@@ -1,0 +1,2 @@
+# Store all files byte-for-byte (no CRLF conversion); scripts verify SHA256 of sources
+* -text

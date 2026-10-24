@@ -1,0 +1,818 @@
+Screens:
+  scrWeeklyHours:
+    Properties:
+      Fill: =RGBA(255, 255, 255, 1)
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+      OnVisible: =If(!Coalesce(varReportReady,false) || Coalesce(varReportProjectID,0)<>Coalesce(ddReportProject.Selected.ID,0),Select(btnLoadReport))
+    Children:
+    - lblWeeklyHoursTitle:
+        Control: Label@2.5.1
+        Properties:
+          Color: =Color.White
+          Fill: =RGBA(25,66,150,1)
+          Font: =Font.'Segoe UI'
+          FontWeight: =FontWeight.Semibold
+          Height: =56
+          PaddingLeft: =16
+          Size: =22
+          Text: ="Hours Summary"
+          Width: =Parent.Width-80
+          X: =40
+          Y: =24
+    - lblSummaryPurpose:
+        Control: Label@2.5.1
+        Properties:
+          Text: ="Samenvatting van opgeslagen uren. Uren invoeren via Weekly Hours (project / team)."
+          X: =40
+          Y: =84
+          Width: =Parent.Width-80
+          Height: =28
+          Size: =11
+          Font: =Font.'Segoe UI'
+    - lblReportProjectDetails:
+        Control: Label@2.5.1
+        Properties:
+          Color: =RGBA(85, 100, 120, 1)
+          Font: =Font.'Segoe UI'
+          Size: =11
+          Text: "=If(\n    IsBlank(ddReportProject.Selected.ID),\n    \"Selecteer een project.\",\n    With(\n        {\n            projectRecord: LookUp(\n                Projects,\n                ID = ddReportProject.Selected.ID\n            )\n        },\n        \"Project Number: \" &\n        projectRecord.'Project Number' &\n        \"   |   Project Reference: \" &\n        projectRecord.'Project Reference'\n    )\n)"
+          Width: =Parent.Width - 80
+          X: =40
+          Y: =conSummarySelectors.Y+conSummarySelectors.Height+12
+          Height: =28
+    - btnBuildReport:
+        Control: Classic/Button@2.2.0
+        Properties:
+          Text: ="Build"
+          X: =0
+          Y: =0
+          Width: =110
+          Height: =36
+          OnSelect: |-
+            =If(varReportReady && !varReportBusy && varReportProjectID=ddReportProject.Selected.ID,
+             Set(varReportValid,false); Clear(colReportBuildErrors);
+             Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
+             Set(varReportHasPeriod,!IsEmpty(colReportPeriods));
+             If(varReportHasPeriod,
+              If(IsBlank(ddReportStartYear.Selected.Value) || IsBlank(ddReportEndYear.Selected.Value) || IsBlank(ddReportStartWeek.Selected.Value) || IsBlank(ddReportEndWeek.Selected.Value),
+               Collect(colReportBuildErrors,{Message:"Selecteer beginjaar, beginweek, eindjaar en eindweek."}),
+               With({startYear:ddReportStartYear.Selected.Value,endYear:ddReportEndYear.Selected.Value,startWeek:ddReportStartWeek.Selected.Value,endWeek:ddReportEndWeek.Selected.Value},
+                Set(varReportFrom,DateAdd(Date(startYear,1,4),1-Weekday(Date(startYear,1,4),StartOfWeek.Monday)+7*(startWeek-1),TimeUnit.Days));
+                Set(varReportUntil,DateAdd(Date(endYear,1,4),1-Weekday(Date(endYear,1,4),StartOfWeek.Monday)+7*endWeek,TimeUnit.Days))
+               );
+               If(varReportFrom>=varReportUntil || DateDiff(varReportFrom,varReportUntil,TimeUnit.Days)/7>50000,
+                Collect(colReportBuildErrors,{Message:"Kies een eindweek vanaf de beginweek en maximaal 50000 weken."}),
+                IfError(CountRows(ClearCollect(colReportSelectedHours,Filter(colReportFacts,
+                 WorkDay>=varReportFrom && WorkDay<varReportUntil &&
+                 (Coalesce(ddReportContractor.Selected.ID,0)=0 || ContractorID=ddReportContractor.Selected.ID))))>=0,
+                 Collect(colReportBuildErrors,{Message:FirstError.Message});false);
+                IfError(CountRows(ClearCollect(colReportColumns,
+                 ForAll(Sequence(DateDiff(varReportFrom,varReportUntil,TimeUnit.Days)/7) As weekIndex,
+                  With({monday:DateAdd(varReportFrom,7*(weekIndex.Value-1),TimeUnit.Days)},
+                   With({isoYearValue:Year(DateAdd(monday,3,TimeUnit.Days))},
+                    {WeekIndex:weekIndex.Value,Monday:monday,ISOYear:isoYearValue,
+                     KW:1+RoundDown(DateDiff(DateAdd(Date(isoYearValue,1,4),1-Weekday(Date(isoYearValue,1,4),StartOfWeek.Monday),TimeUnit.Days),monday,TimeUnit.Days)/7,0)}
+                   )
+                  )
+                 )))>=0,Collect(colReportBuildErrors,{Message:FirstError.Message});false)
+               )
+              )
+             );
+             If(IsEmpty(colReportBuildErrors),
+              IfError(CountRows(ClearCollect(colReportRows,
+               AddColumns(GroupBy(colReportSelectedHours,WorkerID,ContractorID,WorkerEntries) As reportRow,
+                WorkerName,First(reportRow.WorkerEntries).WorkerName,
+                ContractorName,First(reportRow.WorkerEntries).ContractorName,
+                PeriodTotal,Sum(reportRow.WorkerEntries,HourValue))))>=0,
+               Collect(colReportBuildErrors,{Message:FirstError.Message});false);
+              ForAll(Filter(colReportWorkers,IsActive=true) As person,
+               If((Coalesce(ddReportContractor.Selected.ID,0)=0 || person.ContractorID=ddReportContractor.Selected.ID) &&
+                  IsBlank(LookUp(colReportRows,WorkerID=person.WorkerID && ContractorID=person.ContractorID)),
+                IfError(CountRows(Collect(colReportRows,{WorkerID:person.WorkerID,ContractorID:person.ContractorID,
+                 WorkerName:person.WorkerName,ContractorName:person.ContractorName,
+                 PeriodTotal:0,WorkerEntries:Filter(colReportSelectedHours,false)}))>=0,
+                 Collect(colReportBuildErrors,{Message:FirstError.Message});false)
+               )
+              )
+             );
+             If(IsEmpty(colReportBuildErrors),
+              Set(varReportColumnOffset,1); Set(varReportValid,true);
+              Set(varReportMessage,If(!varReportHasPeriod,"Geen opgeslagen uren voor dit project; actieve medewerkers staan op 0. ","") &
+               Text(CountRows(colReportRows)) & " medewerkers/contractors | " & Text(CountRows(colReportColumns)) & " weken | " &
+               Text(Sum(colReportRows,PeriodTotal),If(Sum(colReportRows,PeriodTotal)=Round(Sum(colReportRows,PeriodTotal),0),"[$-en-US]0","[$-en-US]0.00"),"nl-NL") & " uur"),
+              Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
+              Set(varReportMessage,"Rapport gestopt: " & First(colReportBuildErrors).Message);
+              Notify(varReportMessage,NotificationType.Error)
+             )
+            )
+          Visible: =false
+          DisplayMode: =DisplayMode.Edit
+          Fill: =RGBA(25,66,150,1)
+          Color: =Color.White
+          Font: =Font.'Segoe UI'
+          Size: =11
+          RadiusTopLeft: =6
+          RadiusTopRight: =6
+          RadiusBottomLeft: =6
+          RadiusBottomRight: =6
+    - lblReportStatus:
+        Control: Label@2.5.1
+        Properties:
+          Text: =If(varReportBusy,"Uren ophalen...",varReportMessage)
+          X: =40
+          Y: =lblReportProjectDetails.Y+lblReportProjectDetails.Height+8
+          Width: =Parent.Width-80
+          Height: =30
+          Font: =Font.'Segoe UI'
+          Size: =11
+          Color: =RGBA(35,45,60,1)
+    - lblReportNameHeader:
+        Control: Label@2.5.1
+        Properties:
+          Text: ="Name"
+          X: =40
+          Y: =lblReportStatus.Y+lblReportStatus.Height+12
+          Width: =220
+          Height: =40
+          Font: =Font.'Segoe UI'
+          Size: =11
+          Color: =Color.White
+          Fill: =RGBA(25,66,150,1)
+          FontWeight: =FontWeight.Semibold
+          PaddingLeft: =8
+    - lblReportEmployerHeader:
+        Control: Label@2.5.1
+        Properties:
+          Text: ="Contractor"
+          X: =260
+          Y: =lblReportNameHeader.Y
+          Width: =180
+          Height: =40
+          Font: =Font.'Segoe UI'
+          Size: =11
+          Color: =Color.White
+          Fill: =RGBA(25,66,150,1)
+    - galReportWeekHeaders:
+        Control: Gallery@2.15.0
+        Properties:
+          Items: =FirstN(Filter(colReportColumns,WeekIndex>=Min(Coalesce(varReportColumnOffset,1),Max(1,CountRows(colReportColumns)-Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))+1))),Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0)))
+          X: =440
+          Y: =lblReportNameHeader.Y
+          Width: =Parent.Width-600
+          Height: =40
+          TemplateSize: =Max(50,(scrWeeklyHours.Width-600)/Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0)))
+          TemplatePadding: =0
+          ShowScrollbar: =false
+        Variant: Horizontal
+        Children:
+        - lblReportWeekHeader:
+            Control: Label@2.5.1
+            Properties:
+              Text: =Text(ThisItem.ISOYear)&" KW"&Text(ThisItem.KW,"00")
+              X: =0
+              Y: =0
+              Width: =Max(50,(scrWeeklyHours.Width-600)/Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0)))
+              Height: =40
+              Font: =Font.'Segoe UI'
+              Size: =10
+              Color: =Color.White
+              Fill: =RGBA(25,66,150,1)
+              Align: =Align.Center
+    - lblReportTotalHeader:
+        Control: Label@2.5.1
+        Properties:
+          Text: ="Period total"
+          X: =Parent.Width-160
+          Y: =lblReportNameHeader.Y
+          Width: =120
+          Height: =40
+          Font: =Font.'Segoe UI'
+          Size: =11
+          Color: =Color.White
+          Fill: =RGBA(25,66,150,1)
+          Align: =Align.Center
+    - galReportRows:
+        Control: Gallery@2.15.0
+        Properties:
+          Items: =Sort(colReportRows,WorkerName,SortOrder.Ascending)
+          X: =40
+          Y: =lblReportNameHeader.Y+lblReportNameHeader.Height
+          Width: =Parent.Width-80
+          Height: =Max(0,lblReportGrandTotal.Y-12-Self.Y)
+          TemplateSize: =44
+          TemplatePadding: =0
+          TemplateFill: =If(Mod(ThisItem.WorkerID,2)=0,RGBA(244,246,250,1),Color.White)
+          Visible: =varReportValid
+          ShowScrollbar: =true
+        Variant: Vertical
+        Children:
+        - lblReportWorkerName:
+            Control: Label@2.5.1
+            Properties:
+              Text: =ThisItem.WorkerName
+              X: =0
+              Y: =0
+              Width: =220
+              Height: =44
+              Font: =Font.'Segoe UI'
+              Size: =11
+              Color: =RGBA(35,45,60,1)
+              PaddingLeft: =8
+        - lblReportWorkerEmployer:
+            Control: Label@2.5.1
+            Properties:
+              Text: =ThisItem.ContractorName
+              X: =220
+              Y: =0
+              Width: =180
+              Height: =44
+              Font: =Font.'Segoe UI'
+              Size: =11
+              Color: =RGBA(35,45,60,1)
+        - galReportWorkerWeeks:
+            Control: Gallery@2.15.0
+            Properties:
+              Items: =With({workerHours:ThisItem.WorkerEntries},AddColumns(FirstN(Filter(colReportColumns,WeekIndex>=Min(Coalesce(varReportColumnOffset,1),Max(1,CountRows(colReportColumns)-Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))+1))),Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))) As week,WeekHours,Coalesce(Sum(Filter(workerHours,Monday=week.Monday),HourValue),0)))
+              X: =400
+              Y: =0
+              Width: =scrWeeklyHours.Width-600
+              Height: =44
+              TemplateSize: =Max(50,(scrWeeklyHours.Width-600)/Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0)))
+              TemplatePadding: =0
+              ShowScrollbar: =false
+            Variant: Horizontal
+            Children:
+            - lblReportWeekHours:
+                Control: Label@2.5.1
+                Properties:
+                  Text: =Text(ThisItem.WeekHours,If(ThisItem.WeekHours=Round(ThisItem.WeekHours,0),"[$-en-US]0","[$-en-US]0.00"),"nl-NL")
+                  X: =0
+                  Y: =0
+                  Width: =Max(50,(scrWeeklyHours.Width-600)/Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0)))
+                  Height: =44
+                  Font: =Font.'Segoe UI'
+                  Size: =11
+                  Color: =RGBA(35,45,60,1)
+                  Align: =Align.Center
+        - lblReportWorkerTotal:
+            Control: Label@2.5.1
+            Properties:
+              Text: =Text(ThisItem.PeriodTotal,If(ThisItem.PeriodTotal=Round(ThisItem.PeriodTotal,0),"[$-en-US]0","[$-en-US]0.00"),"nl-NL")
+              X: =scrWeeklyHours.Width-200
+              Y: =0
+              Width: =120
+              Height: =44
+              Font: =Font.'Segoe UI'
+              Size: =11
+              Color: =RGBA(35,45,60,1)
+              Align: =Align.Center
+              FontWeight: =FontWeight.Semibold
+    - lblReportGrandTotal:
+        Control: Label@2.5.1
+        Properties:
+          Text: '="Period total: " & Text(Sum(colReportRows,PeriodTotal),If(Sum(colReportRows,PeriodTotal)=Round(Sum(colReportRows,PeriodTotal),0),"[$-en-US]0","[$-en-US]0.00"),"nl-NL") & " hours"'
+          X: =40
+          Y: =navHoursSummary.Y-44
+          Width: =Parent.Width-80
+          Height: =32
+          Font: =Font.'Segoe UI'
+          Size: =11
+          Color: =RGBA(35,45,60,1)
+          Align: =Align.Right
+          FontWeight: =FontWeight.Semibold
+          Visible: =varReportValid && !varReportBusy
+    - lblSummaryFieldWidth:
+        Control: Label@2.5.1
+        Properties:
+          Text: =""
+          Visible: =false
+          X: =0
+          Y: =0
+          Width: =256
+          Height: =1
+    - conSummarySelectors:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          X: =40
+          Y: =116
+          Width: =Parent.Width-80
+          Height: =Min(conSummaryFiltersContent.Height,Max(64,Min(220,navHoursSummary.Y-Self.Y-284)))
+          Fill: =Color.Transparent
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutAlignItems: =LayoutAlignItems.Start
+          LayoutJustifyContent: =LayoutJustifyContent.Start
+          LayoutGap: =0
+          LayoutWrap: =false
+          LayoutOverflowX: =LayoutOverflow.Scroll
+          LayoutOverflowY: =LayoutOverflow.Scroll
+          PaddingTop: =0
+          PaddingBottom: =0
+          PaddingLeft: =0
+          PaddingRight: =0
+        Children:
+          - conSummaryFiltersContent:
+              Control: GroupContainer@1.5.0
+              Variant: ManualLayout
+              Properties:
+                Width: =Max(2*lblSummaryFieldWidth.Width,Parent.Width-16)
+                Height: =Max(ddReportStartYear.Y+ddReportStartYear.Height,ddReportStartWeek.Y+ddReportStartWeek.Height,ddReportEndYear.Y+ddReportEndYear.Height,ddReportEndWeek.Y+ddReportEndWeek.Height)+12
+                FillPortions: =0
+                Fill: =Color.Transparent
+              Children:
+                - lblReportProject:
+                    Control: Label@2.5.1
+                    Properties:
+                      Color: =RGBA(35, 45, 60, 1)
+                      Font: =Font.'Segoe UI'
+                      FontWeight: =FontWeight.Semibold
+                      Height: =24
+                      Size: =12
+                      Text: ="Project"
+                      Width: =ddReportProject.Width
+                      X: =ddReportProject.X
+                      Y: =0
+                - ddReportProject:
+                    Control: Classic/DropDown@2.3.1
+                    Properties:
+                      AllowEmptySelection: =true
+                      BorderThickness: =0
+                      ChevronBackground: =RGBA(244, 246, 250, 1)
+                      ChevronFill: =RGBA(25, 66, 150, 1)
+                      Color: =RGBA(35, 45, 60, 1)
+                      Default: =Coalesce(LookUp(colReportProjects,ID=varReportProjectID,Title),ddProject.Selected.Value)
+                      Fill: =RGBA(244, 246, 250, 1)
+                      Font: =Font.'Segoe UI'
+                      HoverFill: =RGBA(234, 241, 252, 1)
+                      Items: =colReportProjects
+                      Items.Value: =Title
+                      OnChange: =If(!varReportBusy && Coalesce(Self.Selected.ID,0)<>Coalesce(varReportProjectID,0),Set(varReportValid,false); Set(varReportReady,false); Select(btnLoadReport))
+                      SelectionColor: =RGBA(255, 255, 255, 1)
+                      SelectionFill: =RGBA(25, 66, 150, 1)
+                      Size: =12
+                      Width: =2*lblSummaryFieldWidth.Width
+                      X: =0
+                      Y: =lblReportProject.Y+lblReportProject.Height+4
+                      DisplayMode: =If(varReportBusy,DisplayMode.Disabled,DisplayMode.Edit)
+                      Height: =36
+                - lblReportContractor:
+                    Control: Label@2.5.1
+                    Properties:
+                      Color: =RGBA(35, 45, 60, 1)
+                      Font: =Font.'Segoe UI'
+                      FontWeight: =FontWeight.Semibold
+                      Height: =24
+                      Size: =12
+                      Text: ="Contractor"
+                      Width: =ddReportContractor.Width
+                      X: =ddReportContractor.X
+                      Y: =If(ddReportContractor.X=0,ddReportProject.Y+ddReportProject.Height+12,lblReportProject.Y)
+                - ddReportContractor:
+                    Control: Classic/DropDown@2.3.1
+                    Properties:
+                      AllowEmptySelection: =false
+                      BorderThickness: =0
+                      ChevronBackground: =RGBA(244, 246, 250, 1)
+                      ChevronFill: =RGBA(25, 66, 150, 1)
+                      Color: =RGBA(35, 45, 60, 1)
+                      Default: ="Alle contractors"
+                      Fill: =RGBA(244, 246, 250, 1)
+                      Font: =Font.'Segoe UI'
+                      HoverFill: =RGBA(234, 241, 252, 1)
+                      Items: =Sort(colReportContractors,Value,SortOrder.Ascending)
+                      Items.Value: =Value
+                      OnChange: =If(!varReportBusy,Set(varReportValid,false); Select(btnBuildReport))
+                      SelectionColor: =RGBA(255, 255, 255, 1)
+                      SelectionFill: =RGBA(25, 66, 150, 1)
+                      Size: =12
+                      Width: =2*lblSummaryFieldWidth.Width
+                      X: =If(Parent.Width>=ddReportProject.Width+12+Self.Width,ddReportProject.Width+12,0)
+                      Y: =lblReportContractor.Y+lblReportContractor.Height+4
+                      DisplayMode: =If(varReportBusy || !varReportReady,DisplayMode.Disabled,DisplayMode.Edit)
+                      Height: =36
+                - lblddReportStartYear:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Start ISO Year"
+                      X: =ddReportStartYear.X
+                      Y: =Max(ddReportProject.Y+ddReportProject.Height,ddReportContractor.Y+ddReportContractor.Height)+12
+                      Width: =ddReportStartYear.Width
+                      Height: =24
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Color: =RGBA(35,45,60,1)
+                - ddReportStartYear:
+                    Control: Classic/DropDown@2.3.1
+                    Properties:
+                      Items: =colReportYears
+                      Items.Value: =Value
+                      Default: =varReportDefaultStartYear
+                      AllowEmptySelection: =true
+                      OnChange: =If(!varReportBusy,Set(varReportValid,false); ClearCollect(colReportStartWeeks,Sort(Distinct(Filter(colReportPeriods,ISOYear=Self.Selected.Value),KW),Value,SortOrder.Ascending)); Reset(ddReportStartWeek); Select(btnBuildReport))
+                      DisplayMode: =If(varReportBusy || !varReportReady || IsEmpty(colReportPeriods),DisplayMode.Disabled,DisplayMode.Edit)
+                      X: =Mod(0,Max(1,RoundDown((Parent.Width+12)/(lblSummaryFieldWidth.Width+12),0)))*(lblSummaryFieldWidth.Width+12)
+                      Y: =lblddReportStartYear.Y+lblddReportStartYear.Height+4
+                      Width: =lblSummaryFieldWidth.Width
+                      Height: =36
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Fill: =RGBA(244,246,250,1)
+                      Color: =RGBA(35,45,60,1)
+                      BorderThickness: =0
+                      ChevronBackground: =RGBA(244,246,250,1)
+                      ChevronFill: =RGBA(25,66,150,1)
+                - lblddReportStartWeek:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Start KW"
+                      X: =ddReportStartWeek.X
+                      Y: =lblddReportStartYear.Y+RoundDown(1/Max(1,RoundDown((Parent.Width+12)/(lblSummaryFieldWidth.Width+12),0)),0)*(lblddReportStartYear.Height+4+ddReportStartYear.Height+12)
+                      Width: =ddReportStartWeek.Width
+                      Height: =24
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Color: =RGBA(35,45,60,1)
+                - ddReportStartWeek:
+                    Control: Classic/DropDown@2.3.1
+                    Properties:
+                      Items: =colReportStartWeeks
+                      Items.Value: =Value
+                      Default: =First(colReportStartWeeks).Value
+                      AllowEmptySelection: =true
+                      OnChange: =If(!varReportBusy,Set(varReportValid,false); Select(btnBuildReport))
+                      DisplayMode: =If(varReportBusy || !varReportReady || IsEmpty(colReportPeriods),DisplayMode.Disabled,DisplayMode.Edit)
+                      X: =Mod(1,Max(1,RoundDown((Parent.Width+12)/(lblSummaryFieldWidth.Width+12),0)))*(lblSummaryFieldWidth.Width+12)
+                      Y: =lblddReportStartWeek.Y+lblddReportStartWeek.Height+4
+                      Width: =lblSummaryFieldWidth.Width
+                      Height: =36
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Fill: =RGBA(244,246,250,1)
+                      Color: =RGBA(35,45,60,1)
+                      BorderThickness: =0
+                      ChevronBackground: =RGBA(244,246,250,1)
+                      ChevronFill: =RGBA(25,66,150,1)
+                - lblddReportEndYear:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="End ISO Year"
+                      X: =ddReportEndYear.X
+                      Y: =lblddReportStartYear.Y+RoundDown(2/Max(1,RoundDown((Parent.Width+12)/(lblSummaryFieldWidth.Width+12),0)),0)*(lblddReportStartYear.Height+4+ddReportStartYear.Height+12)
+                      Width: =ddReportEndYear.Width
+                      Height: =24
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Color: =RGBA(35,45,60,1)
+                - ddReportEndYear:
+                    Control: Classic/DropDown@2.3.1
+                    Properties:
+                      Items: =colReportYears
+                      Items.Value: =Value
+                      Default: =varReportDefaultEndYear
+                      AllowEmptySelection: =true
+                      OnChange: =If(!varReportBusy,Set(varReportValid,false); ClearCollect(colReportEndWeeks,Sort(Distinct(Filter(colReportPeriods,ISOYear=Self.Selected.Value),KW),Value,SortOrder.Ascending)); Reset(ddReportEndWeek); Select(btnBuildReport))
+                      DisplayMode: =If(varReportBusy || !varReportReady || IsEmpty(colReportPeriods),DisplayMode.Disabled,DisplayMode.Edit)
+                      X: =Mod(2,Max(1,RoundDown((Parent.Width+12)/(lblSummaryFieldWidth.Width+12),0)))*(lblSummaryFieldWidth.Width+12)
+                      Y: =lblddReportEndYear.Y+lblddReportEndYear.Height+4
+                      Width: =lblSummaryFieldWidth.Width
+                      Height: =36
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Fill: =RGBA(244,246,250,1)
+                      Color: =RGBA(35,45,60,1)
+                      BorderThickness: =0
+                      ChevronBackground: =RGBA(244,246,250,1)
+                      ChevronFill: =RGBA(25,66,150,1)
+                - lblddReportEndWeek:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="End KW"
+                      X: =ddReportEndWeek.X
+                      Y: =lblddReportStartYear.Y+RoundDown(3/Max(1,RoundDown((Parent.Width+12)/(lblSummaryFieldWidth.Width+12),0)),0)*(lblddReportStartYear.Height+4+ddReportStartYear.Height+12)
+                      Width: =ddReportEndWeek.Width
+                      Height: =24
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Color: =RGBA(35,45,60,1)
+                - ddReportEndWeek:
+                    Control: Classic/DropDown@2.3.1
+                    Properties:
+                      Items: =colReportEndWeeks
+                      Items.Value: =Value
+                      Default: =Last(colReportEndWeeks).Value
+                      AllowEmptySelection: =true
+                      OnChange: =If(!varReportBusy,Set(varReportValid,false); Select(btnBuildReport))
+                      DisplayMode: =If(varReportBusy || !varReportReady || IsEmpty(colReportPeriods),DisplayMode.Disabled,DisplayMode.Edit)
+                      X: =Mod(3,Max(1,RoundDown((Parent.Width+12)/(lblSummaryFieldWidth.Width+12),0)))*(lblSummaryFieldWidth.Width+12)
+                      Y: =lblddReportEndWeek.Y+lblddReportEndWeek.Height+4
+                      Width: =lblSummaryFieldWidth.Width
+                      Height: =36
+                      Font: =Font.'Segoe UI'
+                      Size: =11
+                      Fill: =RGBA(244,246,250,1)
+                      Color: =RGBA(35,45,60,1)
+                      BorderThickness: =0
+                      ChevronBackground: =RGBA(244,246,250,1)
+                      ChevronFill: =RGBA(25,66,150,1)
+    - btnLoadReport:
+        Control: Classic/Button@2.2.0
+        Properties:
+          Text: ="Read"
+          Visible: =false
+          Width: =1
+          Height: =1
+          OnSelect: |-
+            =If(!varReportBusy,
+             Set(varReportBusy,true); Set(varReportLoadState,"Loading"); Set(varReportReady,false); Set(varReportValid,false);
+             Set(varReportProjectID,ddReportProject.Selected.ID);
+             Clear(colReportLoadErrors); Clear(colReportFacts); Clear(colReportRows);
+             Clear(colReportColumns); Clear(colReportSelectedHours); Clear(colReportAssignments);
+             Clear(colReportWorkers); Clear(colReportPeriods); Clear(colReportYears);
+             Clear(colReportStartWeeks); Clear(colReportEndWeeks); Clear(colReportContractors); Clear(colReportContractorCandidates);
+             IfError(Refresh(Projects),Collect(colReportLoadErrors,{Message:FirstError.Message});false);
+             If(IsEmpty(colReportLoadErrors),
+              IfError(CountRows(ClearCollect(colReportProjects,Sort(Projects,Title,SortOrder.Ascending)))>=0,
+               Collect(colReportLoadErrors,{Message:FirstError.Message});false)
+             );
+             If(CountRows(colReportProjects)>=500,
+              Collect(colReportLoadErrors,{Message:"Projectkeuze mogelijk onvolledig (500 projecten). Rapportage gestopt; een zoekbare projectselectie is nodig."})
+             );
+             If(IsEmpty(colReportLoadErrors),Reset(ddReportProject); Set(varReportProjectID,ddReportProject.Selected.ID));
+             If(IsEmpty(colReportLoadErrors) && !IsBlank(varReportProjectID),
+              IfError(Refresh(Hours),Collect(colReportLoadErrors,{Message:FirstError.Message});false);
+              IfError(Refresh('Project Workers'),Collect(colReportLoadErrors,{Message:FirstError.Message});false);
+              IfError(Refresh(Workers),Collect(colReportLoadErrors,{Message:FirstError.Message});false);
+              If(IsEmpty(colReportLoadErrors),
+               IfError(CountRows(ClearCollect(colReportAssignments,
+                Filter('Project Workers',Project.Id=varReportProjectID)))>=0,
+                Collect(colReportLoadErrors,{Message:FirstError.Message});false)
+              );
+              If(CountRows(colReportAssignments)>=500,
+               Collect(colReportLoadErrors,{Message:"500 projectkoppelingen geladen. Volledigheid niet gegarandeerd; rapportage gestopt."})
+              );
+              If(IsEmpty(colReportLoadErrors),
+               ForAll(Distinct(colReportAssignments,Worker.Id) As person,
+                IfError(
+                 With({profile:LookUp(Workers,ID=person.Value),
+                       activeMember:CountIf(colReportAssignments,Worker.Id=person.Value && Active=true)>0},
+                  If(IsBlank(person.Value) || (activeMember && (IsBlank(profile.ID) || IsBlank(profile.Employer.Id))),
+                   Collect(colReportLoadErrors,{Message:"Actieve medewerker of werkgever ontbreekt bij worker-ID " & Text(person.Value)});false,
+                   CountRows(Collect(colReportWorkers,{WorkerID:person.Value,
+                    WorkerName:Coalesce(Trim(profile.'First Name' & " " & profile.Surname),LookUp(colReportAssignments,Worker.Id=person.Value,Worker.Value)),
+                    ContractorID:profile.Employer.Id,ContractorName:profile.Employer.Value,IsActive:activeMember}))>=0
+                  )
+                 ),Collect(colReportLoadErrors,{Message:FirstError.Message});false
+                )
+               )
+              );
+              If(IsEmpty(colReportLoadErrors),
+               ForAll(colReportAssignments As member,
+                IfError(
+                 With({firstHour:First(Sort(Filter(Hours,Assignment.Id=member.ID),'Work Date',SortOrder.Ascending)),
+                       lastHour:First(Sort(Filter(Hours,Assignment.Id=member.ID),'Work Date',SortOrder.Descending))},
+                  If(IsBlank(firstHour.ID),true,
+                   If(IsBlank(firstHour.'Work Date') || IsBlank(lastHour.'Work Date') || Year(lastHour.'Work Date')-Year(firstHour.'Work Date')>499,
+                    Collect(colReportLoadErrors,{Message:"Ongeldig datumbereik bij koppeling " & Text(member.ID)});false,
+                    CountRows(ForAll(Sequence(Year(lastHour.'Work Date')-Year(firstHour.'Work Date')+1,Year(firstHour.'Work Date')) As calendarYear,
+                     With({dateFrom:Date(calendarYear.Value,1,1),dateUntil:Date(calendarYear.Value+1,1,1),assignmentID:member.ID},
+                      IfError(
+                       With({batch:ForAll(Filter(Hours,Assignment.Id=assignmentID && 'Work Date'>=dateFrom && 'Work Date'<dateUntil) As entry,
+                        {HourID:entry.ID,WorkDay:entry.'Work Date',ContractorID:entry.Employer.Id,
+                         ContractorName:entry.Employer.Value,HourValue:entry.Hours})},
+                        If(CountRows(batch)>=500,
+                         Collect(colReportLoadErrors,{Message:"Limiet bereikt bij koppeling " & Text(assignmentID) & ", jaar " & Text(calendarYear.Value) & ". Geen totalen getoond."});false,
+                         If(CountIf(batch,IsBlank(WorkDay) || IsBlank(ContractorID) || IsBlank(HourValue))>0,
+                          Collect(colReportLoadErrors,{Message:"Urenregel zonder datum, historische werkgever of uren bij koppeling " & Text(assignmentID)});false,
+                          CountRows(Collect(colReportFacts,ForAll(batch As entry,
+                           With({workDay:Date(Year(entry.WorkDay),Month(entry.WorkDay),Day(entry.WorkDay))},
+                            With({monday:DateAdd(workDay,1-Weekday(workDay,StartOfWeek.Monday),TimeUnit.Days)},
+                             With({isoYearValue:Year(DateAdd(monday,3,TimeUnit.Days))},
+                              {HourID:entry.HourID,WorkerID:member.Worker.Id,
+                               WorkerName:LookUp(colReportWorkers,WorkerID=member.Worker.Id,WorkerName),
+                               ContractorID:entry.ContractorID,ContractorName:entry.ContractorName,
+                               WorkDay:workDay,Monday:monday,ISOYear:isoYearValue,
+                               KW:1+RoundDown(DateDiff(DateAdd(Date(isoYearValue,1,4),1-Weekday(Date(isoYearValue,1,4),StartOfWeek.Monday),TimeUnit.Days),monday,TimeUnit.Days)/7,0),
+                               HourValue:entry.HourValue}
+                             )
+                            )
+                           )
+                          )))>=0
+                         )
+                        )
+                       ),Collect(colReportLoadErrors,{Message:FirstError.Message});false
+                      )
+                     )
+                    ))>=0
+                   )
+                  )
+                 ),Collect(colReportLoadErrors,{Message:FirstError.Message});false
+                )
+               )
+              );
+              If(IsEmpty(colReportLoadErrors),
+               IfError(CountRows(ClearCollect(colReportPeriods,
+                Sort(AddColumns(GroupBy(colReportFacts,ISOYear,KW,Monday,PeriodRecords),PeriodKey,ISOYear*100+KW),PeriodKey,SortOrder.Ascending)))>=0,
+                Collect(colReportLoadErrors,{Message:FirstError.Message});false);
+               IfError(CountRows(ClearCollect(colReportYears,Sort(Distinct(colReportPeriods,ISOYear),Value,SortOrder.Ascending)))>=0,
+                Collect(colReportLoadErrors,{Message:FirstError.Message});false);
+               Collect(colReportContractorCandidates,{ID:0,Value:"Alle contractors"});
+               ForAll(Distinct(colReportFacts,ContractorID) As contractor,
+                Collect(colReportContractorCandidates,{ID:contractor.Value,Value:Coalesce(LookUp(colReportFacts,ContractorID=contractor.Value,ContractorName),"Werkgever " & Text(contractor.Value))})
+               );
+               ForAll(Filter(colReportWorkers,IsActive=true) As person,
+                Collect(colReportContractorCandidates,{ID:person.ContractorID,Value:Coalesce(person.ContractorName,"Werkgever " & Text(person.ContractorID))})
+               );
+               ClearCollect(colReportContractors,DropColumns(AddColumns(GroupBy(colReportContractorCandidates,ID,ContractorRecords),Value,First(ContractorRecords).Value),ContractorRecords));
+               If(CountRows(colReportContractors)>500 || CountRows(colReportYears)>500,
+                Collect(colReportLoadErrors,{Message:"Meer dan 500 keuzewaarden. Rapportage gestopt om onvolledige keuzes te voorkomen."})
+               )
+              );
+              If(IsEmpty(colReportLoadErrors),
+               Set(varReportDefaultStartYear,First(colReportPeriods).ISOYear);
+               Set(varReportDefaultEndYear,Last(colReportPeriods).ISOYear);
+               ClearCollect(colReportStartWeeks,Sort(Distinct(Filter(colReportPeriods,ISOYear=varReportDefaultStartYear),KW),Value,SortOrder.Ascending));
+               ClearCollect(colReportEndWeeks,Sort(Distinct(Filter(colReportPeriods,ISOYear=varReportDefaultEndYear),KW),Value,SortOrder.Ascending));
+               Reset(ddReportContractor); Reset(ddReportStartYear); Reset(ddReportEndYear); Reset(ddReportStartWeek); Reset(ddReportEndWeek);
+               Set(varReportReady,true); Set(varReportLoadState,"Loaded")
+              )
+             );
+             If(!IsEmpty(colReportLoadErrors),
+              Set(varReportReady,false); Set(varReportValid,false);
+              Clear(colReportFacts); Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
+              Clear(colReportPeriods); Clear(colReportYears); Clear(colReportStartWeeks); Clear(colReportEndWeeks); Clear(colReportContractors);
+              Set(varReportLoadState,"Failed"); Set(varReportMessage,"Ophalen gestopt: " & First(colReportLoadErrors).Message);
+              Notify(varReportMessage,NotificationType.Error),
+              If(IsBlank(varReportProjectID),Set(varReportMessage,"Selecteer een project."))
+             );
+             Set(varReportBusy,false);
+             If(varReportReady,Select(btnBuildReport))
+            )
+    - navHoursSummary:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          X: =0
+          Y: =Parent.Height-Self.Height
+          Width: =Parent.Width
+          Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height+16
+          Fill: =RGBA(244,246,250,1)
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutAlignItems: =LayoutAlignItems.Start
+          LayoutJustifyContent: =LayoutJustifyContent.Start
+          LayoutWrap: =false
+          LayoutOverflowX: =LayoutOverflow.Scroll
+          LayoutOverflowY: =LayoutOverflow.Hide
+          LayoutGap: =0
+          PaddingTop: =0
+          PaddingBottom: =0
+          PaddingLeft: =0
+          PaddingRight: =0
+        Children:
+          - conSummaryButtonRow:
+              Control: GroupContainer@1.5.0
+              Variant: ManualLayout
+              Properties:
+                Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnSummaryProjectTeam.Width+btnReportPreviousWeeks.Width+btnReportNextWeeks.Width+btnRefreshReport.Width+3*lblFooterButtonMetrics.Width)
+                Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height
+                FillPortions: =0
+                Fill: =Color.Transparent
+              Children:
+                - btnSummaryProjectTeam:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      PressedBorderColor: =ColorValue("#123273")
+                      HoverBorderColor: =ColorValue("#123273")
+                      BorderColor: =ColorValue("#194296")
+                      DisabledColor: =ColorValue("#6B7280")
+                      DisabledFill: =ColorValue("#E5E7EB")
+                      PressedColor: =Color.White
+                      HoverColor: =Color.White
+                      Color: =Color.White
+                      PressedFill: =ColorValue("#123273")
+                      HoverFill: =ColorValue("#123273")
+                      Fill: =ColorValue("#194296")
+                      Text: ="Project / team"
+                      X: =lblFooterButtonMetrics.X
+                      Y: =lblFooterButtonMetrics.Y
+                      Width: =160
+                      Height: =lblFooterButtonMetrics.Height
+                      OnSelect: =Navigate(Screen1,ScreenTransition.Fade)
+                      DisplayMode: =If(varReportBusy,DisplayMode.Disabled,DisplayMode.Edit)
+                      Font: =Font.'Segoe UI'
+                      Size: =14
+                      FontWeight: =FontWeight.Semibold
+                      Align: =Align.Center
+                      VerticalAlign: =VerticalAlign.Middle
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =16
+                      PaddingRight: =16
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                - btnReportPreviousWeeks:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      RadiusBottomRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusTopRight: =8
+                      RadiusTopLeft: =8
+                      PaddingRight: =16
+                      PaddingLeft: =16
+                      PaddingBottom: =0
+                      PaddingTop: =0
+                      VerticalAlign: =VerticalAlign.Middle
+                      Align: =Align.Center
+                      FontWeight: =FontWeight.Semibold
+                      Size: =14
+                      Font: =Font.'Segoe UI'
+                      PressedBorderColor: =ColorValue("#593080")
+                      HoverBorderColor: =ColorValue("#593080")
+                      BorderColor: =ColorValue("#7040A0")
+                      DisabledColor: =ColorValue("#6B7280")
+                      DisabledFill: =ColorValue("#E5E7EB")
+                      PressedColor: =Color.White
+                      HoverColor: =Color.White
+                      Color: =Color.White
+                      PressedFill: =ColorValue("#593080")
+                      HoverFill: =ColorValue("#593080")
+                      Fill: =ColorValue("#7040A0")
+                      Text: ="<"
+                      X: =btnReportNextWeeks.X-lblFooterButtonMetrics.Width-Self.Width
+                      Y: =lblFooterButtonMetrics.Y
+                      Width: =44
+                      Height: =lblFooterButtonMetrics.Height
+                      Visible: =varReportValid && CountRows(colReportColumns)>Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))
+                      DisplayMode: =If(Min(Coalesce(varReportColumnOffset,1),Max(1,CountRows(colReportColumns)-Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))+1))<=1,DisplayMode.Disabled,DisplayMode.Edit)
+                      OnSelect: =Set(varReportColumnOffset,Max(1,Min(Coalesce(varReportColumnOffset,1),Max(1,CountRows(colReportColumns)-Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))+1))-1))
+                - btnReportNextWeeks:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      RadiusBottomRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusTopRight: =8
+                      RadiusTopLeft: =8
+                      PaddingRight: =16
+                      PaddingLeft: =16
+                      PaddingBottom: =0
+                      PaddingTop: =0
+                      VerticalAlign: =VerticalAlign.Middle
+                      Align: =Align.Center
+                      FontWeight: =FontWeight.Semibold
+                      Size: =14
+                      Font: =Font.'Segoe UI'
+                      PressedBorderColor: =ColorValue("#593080")
+                      HoverBorderColor: =ColorValue("#593080")
+                      BorderColor: =ColorValue("#7040A0")
+                      DisabledColor: =ColorValue("#6B7280")
+                      DisabledFill: =ColorValue("#E5E7EB")
+                      PressedColor: =Color.White
+                      HoverColor: =Color.White
+                      Color: =Color.White
+                      PressedFill: =ColorValue("#593080")
+                      HoverFill: =ColorValue("#593080")
+                      Fill: =ColorValue("#7040A0")
+                      Text: =">"
+                      X: =btnRefreshReport.X-lblFooterButtonMetrics.Width-Self.Width
+                      Y: =lblFooterButtonMetrics.Y
+                      Width: =44
+                      Height: =lblFooterButtonMetrics.Height
+                      Visible: =varReportValid && CountRows(colReportColumns)>Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))
+                      DisplayMode: =If(Coalesce(varReportColumnOffset,1)>=Max(1,CountRows(colReportColumns)-Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))+1),DisplayMode.Disabled,DisplayMode.Edit)
+                      OnSelect: =Set(varReportColumnOffset,Min(Max(1,CountRows(colReportColumns)-Max(1,RoundDown((scrWeeklyHours.Width-600)/90,0))+1),Coalesce(varReportColumnOffset,1)+1))
+                - btnRefreshReport:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      PressedBorderColor: =ColorValue("#593080")
+                      HoverBorderColor: =ColorValue("#593080")
+                      BorderColor: =ColorValue("#7040A0")
+                      DisabledColor: =ColorValue("#6B7280")
+                      DisabledFill: =ColorValue("#E5E7EB")
+                      PressedColor: =Color.White
+                      HoverColor: =Color.White
+                      PressedFill: =ColorValue("#593080")
+                      HoverFill: =ColorValue("#593080")
+                      Text: ="Refresh"
+                      X: =Parent.Width-lblFooterButtonMetrics.X-Self.Width
+                      Y: =lblFooterButtonMetrics.Y
+                      Width: =110
+                      Height: =lblFooterButtonMetrics.Height
+                      OnSelect: =If(!Coalesce(varReportBusy,false),Select(btnLoadReport))
+                      Visible: =true
+                      DisplayMode: =If(varReportBusy,DisplayMode.Disabled,DisplayMode.Edit)
+                      Fill: =ColorValue("#7040A0")
+                      Color: =Color.White
+                      Font: =Font.'Segoe UI'
+                      Size: =14
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      FontWeight: =FontWeight.Semibold
+                      Align: =Align.Center
+                      VerticalAlign: =VerticalAlign.Middle
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =16
+                      PaddingRight: =16

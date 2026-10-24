@@ -1,0 +1,841 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  Screen1:
+    Properties:
+      Fill: =ColorValue("#F4F6FA")
+      LoadingSpinnerColor: =RGBA(0, 120, 212, 1)
+      OnVisible: =If(IsBlank(varTeamLoadState),Set(varTeamLoadState,"NotLoaded")); If(!Coalesce(varTeamDirty,false),Select(btnReadTeam))
+    Children:
+      - Gallery1:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextVariant_ver5.0
+          Properties:
+            BorderColor: =RGBA(245, 245, 245, 1)
+            Fill: =Color.Transparent
+            Height: =Max(0,Label2.Y-12-Self.Y)
+            Items: =Workers
+            TemplateFill: =Color.Transparent
+            TemplatePadding: =6
+            TemplateSize: =60
+            X: =40
+            Y: =lblSelectionLoadStatus.Y+lblSelectionLoadStatus.Height+8
+            Width: =Parent.Width-80
+            Visible: =Coalesce(varMastersReady,false)
+          Children:
+            - Workercard:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ColorValue("#E1E6EF")
+                  BorderThickness: =1
+                  Fill: |-
+                    =If(
+                        ThisItem.ID in ShowColumns(colSelectedWorkers,ID),
+                        ColorValue("#EAF1FC"),
+                        Color.White
+                    )
+                  Height: =Parent.TemplateHeight - 4
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =Workercard.RadiusTopLeft
+                  RadiusTopLeft: =Workercard.RadiusBottomLeft
+                  RadiusTopRight: =Workercard.RadiusBottomLeft
+                  Width: =Parent.TemplateWidth-8
+                  X: =4
+                  Y: =2
+            - Title4:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =Color.Black
+                  DisabledColor: =RGBA(161, 159, 157, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =23
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =12
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =12
+                  Text: =ThisItem.'First Name' & " " & ThisItem.Surname
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =Parent.TemplateWidth - 80
+                  X: =64
+                  Y: =8
+            - Subtitle4:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =RGBA(96, 94, 92, 1)
+                  DisabledColor: =RGBA(161, 159, 157, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =If(ThisItem.IsSelected, FontWeight.Semibold, FontWeight.Normal)
+                  Height: =21
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =12
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.'Employer Name'
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =Parent.TemplateWidth - 80
+                  X: =Title4.X
+                  Y: =Title4.Y+Title4.Height+3
+            - NextArrow4:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: =Self.Tooltip
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Color: =RGBA(166, 166, 166, 1)
+                  DisabledBorderColor: =RGBA(245, 245, 245, 1)
+                  DisabledColor: =RGBA(225, 223, 221, 1)
+                  DisabledFill: =RGBA(0, 0, 0, 0)
+                  FocusedBorderThickness: =4
+                  Height: =50
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(16, 110, 190, 1)
+                  HoverFill: =RGBA(0, 0, 0, 0)
+                  Icon: =Icon.ChevronRight
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =16
+                  PaddingLeft: =16
+                  PaddingRight: =16
+                  PaddingTop: =16
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedColor: =RGBA(16, 110, 190, 1)
+                  PressedFill: =RGBA(0, 0, 0, 0)
+                  Tooltip: ="View item details"
+                  Visible: =false
+                  Width: =50
+                  X: =Parent.TemplateWidth - Self.Width - 12
+                  Y: =(Parent.TemplateHeight / 2) - (Self.Height / 2)
+            - Separator4:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  Fill: =RGBA(255, 255, 255, 1)
+                  Height: =8
+                  OnSelect: =Select(Parent)
+                  Visible: =false
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - Self.Height
+            - Checkbox1:
+                Control: Classic/CheckBox@2.1.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  BorderStyle: =BorderStyle.None
+                  BorderThickness: =2
+                  CheckboxBorderColor: =RGBA(96, 94, 92, 1)
+                  CheckmarkFill: =RGBA(0, 120, 212, 1)
+                  Color: =RGBA(50, 49, 48, 1)
+                  Default: =ThisItem.ID in ShowColumns(colSelectedWorkers,ID)
+                  DisabledBorderColor: =RGBA(0, 0, 0, 0)
+                  DisabledColor: =RGBA(161, 159, 157, 1)
+                  FocusedBorderThickness: =4
+                  Font: =Font.'Segoe UI'
+                  Height: '=40  '
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(50, 49, 48, 1)
+                  HoverFill: =RGBA(0, 0, 0, 0)
+                  OnCheck: =If(Self.Value && varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,If(!(ThisItem.ID in ShowColumns(colSelectedWorkers,ID)),Collect(colSelectedWorkers,ThisItem)); RemoveIf(colTeamRemovedIDs,WorkerID=ThisItem.ID); Set(varTeamDirty,JSON(Sort(ShowColumns(colSelectedWorkers,ID),ID,SortOrder.Ascending))<>JSON(Sort(ShowColumns(colTeamOriginalSelection,ID),ID,SortOrder.Ascending))))
+                  OnSelect: =
+                  OnUncheck: =If(!Self.Value && varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,RemoveIf(colSelectedWorkers,ID=ThisItem.ID); If(ThisItem.ID in ShowColumns(colTeamOriginalSelection,ID) && !(ThisItem.ID in ShowColumns(colTeamRemovedIDs,WorkerID)),Collect(colTeamRemovedIDs,{WorkerID:ThisItem.ID})); Set(varTeamDirty,JSON(Sort(ShowColumns(colSelectedWorkers,ID),ID,SortOrder.Ascending))<>JSON(Sort(ShowColumns(colTeamOriginalSelection,ID),ID,SortOrder.Ascending))))
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedColor: =RGBA(50, 49, 48, 1)
+                  PressedFill: =RGBA(0, 0, 0, 0)
+                  Text: =
+                  Width: =40
+                  X: =24
+                  Y: =10
+                  DisplayMode: =If(varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,DisplayMode.Edit,DisplayMode.Disabled)
+            - Rectangle4:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =Color.Black
+                  BorderThickness: =1.5
+                  DisabledFill: =
+                  Fill: =RGBA(240, 240, 240, 1)
+                  Height: =40
+                  OnSelect: =Select(Parent)
+                  Visible: =false
+                  Width: =615
+                  X: =13
+                  Y: =20
+      - conSelection:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =Color.White
+            Height: =120
+            RadiusBottomLeft: =conSelection.RadiusTopLeft
+            RadiusBottomRight: =conSelection.RadiusTopLeft
+            RadiusTopLeft: '=10  '
+            RadiusTopRight: '=conSelection.RadiusTopLeft  '
+            Width: =Parent.Width-80
+            X: =40
+            Y: =104
+      - ddProject:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            AllowEmptySelection: =true
+            BorderColor: =RGBA(245, 245, 245, 1)
+            BorderThickness: =0
+            ChevronBackground: =ColorValue("#F4F6FA")
+            ChevronDisabledBackground: =RGBA(242, 242, 241, 0)
+            ChevronDisabledFill: =RGBA(161, 159, 157, 1)
+            ChevronFill: =ColorValue("#193F83")
+            ChevronHoverBackground: =RGBA(245, 245, 245, 1)
+            ChevronHoverFill: =RGBA(50, 49, 48, 1)
+            Color: =ColorValue("#243247")
+            Default: =LookUp(colSelectionProjects,Id=varSelectionProjectID,Value)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(161, 159, 157, 1)
+            DisabledFill: =RGBA(242, 242, 241, 0)
+            Fill: =ColorValue("#F4F6FA")
+            Font: =Font.'Segoe UI'
+            HoverBorderColor: =RGBA(16, 110, 190, 1)
+            HoverColor: =RGBA(50, 49, 48, 1)
+            HoverFill: =ColorValue("#EAF1FC")
+            Items: =colSelectionProjects
+            Items.Value: =Value
+            OnChange: =If(!varSelectionBusy && !varSaving,Select(btnReadTeam))
+            PaddingBottom: =5
+            PaddingLeft: =12
+            PaddingRight: =5
+            PaddingTop: =5
+            PressedBorderColor: =RGBA(16, 110, 190, 1)
+            PressedColor: =RGBA(255, 255, 255, 1)
+            PressedFill: =RGBA(0, 120, 212, 1)
+            SelectionColor: =RGBA(50, 49, 48, 1)
+            SelectionFill: =RGBA(0, 120, 212, 1)
+            Size: =12
+            Width: =Min(419,Parent.Width-200)
+            X: =conSelection.X+lblProject.Width+20
+            Y: =lblProject.Y
+            Height: =40
+            DisplayMode: =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false) || Coalesce(varTeamDirty,false),DisplayMode.Disabled,DisplayMode.Edit)
+      - ddTeam:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            AllowEmptySelection: =true
+            BorderColor: =RGBA(245, 245, 245, 1)
+            BorderThickness: =0
+            ChevronBackground: =ColorValue("#F4F6FA")
+            ChevronDisabledBackground: =RGBA(242, 242, 241, 0)
+            ChevronDisabledFill: =RGBA(161, 159, 157, 1)
+            ChevronFill: =ColorValue("#193F83")
+            ChevronHoverBackground: =RGBA(245, 245, 245, 1)
+            ChevronHoverFill: =RGBA(50, 49, 48, 1)
+            Color: =ColorValue("#243247")
+            Default: =Blank()
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(161, 159, 157, 1)
+            DisabledFill: =RGBA(242, 242, 241, 0)
+            Fill: =ColorValue("#F4F6FA")
+            Font: =Font.'Segoe UI'
+            HoverBorderColor: =RGBA(16, 110, 190, 1)
+            HoverColor: =RGBA(50, 49, 48, 1)
+            HoverFill: =ColorValue("#EAF1FC")
+            Items: =colTeamChoices
+            Items.Value: =Value
+            OnChange: =If(!varSelectionBusy && !varSaving,Select(btnReadTeam))
+            PaddingBottom: =5
+            PaddingLeft: =12
+            PaddingRight: =5
+            PaddingTop: =5
+            PressedBorderColor: =RGBA(16, 110, 190, 1)
+            PressedColor: =RGBA(255, 255, 255, 1)
+            PressedFill: =RGBA(0, 120, 212, 1)
+            SelectionColor: =RGBA(50, 49, 48, 1)
+            SelectionFill: =RGBA(0, 120, 212, 1)
+            Size: =12
+            Width: =Min(419,Parent.Width-200)
+            X: =conSelection.X+lblTeam.Width+20
+            Y: =lblTeam.Y
+            Height: =40
+            DisplayMode: =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false) || Coalesce(varTeamDirty,false),DisplayMode.Disabled,DisplayMode.Edit)
+      - lblProject:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            Color: =RGBA(50, 49, 48, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(161, 159, 157, 1)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Size: =12
+            Text: ="Project"
+            Width: =100
+            X: =conSelection.X
+            Y: =conSelection.Y+10
+            Height: =40
+      - lblTeam:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            Color: =RGBA(50, 49, 48, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(161, 159, 157, 1)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            Size: =12
+            Text: ="Team"
+            Width: =100
+            X: =conSelection.X
+            Y: |+
+              =lblProject.Y+lblProject.Height+10
+            Height: =40
+      - Label2:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 0)
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =2
+            Color: =RGBA(50, 49, 48, 1)
+            DisabledBorderColor: =RGBA(0, 0, 0, 0)
+            DisabledColor: =RGBA(161, 159, 157, 1)
+            FocusedBorderThickness: =4
+            Font: =Font.'Segoe UI'
+            Text: |-
+              ="Geselecteerd: " & CountRows(colSelectedWorkers)
+            X: =40
+            Y: =navProjectTeam.Y-56
+            Width: =Parent.Width-280
+            Height: =40
+      - lblProjectTeamTitle:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Project / team"
+            X: =40
+            Y: =24
+            Width: =Parent.Width-80
+            Height: =56
+            Size: =22
+            PaddingLeft: =16
+            Fill: =RGBA(25,66,150,1)
+            Color: =Color.White
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+      - btnReadTeam:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Read"
+            Visible: =false
+            DisplayMode: =DisplayMode.Edit
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            OnSelect: |-
+              =If(!Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false),
+               If(Coalesce(varTeamDirty,false),
+                Notify("Niet opnieuw geladen: onopgeslagen teamselectie behouden. Rond de selectie af of noteer deze voordat u de sessie opnieuw opent.",NotificationType.Warning,15000),
+                Set(varSelectionBusy,true); Set(varTeamLoadState,"Loading"); Set(varSelectionLoaded,false); Set(varSelectionKeysValid,false);
+                Set(varSelectionProjectID,ddProject.Selected.Id); Set(varSelectionTeam,ddTeam.Selected.Value);
+                Set(varSelectionProjectKey,Text(varSelectionProjectID));
+                Clear(colSelectionLoadErrors); Clear(colPendingTeamAssignments); Clear(colPendingSelectedWorkers);
+                If(Coalesce(varForceTeamRefresh,false),
+                 IfError(Refresh(Projects),Collect(colSelectionLoadErrors,{Message:FirstError.Message});false);
+                 IfError(Refresh(Workers),Collect(colSelectionLoadErrors,{Message:FirstError.Message});false);
+                 IfError(Refresh('Project Workers'),Collect(colSelectionLoadErrors,{Message:FirstError.Message});false)
+                );
+                If(!Coalesce(varMastersReady,false) || Coalesce(varForceTeamRefresh,false),
+                 IfError(CountRows(ClearCollect(colPendingProjects,ForAll(Sort(Projects,Title,SortOrder.Ascending) As project,{Id:project.ID,Value:project.Title})))>=0,
+                  Collect(colSelectionLoadErrors,{Message:"Projects: " & FirstError.Message});false);
+                 IfError(CountRows(ClearCollect(colPendingTeamChoices,Choices('Project Workers'.Team)))>=0,
+                  Collect(colSelectionLoadErrors,{Message:"Teamkeuzes: " & FirstError.Message});false);
+                 If(CountRows(colPendingProjects)>=500 || CountRows(colPendingTeamChoices)>=500,
+                  Collect(colSelectionLoadErrors,{Message:"Keuzelijst bereikt rijlimiet; laden niet volledig."}));
+                 If(IsEmpty(colPendingProjects),Collect(colSelectionLoadErrors,{Message:"Geen projecten teruggelezen. Controleer SharePoint-verbinding en rechten; geen gegevens opnieuw aanmaken."}));
+                 If(IsEmpty(colPendingTeamChoices),Collect(colSelectionLoadErrors,{Message:"Geen Team-keuzes ontvangen uit Project Workers. Controleer connector/schema/rechten."}));
+                 If(IsEmpty(colSelectionLoadErrors),
+                  ClearCollect(colSelectionProjects,colPendingProjects); ClearCollect(colTeamChoices,colPendingTeamChoices);
+                  Set(varMastersReady,true); Reset(ddProject)
+                 )
+                );
+                Set(varForceTeamRefresh,false);
+                If(IsEmpty(colSelectionLoadErrors),
+                 Set(varSelectionHasWorkers,IfError(!IsBlank(First(Workers).ID),Collect(colSelectionLoadErrors,{Message:"Workers: " & FirstError.Message});false));
+                 Set(varSelectionProjectID,ddProject.Selected.Id); Set(varSelectionProjectKey,Text(varSelectionProjectID));
+                 Set(varSelectionTeam,ddTeam.Selected.Value);
+                 If(!IsBlank(varSelectionProjectID) && !IsBlank(varSelectionTeam),
+                  IfError(CountRows(ClearCollect(colPendingTeamAssignments,
+                   Filter('Project Workers',Project.Id=varSelectionProjectID && Team.Value=varSelectionTeam && Active=true)))>=0,
+                   Collect(colSelectionLoadErrors,{Message:FirstError.Message});false);
+                  If(CountRows(colPendingTeamAssignments)>=500,Collect(colSelectionLoadErrors,{Message:"500 koppelingen geladen; volledigheid niet gegarandeerd."}));
+                  If(CountRows(Distinct(colPendingTeamAssignments,Worker.Id))<>CountRows(colPendingTeamAssignments),Collect(colSelectionLoadErrors,{Message:"Dubbele actieve medewerkerkoppelingen; opslaan geblokkeerd."}));
+                  If(IsEmpty(colSelectionLoadErrors),
+                   ForAll(colPendingTeamAssignments As member,
+                    IfError(With({person:LookUp(Workers,ID=member.Worker.Id)},
+                     If(IsBlank(person.ID),Collect(colSelectionLoadErrors,{Message:"Medewerker ontbreekt bij koppeling " & Text(member.ID)});false,
+                      CountRows(Collect(colPendingSelectedWorkers,person))>=0)),Collect(colSelectionLoadErrors,{Message:FirstError.Message});false)
+                   )
+                  );
+                  If(IsEmpty(colSelectionLoadErrors),
+                   ClearCollect(colCurrentTeamAssignments,colPendingTeamAssignments); ClearCollect(colSelectedWorkers,colPendingSelectedWorkers);
+                   ClearCollect(colTeamOriginalSelection,colPendingSelectedWorkers); Clear(colTeamRemovedIDs);
+                   Set(varTeamLoadedProjectID,varSelectionProjectID); Set(varTeamLoadedTeam,varSelectionTeam);
+                   Set(varTeamLoadedAssignmentCount,CountRows(colPendingTeamAssignments)); Set(varTeamDirty,false);
+                   Set(varSelectionKeysValid,CountIf(colPendingTeamAssignments,AssignmentKey<>Text(varSelectionProjectID) & "|" & Text(Worker.Id) || ProjectKey<>Text(varSelectionProjectID))=0);
+                   Set(varSelectionLoaded,true); Set(varTeamLoadState,"Loaded");
+                   Set(varSelectionMessage,Text(varTeamLoadedAssignmentCount) & " actieve koppelingen volledig geladen." & If(!varSelectionKeysValid," Alleen lezen: afwijkende sleutels; opslaan geblokkeerd.",""))
+                  ),
+                  Set(varTeamLoadState,"NotLoaded"); Set(varSelectionMessage,"Projecten en teamkeuzes geladen. Kies project en team. Opslaan blijft geblokkeerd tot de selectie volledig is gelezen.")
+                 )
+                );
+                If(!IsEmpty(colSelectionLoadErrors),
+                 Set(varTeamLoadState,"Failed"); Set(varSelectionLoaded,false); Set(varSelectionKeysValid,false);
+                 Set(varSelectionMessage,"Laden mislukt; opslaan geblokkeerd. Vorige selectie behouden. " & First(colSelectionLoadErrors).Message);
+                 Notify(varSelectionMessage,NotificationType.Error,15000)
+                );
+                Set(varSelectionBusy,false)
+               )
+              )
+      - lblSelectionLoadStatus:
+          Control: Label@2.5.1
+          Properties:
+            Text: =Switch(Coalesce(varTeamLoadState,"NotLoaded"),"Loading","Projecten, teamkeuzes en bestaande koppelingen ophalen...","NotLoaded",Coalesce(varSelectionMessage,"Nog niet geladen. Opslaan geblokkeerd; kies project en team."),varSelectionMessage)
+            X: =40
+            Y: =ddTeam.Y+ddTeam.Height+12
+            Width: =Parent.Width-80
+            Height: =34
+            Font: =Font.'Segoe UI'
+            Size: =11
+            Color: =If(!IsEmpty(colSelectionLoadErrors),Color.Red,RGBA(35,45,60,1))
+      - navProjectTeam:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            X: =0
+            Y: =Parent.Height-Self.Height
+            Width: =Parent.Width
+            Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height+16
+            Fill: =RGBA(244,246,250,1)
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Start
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutWrap: =false
+            LayoutOverflowX: =LayoutOverflow.Scroll
+            LayoutOverflowY: =LayoutOverflow.Hide
+            LayoutGap: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+          Children:
+            - conProjectButtonRow:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnGotoHours.Width+btnGotoHoursSummary.Width+btnRefreshTeam.Width+btnAddtoTeam.Width+3*lblFooterButtonMetrics.Width)
+                  Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height
+                  FillPortions: =0
+                  Fill: =Color.Transparent
+                Children:
+                  - btnGotoHours:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#194296")
+                        BorderStyle: =BorderStyle.None
+                        Color: =Color.White
+                        DisabledBorderColor: =ColorValue("#596579")
+                        DisabledColor: =ColorValue("#6B7280")
+                        DisabledFill: =ColorValue("#E5E7EB")
+                        DisplayMode: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,DisplayMode.Edit,DisplayMode.Disabled)
+                        Fill: =ColorValue("#194296")
+                        Font: =Font.'Segoe UI'
+                        HoverBorderColor: =ColorValue("#123273")
+                        HoverColor: =Color.White
+                        HoverFill: =ColorValue("#123273")
+                        OnSelect: |-
+                          =If(
+                              IsBlank(ddProject.Selected.Id),
+                              Notify("Selecteer eerst een project.", NotificationType.Warning),
+                          
+                              IsBlank(ddTeam.Selected.Value),
+                              Notify("Selecteer eerst een team.", NotificationType.Warning),
+                          
+                              Set(varProject, ddProject.Selected);
+                              Set(varTeam, ddTeam.Selected);
+                              
+                              Navigate(scrHours, ScreenTransition.Fade)
+                          )
+                        PressedBorderColor: =ColorValue("#123273")
+                        PressedColor: =Color.White
+                        PressedFill: =ColorValue("#123273")
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Text: ="Weekly Hours"
+                        Width: =160
+                        X: =lblFooterButtonMetrics.X
+                        Y: =lblFooterButtonMetrics.Y
+                        Height: =lblFooterButtonMetrics.Height
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusBottomLeft: =8
+                  - btnGotoHoursSummary:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        PressedBorderColor: =ColorValue("#123273")
+                        HoverBorderColor: =ColorValue("#123273")
+                        BorderColor: =ColorValue("#194296")
+                        DisabledColor: =ColorValue("#6B7280")
+                        DisabledFill: =ColorValue("#E5E7EB")
+                        PressedColor: =Color.White
+                        HoverColor: =Color.White
+                        Color: =Color.White
+                        PressedFill: =ColorValue("#123273")
+                        HoverFill: =ColorValue("#123273")
+                        Fill: =ColorValue("#194296")
+                        Text: ="Hours Summary"
+                        X: =btnGotoHours.X+btnGotoHours.Width+lblFooterButtonMetrics.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =180
+                        Height: =lblFooterButtonMetrics.Height
+                        OnSelect: =Navigate(scrWeeklyHours,ScreenTransition.Fade)
+                        DisplayMode: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,DisplayMode.Edit,DisplayMode.Disabled)
+                        Font: =Font.'Segoe UI'
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnRefreshTeam:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        PressedBorderColor: =ColorValue("#593080")
+                        HoverBorderColor: =ColorValue("#593080")
+                        BorderColor: =ColorValue("#7040A0")
+                        DisabledColor: =ColorValue("#6B7280")
+                        DisabledFill: =ColorValue("#E5E7EB")
+                        PressedColor: =Color.White
+                        HoverColor: =Color.White
+                        Color: =Color.White
+                        PressedFill: =ColorValue("#593080")
+                        HoverFill: =ColorValue("#593080")
+                        Fill: =ColorValue("#7040A0")
+                        Text: ="Refresh"
+                        OnSelect: |-
+                          =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false) || Coalesce(varTeamDirty,false),Notify("Refresh geblokkeerd: laadactie/opslag bezig of onopgeslagen selectie aanwezig.",NotificationType.Warning),Set(varForceTeamRefresh,true); Select(btnReadTeam))
+                        DisplayMode: =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false) || Coalesce(varTeamDirty,false),DisplayMode.Disabled,DisplayMode.Edit)
+                        X: =btnAddtoTeam.X-lblFooterButtonMetrics.Width-Self.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =110
+                        Height: =lblFooterButtonMetrics.Height
+                        Font: =Font.'Segoe UI'
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnAddtoTeam:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        PressedBorderColor: =ColorValue("#593080")
+                        HoverBorderColor: =ColorValue("#593080")
+                        BorderColor: =ColorValue("#7040A0")
+                        BorderThickness: =0
+                        Color: =Color.White
+                        DisabledColor: =ColorValue("#6B7280")
+                        DisabledFill: =ColorValue("#E5E7EB")
+                        DisplayMode: |-
+                          =If(And(varTeamLoadState="Loaded",
+                          Coalesce(varSelectionLoaded,false),
+                          Coalesce(varSelectionKeysValid,false),
+                          !Coalesce(varSelectionBusy,false),
+                          !Coalesce(varSaving,false),
+                          IsEmpty(colSelectionLoadErrors),
+                          !IsBlank(ddProject.Selected.Id),
+                          !IsBlank(ddTeam.Selected.Value),
+                          varTeamLoadedProjectID=ddProject.Selected.Id,
+                          varTeamLoadedTeam=ddTeam.Selected.Value,
+                          CountRows(colCurrentTeamAssignments)=varTeamLoadedAssignmentCount,
+                          CountRows(colTeamOriginalSelection)=varTeamLoadedAssignmentCount,
+                          CountIf(colCurrentTeamAssignments,Project.Id<>varTeamLoadedProjectID || Team.Value<>varTeamLoadedTeam || Active<>true)=0,
+                          !IsEmpty(colSelectedWorkers),
+                          CountIf(colSelectedWorkers,IsBlank(ID))=0,
+                          CountRows(Distinct(colSelectedWorkers,ID))=CountRows(colSelectedWorkers),
+                          CountIf(colTeamOriginalSelection,!(ID in ShowColumns(colSelectedWorkers,ID)) && !(ID in ShowColumns(colTeamRemovedIDs,WorkerID)))=0),DisplayMode.Edit,DisplayMode.Disabled)
+                        Fill: =ColorValue("#7040A0")
+                        Font: =Font.'Segoe UI'
+                        HoverColor: =Color.White
+                        HoverFill: =ColorValue("#593080")
+                        OnSelect: |-
+                          =If(And(varTeamLoadState="Loaded",
+                          Coalesce(varSelectionLoaded,false),
+                          Coalesce(varSelectionKeysValid,false),
+                          !Coalesce(varSelectionBusy,false),
+                          !Coalesce(varSaving,false),
+                          IsEmpty(colSelectionLoadErrors),
+                          !IsBlank(ddProject.Selected.Id),
+                          !IsBlank(ddTeam.Selected.Value),
+                          varTeamLoadedProjectID=ddProject.Selected.Id,
+                          varTeamLoadedTeam=ddTeam.Selected.Value,
+                          CountRows(colCurrentTeamAssignments)=varTeamLoadedAssignmentCount,
+                          CountRows(colTeamOriginalSelection)=varTeamLoadedAssignmentCount,
+                          CountIf(colCurrentTeamAssignments,Project.Id<>varTeamLoadedProjectID || Team.Value<>varTeamLoadedTeam || Active<>true)=0,
+                          !IsEmpty(colSelectedWorkers),
+                          CountIf(colSelectedWorkers,IsBlank(ID))=0,
+                          CountRows(Distinct(colSelectedWorkers,ID))=CountRows(colSelectedWorkers),
+                          CountIf(colTeamOriginalSelection,!(ID in ShowColumns(colSelectedWorkers,ID)) && !(ID in ShowColumns(colTeamRemovedIDs,WorkerID)))=0),
+                          If(
+                              IsBlank(ddProject.Selected.Id) ||
+                              IsBlank(ddTeam.Selected.Value),
+                              Notify(
+                                  "Selecteer eerst een project en team.",
+                                  NotificationType.Warning
+                              ),
+                          
+                              Set(varReportReady,false); Set(varReportValid,false); Set(varSaving, true);
+                              Clear(colAssignmentErrors);
+                              ClearCollect(
+                                  colTeamSelectionToSave,
+                                  colSelectedWorkers
+                              );
+                              ClearCollect(
+                                  colTeamAssignmentsToCheck,
+                                  colCurrentTeamAssignments
+                              );
+                          
+                              IfError(
+                                  With(
+                                      {
+                                          chosenProject: ddProject.Selected,
+                                          chosenTeam: ddTeam.Selected,
+                                          projectKeyValue: Text(ddProject.Selected.Id)
+                                      },
+                          
+                                      ForAll(
+                                          colTeamSelectionToSave As person,
+                                          IfError(
+                                              With(
+                                                  {
+                                                      assignmentKeyValue:
+                                                          projectKeyValue & "|" &
+                                                          Text(person.ID)
+                                                  },
+                                                  With(
+                                                      {
+                                                          existingAssignment: LookUp(
+                                                              'Project Workers',
+                                                              AssignmentKey = assignmentKeyValue
+                                                          )
+                                                      },
+                                                      With(
+                                                          {
+                                                              savedAssignment: Patch(
+                                                                  'Project Workers',
+                                                                  If(
+                                                                      IsBlank(existingAssignment.ID),
+                                                                      Defaults('Project Workers'),
+                                                                      existingAssignment
+                                                                  ),
+                                                                  {
+                                                                      Title: Left(
+                                                                          Trim(
+                                                                              person.'First Name' &
+                                                                              " " &
+                                                                              person.Surname
+                                                                          ) &
+                                                                          " | " &
+                                                                          chosenProject.Value,
+                                                                          255
+                                                                      ),
+                                                                      AssignmentKey: assignmentKeyValue,
+                                                                      ProjectKey: projectKeyValue,
+                                                                      Project: chosenProject,
+                                                                      Worker: {
+                                                                          Id: person.ID,
+                                                                          Value: Trim(
+                                                                              person.'First Name' &
+                                                                              " " &
+                                                                              person.Surname
+                                                                          )
+                                                                      },
+                                                                      Team: chosenTeam,
+                                                                      Active: true
+                                                                  }
+                                                              )
+                                                          },
+                                                          If(
+                                                              IsBlank(savedAssignment.ID),
+                                                              Error(
+                                                                  {
+                                                                      Kind: ErrorKind.Validation,
+                                                                      Message: "De koppeling leverde geen SharePoint-ID op."
+                                                                  }
+                                                              ),
+                                                              true
+                                                          )
+                                                      )
+                                                  )
+                                              ),
+                                              Collect(
+                                                  colAssignmentErrors,
+                                                  {
+                                                      WorkerID: person.ID,
+                                                      Message: FirstError.Message
+                                                  }
+                                              );
+                                              false
+                                          )
+                                      );
+                          
+                                      If(
+                                          IsEmpty(colAssignmentErrors),
+                          
+                                          ForAll(
+                                              Filter(
+                                                  colTeamAssignmentsToCheck As assignment,
+                                                  !(assignment.Worker.Id in colTeamSelectionToSave.ID) && assignment.Worker.Id in ShowColumns(colTeamRemovedIDs,WorkerID)
+                                              ) As removedAssignment,
+                          
+                                              IfError(
+                                                  With(
+                                                      {
+                                                          currentAssignment: LookUp(
+                                                              'Project Workers',
+                                                              ID = removedAssignment.ID
+                                                          )
+                                                      },
+                                                      If(
+                                                          IsBlank(currentAssignment.ID),
+                                                          Error(
+                                                              {
+                                                                  Kind: ErrorKind.Validation,
+                                                                  Message: "Een bestaande koppeling is niet meer beschikbaar."
+                                                              }
+                                                          ),
+                          
+                                                          currentAssignment.ProjectKey <> projectKeyValue ||
+                                                          currentAssignment.Team.Value <> chosenTeam.Value,
+                                                          Error(
+                                                              {
+                                                                  Kind: ErrorKind.Validation,
+                                                                  Message: "Een koppeling is ondertussen naar een ander project of team gewijzigd. Kies het team opnieuw."
+                                                              }
+                                                          ),
+                          
+                                                          With(
+                                                              {
+                                                                  savedAssignment: Patch(
+                                                                      'Project Workers',
+                                                                      currentAssignment,
+                                                                      {Active: false}
+                                                                  )
+                                                              },
+                                                              If(
+                                                                  IsBlank(savedAssignment.ID),
+                                                                  Error(
+                                                                      {
+                                                                          Kind: ErrorKind.Validation,
+                                                                          Message: "De toewijzing kon niet worden gedeactiveerd."
+                                                                      }
+                                                                  ),
+                                                                  true
+                                                              )
+                                                          )
+                                                      )
+                                                  ),
+                                                  Collect(
+                                                      colAssignmentErrors,
+                                                      {
+                                                          WorkerID: removedAssignment.Worker.Id,
+                                                          Message: FirstError.Message
+                                                      }
+                                                  );
+                                                  false
+                                              )
+                                          )
+                                      );
+                          
+                                      If(
+                                          IsEmpty(colAssignmentErrors),
+                          
+                                          Notify(
+                                              "Teamwijzigingen opgeslagen. Bestaande koppelingen worden opnieuw gelezen.",
+                                              NotificationType.Success
+                                          ),
+                          
+                                          Notify(
+                                              "Niet alle wijzigingen zijn opgeslagen: " &
+                                              First(colAssignmentErrors).Message,
+                                              NotificationType.Error,
+                                              15000
+                                          )
+                                      )
+                                  ),
+                                  Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message}); Notify(
+                                      "Team opslaan gestopt: " &
+                                      FirstError.Message,
+                                      NotificationType.Error,
+                                      15000
+                                  )
+                              );
+                          
+                              Set(varSaving, false)
+                          );
+                          Set(varSelectionLoaded,false); Set(varSelectionKeysValid,false); If(IsEmpty(colAssignmentErrors),Set(varTeamDirty,false); Set(varForceTeamRefresh,true); Set(varTeamLoadState,"NotLoaded"); Select(btnReadTeam),Set(varTeamLoadState,"Failed"); Notify("Opslag mogelijk gedeeltelijk uitgevoerd. Selectie behouden; opslaan geblokkeerd. Controleer SharePoint-versies voordat u opnieuw laadt.",NotificationType.Error,15000)),
+                          Notify("Save team geblokkeerd: selectie niet volledig geladen, gewijzigd, leeg of niet passend bij huidig project/team.",NotificationType.Error,15000))
+                        PressedColor: =Color.White
+                        PressedFill: =ColorValue("#593080")
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =14
+                        Text: =If(varSaving, "Saving...", "Save team")
+                        X: =Parent.Width-lblFooterButtonMetrics.X-Self.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Height: =lblFooterButtonMetrics.Height
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        Width: =160
+      - lblFooterButtonMetrics:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =40
+            Y: =16
+            Width: =12
+            Height: =40
