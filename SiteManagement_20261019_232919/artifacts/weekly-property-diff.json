@@ -1,0 +1,250 @@
+﻿[
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnBuildReport.Properties.DisplayMode",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnBuildReport.Properties.OnSelect",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnRefreshReport.Properties.OnSelect",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Control",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.AccessibleLabel",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.DisplayMode",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.Height",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.OnSelect",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.Text",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.Visible",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.Width",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.X",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportNextWeeks.Properties.Y",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Control",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.AccessibleLabel",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.DisplayMode",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.Height",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.OnSelect",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.Text",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.Visible",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.Width",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.X",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.btnReportPreviousWeeks.Properties.Y",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportContractor.Properties.AllowEmptySelection",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportContractor.Properties.Default",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportContractor.Properties.Items",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportContractor.Properties.OnChange",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportEndWeek.Properties.DisplayMode",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportEndWeek.Properties.OnChange",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportEndYear.Properties.DisplayMode",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportEndYear.Properties.OnChange",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportProject.Properties.Default",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportProject.Properties.Items",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportProject.Properties.Items.Value",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportProject.Properties.OnChange",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportStartWeek.Properties.DisplayMode",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportStartWeek.Properties.OnChange",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportStartYear.Properties.DisplayMode",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.ddReportStartYear.Properties.OnChange",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportRows.Children.galReportWorkerWeeks.Children.lblReportWeekHours.Properties.Text",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportRows.Children.galReportWorkerWeeks.Children.lblReportWeekHours.Properties.Width",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportRows.Children.galReportWorkerWeeks.Properties.Items",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportRows.Children.galReportWorkerWeeks.Properties.TemplateSize",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportRows.Children.lblReportWorkerTotal.Properties.Text",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportWeekHeaders.Children.lblReportWeekHeader.Properties.Width",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportWeekHeaders.Properties.Items",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.galReportWeekHeaders.Properties.TemplateSize",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.lblReportGrandTotal.Properties.Text",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.lblReportGrandTotal.Properties.Visible",
+        "Change":  "Added"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.lblReportProjectDetails.Properties.Text",
+        "Change":  "Changed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Control",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.Default",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.Height",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.Max",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.Min",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.OnChange",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.ValueFill",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.Visible",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.Width",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.X",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Children.sldReportWeeks.Properties.Y",
+        "Change":  "Removed"
+    },
+    {
+        "Property":  ".Screens.scrWeeklyHours.Properties.OnVisible",
+        "Change":  "Changed"
+    }
+]

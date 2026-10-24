@@ -1,0 +1,11 @@
+{
+    "BuildPath":  "C:\\Users\\vandergoot.ed\\Dev\\Sitemanagment\\SiteManagement_20261019_232919\\artifacts\\summary-labels-20261021_105544\\SiteManagement_SummaryLabels_20261021_105544.msapp",
+    "Bytes":  96680,
+    "SHA256":  "20BF57E6CF29928F207FE04BD6B847D9DE687BF9F6631E5B60F70324580C7CBA",
+    "Backup":  "C:\\Users\\vandergoot.ed\\Dev\\Sitemanagment\\SiteManagement_20261019_232919\\checkpoints\\summary-labels-20261021_105112",
+    "Baseline":  "C:\\Users\\vandergoot.ed\\Dev\\Sitemanagment\\SiteManagement_20261019_232919\\checkpoints\\baseline-footer-row-20261020_215936",
+    "StudioImport":  "Openstaand (ModernDatePicker@1.0.0 niet in oorspronkelijke templates)",
+    "FunctionalTest":  "Niet uitgevoerd voor deze build; korte controle en datumtests in PROJECT_STATUS.md",
+    "VisualSummaryLabels":  "Openstaand: titelbalk, Bold-labels, Period total-accent",
+    "SharePointIncidentChecked":  "Niet opgehelderd (zie PROJECT_STATUS.md)"
+}

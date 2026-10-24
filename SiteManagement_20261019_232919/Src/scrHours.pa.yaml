@@ -1,0 +1,1190 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrHours:
+    Properties:
+      Fill: =Color.White
+      LoadingSpinnerColor: =ColorValue("#0303B8")
+      OnVisible: =If(IsBlank(varWeekLoadState),Set(varWeekLoadState,"NotLoaded")); Trace("DIAG|Week|OnVisible",TraceSeverity.Information,{Scenario:"Week",Step:"OnVisible",LoadState:Coalesce(varWeekLoadState,"")}); If(IsBlank(varHoursPickedDay),Set(varHoursPickedDay,Today())); Set(varHoursWeekMonday,DateAdd(varHoursPickedDay,1-Weekday(varHoursPickedDay,StartOfWeek.Monday),TimeUnit.Days)); Select(btnReadWeek)
+    Children:
+      - lblHoursWeek:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000000")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Text: ="Week"
+            Width: =256
+            X: =40
+            Y: =104
+            Height: =28
+      - lblWeeklyHoursEntryTitle:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Weekly Hours"
+            X: =40
+            Y: =24
+            Width: =Parent.Width-80
+            Height: =56
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Size: =22
+            Color: =Color.White
+            PaddingLeft: =16
+            Fill: =ColorValue("#0303B8")
+      - recHoursHeaderBar:
+          Control: Rectangle@2.3.0
+          Properties:
+            X: =galHours.X
+            Y: =galHours.Y-50
+            Width: =galHours.Width
+            Height: =48
+            Fill: =ColorValue("#0303B8")
+      - lblHeaderWorker:
+          Control: Label@2.5.1
+          Properties:
+            Fill: =ColorValue("#0303B8")
+            Color: =Color.White
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =12
+            Text: ="Worker"
+            Width: =270
+            X: =galHours.X + 8
+            Y: =galHours.Y - 50
+      - lblHeaderMon:
+          Control: Label@2.5.1
+          Properties:
+            Fill: =ColorValue("#0303B8")
+            Align: =Align.Center
+            Color: =Color.White
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =11
+            Text: ="Mon" & Char(10) & If(!IsBlank(varWeekMonday), Text(varWeekMonday, "dd-mm"))
+            Width: =(galHours.Width - 390) / 7 - 8
+            X: =galHours.X + 290
+            Y: =galHours.Y - 50
+      - lblHeaderTue:
+          Control: Label@2.5.1
+          Properties:
+            Fill: =ColorValue("#0303B8")
+            Align: =Align.Center
+            Color: =Color.White
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =11
+            Text: ="Tue" & Char(10) & If(!IsBlank(varWeekMonday), Text(DateAdd(varWeekMonday, 1, TimeUnit.Days), "dd-mm"))
+            Width: =lblHeaderMon.Width
+            X: =lblHeaderMon.X + lblHeaderMon.Width + 8
+            Y: =lblHeaderMon.Y
+      - lblHeaderWed:
+          Control: Label@2.5.1
+          Properties:
+            Fill: =ColorValue("#0303B8")
+            Align: =Align.Center
+            Color: =Color.White
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =11
+            Text: ="Wed" & Char(10) & If(!IsBlank(varWeekMonday), Text(DateAdd(varWeekMonday, 2, TimeUnit.Days), "dd-mm"))
+            Width: =lblHeaderMon.Width
+            X: =lblHeaderTue.X + lblHeaderTue.Width + 8
+            Y: =lblHeaderMon.Y
+      - lblHeaderThu:
+          Control: Label@2.5.1
+          Properties:
+            Fill: =ColorValue("#0303B8")
+            Align: =Align.Center
+            Color: =Color.White
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =11
+            Text: ="Thu" & Char(10) & If(!IsBlank(varWeekMonday), Text(DateAdd(varWeekMonday, 3, TimeUnit.Days), "dd-mm"))
+            Width: =lblHeaderMon.Width
+            X: =lblHeaderWed.X + lblHeaderWed.Width + 8
+            Y: =lblHeaderMon.Y
+      - lblHeaderFri:
+          Control: Label@2.5.1
+          Properties:
+            Fill: =ColorValue("#0303B8")
+            Align: =Align.Center
+            Color: =Color.White
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =11
+            Text: ="Fri" & Char(10) & If(!IsBlank(varWeekMonday), Text(DateAdd(varWeekMonday, 4, TimeUnit.Days), "dd-mm"))
+            Width: =lblHeaderMon.Width
+            X: =lblHeaderThu.X + lblHeaderThu.Width + 8
+            Y: =lblHeaderMon.Y
+      - lblHeaderSat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =Color.White
+            Fill: =ColorValue("#0303B8")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =11
+            Text: ="Sat" & Char(10) & If(!IsBlank(varWeekMonday), Text(DateAdd(varWeekMonday, 5, TimeUnit.Days), "dd-mm"))
+            Width: =lblHeaderMon.Width
+            X: =lblHeaderFri.X + lblHeaderFri.Width + 8
+            Y: =lblHeaderMon.Y
+      - lblHeaderSun:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =Color.White
+            Fill: =ColorValue("#0303B8")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =11
+            Text: ="Sun" & Char(10) & If(!IsBlank(varWeekMonday), Text(DateAdd(varWeekMonday, 6, TimeUnit.Days), "dd-mm"))
+            Width: =lblHeaderMon.Width
+            X: =lblHeaderSat.X + lblHeaderSat.Width + 8
+            Y: =lblHeaderMon.Y
+      - lblHeaderTotal:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =Color.White
+            Fill: =ColorValue("#0303B8")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =48
+            Size: =12
+            Text: ="Total"
+            Width: =80
+            X: =lblHeaderSun.X + lblHeaderSun.Width + 12
+            Y: =lblHeaderMon.Y
+      - dpHoursWeek:
+          Control: ModernDatePicker@1.0.0
+          Properties:
+            AccessibleLabel: '="Week: any day of the work week"'
+            DefaultDate: =Coalesce(varHoursPickedDay,Today())
+            Format: ="dd-mm-yyyy"
+            StartOfWeek: =StartOfWeek.Monday
+            OnChange: |-
+              =If(!Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),
+               If(IsBlank(Self.SelectedDate),Reset(dpHoursWeek),
+                With({selectedDay:Date(Year(Self.SelectedDate),Month(Self.SelectedDate),Day(Self.SelectedDate))},
+                 If(selectedDay<>Coalesce(varHoursPickedDay,Date(1900,1,1)),
+                  With({monday:DateAdd(selectedDay,1-Weekday(selectedDay,StartOfWeek.Monday),TimeUnit.Days)},
+                   If(monday=varHoursWeekMonday,
+                    Set(varHoursPickedDay,selectedDay),
+                    JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),
+                    Reset(dpHoursWeek); Notify("Week niet gewisseld: onopgeslagen uren behouden. Sla eerst op.",NotificationType.Warning,15000),
+                    Set(varHoursPickedDay,selectedDay); Set(varHoursWeekMonday,monday); Select(btnReadWeek)
+                   )
+                  )
+                 )
+                )
+               )
+              )
+            DisplayMode: =If(Coalesce(varWeekLoading,false) || Coalesce(varWeekSaving,false) || JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),DisplayMode.Disabled,DisplayMode.Edit)
+            X: =40
+            Y: =136
+            Width: =256
+            Height: =36
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =12
+            Color: =ColorValue("#000000")
+            Fill: =ColorValue("#F0F0F0")
+            BorderColor: =ColorValue("#DCDCDC")
+            BorderThickness: =1
+      - lblHoursWeekKW:
+          Control: Label@2.5.1
+          Properties:
+            Text: =If(IsBlank(varHoursWeekMonday),"",Text(Year(DateAdd(varHoursWeekMonday,3,TimeUnit.Days)),"0000") & " KW" & Text(ISOWeekNum(varHoursWeekMonday),"00"))
+            X: =dpHoursWeek.X+dpHoursWeek.Width+12
+            Y: =dpHoursWeek.Y
+            Width: =120
+            Height: =dpHoursWeek.Height
+            VerticalAlign: =VerticalAlign.Middle
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =12
+            Color: =ColorValue("#000000")
+      - galHours:
+          Control: Gallery@2.15.0
+          Variant: BrowseLayout_Vertical_TwoTextVariant_ver5.0
+          Properties:
+            BorderColor: =ColorValue("#DCDCDC")
+            Height: =Max(0,navWeeklyHours.Y-12-Self.Y)
+            Items: =colWeekRows
+            TemplateSize: =52
+            Width: =Parent.Width-80
+            X: =40
+            Y: =lblWeekLoadStatus.Y+92
+            Visible: =!IsEmpty(colWeekRows)
+          Children:
+            - Separator2:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =Color.Transparent
+                  Fill: =Color.White
+                  Height: =8
+                  OnSelect: =Select(Parent)
+                  Width: =Parent.TemplateWidth
+                  Y: =Parent.TemplateHeight - Self.Height
+            - Rectangle2:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =Color.Transparent
+                  Fill: =ColorValue("#0303B8")
+                  Height: =Parent.TemplateHeight - Separator2.Height
+                  OnSelect: =Select(Parent)
+                  Visible: =ThisItem.IsSelected
+                  Width: =4
+            - lblItemTitle:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =Color.Black
+                  Color: =ColorValue("#000000")
+                  DisabledColor: =ColorValue("#787878")
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Height: =52
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =0
+                  Size: =12
+                  Text: =ThisItem.Worker.Value
+                  Width: =270
+                  X: =8
+            - txtMon:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  Fill: =ColorValue("#F0F0F0")
+                  AccessibleLabel: ="Monday hours for " & ThisItem.Worker.Value
+                  Align: =Align.Center
+                  BorderColor: =ColorValue("#DCDCDC")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =ThisItem.MonHours
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Format: =TextFormat.Number
+                  HintText: ="0"
+                  HoverBorderColor: =ColorValue("#0303B8")
+                  HoverFill: =ColorValue("#F0F0F0")
+                  OnChange: |-
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                        colWeekRows,
+                        LookUp(colWeekRows, ID = ThisItem.ID),
+                        {MonHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
+                    ))
+                  PaddingLeft: =4
+                  PaddingRight: =4
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =12
+                  Width: =(Parent.TemplateWidth - 390) / 7 - 8
+                  X: =290 + 0 * (Parent.TemplateWidth - 390) / 7
+                  Y: =6
+            - txtTue:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  Fill: =ColorValue("#F0F0F0")
+                  AccessibleLabel: ="Tuesday hours for " & ThisItem.Worker.Value
+                  Align: =Align.Center
+                  BorderColor: =ColorValue("#DCDCDC")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =ThisItem.TueHours
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Format: =TextFormat.Number
+                  HintText: ="0"
+                  HoverBorderColor: =ColorValue("#0303B8")
+                  HoverFill: =ColorValue("#F0F0F0")
+                  OnChange: |-
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                        colWeekRows,
+                        LookUp(colWeekRows, ID = ThisItem.ID),
+                        {TueHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
+                    ))
+                  PaddingLeft: =4
+                  PaddingRight: =4
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =12
+                  Width: =(Parent.TemplateWidth - 390) / 7 - 8
+                  X: =290 + 1 * (Parent.TemplateWidth - 390) / 7
+                  Y: =6
+            - txtWed:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  Fill: =ColorValue("#F0F0F0")
+                  AccessibleLabel: ="Wednesday hours for " & ThisItem.Worker.Value
+                  Align: =Align.Center
+                  BorderColor: =ColorValue("#DCDCDC")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =ThisItem.WedHours
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Format: =TextFormat.Number
+                  HintText: ="0"
+                  HoverBorderColor: =ColorValue("#0303B8")
+                  HoverFill: =ColorValue("#F0F0F0")
+                  OnChange: |-
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                        colWeekRows,
+                        LookUp(colWeekRows, ID = ThisItem.ID),
+                        {WedHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
+                    ))
+                  PaddingLeft: =4
+                  PaddingRight: =4
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =12
+                  Width: =(Parent.TemplateWidth - 390) / 7 - 8
+                  X: =290 + 2 * (Parent.TemplateWidth - 390) / 7
+                  Y: =6
+            - txtThu:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  Fill: =ColorValue("#F0F0F0")
+                  AccessibleLabel: ="Thursday hours for " & ThisItem.Worker.Value
+                  Align: =Align.Center
+                  BorderColor: =ColorValue("#DCDCDC")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =ThisItem.ThuHours
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Format: =TextFormat.Number
+                  HintText: ="0"
+                  HoverBorderColor: =ColorValue("#0303B8")
+                  HoverFill: =ColorValue("#F0F0F0")
+                  OnChange: |-
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                        colWeekRows,
+                        LookUp(colWeekRows, ID = ThisItem.ID),
+                        {ThuHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
+                    ))
+                  PaddingLeft: =4
+                  PaddingRight: =4
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =12
+                  Width: =(Parent.TemplateWidth - 390) / 7 - 8
+                  X: =290 + 3 * (Parent.TemplateWidth - 390) / 7
+                  Y: =6
+            - txtFri:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  Fill: =ColorValue("#F0F0F0")
+                  AccessibleLabel: ="Friday hours for " & ThisItem.Worker.Value
+                  Align: =Align.Center
+                  BorderColor: =ColorValue("#DCDCDC")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =ThisItem.FriHours
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Format: =TextFormat.Number
+                  HintText: ="0"
+                  HoverBorderColor: =ColorValue("#0303B8")
+                  HoverFill: =ColorValue("#F0F0F0")
+                  OnChange: |-
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                        colWeekRows,
+                        LookUp(colWeekRows, ID = ThisItem.ID),
+                        {FriHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
+                    ))
+                  PaddingLeft: =4
+                  PaddingRight: =4
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =12
+                  Width: =(Parent.TemplateWidth - 390) / 7 - 8
+                  X: =290 + 4 * (Parent.TemplateWidth - 390) / 7
+                  Y: =6
+            - txtSat:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  AccessibleLabel: ="Saturday hours for " & ThisItem.Worker.Value
+                  Align: =Align.Center
+                  BorderColor: =ColorValue("#DCDCDC")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =ThisItem.SatHours
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  Fill: =ColorValue("#F0F0F0")
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Format: =TextFormat.Number
+                  HintText: ="0"
+                  HoverBorderColor: =ColorValue("#0303B8")
+                  HoverFill: =ColorValue("#F0F0F0")
+                  OnChange: |-
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                        colWeekRows,
+                        LookUp(colWeekRows, ID = ThisItem.ID),
+                        {SatHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
+                    ))
+                  PaddingLeft: =4
+                  PaddingRight: =4
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =12
+                  Width: =(Parent.TemplateWidth - 390) / 7 - 8
+                  X: =290 + 5 * (Parent.TemplateWidth - 390) / 7
+                  Y: =6
+            - txtSun:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  AccessibleLabel: ="Sunday hours for " & ThisItem.Worker.Value
+                  Align: =Align.Center
+                  BorderColor: =ColorValue("#DCDCDC")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =ThisItem.SunHours
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  Fill: =ColorValue("#F0F0F0")
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Format: =TextFormat.Number
+                  HintText: ="0"
+                  HoverBorderColor: =ColorValue("#0303B8")
+                  HoverFill: =ColorValue("#F0F0F0")
+                  OnChange: |-
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                        colWeekRows,
+                        LookUp(colWeekRows, ID = ThisItem.ID),
+                        {SunHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
+                    ))
+                  PaddingLeft: =4
+                  PaddingRight: =4
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =12
+                  Width: =(Parent.TemplateWidth - 390) / 7 - 8
+                  X: =290 + 6 * (Parent.TemplateWidth - 390) / 7
+                  Y: =6
+            - lblWeekTotal:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =ColorValue("#000F41")
+                  Fill: =ColorValue("#D5EDFF")
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Size: =12
+                  Text: =Sum(Coalesce(ThisItem.MonHours, 0), Coalesce(ThisItem.TueHours, 0), Coalesce(ThisItem.WedHours, 0), Coalesce(ThisItem.ThuHours, 0), Coalesce(ThisItem.FriHours, 0), Coalesce(ThisItem.SatHours, 0), Coalesce(ThisItem.SunHours, 0))
+                  Width: =80
+                  X: =Parent.TemplateWidth - 96
+                  Y: =6
+      - btnReadWeek:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Read"
+            Visible: =false
+            DisplayMode: =DisplayMode.Edit
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            OnSelect: |-
+              =If(JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),Notify("Niet geladen: onopgeslagen uren behouden. Refresh en opnieuw laden zijn geblokkeerd.",NotificationType.Warning,15000); Set(varWeekForceRefresh,false),
+              If(!varWeekLoading && !varWeekSaving,
+               If(!Coalesce(varWeekForceRefresh,false) && varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && IsEmpty(colWeekLoadErrors) && !IsBlank(varWeekLoadedProjectID) &&
+                varWeekLoadedProjectID=Coalesce(varProject.Id,ddProject.Selected.Id) && varWeekLoadedTeam=Coalesce(varTeam.Value,ddTeam.Selected.Value) &&
+                varLoadedWeekMonday=varHoursWeekMonday && Coalesce(varWeekLoadedTeamVersion,-1)=Coalesce(varTeamDataVersion,0),
+                Trace("DIAG|Week|CacheHit",TraceSeverity.Information,{Scenario:"Week",Step:"CacheHit",ProjectID:varWeekLoadedProjectID,Team:varWeekLoadedTeam,Year:varWeekLoadedISOYear,KW:varWeekLoadedKW,Rows:CountRows(colWeekRows)}),
+               Set(varWeekLoading,true); Set(varWeekLoadState,"Loading"); Set(varWeekReady,false); Set(varPendingWeekKeyIssue,false);
+               Set(varDiagWeekT0,Now()); Trace("DIAG|Week|Start",TraceSeverity.Information,{Scenario:"Week",Step:"Start",Monday:Coalesce(Text(varHoursWeekMonday,"yyyy-mm-dd"),""),ProjectID:Coalesce(varProject.Id,ddProject.Selected.Id,0),Team:Coalesce(varTeam.Value,ddTeam.Selected.Value,""),Forced:Coalesce(varWeekForceRefresh,false)});
+               Set(varPendingLoadedWeekMonday,Blank());
+               Set(varPendingHoursProjectID,Coalesce(varProject.Id,ddProject.Selected.Id));
+               Set(varPendingHoursProjectKey,Text(varPendingHoursProjectID)); Set(varPendingHoursTeam,Coalesce(varTeam.Value,ddTeam.Selected.Value));
+               Clear(colWeekLoadErrors); Clear(colPendingWeekAssignments); Clear(colPendingWeekKeys);
+               Clear(colPendingWeekRows); Clear(colPendingWeekOriginal); Clear(colPendingWeekStored);
+               If(IsBlank(varPendingHoursProjectID) || IsBlank(varPendingHoursTeam),
+                Set(varWeekMessage,"Kies eerst project en team via Project / team. Uren zijn opgeslagen in SharePoint, niet in deze lege schermselectie."),
+                If(IsBlank(varHoursWeekMonday),
+                 Set(varWeekMessage,"Kies een week om de opgeslagen week terug te lezen."),
+                 Set(varPendingWeekMonday,varHoursWeekMonday);
+                 IfError(Refresh(Hours),Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                 IfError(Refresh('Project Workers'),Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                 If(IsEmpty(colWeekLoadErrors),
+                  IfError(CountRows(ClearCollect(colPendingWeekAssignments,
+                   Filter('Project Workers',ProjectKey=varPendingHoursProjectKey && Team.Value=varPendingHoursTeam && Active=true)))>=0,
+                   Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                  If(CountRows(colPendingWeekAssignments)>=500,
+                   Collect(colWeekLoadErrors,{Message:"500 actieve koppelingen geladen; weekoverzicht gestopt om onvolledige uren te voorkomen."})
+                  );
+                  If(CountIf(colPendingWeekAssignments,Project.Id<>varPendingHoursProjectID)>0,
+                   Collect(colWeekLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Laden gestopt; gegevens laten controleren."})
+                  );
+                  If(CountRows(Distinct(colPendingWeekAssignments,Worker.Id))<>CountRows(colPendingWeekAssignments),
+                   Collect(colWeekLoadErrors,{Message:"Dubbele actieve medewerkerkoppelingen in dit project/team. Laden gestopt; bestaande koppelingen laten controleren."})
+                  )
+                 );
+                 If(IsEmpty(colWeekLoadErrors),
+                  Clear(colPendingWeekProjectHours);
+                  Set(varWeekQueryPrefix,varPendingHoursProjectKey & "|"); Set(varWeekQueryFrom,varPendingWeekMonday); Set(varWeekQueryUntil,DateAdd(varPendingWeekMonday,7,TimeUnit.Days)); Set(varWeekQueryPaged,false);
+                  IfError(With({batch:ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=varWeekQueryFrom && 'Work Date'<varWeekQueryUntil) As entry,
+                   {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})},
+                   If(CountRows(batch)<500,
+                    CountRows(Collect(colPendingWeekProjectHours,batch))>=0,
+                    Set(varWeekQueryPaged,true); true
+                   )),Collect(colWeekLoadErrors,{Message:FirstError.Message});false
+                  );
+                  If(IsEmpty(colWeekLoadErrors) && varWeekQueryPaged,
+                   Trace("DIAG|Week|PagedByDay",TraceSeverity.Information,{Scenario:"Week",Step:"PagedByDay",ElapsedMs:DateDiff(varDiagWeekT0,Now(),TimeUnit.Milliseconds)});
+                   IfError(CountRows(Collect(colPendingWeekProjectHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=DateAdd(varWeekQueryFrom,0,TimeUnit.Days) && 'Work Date'<DateAdd(varWeekQueryFrom,1,TimeUnit.Days)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                   IfError(CountRows(Collect(colPendingWeekProjectHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=DateAdd(varWeekQueryFrom,1,TimeUnit.Days) && 'Work Date'<DateAdd(varWeekQueryFrom,2,TimeUnit.Days)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                   IfError(CountRows(Collect(colPendingWeekProjectHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=DateAdd(varWeekQueryFrom,2,TimeUnit.Days) && 'Work Date'<DateAdd(varWeekQueryFrom,3,TimeUnit.Days)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                   IfError(CountRows(Collect(colPendingWeekProjectHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=DateAdd(varWeekQueryFrom,3,TimeUnit.Days) && 'Work Date'<DateAdd(varWeekQueryFrom,4,TimeUnit.Days)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                   IfError(CountRows(Collect(colPendingWeekProjectHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=DateAdd(varWeekQueryFrom,4,TimeUnit.Days) && 'Work Date'<DateAdd(varWeekQueryFrom,5,TimeUnit.Days)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                   IfError(CountRows(Collect(colPendingWeekProjectHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=DateAdd(varWeekQueryFrom,5,TimeUnit.Days) && 'Work Date'<DateAdd(varWeekQueryFrom,6,TimeUnit.Days)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                   IfError(CountRows(Collect(colPendingWeekProjectHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWeekQueryPrefix) && 'Work Date'>=DateAdd(varWeekQueryFrom,6,TimeUnit.Days) && 'Work Date'<DateAdd(varWeekQueryFrom,7,TimeUnit.Days)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours})))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                   ForAll(Sequence(7) As dayIndex,
+                    With({dayFrom:DateAdd(varWeekQueryFrom,dayIndex.Value-1,TimeUnit.Days),dayUntil:DateAdd(varWeekQueryFrom,dayIndex.Value,TimeUnit.Days)},
+                     If(CountIf(colPendingWeekProjectHours,WorkDay>=dayFrom && WorkDay<dayUntil)>=500,
+                      Collect(colWeekLoadErrors,{Message:"Limiet bereikt bij uren op " & Text(dayFrom,"dd-mm-yyyy") & "; week niet volledig geladen."})
+                     )
+                    )
+                   )
+                  );
+                  If(CountRows(Distinct(colPendingWeekProjectHours,HourID))<>CountRows(colPendingWeekProjectHours),
+                   Collect(colWeekLoadErrors,{Message:"Dezelfde urenregel is meer dan eens teruggelezen. Laden gestopt."})
+                  );
+                  ClearCollect(colPendingWeekStored,Filter(colPendingWeekProjectHours,AssignmentID in ShowColumns(colPendingWeekAssignments,ID)));
+                  Trace("DIAG|Week|AfterHoursQueries",TraceSeverity.Information,{Scenario:"Week",Step:"AfterHoursQueries",ElapsedMs:DateDiff(varDiagWeekT0,Now(),TimeUnit.Milliseconds),Assignments:CountRows(colPendingWeekAssignments),ProjectDayRows:CountRows(colPendingWeekProjectHours),DayRows:CountRows(colPendingWeekStored),Errors:CountRows(colWeekLoadErrors)});
+                  If(CountIf(colPendingWeekStored,IsBlank(HourValue))>0,
+                   Collect(colWeekLoadErrors,{Message:"Een opgeslagen urenregel heeft een lege urenwaarde. Laden gestopt; voer geen vervangende uren in."})
+                  );
+                  If(CountIf(GroupBy(colPendingWeekStored,AssignmentID,WorkDay,DailyRecords),CountRows(DailyRecords)>1)>0,
+                   Collect(colWeekLoadErrors,{Message:"Meerdere urenregels voor dezelfde koppeling en werkdag. Laat de bestaande gegevens controleren; niets opnieuw invoeren."})
+                  );
+                  Set(varPendingWeekKeyIssue,CountIf(colPendingWeekStored,IsBlank(EntryKey))>0 || CountRows(Distinct(colPendingWeekStored,EntryKey))<>CountRows(colPendingWeekStored) ||
+                   CountIf(colPendingWeekStored As stored,stored.EntryKey<>LookUp(colPendingWeekAssignments,ID=stored.AssignmentID,AssignmentKey) & "|" & Text(stored.WorkDay,"[$-en-US]yyyymmdd"))>0 ||
+                   CountIf(colPendingWeekAssignments,IsBlank(AssignmentKey) || AssignmentKey<>(Text(varPendingHoursProjectID) & "|" & Text(Worker.Id)) || ProjectKey<>Text(varPendingHoursProjectID))>0)
+                 );
+                 If(IsEmpty(colWeekLoadErrors),
+                  IfError(CountRows(ClearCollect(colPendingWeekKeys,
+                   AddColumns(colPendingWeekAssignments As member,
+                    MonKey,Coalesce(member.AssignmentKey,Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id)) & "|" & Text(varPendingWeekMonday,"[$-en-US]yyyymmdd"),
+                    TueKey,Coalesce(member.AssignmentKey,Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id)) & "|" & Text(DateAdd(varPendingWeekMonday,1,TimeUnit.Days),"[$-en-US]yyyymmdd"),
+                    WedKey,Coalesce(member.AssignmentKey,Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id)) & "|" & Text(DateAdd(varPendingWeekMonday,2,TimeUnit.Days),"[$-en-US]yyyymmdd"),
+                    ThuKey,Coalesce(member.AssignmentKey,Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id)) & "|" & Text(DateAdd(varPendingWeekMonday,3,TimeUnit.Days),"[$-en-US]yyyymmdd"),
+                    FriKey,Coalesce(member.AssignmentKey,Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id)) & "|" & Text(DateAdd(varPendingWeekMonday,4,TimeUnit.Days),"[$-en-US]yyyymmdd"),
+                    SatKey,Coalesce(member.AssignmentKey,Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id)) & "|" & Text(DateAdd(varPendingWeekMonday,5,TimeUnit.Days),"[$-en-US]yyyymmdd"),
+                    SunKey,Coalesce(member.AssignmentKey,Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id)) & "|" & Text(DateAdd(varPendingWeekMonday,6,TimeUnit.Days),"[$-en-US]yyyymmdd")
+                   )))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                  IfError(CountRows(ClearCollect(colPendingWeekRows,
+                   ForAll(colPendingWeekKeys As member,
+                    With({mon:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=varPendingWeekMonday),
+                          tue:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,1,TimeUnit.Days)),
+                          wed:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,2,TimeUnit.Days)),
+                          thu:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,3,TimeUnit.Days)),
+                          fri:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,4,TimeUnit.Days)),
+                          sat:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,5,TimeUnit.Days)),
+                          sun:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,6,TimeUnit.Days))},
+                     {ID:member.ID,Worker:member.Worker,Project:member.Project,Team:member.Team,Active:member.Active,
+                      AssignmentKey:member.AssignmentKey,ProjectKey:member.ProjectKey,Title:member.Title,
+                      MonKey:Coalesce(mon.EntryKey,member.MonKey),TueKey:Coalesce(tue.EntryKey,member.TueKey),WedKey:Coalesce(wed.EntryKey,member.WedKey),
+                      ThuKey:Coalesce(thu.EntryKey,member.ThuKey),FriKey:Coalesce(fri.EntryKey,member.FriKey),SatKey:Coalesce(sat.EntryKey,member.SatKey),SunKey:Coalesce(sun.EntryKey,member.SunKey),
+                      MonHours:mon.HourValue,TueHours:tue.HourValue,WedHours:wed.HourValue,ThuHours:thu.HourValue,FriHours:fri.HourValue,SatHours:sat.HourValue,SunHours:sun.HourValue}
+                    )
+                   )))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false)
+                 );
+                 If(IsEmpty(colWeekLoadErrors),
+                  IfError(CountRows(ClearCollect(colPendingWeekOriginal,colPendingWeekRows))>=0,Collect(colWeekLoadErrors,{Message:FirstError.Message});false)
+                 );
+                 If(IsEmpty(colWeekLoadErrors),
+                  ClearCollect(colWeekAssignments,colPendingWeekAssignments); ClearCollect(colWeekKeys,colPendingWeekKeys);
+              ClearCollect(colWeekStored,colPendingWeekStored); ClearCollect(colWeekRows,colPendingWeekRows); ClearCollect(colWeekOriginal,colPendingWeekOriginal);
+              Set(varHoursProjectID,varPendingHoursProjectID); Set(varHoursProjectKey,varPendingHoursProjectKey); Set(varHoursTeam,varPendingHoursTeam);
+              Set(varWeekMonday,varPendingWeekMonday); Set(varLoadedWeekMonday,varPendingWeekMonday); Set(varWeekKeyIssue,varPendingWeekKeyIssue);
+              Set(varWeekLoadedProjectID,varPendingHoursProjectID); Set(varWeekLoadedTeam,varPendingHoursTeam);
+              Set(varWeekLoadedISOYear,Year(DateAdd(varPendingWeekMonday,3,TimeUnit.Days))); Set(varWeekLoadedKW,ISOWeekNum(varPendingWeekMonday));
+              Set(varWeekLoadedAssignmentCount,CountRows(colPendingWeekAssignments)); Set(varWeekLoadedTeamVersion,Coalesce(varTeamDataVersion,0)); Set(varWeekLoadState,"Loaded"); Set(varWeekReady,true); Set(varPendingLoadedWeekMonday,varPendingWeekMonday);
+                  Set(varWeekMessage,
+                   If(IsEmpty(colPendingWeekAssignments),"Geen actieve koppelingen voor dit project/team. Bekijk historische uren in Hours Summary.",
+                    Text(CountRows(colPendingWeekStored)) & " opgeslagen dagregels teruggelezen voor de gekozen week; " & Text(CountRows(colPendingWeekAssignments)) & " actieve medewerkers." &
+                    If(varPendingWeekKeyIssue," Alleen lezen: ontbrekende, dubbele of afwijkende technische sleutels; opslaan geblokkeerd om duplicaten te voorkomen.",""))
+                  )
+                 )
+                )
+               );
+               If(!IsEmpty(colWeekLoadErrors),
+                Clear(colPendingWeekRows); Clear(colPendingWeekOriginal); Set(varWeekReady,false);
+                Set(varWeekLoadState,"Failed"); Set(varWeekMessage,"Week laden mislukt; opslaan geblokkeerd. Vorige invoer behouden. " & First(colWeekLoadErrors).Message);
+                Notify(varWeekMessage,NotificationType.Error,15000)
+               );
+               If(varWeekLoadState="Loading",Set(varWeekLoadState,"NotLoaded")); Set(varWeekForceRefresh,false);
+               Trace("DIAG|Week|End",TraceSeverity.Information,{Scenario:"Week",Step:"End",ElapsedMs:DateDiff(varDiagWeekT0,Now(),TimeUnit.Milliseconds),State:Coalesce(varWeekLoadState,""),Rows:CountRows(colWeekRows),Errors:CountRows(colWeekLoadErrors)});
+               Set(varWeekLoading,false)
+              ))
+              )
+      - lblWeekLoadStatus:
+          Control: Label@2.5.1
+          Properties:
+            Text: =Switch(Coalesce(varWeekLoadState,"NotLoaded"),"Loading","Opgeslagen week ophalen; vorige invoer blijft behouden tot laden slaagt...","NotLoaded",Coalesce(varWeekMessage,"Nog niet geladen. Kies project, team en week; opslaan geblokkeerd."),varWeekMessage)
+            X: =40
+            Y: =dpHoursWeek.Y+dpHoursWeek.Height+8
+            Width: =Parent.Width-80
+            Height: =32
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =11
+            Color: =If(!IsEmpty(colWeekLoadErrors),ColorValue("#DB1E28"),ColorValue("#000000"))
+      - navWeeklyHours:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            X: =0
+            Y: =Parent.Height-Self.Height
+            Width: =Parent.Width
+            Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height+16
+            Fill: =ColorValue("#F0F0F0")
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Start
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutWrap: =false
+            LayoutOverflowX: =LayoutOverflow.Scroll
+            LayoutOverflowY: =LayoutOverflow.Hide
+            LayoutGap: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+          Children:
+            - conWeekButtonRow:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnWeeklyProjectTeam.Width+btnRefreshWeek.Width+btnSaveWeek.Width+2*lblFooterButtonMetrics.Width)
+                  Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height
+                  FillPortions: =0
+                  Fill: =Color.Transparent
+                Children:
+                  - btnWeeklyProjectTeam:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        PressedBorderColor: =ColorValue("#000F41")
+                        HoverBorderColor: =ColorValue("#000F41")
+                        BorderColor: =ColorValue("#0303B8")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        PressedColor: =Color.White
+                        HoverColor: =Color.White
+                        Color: =Color.White
+                        PressedFill: =ColorValue("#000F41")
+                        HoverFill: =ColorValue("#000F41")
+                        Fill: =ColorValue("#0303B8")
+                        Text: ="Project / team"
+                        OnSelect: =Navigate(Screen1,ScreenTransition.Fade)
+                        DisplayMode: =If(varWeekLoading,DisplayMode.Disabled,If(varWeekSaving || (JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))),DisplayMode.Disabled,DisplayMode.Edit))
+                        Tooltip: ="Sla gewijzigde uren op voordat u naar project / team gaat."
+                        X: =lblFooterButtonMetrics.X
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =180
+                        Height: =lblFooterButtonMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnRefreshWeek:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        BorderColor: =ColorValue("#0303B8")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        PressedColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        Color: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        Fill: =Color.White
+                        Text: ="Refresh"
+                        OnSelect: |-
+                          =If(Coalesce(varWeekLoading,false) || Coalesce(varWeekSaving,false) || JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),Notify("Refresh geblokkeerd: laadactie/opslag bezig of onopgeslagen uren aanwezig.",NotificationType.Warning,15000),Set(varWeekForceRefresh,true); Select(btnReadWeek))
+                        DisplayMode: =If(Coalesce(varWeekLoading,false) || Coalesce(varWeekSaving,false) || JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),DisplayMode.Disabled,DisplayMode.Edit)
+                        X: =btnSaveWeek.X-lblFooterButtonMetrics.Width-Self.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =110
+                        Height: =lblFooterButtonMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnSaveWeek:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        PressedBorderColor: =ColorValue("#18DD6E")
+                        HoverBorderColor: =ColorValue("#18DD6E")
+                        BorderColor: =ColorValue("#1AFF80")
+                        BorderThickness: =0
+                        Color: =ColorValue("#000F41")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        DisplayMode: |-
+                          =If(And(varWeekLoadState="Loaded",
+                          Coalesce(varWeekReady,false),
+                          !Coalesce(varWeekKeyIssue,true),
+                          !Coalesce(varWeekLoading,false),
+                          !Coalesce(varWeekSaving,false),
+                          IsEmpty(colWeekLoadErrors),
+                          !IsBlank(varLoadedWeekMonday),
+                          !IsBlank(varWeekLoadedProjectID),
+                          !IsBlank(varWeekLoadedTeam),
+                          varWeekLoadedProjectID=varProject.Id,
+                          varWeekLoadedProjectID=ddProject.Selected.Id,
+                          varWeekLoadedTeam=varTeam.Value,
+                          varWeekLoadedTeam=ddTeam.Selected.Value,
+                          varLoadedWeekMonday=varHoursWeekMonday,
+                          !IsEmpty(colWeekRows),
+                          CountRows(colWeekRows)=varWeekLoadedAssignmentCount,
+                          CountRows(colWeekOriginal)=varWeekLoadedAssignmentCount,
+                          CountRows(colWeekAssignments)=varWeekLoadedAssignmentCount,
+                          CountRows(Distinct(colWeekRows,ID))=varWeekLoadedAssignmentCount,
+                          CountRows(Distinct(colWeekOriginal,ID))=varWeekLoadedAssignmentCount,
+                          CountIf(colWeekRows,!(ID in ShowColumns(colWeekOriginal,ID)) || !(ID in ShowColumns(colWeekAssignments,ID)) || Project.Id<>varWeekLoadedProjectID || Team.Value<>varWeekLoadedTeam || Active<>true)=0,
+                          varLoadedWeekMonday=DateAdd(Date(varWeekLoadedISOYear,1,4),1-Weekday(Date(varWeekLoadedISOYear,1,4),StartOfWeek.Monday)+7*(varWeekLoadedKW-1),TimeUnit.Days)),DisplayMode.Edit,DisplayMode.Disabled)
+                        Fill: =ColorValue("#1AFF80")
+                        Font: ="Inter, Arial, sans-serif"
+                        HoverColor: =ColorValue("#000F41")
+                        HoverFill: =ColorValue("#18DD6E")
+                        OnSelect: |-
+                          =If(And(varWeekLoadState="Loaded",
+                          Coalesce(varWeekReady,false),
+                          !Coalesce(varWeekKeyIssue,true),
+                          !Coalesce(varWeekLoading,false),
+                          !Coalesce(varWeekSaving,false),
+                          IsEmpty(colWeekLoadErrors),
+                          !IsBlank(varLoadedWeekMonday),
+                          !IsBlank(varWeekLoadedProjectID),
+                          !IsBlank(varWeekLoadedTeam),
+                          varWeekLoadedProjectID=varProject.Id,
+                          varWeekLoadedProjectID=ddProject.Selected.Id,
+                          varWeekLoadedTeam=varTeam.Value,
+                          varWeekLoadedTeam=ddTeam.Selected.Value,
+                          varLoadedWeekMonday=varHoursWeekMonday,
+                          !IsEmpty(colWeekRows),
+                          CountRows(colWeekRows)=varWeekLoadedAssignmentCount,
+                          CountRows(colWeekOriginal)=varWeekLoadedAssignmentCount,
+                          CountRows(colWeekAssignments)=varWeekLoadedAssignmentCount,
+                          CountRows(Distinct(colWeekRows,ID))=varWeekLoadedAssignmentCount,
+                          CountRows(Distinct(colWeekOriginal,ID))=varWeekLoadedAssignmentCount,
+                          CountIf(colWeekRows,!(ID in ShowColumns(colWeekOriginal,ID)) || !(ID in ShowColumns(colWeekAssignments,ID)) || Project.Id<>varWeekLoadedProjectID || Team.Value<>varWeekLoadedTeam || Active<>true)=0,
+                          varLoadedWeekMonday=DateAdd(Date(varWeekLoadedISOYear,1,4),1-Weekday(Date(varWeekLoadedISOYear,1,4),StartOfWeek.Monday)+7*(varWeekLoadedKW-1),TimeUnit.Days)),
+                          Set(varReportReady,false); Set(varReportValid,false); Set(varWeekSaving, true);
+                          Clear(colHoursChanges);
+                          Clear(colHoursWritten);
+                          Clear(colHoursErrors);
+                          Set(varDiagSaveT0,Now()); Set(varDiagSaveReads,0); Set(varDiagSaveWrites,0);
+                          Clear(colSaveCheckRaw); Clear(colSaveCheck); Clear(colHoursWritePlan);
+                          Clear(colHoursPatchedExisting); Clear(colHoursPatchedNew); Clear(colSaveVerifyRaw); Clear(colSaveVerify);
+                          
+                          IfError(
+                              ForAll(
+                                  colWeekRows As r,
+                                  With(
+                                      {
+                                          original: LookUp(
+                                              colWeekOriginal,
+                                              ID = r.ID
+                                          )
+                                      },
+                                      ForAll(
+                                          Table(
+                                              {
+                                                  DayIndex: 0,
+                                                  KeyValue: r.MonKey,
+                                                  NewHours: r.MonHours,
+                                                  OldHours: original.MonHours
+                                              },
+                                              {
+                                                  DayIndex: 1,
+                                                  KeyValue: r.TueKey,
+                                                  NewHours: r.TueHours,
+                                                  OldHours: original.TueHours
+                                              },
+                                              {
+                                                  DayIndex: 2,
+                                                  KeyValue: r.WedKey,
+                                                  NewHours: r.WedHours,
+                                                  OldHours: original.WedHours
+                                              },
+                                              {
+                                                  DayIndex: 3,
+                                                  KeyValue: r.ThuKey,
+                                                  NewHours: r.ThuHours,
+                                                  OldHours: original.ThuHours
+                                              },
+                                              {
+                                                  DayIndex: 4,
+                                                  KeyValue: r.FriKey,
+                                                  NewHours: r.FriHours,
+                                                  OldHours: original.FriHours
+                                              },
+                                              {
+                                                  DayIndex: 5,
+                                                  KeyValue: r.SatKey,
+                                                  NewHours: r.SatHours,
+                                                  OldHours: original.SatHours
+                                              },
+                                              {
+                                                  DayIndex: 6,
+                                                  KeyValue: r.SunKey,
+                                                  NewHours: r.SunHours,
+                                                  OldHours: original.SunHours
+                                              }
+                                          ) As d,
+                                          If(
+                                              IsBlank(d.NewHours) <> IsBlank(d.OldHours) ||
+                                              Coalesce(d.NewHours, 0) <> Coalesce(d.OldHours, 0),
+                                              Collect(
+                                                  colHoursChanges,
+                                                  {
+                                                      AssignmentID: r.ID,
+                                                      WorkerID: r.Worker.Id,
+                                                      WorkerName: r.Worker.Value,
+                                                      TeamValue: r.Team.Value,
+                                                      DayIndex: d.DayIndex,
+                                                      KeyValue: d.KeyValue,
+                                                      NewHours: d.NewHours,
+                                                      OldHours: d.OldHours
+                                                  }
+                                              )
+                                          )
+                                      )
+                                  )
+                              );
+                          
+                              If(
+                                  IsBlank(varLoadedWeekMonday) || IsEmpty(colWeekRows),
+                                  Notify(
+                                      "Open eerst een project, team en werkweek.",
+                                      NotificationType.Warning
+                                  ),
+                          
+                                  IsEmpty(colHoursChanges),
+                                  Notify(
+                                      "Geen gewijzigde uren.",
+                                      NotificationType.Information
+                                  ),
+                          
+                                  CountIf(
+                                      colHoursChanges,
+                                      !IsBlank(NewHours) &&
+                                      (
+                                          NewHours < 0 ||
+                                          NewHours > 24 ||
+                                          Abs(
+                                              NewHours * 100 -
+                                              Round(NewHours * 100, 0)
+                                          ) > 0.000001
+                                      )
+                                  ) > 0,
+                                  Notify(
+                                      "Gebruik 0 t/m 24 uur, met maximaal twee decimalen.",
+                                      NotificationType.Error
+                                  ),
+                          
+                                  CountIf(
+                                      colHoursChanges,
+                                      IsBlank(NewHours) && !IsBlank(OldHours)
+                                  ) > 0,
+                                  Notify(
+                                      "Gebruik 0 om eerder ingevulde uren te corrigeren naar geen gewerkte uren.",
+                                      NotificationType.Warning
+                                  ),
+                          
+                                      Set(varSaveQueryPrefix,Text(varWeekLoadedProjectID) & "|");
+                                      Set(varSaveQueryFrom,varLoadedWeekMonday);
+                                      Set(varSaveQueryUntil,DateAdd(varLoadedWeekMonday,7,TimeUnit.Days));
+                          
+                                      IfError(Refresh(Hours),Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                      If(IsEmpty(colHoursErrors),
+                                          Set(varDiagSaveReads,varDiagSaveReads+1);
+                                          IfError(CountRows(ClearCollect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=varSaveQueryFrom && 'Work Date'<varSaveQueryUntil)))>=0,
+                                              Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false)
+                                      );
+                                      If(IsEmpty(colHoursErrors) && CountRows(colSaveCheckRaw)>=500,
+                                          Clear(colSaveCheckRaw); Set(varDiagSaveReads,varDiagSaveReads+7);
+                                          IfError(CountRows(Collect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,0,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,1,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          IfError(CountRows(Collect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,1,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,2,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          IfError(CountRows(Collect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,2,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,3,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          IfError(CountRows(Collect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,3,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,4,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          IfError(CountRows(Collect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,4,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,5,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          IfError(CountRows(Collect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,5,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,6,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          IfError(CountRows(Collect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,6,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,7,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          ForAll(Sequence(7) As dayIndex,
+                                              With({dayFrom:DateAdd(varSaveQueryFrom,dayIndex.Value-1,TimeUnit.Days),dayUntil:DateAdd(varSaveQueryFrom,dayIndex.Value,TimeUnit.Days)},
+                                                  If(CountIf(colSaveCheckRaw,'Work Date'>=dayFrom && 'Work Date'<dayUntil)>=500,
+                                                      Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Limiet bereikt bij uren op " & Text(dayFrom,"dd-mm-yyyy") & "; opslaan gestopt."})
+                                                  )
+                                              )
+                                          )
+                                      );
+                                      ClearCollect(colSaveCheck,ForAll(colSaveCheckRaw As entry,
+                                          {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours,TeamValue:entry.Team.Value}));
+                                      If(CountRows(Distinct(colSaveCheck,HourID))<>CountRows(colSaveCheck),
+                                          Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Dezelfde urenregel is meer dan eens teruggelezen. Opslaan gestopt."})
+                                      );
+                          
+                                      If(IsEmpty(colHoursErrors),
+                                          ForAll(
+                                              colHoursChanges As c,
+                                              With(
+                                                  {
+                                                      existing: LookUp(colSaveCheck, EntryKey = c.KeyValue),
+                                                      workDate: DateAdd(varLoadedWeekMonday, c.DayIndex, TimeUnit.Days)
+                                                  },
+                                                  If(
+                                                      CountIf(colSaveCheck, EntryKey = c.KeyValue) > 1,
+                                                      Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"Meerdere urenregels met dezelfde sleutel. Opslaan gestopt; gegevens laten controleren."}),
+                          
+                                                      !IsBlank(existing.HourID) && (existing.AssignmentID<>c.AssignmentID || IsBlank(existing.WorkDay) || existing.WorkDay<>workDate),
+                                                      Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"De opgeslagen sleutel hoort bij een andere koppeling of werkdatum. Opslaan gestopt; gegevens laten controleren."}),
+                          
+                                                      IsBlank(existing.HourValue) <> IsBlank(c.OldHours) ||
+                                                      Coalesce(existing.HourValue, 0) <> Coalesce(c.OldHours, 0),
+                                                      Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"Deze uren zijn sinds het laden gewijzigd. Open de week opnieuw."}),
+                          
+                                                      !IsBlank(existing.HourID) &&
+                                                      existing.TeamValue <> c.TeamValue,
+                                                      Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"Deze registratie hoort bij een ander team."}),
+                          
+                                                      IsBlank(existing.HourID),
+                                                      With(
+                                                          {
+                                                              assignmentRecord: LookUp(colWeekAssignments, ID = c.AssignmentID),
+                                                              workerRecord: LookUp(colWorkersCache, ID = c.WorkerID)
+                                                          },
+                                                          If(
+                                                              IsBlank(assignmentRecord.ID) ||
+                                                              IsBlank(workerRecord.Employer.Id) ||
+                                                              IsBlank(c.TeamValue) ||
+                                                              IsBlank(workerRecord.Trade.Value),
+                                                              Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"Assignment, Employer, Team of Trade ontbreekt."}),
+                          
+                                                              Collect(colHoursWritePlan,{IsNew:true,ExistingID:Blank(),AssignmentID:c.AssignmentID,AssignmentTitle:assignmentRecord.Title,
+                                                                  EmployerID:workerRecord.Employer.Id,EmployerValue:workerRecord.Employer.Value,TeamValue:c.TeamValue,TradeValue:workerRecord.Trade.Value,
+                                                                  KeyValue:c.KeyValue,WorkDate:workDate,Title:Left(c.WorkerName & " | " & Text(workDate,"[$-en-GB]dd-mm-yyyy"),255),
+                                                                  NewHours:c.NewHours,WorkerName:c.WorkerName,DayIndex:c.DayIndex})
+                                                          )
+                                                      ),
+                          
+                                                      Collect(colHoursWritePlan,{IsNew:false,ExistingID:existing.HourID,AssignmentID:c.AssignmentID,AssignmentTitle:"",
+                                                          EmployerID:Blank(),EmployerValue:"",TeamValue:c.TeamValue,TradeValue:"",
+                                                          KeyValue:c.KeyValue,WorkDate:workDate,Title:Left(c.WorkerName & " | " & Text(workDate,"[$-en-GB]dd-mm-yyyy"),255),
+                                                          NewHours:c.NewHours,WorkerName:c.WorkerName,DayIndex:c.DayIndex})
+                                                  )
+                                              )
+                                          )
+                                      );
+                          
+                                      If(IsEmpty(colHoursErrors) && CountRows(colHoursWritePlan) = CountRows(colHoursChanges),
+                                          With({existingRows:Filter(colHoursWritePlan,!IsNew),newRows:Filter(colHoursWritePlan,IsNew)},
+                                              If(!IsEmpty(existingRows),
+                                                  Set(varDiagSaveWrites,varDiagSaveWrites+1);
+                                                  IfError(CountRows(ClearCollect(colHoursPatchedExisting,Patch(Hours,
+                                                      ForAll(existingRows As u,LookUp(colSaveCheckRaw As stored,stored.ID=u.ExistingID)),
+                                                      ForAll(existingRows As u,{Title:u.Title,Hours:u.NewHours}))))>=0,
+                                                      Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                                  If(CountRows(colHoursPatchedExisting)<>CountRows(existingRows) || CountIf(colHoursPatchedExisting,IsBlank(ID))>0,
+                                                      Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Opslaan leverde geen SharePoint-record-ID op."}))
+                                              );
+                                              If(IsEmpty(colHoursErrors) && !IsEmpty(newRows),
+                                                  Set(varDiagSaveWrites,varDiagSaveWrites+1);
+                                                  IfError(CountRows(ClearCollect(colHoursPatchedNew,Patch(Hours,
+                                                      ForAll(newRows As n,Defaults(Hours)),
+                                                      ForAll(newRows As n,{Title:n.Title,EntryKey:n.KeyValue,'Work Date':n.WorkDate,
+                                                          Assignment:{Id:n.AssignmentID,Value:n.AssignmentTitle},
+                                                          Employer:{Id:n.EmployerID,Value:n.EmployerValue},
+                                                          Team:{Value:n.TeamValue},Trade:{Value:n.TradeValue},Hours:n.NewHours}))))>=0,
+                                                      Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                                  If(CountRows(colHoursPatchedNew)<>CountRows(newRows) || CountIf(colHoursPatchedNew,IsBlank(ID))>0,
+                                                      Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Opslaan leverde geen SharePoint-record-ID op."}))
+                                              )
+                                          )
+                                      );
+                          
+                                      If(varDiagSaveWrites > 0,
+                                          IfError(Refresh(Hours),Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          Set(varDiagSaveReads,varDiagSaveReads+1);
+                                          IfError(CountRows(ClearCollect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=varSaveQueryFrom && 'Work Date'<varSaveQueryUntil)))>=0,
+                                              Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                          If(CountRows(colSaveVerifyRaw)>=500,
+                                              Clear(colSaveVerifyRaw); Set(varDiagSaveReads,varDiagSaveReads+7);
+                                              IfError(CountRows(Collect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,0,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,1,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                              IfError(CountRows(Collect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,1,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,2,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                              IfError(CountRows(Collect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,2,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,3,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                              IfError(CountRows(Collect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,3,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,4,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                              IfError(CountRows(Collect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,4,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,5,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                              IfError(CountRows(Collect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,5,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,6,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                              IfError(CountRows(Collect(colSaveVerifyRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=DateAdd(varSaveQueryFrom,6,TimeUnit.Days) && 'Work Date'<DateAdd(varSaveQueryFrom,7,TimeUnit.Days))))>=0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                              true
+                                          );
+                                          ClearCollect(colSaveVerify,ForAll(colSaveVerifyRaw As entry,
+                                              {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),EntryKey:entry.EntryKey,HourValue:entry.Hours}));
+                          
+                                          ForAll(
+                                              colHoursWritePlan As w,
+                                              With(
+                                                  {
+                                                      verifiedRecord: LookUp(colSaveVerify, EntryKey = w.KeyValue)
+                                                  },
+                                                  If(
+                                                      CountIf(colSaveVerify, EntryKey = w.KeyValue) <> 1 ||
+                                                      IsBlank(verifiedRecord.HourID) ||
+                                                      IsBlank(verifiedRecord.HourValue) ||
+                                                      verifiedRecord.AssignmentID <> w.AssignmentID ||
+                                                      verifiedRecord.WorkDay <> w.WorkDate ||
+                                                      verifiedRecord.HourValue <> w.NewHours,
+                                                      Collect(colHoursErrors,{WorkerName:w.WorkerName,KeyValue:w.KeyValue,Message:"De opgeslagen registratie kon niet correct worden teruggelezen."}),
+                          
+                                                      Collect(
+                                                          colHoursWritten,
+                                                          {
+                                                              SavedID: verifiedRecord.HourID,
+                                                              AssignmentID: w.AssignmentID,
+                                                              WorkerName: w.WorkerName,
+                                                              DayIndex: w.DayIndex,
+                                                              KeyValue: w.KeyValue,
+                                                              ExpectedHours: w.NewHours
+                                                          }
+                                                      );
+                                                      Switch(
+                                                          w.DayIndex,
+                                                          0, UpdateIf(colWeekOriginal, ID = w.AssignmentID, {MonHours: verifiedRecord.HourValue}),
+                                                          1, UpdateIf(colWeekOriginal, ID = w.AssignmentID, {TueHours: verifiedRecord.HourValue}),
+                                                          2, UpdateIf(colWeekOriginal, ID = w.AssignmentID, {WedHours: verifiedRecord.HourValue}),
+                                                          3, UpdateIf(colWeekOriginal, ID = w.AssignmentID, {ThuHours: verifiedRecord.HourValue}),
+                                                          4, UpdateIf(colWeekOriginal, ID = w.AssignmentID, {FriHours: verifiedRecord.HourValue}),
+                                                          5, UpdateIf(colWeekOriginal, ID = w.AssignmentID, {SatHours: verifiedRecord.HourValue}),
+                                                          6, UpdateIf(colWeekOriginal, ID = w.AssignmentID, {SunHours: verifiedRecord.HourValue})
+                                                      )
+                                                  )
+                                              )
+                                          )
+                                      );
+                          
+                                  If(
+                                      IsEmpty(colHoursErrors) &&
+                                      CountRows(colHoursWritten) = CountRows(colHoursChanges),
+                                      Notify(
+                                          "Werkweek opgeslagen en gecontroleerd. " &
+                                          Text(CountRows(colHoursWritten)) &
+                                          " dagregistratie(s).",
+                                          NotificationType.Success
+                                      ),
+                          
+                                      Notify(
+                                          "Niet alles kon worden opgeslagen en gecontroleerd. " &
+                                          If(
+                                              !IsEmpty(colHoursErrors),
+                                              First(colHoursErrors).WorkerName & ": " &
+                                              First(colHoursErrors).Message,
+                                              "Het aantal opgeslagen registraties wijkt af."
+                                          ),
+                                          NotificationType.Error,
+                                          15000
+                                      )
+                                  )
+                              ),
+                              Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message}); Notify(
+                                  "Opslagfout: " & FirstError.Message,
+                                  NotificationType.Error,
+                                  15000
+                              )
+                          );
+                          
+                          Trace("DIAG|SaveWeek|End",TraceSeverity.Information,{Scenario:"SaveWeek",Step:"End",ElapsedMs:DateDiff(varDiagSaveT0,Now(),TimeUnit.Milliseconds),Changes:CountRows(colHoursChanges),Reads:Coalesce(varDiagSaveReads,0),Writes:Coalesce(varDiagSaveWrites,0),PatchedRows:CountRows(colHoursPatchedExisting)+CountRows(colHoursPatchedNew),VerifiedRows:CountRows(colHoursWritten),Errors:CountRows(colHoursErrors)});
+                          Set(varWeekSaving, false);
+                          If(!IsEmpty(colHoursErrors),Set(varWeekLoadState,"Failed" ); Set(varWeekReady,false); Notify("Opslag niet volledig bevestigd. Invoer behouden; controleer SharePoint-versies voordat u verdergaat.",NotificationType.Error,15000)),
+                          Notify("Save week geblokkeerd: week niet volledig geladen, laadfout of selectie komt niet overeen.",NotificationType.Error,15000))
+                        PressedColor: =ColorValue("#000F41")
+                        PressedFill: =ColorValue("#18DD6E")
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =14
+                        Text: =If(varWeekSaving, "Saving...", "Save")
+                        Width: =140
+                        X: =Parent.Width-lblFooterButtonMetrics.X-Self.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Height: =lblFooterButtonMetrics.Height
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
