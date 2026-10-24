@@ -22,7 +22,7 @@ One topic, one file. Other files link here instead of repeating content.
 
 | Project | Stack | Location | Repo |
 |---|---|---|---|
-| **Site Management** | Power Apps canvas + SharePoint Lists + Power Automate | `C:\Users\vandergoot.ed\Dev\Sitemanagment` | Private GitHub `eddyvandergoot-hue/Sitemanagement` |
+| **Site Management** | Power Apps canvas + SharePoint Lists + Power Automate | `C:\Users\vandergoot.ed\Dev\Sitemanagment` | Private GitHub `eddyvandergoot-hue/sitemanagment` |
 | **pidtracker** | React/Vite + FastAPI/SQLite (+ React Three Fiber for 3D) | Linux ZBook + Windows | `eddyvandergoot-hue/PID-Tracker` |
 
 Old OneDrive folder `OneDrive - GEA\Projects\Development\Sitemanagment\SiteManagement_20261019_232919` = read-only backup. Never write there.

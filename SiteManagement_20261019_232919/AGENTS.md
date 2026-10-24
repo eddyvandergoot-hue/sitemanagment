@@ -104,7 +104,10 @@ In de onderzochte app:
 - Los delegatieproblemen op; verberg waarschuwingen niet als daardoor gegevens ontbreken.
 - Checkpoints via git commit; zet geen backupbestanden in Src. PAC weigert backupbestanden in Src die niet op .pa.yaml eindigen.
 - Pack met: pac canvas pack --sources "." --layout SourceCode --msapp "<apart testbestand>.msapp"
-- Importeer een testbestand via make.powerapps.com → Apps → Import app → From file (.msapp).
+- Importeer een testbestand via make.powerapps.com → Apps → Import app → From file (.msapp). Rapporteer bij iedere build het exacte pad en de SHA-256; vóór import controleert de gebruiker bestandsnaam en SHA-256 daartegen.
+- Tests in twee niveaus: per wijziging alleen de relevante snelle test; aan het einde van de opdracht eenmaal de volledige testset plus pack.
+- Benodigde SharePoint- of Power Automate-wijzigingen voer je niet zelf uit: leg ze vast in MANUAL_STEPS.md als MS-xxx (ID, datum, reden, exacte namen/typen, status) en noem open MS-items in je antwoord.
+- Tussen opdrachten wordt de Claude Code-sessie gewist (/clear); leg alles wat de volgende opdracht nodig heeft vast in de projectdocumenten, niet alleen in het gesprek.
 - Een geslaagde pack is geen bewijs dat Power Fx correct is. Studio/App checker en een functionele test zijn nodig.
 - Overschrijf of publiceer de bestaande productieapp niet automatisch.
 - Claim geen uitgevoerde tests die je niet daadwerkelijk kunt uitvoeren.
@@ -122,6 +125,7 @@ Deze onderdelen zijn nog geen voltooide functies.
 
 ## Voortgang en oplevering
 
+- Documentkaart: zie README.md. README, DECISIONS, ROADMAP, MANUAL_STEPS en NEXT_COMMANDS staan in de projectmap (repo-root), AGENTS.md en PROJECT_STATUS.md in de bronmap. Lees ROADMAP.md, MANUAL_STEPS.md en NEXT_COMMANDS.md alleen als de opdracht daarom vraagt.
 - Blijvende projectafspraken staan in AGENTS.md. Tijdelijke bevindingen, uitgevoerde controles, beperkingen, Studio-controles en het actuele buildpad staan in PROJECT_STATUS.md in deze bronmap.
 - Werk PROJECT_STATUS.md aan het einde van iedere opdracht bij. Maak onderscheid tussen geïmplementeerd, technisch gecontroleerd en functioneel getest.
 - Rond eerst Hours Summary (administratieve rapportage) af en valideer dit overzicht. Weekly Hours blijft de bestaande ureninvoer op scrHours. Export is een afzonderlijke volgende opdracht.

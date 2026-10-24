@@ -7,18 +7,6 @@ Agents: subagents in .claude/agents/ are picked automatically by task; commands 
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
 
-## 1. Path fix after move (now, without Git)
-
-```bash
-claude << 'EOF'
-Project moved to C:\Users\vandergoot.ed\Dev\Sitemanagment (outside OneDrive). Old OneDrive folder = read-only backup, never write there. Git not installed yet: skip all git steps.
-1. Verify cwd = new path. Src/*.pa.yaml, .msapr, artifacts scripts present. Hash-compare Src vs old OneDrive Src -> report.
-2. Replace hardcoded old paths in AGENTS.md, PROJECT_STATUS.md, artifacts/*.ps1 -> relative ($PSScriptRoot) or new path. Report files changed.
-3. Quick pac pack test from new path.
-Until git available: checkpoints as before, folder copy outside Src.
-EOF
-```
-
 ## 2. Sync repo docs (right after path fix)
 
 ```bash
@@ -88,31 +76,6 @@ EOF
 ```
 
 **Test after import:** one date picker with `2026 KW43`; Wednesday picked → loads once; same-week Friday → no reload; 01-01-2027 → `2026 KW53`; unsaved input blocks week change. Vibrant Blue headers, one green Save with dark text, white Refresh with blue border, no purple. Summary: grey/white rows, "–" for 0, blue total row aligned under columns.
-
-## 5. Git setup (after Git install)
-
-Restart VS Code, check `git --version`, then:
-
-```bash
-claude << 'EOF'
-Git now installed. Project at C:\Users\vandergoot.ed\Dev\Sitemanagment.
-1. git init, branch main. .gitignore: *.msapp, artifacts output (keep artifacts/*.ps1 + script files), checkpoints/, fonts/, *.ttf *.otf *.woff *.woff2 *.eot, *.csv, *.pdf, *.png *.jpg, Monitor/trace exports, *.crdownload, Thumbs.db.
-2. git add, git ls-files -> report any font/msapp/csv/pdf/png tracked; remove from index if found.
-3. Commit "Baseline after move". Tag approved baseline build per PROJECT_STATUS.md.
-4. AGENTS.md: checkpoint = git commit before each task, no folder copies. Commit.
-Report: ls-files check, commit hash, tag. Don't push.
-EOF
-```
-
-Then on github.com: New repository → `Sitemanagement` → **Private** → no README/.gitignore/license → Create. In the VS Code terminal:
-
-```bash
-git remote add origin https://github.com/eddyvandergoot-hue/Sitemanagement.git
-git push -u origin main
-git push --tags
-```
-
-Check on GitHub: no `.msapp`, fonts or exports visible. After each approved step: `git push`.
 
 ## 6. Housekeeping (after combined build approved)
 

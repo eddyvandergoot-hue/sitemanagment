@@ -35,3 +35,6 @@ desktop.ini
 
 # Local Power Platform CLI copy (binaries, logs)
 pac/
+
+# Secrets never belong in the repo
+github-recovery-codes*.txt

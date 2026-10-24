@@ -1,5 +1,25 @@
 # Projectstatus — 22 oktober 2026
 
+## Overzicht - 25 oktober 2026
+
+"Gebouwd" = aantoonbaar in Src; dat zegt niets over Studio-import of functionele test (zie de secties hieronder). Volgorde van open punten: NEXT_COMMANDS.md. Open beslissingen: ROADMAP.md. Handmatige stappen: MANUAL_STEPS.md.
+
+| Onderdeel | Status | Bewijs |
+|---|---|---|
+| Batch-opslag Save week / Save team + Concurrent loads | Gebouwd. Functionele test hieronder nog als open vastgelegd (uitslag gevraagd aan Eddy) | Src: `Concurrent(`, `DIAG\|SaveWeek\|End` |
+| Delegatiecorrectie Save team (ProjectKey = globale var) | Gebouwd. App checker hieronder nog als niet uitgevoerd vastgelegd (uitslag gevraagd aan Eddy) | Src: `varTeamSaveProjectKey` (4×) |
+| MS-001 indexen (Hours.EntryKey, Hours.'Work Date', Project Workers.ProjectKey) | Open: uitvoeren / controleren | MANUAL_STEPS.md |
+| Hours Summary-datumkiezers: KW-label, geen sprong | Gebouwd | Src: `lblReportFromWeek` |
+| Lettertype Inter + Arial | Gebouwd | Src: 69× `"Inter, Arial, sans-serif"` |
+| Projectmap naar Dev-map | Klaar | Hashvergelijking Src 5/5; commit ec0d408 |
+| Gecombineerde build (weekkiezer Weekly Hours, tabelrestyle, GEA-kleuren) | Gebouwd, niet geïmporteerd/goedgekeurd | Src: `dpHoursWeek`, 0× `ddHoursYear`, `recHoursHeaderBar`, `galReportTotalWeeks`, 0× oude paarse literals |
+| Git: repository, branch main, baselinetag | Klaar | Commits ec0d408, 1fa3b94; tag baseline-footer-row-20261020_215936 |
+| Push naar private GitHub | Open | Geen remote ingesteld |
+| Housekeeping (status archiveren, AGENTS inkorten) | Open | — |
+| Startscherm + Week Report | Open | Src: 0× `scrHome`, 0× `scrWeekReport` |
+| Export (PDF + CSV, generieke flow) | Open; afspraak in AGENTS.md | — |
+| Volledige roadmap in repo | Open; ROADMAP.md bevat nu alleen open beslissingen en geparkeerde punten | — |
+
 ## Verhuizing projectmap naar C:\Users\vandergoot.ed\Dev\Sitemanagment - 22 oktober 2026
 
 Status: **verhuisd en lokaal technisch gecontroleerd. App-inhoud (Src) ongewijzigd; geen nieuwe Studio-import nodig voor deze stap.**
