@@ -15,7 +15,7 @@
 | Bronmap platgeslagen naar projectmap (git-root) | Klaar, 25-10-2026 | Paden in docs/manifesten aangepast; pac pack vanuit de projectmap geslaagd; Test-SaveRegression PASS |
 | Gecombineerde build (weekkiezer Weekly Hours, tabelrestyle, GEA-kleuren) | Gebouwd, niet geïmporteerd/goedgekeurd. Build: artifacts\combined-gea-20261022_134040\SiteManagement_CombinedGea_20261022_134040.msapp, SHA-256 C7616A268B6B6FF7F303F8E88C9C33D63B12674641EC598950BB5E338FCE3B6C (opnieuw gecontroleerd 25-10; Src 5/5 bytegelijk aan de bron in deze build) | Src: `dpHoursWeek`, 0× `ddHoursYear`, `recHoursHeaderBar`, `galReportTotalWeeks`, 0× oude paarse literals |
 | Git: repository, branch main, baselinetag | Klaar | Commits ec0d408, 1fa3b94; tag baseline-footer-row-20261020_215936 |
-| Push naar private GitHub | Open | Geen remote ingesteld |
+| Push naar private GitHub | Remote ingesteld; Eddy pusht na iedere goedgekeurde stap | origin = github.com/eddyvandergoot-hue/sitemanagment |
 | Housekeeping (status archiveren, AGENTS inkorten) | Open | — |
 | Startscherm + Week Report | Open | Src: 0× `scrHome`, 0× `scrWeekReport` |
 | Export (PDF + CSV, generieke flow) | Open; afspraak in AGENTS.md | — |
