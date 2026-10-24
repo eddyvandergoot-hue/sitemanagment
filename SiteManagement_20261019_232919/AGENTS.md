@@ -12,7 +12,8 @@ SiteManagement_20261019_232919
 
 - De oude map C:\Users\vandergoot.ed\OneDrive - GEA\Projects\Development\Sitemanagment is een alleen-lezen backup. Schrijf daar nooit.
 - Scripts in artifacts gebruiken alleen paden relatief aan $PSScriptRoot. Pointerbestanden (artifacts/*-backup.txt, *-builddir.txt, *-buildpath.txt) bevatten paden relatief aan de bronmap. Zet geen absolute paden in scripts of pointerbestanden.
-- Git is nog niet geïnstalleerd; sla gitstappen over. Tot dan: checkpoints als mapkopie in checkpoints/, buiten Src.
+- Git (sinds 25-10-2026): repository in de projectmap, branch main. Checkpoint = een git commit vóór elke opdracht (werkboom schoon, daarna pas wijzigen). Maak geen mapkopieën meer in checkpoints/; de bestaande map checkpoints/ is historisch en staat in .gitignore. Niet pushen tenzij gevraagd.
+- Goedgekeurde baseline: tag baseline-footer-row-20261020_215936 (losse commit met de bronnen uit het baselinecheckpoint).
 
 Platform:
 - Power Apps canvas-app voor gebruik in de browser.
@@ -101,7 +102,7 @@ In de onderzochte app:
 - Gebruik uitsluitend geldige Power Apps Source Code-schema’s, controlversies en eigenschappen.
 - Controleer actuele Microsoft-documentatie bij twijfel.
 - Los delegatieproblemen op; verberg waarschuwingen niet als daardoor gegevens ontbreken.
-- Maak checkpoints of backups buiten Src. PAC weigert backupbestanden in Src die niet op .pa.yaml eindigen.
+- Checkpoints via git commit; zet geen backupbestanden in Src. PAC weigert backupbestanden in Src die niet op .pa.yaml eindigen.
 - Pack met: pac canvas pack --sources "." --layout SourceCode --msapp "<apart testbestand>.msapp"
 - Importeer een testbestand via make.powerapps.com → Apps → Import app → From file (.msapp).
 - Een geslaagde pack is geen bewijs dat Power Fx correct is. Studio/App checker en een functionele test zijn nodig.
