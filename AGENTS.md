@@ -124,12 +124,21 @@ Deze onderdelen zijn nog geen voltooide functies.
 
 ## Voortgang en oplevering
 
-- Documentkaart: zie README.md. Lees ROADMAP.md, MANUAL_STEPS.md en NEXT_COMMANDS.md alleen als de opdracht daarom vraagt.
+- Documentkaart: zie README.md. Lees ROADMAP.md, MANUAL_STEPS.md, DECISIONS.md en NEXT_COMMANDS.md alleen als de opdracht daarom vraagt.
 - Blijvende projectafspraken staan in AGENTS.md. Tijdelijke bevindingen, uitgevoerde controles, beperkingen, Studio-controles en het actuele buildpad staan in PROJECT_STATUS.md in deze bronmap.
 - Werk PROJECT_STATUS.md aan het einde van iedere opdracht bij. Maak onderscheid tussen geïmplementeerd, technisch gecontroleerd en functioneel getest.
 - Rond eerst Hours Summary (administratieve rapportage) af en valideer dit overzicht. Weekly Hours blijft de bestaande ureninvoer op scrHours. Export is een afzonderlijke volgende opdracht.
 - Behoud Screen1, scrHours, bestaande SharePoint-verbindingen en werkende ureninvoer. Wijzig andere onderdelen alleen indien noodzakelijk en licht dit toe.
 - Zet de status van acceptatiecriteria die Studio vereisen nooit op geslaagd op basis van pack, syntaxiscontrole of lokale referentietests.
+
+## Agents
+
+Subagents staan in .claude/agents/ (overzicht in README.md).
+- Wijzigingen in datalogica (laden, Save, guards, filters, delegatie, sleutels, berekeningen, exportinhoud) → powerfx-logic.
+- Presentatiewijzigingen (kleuren, lettertypen, posities, labels, tabellen, footer) → powerfx-ui.
+- Tests en pack → verifier.
+- Builds met logicawijzigingen: eerst review door reviewer, daarna pas pack.
+- Documentatie, status en MS-items → docs-keeper.
 
 ## Technische randvoorwaarden
 

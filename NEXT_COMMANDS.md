@@ -18,21 +18,7 @@ Report before/after line counts. Commit.
 EOF
 ```
 
-## 2. Install subagents + decision log
-
-Place the five agent files in `.claude/agents/` and DECISIONS.md + README.md in the repo root first.
-
-```bash
-claude << 'EOF'
-Files placed: .claude/agents/{powerfx-logic,powerfx-ui,verifier,reviewer,docs-keeper}.md, DECISIONS.md, README.md (updated).
-1. Validate agent frontmatter (name, description, model, effort, disallowedTools). List agents you see.
-2. AGENTS.md: add short section "Agents": logic changes -> powerfx-logic; presentation -> powerfx-ui; tests/pack -> verifier; logic builds reviewed by reviewer before pack; docs/status/MS items -> docs-keeper. Doc map incl DECISIONS.md (read only when task says so).
-3. Adapt verifier test names to actual artifacts/*.ps1 if different; report.
-4. Commit "Agents + decision log" (or folder checkpoint if no git yet).
-EOF
-```
-
-## 3. Combined build: verify + import (no rebuild)
+## 2. Combined build: verify + import (no rebuild)
 
 The combined build (week picker, table restyle, GEA colors) was built on 22-10-2026; Src already contains it.
 
@@ -50,7 +36,7 @@ Then Eddy imports this build, tests and approves. After approval: record it in P
 
 **Test after import:** one date picker with `2026 KW43`; Wednesday picked → loads once; same-week Friday → no reload; 01-01-2027 → `2026 KW53`; unsaved input blocks week change. Vibrant Blue headers, one green Save with dark text, white Refresh with blue border, no purple. Summary: grey/white rows, "–" for 0, blue total row aligned under columns.
 
-## 4. Landing screen + Week Report
+## 3. Landing screen + Week Report
 
 ```bash
 claude << 'EOF'
@@ -78,7 +64,7 @@ Quick tests per change; full suite + pack once at end. Update PROJECT_STATUS.md.
 EOF
 ```
 
-## 5. Export spec (record now, build after Week Report)
+## 4. Export spec (record now, build after Week Report)
 
 ```bash
 claude << 'EOF'
@@ -93,7 +79,7 @@ Update PROJECT_STATUS.md.
 EOF
 ```
 
-## 6. Roadmap into repo
+## 5. Roadmap into repo
 
 ```bash
 claude << 'EOF'
@@ -114,7 +100,7 @@ Commit "Full roadmap".
 EOF
 ```
 
-## 7. Component library pipeline (pidtracker repo, later)
+## 6. Component library pipeline (pidtracker repo, later)
 
 ```bash
 claude << 'EOF'
