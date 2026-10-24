@@ -6,13 +6,14 @@
 
 | Onderdeel | Status | Bewijs |
 |---|---|---|
-| Batch-opslag Save week / Save team + Concurrent loads | Gebouwd. Functionele test hieronder nog als open vastgelegd (uitslag gevraagd aan Eddy) | Src: `Concurrent(`, `DIAG\|SaveWeek\|End` |
-| Delegatiecorrectie Save team (ProjectKey = globale var) | Gebouwd. App checker hieronder nog als niet uitgevoerd vastgelegd (uitslag gevraagd aan Eddy) | Src: `varTeamSaveProjectKey` (4×) |
+| Batch-opslag Save week / Save team + Concurrent loads | Gebouwd. Laden getest door Eddy 22-10-2026: snel, geen fouten. **Open controle:** opslagsnelheid (Save week / Save team) nog niet expliciet bevestigd | Src: `Concurrent(`, `DIAG\|SaveWeek\|End` |
+| Delegatiecorrectie Save team (ProjectKey = globale var) | Gebouwd. App checker: geen fouten en geen delegatiewaarschuwingen (gemeld door Eddy 22-10-2026) | Src: `varTeamSaveProjectKey` (4×) |
 | MS-001 indexen (Hours.EntryKey, Hours.'Work Date', Project Workers.ProjectKey) | Open: uitvoeren / controleren | MANUAL_STEPS.md |
 | Hours Summary-datumkiezers: KW-label, geen sprong | Gebouwd | Src: `lblReportFromWeek` |
 | Lettertype Inter + Arial | Gebouwd | Src: 69× `"Inter, Arial, sans-serif"` |
 | Projectmap naar Dev-map | Klaar | Hashvergelijking Src 5/5; commit ec0d408 |
-| Gecombineerde build (weekkiezer Weekly Hours, tabelrestyle, GEA-kleuren) | Gebouwd, niet geïmporteerd/goedgekeurd | Src: `dpHoursWeek`, 0× `ddHoursYear`, `recHoursHeaderBar`, `galReportTotalWeeks`, 0× oude paarse literals |
+| Bronmap platgeslagen naar projectmap (git-root) | Klaar, 25-10-2026 | Paden in docs/manifesten aangepast; pac pack vanuit de projectmap geslaagd; Test-SaveRegression PASS |
+| Gecombineerde build (weekkiezer Weekly Hours, tabelrestyle, GEA-kleuren) | Gebouwd, niet geïmporteerd/goedgekeurd. Build: artifacts\combined-gea-20261022_134040\SiteManagement_CombinedGea_20261022_134040.msapp, SHA-256 C7616A268B6B6FF7F303F8E88C9C33D63B12674641EC598950BB5E338FCE3B6C (opnieuw gecontroleerd 25-10; Src 5/5 bytegelijk aan de bron in deze build) | Src: `dpHoursWeek`, 0× `ddHoursYear`, `recHoursHeaderBar`, `galReportTotalWeeks`, 0× oude paarse literals |
 | Git: repository, branch main, baselinetag | Klaar | Commits ec0d408, 1fa3b94; tag baseline-footer-row-20261020_215936 |
 | Push naar private GitHub | Open | Geen remote ingesteld |
 | Housekeeping (status archiveren, AGENTS inkorten) | Open | — |
@@ -544,7 +545,7 @@ Lokaal gecontroleerd:
 - Niet lokaal te controleren: naam-, type- en delegatiecontrole van Studio/App checker. De parser controleert alleen syntaxis.
 
 Nieuwe aparte testbuild:
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\regression-fix-20261021_195537\SiteManagement_RegressionFix_20261021_195537.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\regression-fix-20261021_195537\SiteManagement_RegressionFix_20261021_195537.msapp
 Grootte 99301 bytes; SHA-256 6F98BE650B54EB29A91D1193D0867F0A4FB8BB62148BFD7CFD101DDE8AB50581. Vervangt de build performance-fix-20261021_185604.
 
 Openstaande controles door jou:
@@ -600,7 +601,7 @@ Daadwerkelijk lokaal gecontroleerd:
 - PAC-pack geslaagd, vanuit een schone kopie (alleen *.pa.yaml + .msapr) vanwege het .crdownload-bestand in Src. De vijf YAML-bestanden zijn gelijk aan Src; Properties/DataSources/Templates zijn gelijk aan .msapr. Alle vijf lijsten verwijzen naar https://geacloud.sharepoint.com/sites/GEASiteManagment met de oorspronkelijke lijst-ID's. Logs naast de build.
 
 Nieuwe aparte testbuild (apart importeren; Save schrijft naar de bestaande productielijsten):
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\performance-fix-20261021_185604\SiteManagement_PerformanceFix_20261021_185604.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\performance-fix-20261021_185604\SiteManagement_PerformanceFix_20261021_185604.msapp
 Grootte 99236 bytes; SHA-256 7647F4277ECAED3354A76247E682A9B2B394B481C7B5D551C763114B1D1EA435.
 
 Risico's en beperkingen (online te controleren):
@@ -631,7 +632,7 @@ Gemaakt:
 - PAC-pack geslaagd; vijf YAML-bestanden in de build gelijk aan de diagnostische bron; Properties/DataSources/Templates gelijk aan .msapr. Logs: pac-pack.txt, package-checks.txt, diagnostic-checks.txt.
 
 Diagnostische testbuild (apart importeren, niet als productie gebruiken):
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\diagnostics-20261021_120112\SiteManagement_Diagnostics_20261021_120112.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\diagnostics-20261021_120112\SiteManagement_Diagnostics_20261021_120112.msapp
 Grootte 98386 bytes; SHA-256 4EC9FAF27E271C7DE0F0823E3139CD623B99F50100CAF284DA41B714D556EBA5.
 Bevat dezelfde functionaliteit als de labelbuild (incl. ModernDatePicker; Studio-import daarvan is nog onbevestigd). Save in deze build schrijft naar de productielijsten.
 
@@ -665,7 +666,7 @@ Beperkingen/open:
 - Studio-import (ModernDatePicker nog steeds open), visuele controle van Bold-labels, titelbalk en accentkleur.
 
 Nieuwe aparte testbuild:
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\summary-labels-20261021_105544\SiteManagement_SummaryLabels_20261021_105544.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\summary-labels-20261021_105544\SiteManagement_SummaryLabels_20261021_105544.msapp
 Grootte 96680 bytes; SHA-256 20BF57E6CF29928F207FE04BD6B847D9DE687BF9F6631E5B60F70324580C7CBA.
 Goedgekeurde baseline blijft footer-row-20261020_215936.
 
@@ -704,7 +705,7 @@ Risico's en beperkingen:
 Nieuwe of aangepaste scripts: Test-SummaryDates.ps1 (nieuw), summary-dates-backup.txt, Test-WeeklyCalculations.ps1 (periodetests op de nieuwe bron), Check-WeeklySource.ps1 (gedocumenteerde ModernDatePicker-eigenschappen), Test-SummaryStyle.ps1/Test-OpenSans.ps1 (uitzondering voor datumcontrols), Measure-FontFit.ps1 (nieuwe teksten).
 
 Nieuwe aparte testbuild:
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\summary-dates-20261021_005247\SiteManagement_SummaryDates_20261021_005247.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\summary-dates-20261021_005247\SiteManagement_SummaryDates_20261021_005247.msapp
 Grootte 96868 bytes; SHA-256 B5E426343163C52EDB11B8AD39E7AA6D85AC9E307D893DF8525067CFA9C0CB34.
 Goedgekeurde baseline blijft footer-row-20261020_215936.
 
@@ -741,7 +742,7 @@ Nieuwe of aangepaste scripts: artifacts/Apply-OpenSans.ps1 (eenmalig, niet opnie
 Openstaand (vereist jouw terugkoppeling): Studio-import/App checker; visuele controle van Open Sans en Semibold/Normal op alle drie schermen; volledige knopteksten in de onderste balk; daarnaast de nog openstaande Hours Summary-opmaakpunten hieronder (blauwe kop, rijkleuren, zwarte tekst, statusregel).
 
 Nieuwe aparte testbuild:
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\open-sans-20261020_235254\SiteManagement_OpenSans_20261020_235254.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\open-sans-20261020_235254\SiteManagement_OpenSans_20261020_235254.msapp
 Grootte 96660 bytes; SHA-256 2F453DFC778149E414ACA3E517D3FFDD632926D84D827D50DDF961E072CECB34.
 Goedgekeurde baseline blijft footer-row-20261020_215936 tot deze build is goedgekeurd.
 
@@ -778,7 +779,7 @@ Openstaand (vereist jouw terugkoppeling):
 - Ononderbroken blauwe kop bij weinig en veel weken, rijkleuren, zwarte tekst, gecentreerde uren, geen statistiekregel, foutmeldingen nog zichtbaar, scrollen.
 
 Nieuwe aparte testbuild:
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\summary-style-20261020_234303\SiteManagement_SummaryStyle_20261020_234303.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\summary-style-20261020_234303\SiteManagement_SummaryStyle_20261020_234303.msapp
 Grootte 96635 bytes; SHA-256 350E0AFB99435463D951C0E9487E349C0C5473B8FBDB02EC1C27764114567293.
 Baseline blijft footer-row-20261020_215936 tot deze build is goedgekeurd.
 
@@ -834,7 +835,7 @@ Wijzigingen / reden:
 - Src/scrWeeklyHours.pa.yaml: Refresh en beide weekschuifknoppen verplaatst naar dezelfde rij als Project / team. Pijlen ook 40 px hoog en conform bestaande knoptypografie. Oude verwijzingen van alle tabelkoppen en eerste periodeveldlabel naar de verplaatste actieknoppen hersteld naar inhoudscontrols. Periodevelden blijven compact en rapporttotaal boven de balk.
 - De drie bestaande navcontainers hebben nu een niet-omlopende AutoLayout-viewport met een ManualLayout-binnenrij. Buitenbalk 88 px hoog, binnenrij 72 px; 16 px extra ruimte gereserveerd voor horizontale scrollbar. Bij onvoldoende breedte horizontaal scrollen binnen die vaste balk, nooit een tweede knoppenrij. Rijminima 726 / 514 / 474 px voor respectievelijk Screen1 / Weekly Hours / Hours Summary. Bestaande tabeltelefoonlayout niet opnieuw ontworpen.
 - AGENTS.md bijgewerkt: deze afspraak vervangt de eerdere plaatsing van acties bij inhoud. PROJECT_STATUS.md, VALIDATIE.md en manifest bijgewerkt. artifacts/Layout-FooterRow.ps1 is een eenmalig verplaatsingsscript; niet opnieuw uitvoeren op de eindbron. artifacts/Test-FooterRow.ps1 controleert actuele layout en behoud van gedrag.
-- Checkpoint buiten Src: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\checkpoints\footer-row-20261020_215425.
+- Checkpoint buiten Src: C:\Users\vandergoot.ed\Dev\Sitemanagment\checkpoints\footer-row-20261020_215425.
 
 Daadwerkelijk lokaal gecontroleerd:
 - Parsed diff tegen checkpoint: alleen layout-/knopopmaakeigenschappen gewijzigd. Alle bestaande teksten, kleuren, OnSelect, OnChange, Items, filters, laad-/opslaglogica, validaties, Visible, DisplayMode en schermacties exact behouden. App.pa.yaml en _EditorState.pa.yaml bytegelijk. Verborgen technische knoppen niet verplaatst.
@@ -848,7 +849,7 @@ Nog open / beperkingen:
 - De eerdere laad-/Save-incidentcontrole en functionele acceptatie blijven open. Deze opdracht verandert geen gegevens-, opslag- of laadlogica. Geen online functionaliteit of snelheidsmeting geclaimd; productie niet overschreven/gepubliceerd.
 
 Nieuwste aparte testbuild:
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\footer-row-20261020_215936\SiteManagement_OneFooterRow_20261020_215936.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\footer-row-20261020_215936\SiteManagement_OneFooterRow_20261020_215936.msapp
 Grootte 96521 bytes; SHA-256 1EB3788816043A0F1799539F51958ED38221A904F6791158FB64F0F1912C8F15.
 
 Eerstvolgende stap: importeer apart, voer App checker uit en controleer op elk scherm de gezamenlijke onderrij bij brede/smalle vensters en scrollende inhoud. Controleer horizontale bereikbaarheid en dat totalen/invoer boven de balk blijven. De eerdere incidenttest blijft artifacts/SAVE_INCIDENT_EN_TEST.md.
@@ -859,7 +860,7 @@ Bron voor scroll/wrap-instellingen: https://learn.microsoft.com/en-us/power-apps
 
 Geimplementeerd: vier zichtbare schermnavigatieknoppen blauw (#194296 / hover #123273), zeven zichtbare actieknoppen paars (#7040A0 / hover #593080), inclusief de twee lokale weekschuifknoppen. Witte normale/hover/ingedrukte tekst; disabled achtergrond #E5E7EB en tekst #6B7280. Ingedrukt volgt hover; randen volgen de bijbehorende achtergrondkleur. Groen is geen algemene actiekleur meer.
 
-Gewijzigd: Src/Screen1.pa.yaml, Src/scrHours.pa.yaml en Src/scrWeeklyHours.pa.yaml uitsluitend voor knopkleuren; AGENTS.md voor de blijvende afspraak; dit statusbestand, VALIDATIE.md en buildmanifest voor oplevering. Eenmalig kleurhulpscript artifacts/Apply-ButtonColors.ps1 toegevoegd. Checkpoint buiten Src: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\checkpoints\button-colors-20261020_214829.
+Gewijzigd: Src/Screen1.pa.yaml, Src/scrHours.pa.yaml en Src/scrWeeklyHours.pa.yaml uitsluitend voor knopkleuren; AGENTS.md voor de blijvende afspraak; dit statusbestand, VALIDATIE.md en buildmanifest voor oplevering. Eenmalig kleurhulpscript artifacts/Apply-ButtonColors.ps1 toegevoegd. Checkpoint buiten Src: C:\Users\vandergoot.ed\Dev\Sitemanagment\checkpoints\button-colors-20261020_214829.
 
 Technisch gecontroleerd:
 - Parsed eigenschapsdiff tegen checkpoint: uitsluitend 119 kleurverschillen/toevoegingen op 11 zichtbare knoppen. Alle overige eigenschappen inclusief teksten, acties, validaties, DisplayMode, Visible, posities en afmetingen exact behouden. Schermacties behouden; App.pa.yaml en _EditorState.pa.yaml bytegelijk. Verborgen technische knoppen ongewijzigd. Vaste onderste navigatie en inhoudsactieplaatsing behouden.
@@ -869,7 +870,7 @@ Technisch gecontroleerd:
 
 Nog open: Studio-import/App checker, visuele normale/hover/pressed/disabled-kleuren en eventuele browser-/toegankelijkheidscontrole. Het Save-incident rond 21:15, werkelijk laden, online foutafhandeling en de eerdere functionele acceptatietests blijven open; een kleurbuild verandert die status niet. Geen productiepublicatie of SharePoint-schrijf-/herstelacties uitgevoerd.
 
-Nieuwste testbuild: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\button-colors-20261020_214931\SiteManagement_ButtonColors_20261020_214931.msapp
+Nieuwste testbuild: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\button-colors-20261020_214931\SiteManagement_ButtonColors_20261020_214931.msapp
 Grootte 96254 bytes; SHA-256 C9D904567CCF34A9CA6F3879927B01B9B59F80C6D966C00D26C763DC7AAD70D0.
 Eerstvolgende stap: importeer apart, controleer de kleuren op alle drie schermen en voer vervolgens artifacts/SAVE_INCIDENT_EN_TEST.md uit zonder ingeschakelde Save voor uitsluitend teruglezen.
 
@@ -897,7 +898,7 @@ Gewijzigde bestanden / reden:
 - Src/scrWeeklyHours.pa.yaml: nieuwe cache en verkorte historische route teruggenomen; directe loader hersteld met status/foutpad. Compacte layout en lokale berekening behouden.
 - AGENTS.md: blijvende opslagveiligheid; actuele cacheterugname expliciet gemaakt. PROJECT_STATUS.md, VALIDATIE.md en latest-functional-test.json bijgewerkt.
 - artifacts/SAVE_INCIDENT_EN_TEST.md: mogelijke gevolgen, alleen-lezen controle rond 21:15, herstelvoorwaarden en online fout-/invoerbehoudtest. artifacts/Test-SaveRegression.ps1: actuele guards uit de echte bron getest, schrijfpadscan en stagingchecks; team/week-save-guard.fx zijn inspectiekopieen van de guards. Eenmalig Repair-SaveRegression.ps1 is een tussenstapscript, geen opnieuw uit te voeren installer voor de eindbron.
-- App.pa.yaml en _EditorState.pa.yaml bytegelijk aan incidentcheckpoint. Geen productiepublicatie, vervangende lijsten/testdata of verbindingwijzigingen. Checkpoint: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\checkpoints\save-regression-20261020_211839.
+- App.pa.yaml en _EditorState.pa.yaml bytegelijk aan incidentcheckpoint. Geen productiepublicatie, vervangende lijsten/testdata of verbindingwijzigingen. Checkpoint: C:\Users\vandergoot.ed\Dev\Sitemanagment\checkpoints\save-regression-20261020_211839.
 
 Daadwerkelijk gecontroleerd:
 - Alle 1306 appformules zonder parser-syntaxfouten; 92 controls door gerichte structuur/templatecontrole. Hours Summary: 419 formules/38 controls. Geen volledige Canvas-binding-/delegatiecontrole geclaimd.
@@ -913,7 +914,7 @@ Nog open / beperkingen:
 - Een mislukte/gedeeltelijke Save is geen rollback. Bij blokkade na zo'n fout de lokale invoer noteren en eerst SharePoint-versies controleren. Een team volledig leeg opslaan is bewust geblokkeerd.
 
 Nieuwste aparte hersteltestbuild:
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\save-safety-20261020_213657\SiteManagement_SaveSafety_20261020_213657.msapp
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\save-safety-20261020_213657\SiteManagement_SaveSafety_20261020_213657.msapp
 Grootte 95748 bytes; SHA-256 D35131BD17A13A2C6D6575C13A2AFC710152729E9C54F0973663F10A5E828562.
 
 Eerstvolgende stap: controleer eerst alleen-lezen de incidentrecords en importeer daarna de aparte herstelapp; volg artifacts/SAVE_INCIDENT_EN_TEST.md. Bij blijvende lege keuzes zijn de exacte status/App checker-melding en Monitor-log nodig. Geen ingeschakelde Save gebruiken voor uitsluitend teruglezen.
@@ -924,7 +925,7 @@ Huidige bron opnieuw verpakt; geen appformules of layout gewijzigd. Uitgevoerd: 
 
 Gewijzigd: PROJECT_STATUS.md, artifacts/latest-functional-test.json en artifacts/VALIDATIE.md; nieuwe build/logbestanden buiten Src.
 
-Testbuild: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\testbuild-20261020_210403\SiteManagement_Test.msapp
+Testbuild: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\testbuild-20261020_210403\SiteManagement_Test.msapp
 Grootte: 95026 bytes. SHA-256: 92D9051A669BB97405B0170E41F5EF139F011ABA08A0EBC4005FA83E713B68DC.
 
 Openstaand / eerstvolgende stap: importeer als aparte app in Power Apps Studio, voer App checker uit en volg artifacts/PERFORMANCE_EN_INDEXEN.md. Een geslaagde pack bewijst geen geslaagde Studio-import of functionele test.
@@ -948,7 +949,7 @@ Gewijzigde bestanden en scope:
 - AGENTS.md: vaste SharePoint-architectuur en cache-/Refresh-/correctheidsregels. PROJECT_STATUS.md en artifacts/VALIDATIE.md/buildmanifest bijgewerkt.
 - artifacts/PERFORMANCE_EN_INDEXEN.md: onderzochte routes, cachegeldigheid, resterende schaalbeperking, indexinventaris en online Monitor-test. Nieuwe lokale wijzigings-/controlescripts staan buiten Src; Optimize-Loading/Refine-Loading/Cache-Reports/Optimize-History zijn eenmalige scripts en mogen niet opnieuw op de gewijzigde bron worden uitgevoerd.
 - Regressiescripts aangepast voor de afgescheiden loader en gecontroleerde cacheprefix bij opslag. Test-SummaryFields -GeometryOnly controleert geometrie zonder de vroegere eis dat alle acties ongewijzigd moeten zijn. App.pa.yaml en _EditorState.pa.yaml bytegelijk aan checkpoint.
-- Checkpoint buiten Src: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\checkpoints\performance-20261020_201156.
+- Checkpoint buiten Src: C:\Users\vandergoot.ed\Dev\Sitemanagment\checkpoints\performance-20261020_201156.
 
 Daadwerkelijk uitgevoerde lokale controles:
 - Alle 1306 appformules zonder parser-syntaxfouten; 92 controls door de gerichte structuur/templatecontrole. Hours Summary: 419 formules, 38 controls. Geen AccessibleLabel op Classic/Button toegevoegd. Geen volledige Canvas-bindingcontrole geclaimd.
@@ -964,7 +965,7 @@ Beperkingen / nog te testen:
 - Sessiecaches zijn geen realtime abonnement; wijzigingen van anderen vereisen Refresh. Cachegeheugen groeit tot Refresh/opslaan/sessie-einde; grote datasets en snelle selectiewissels nog online testen.
 - Studio-import/schema/binding (met name nested cachetabellen), App checker/delegatie, echte serverfilters/projectie, connectorrechten, Refresh-foutscenario en historische totalen/actieve nulurenleden zijn openstaand. Geen online metingen beschikbaar.
 
-Nieuwste testapp: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\performance-20261020_201746\SiteManagement_Performance_Test.msapp
+Nieuwste testapp: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\performance-20261020_201746\SiteManagement_Performance_Test.msapp
 Grootte 95026 bytes; SHA-256 5E4DC3C75ADA4E81FD07240BFFCA76D6959CD75EAECDA072072CC191237DB90B.
 
 Eerstvolgende stap: importeer apart en voer de vijf scenario's plus Live monitor uit volgens artifacts/PERFORMANCE_EN_INDEXEN.md. Lever eventuele exacte Studio-melding, selectie en Monitor-log aan. Eerst overzicht/ureninvoer functioneel accepteren; export blijft volgende opdracht.
@@ -1278,13 +1279,13 @@ Screen1.pa.yaml, scrHours.pa.yaml en App.pa.yaml zijn bytegewijs ongewijzigd vol
 
 ## Nieuwste testbuild
 
-C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\summary-labels-20261021_105544\SiteManagement_SummaryLabels_20261021_105544.msapp
+De gecombineerde build (zie "Gecombineerde build" bovenaan):
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\combined-gea-20261022_134040\SiteManagement_CombinedGea_20261022_134040.msapp
 
-Grootte: 96680 bytes.
-SHA-256: 20BF57E6CF29928F207FE04BD6B847D9DE687BF9F6631E5B60F70324580C7CBA
+Grootte: 100294 bytes.
+SHA-256: C7616A268B6B6FF7F303F8E88C9C33D63B12674641EC598950BB5E338FCE3B6C
 
-Studio-import (ModernDatePicker), online datumtests en visuele controle van Open Sans, labels, titelbalk en de Hours Summary-opmaak: openstaand. Goedgekeurde baseline: footer-row-20261020_215936 (zie bovenaan).
-Buildmanifest: artifacts/latest-functional-test.json.
+Studio-import, functionele test en goedkeuring door Eddy: openstaand. Goedgekeurde baseline: footer-row-20261020_215936.
 
 ## Eerstvolgende stap
 

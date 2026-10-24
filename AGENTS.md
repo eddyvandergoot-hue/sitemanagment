@@ -7,8 +7,7 @@ Sla onderstaande projectafspraken op in AGENTS.md. Vul technische bevindingen aa
 Projectmap (sinds 22-10-2026, buiten OneDrive):
 C:\Users\vandergoot.ed\Dev\Sitemanagment
 
-Huidige uitgepakte bronmap:
-SiteManagement_20261019_232919
+De projectmap is ook de bronmap en de git-root (sinds 25-10-2026 platgeslagen): Src, artifacts, Site Managment_VS.msapr, AGENTS.md en PROJECT_STATUS.md staan direct in de projectmap. Pack vanuit de projectmap.
 
 - De oude map C:\Users\vandergoot.ed\OneDrive - GEA\Projects\Development\Sitemanagment is een alleen-lezen backup. Schrijf daar nooit.
 - Scripts in artifacts gebruiken alleen paden relatief aan $PSScriptRoot. Pointerbestanden (artifacts/*-backup.txt, *-builddir.txt, *-buildpath.txt) bevatten paden relatief aan de bronmap. Zet geen absolute paden in scripts of pointerbestanden.
@@ -125,7 +124,7 @@ Deze onderdelen zijn nog geen voltooide functies.
 
 ## Voortgang en oplevering
 
-- Documentkaart: zie README.md. README, DECISIONS, ROADMAP, MANUAL_STEPS en NEXT_COMMANDS staan in de projectmap (repo-root), AGENTS.md en PROJECT_STATUS.md in de bronmap. Lees ROADMAP.md, MANUAL_STEPS.md en NEXT_COMMANDS.md alleen als de opdracht daarom vraagt.
+- Documentkaart: zie README.md. Lees ROADMAP.md, MANUAL_STEPS.md en NEXT_COMMANDS.md alleen als de opdracht daarom vraagt.
 - Blijvende projectafspraken staan in AGENTS.md. Tijdelijke bevindingen, uitgevoerde controles, beperkingen, Studio-controles en het actuele buildpad staan in PROJECT_STATUS.md in deze bronmap.
 - Werk PROJECT_STATUS.md aan het einde van iedere opdracht bij. Maak onderscheid tussen geïmplementeerd, technisch gecontroleerd en functioneel getest.
 - Rond eerst Hours Summary (administratieve rapportage) af en valideer dit overzicht. Weekly Hours blijft de bestaande ureninvoer op scrHours. Export is een afzonderlijke volgende opdracht.

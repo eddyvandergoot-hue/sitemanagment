@@ -20,6 +20,6 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   | Hours | Work Date / `WorkDate` | Date | `'Work Date'` range in the same queries |
   | Project Workers | ProjectKey | Single line of text | `ProjectKey = <precomputed text>` in Save team / team load |
 
-- **Check first:** whether each index already exists. Local app metadata does not show index presence; do not assume it is missing. Background: `SiteManagement_20261019_232919/artifacts/PERFORMANCE_EN_INDEXEN.md`.
+- **Check first:** whether each index already exists. Local app metadata does not show index presence; do not assume it is missing. Background: `artifacts/PERFORMANCE_EN_INDEXEN.md`.
 - **Also check (not part of this item):** no Project Workers row with empty ProjectKey (AGENTS.md, Save team known risk).
 - **Done when:** all three indexes listed under Indexed columns; report back date + who.

@@ -7,22 +7,18 @@ Agents: subagents in .claude/agents/ are picked automatically by task; commands 
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
 
-## 2. Sync repo docs (right after path fix)
+## 1. Housekeeping (next, before testing the combined build)
 
 ```bash
-claude << 'EOF2'
-Doc sync. No app changes. Delegate to docs-keeper if installed, else main session. Inputs: README.md + NEXT_COMMANDS.md (provided by Eddy, place in repo root), PROJECT_OVERVIEW.md (reference, delete after sync).
-Rule: one topic = one file. README = index/layout/screens/file map. AGENTS = rules. PROJECT_STATUS = status. ROADMAP = plan + open decisions. MANUAL_STEPS = MS items. NEXT_COMMANDS = queue. No duplicated content; link to owning file instead.
-1. Compare PROJECT_OVERVIEW.md sections 4-6, 8, 9 with AGENTS.md, PROJECT_STATUS.md, ROADMAP.md, MANUAL_STEPS.md. Report table: topic | overview says | repo file says | conflict yes/no.
-2. Do NOT write future rules into AGENTS.md (pending builds add their own rules). Only move: way-of-working rules (MS items, git checkpoint, test tiers, /clear, import check SHA) -> AGENTS.md if missing; status table -> PROJECT_STATUS.md (mark items Done only if evidence in Src/build); open decisions + parked doc generator -> ROADMAP.md; MS-001 -> MANUAL_STEPS.md if missing.
-3. Conflicts: don't resolve by guessing; list them, ask Eddy.
-4. AGENTS.md: add "Doc map: see README.md; read ROADMAP/MANUAL_STEPS/NEXT_COMMANDS only when task says so".
-5. Delete PROJECT_OVERVIEW.md. Commit "Doc sync" (or folder checkpoint if git not yet).
-Report changed files + line counts.
-EOF2
+claude << 'EOF'
+Housekeeping, no app changes. Delegate to docs-keeper.
+1. PROJECT_STATUS.md: move all except current state to PROJECT_STATUS_ARCHIVE.md (never read unless asked). Keep ≤80 lines: current baseline build path+SHA, open items, open MS items, known limits.
+2. AGENTS.md: rewrite as current rules only, ≤150 lines. No dates/history/superseded rules. Keep all active rules (data/keys, load/save safety, delegation, layout, GEA colors/fonts, week label format, export spec, MS steps, home screen exception). Old version -> AGENTS_ARCHIVE.md.
+Report before/after line counts. Commit.
+EOF
 ```
 
-## 3. Install subagents + decision log
+## 2. Install subagents + decision log
 
 Place the five agent files in `.claude/agents/` and DECISIONS.md + README.md in the repo root first.
 
@@ -36,60 +32,25 @@ Files placed: .claude/agents/{powerfx-logic,powerfx-ui,verifier,reviewer,docs-ke
 EOF
 ```
 
-## 4. Combined build (next)
+## 3. Combined build: verify + import (no rebuild)
+
+The combined build (week picker, table restyle, GEA colors) was built on 22-10-2026; Src already contains it.
 
 ```bash
 claude << 'EOF'
-Combined build: items 1, 3, 4 missing (2, 5 done, keep). Checkpoint first.
-Delegate: PART 1 -> powerfx-logic; PART 2 + 3 -> powerfx-ui; quick tests after each part -> verifier; reviewer on PART 1 before pack; full tier + pack -> verifier; status -> docs-keeper. Do all parts; if a part fails, stop + report, don't pack partial.
-
-PART 1 — scrHours week date picker
-- Replace ddHoursYear + ddHoursWeek with dpHoursWeek: ModernDatePicker@1.0.0, same props/style as dpReportFrom (Format "dd-mm-yyyy", StartOfWeek.Monday, 256 px), at old dropdown position. No StartDate/EndDate.
-- Vars: varHoursPickedDay (shown day), varHoursWeekMonday (derived). DefaultDate = Coalesce(varHoursPickedDay, Today()). No visible jump, no Reset after normal pick.
-- OnChange: skip while varWeekLoading/varWeekSaving. Dirty (same JSON check as old dropdowns) -> Reset back to varHoursPickedDay + Notify, no load. Monday changed -> set vars + Select(btnReadWeek). Same week -> only varHoursPickedDay. Reset-triggered OnChange = no-op.
-- DisplayMode Disabled when loading/saving/dirty.
-- Label beside picker "YYYY KWxx" (KW 2 digits, ISO year = Year(monday+3), same KW formula as Hours Summary). 01-01-2027 -> "2026 KW53".
-- Replace ALL refs Value(ddHoursYear...)/Value(ddHoursWeek...) (btnReadWeek, cache-hit, 7 txt DisplayMode/OnChange, btnSaveWeek DisplayMode+OnSelect guards, nav, refresh) with varLoadedWeekMonday = varHoursWeekMonday. btnReadWeek: varPendingWeekMonday = varHoursWeekMonday; keep setting varWeekLoadedISOYear/KW from monday.
-- Remove year-range loading (varEntryFirstISOYear/LastISOYear sorts, varEntryYearsLoaded), lblISOYears/lblKW -> single label "Week". Zero dd refs left.
-
-PART 2 — Hours Summary table restyle (presentation only)
-- Zebra #FFFFFF / #F0F0F0. Lines #DCDCDC.
-- Period total column: no fill; text #000F41 Bold; 1px left line #DCDCDC.
-- 0 values in week cells + period total display "–" Normal weight. Data/export keep 0.
-- Replace floating lblReportGrandTotal with Total row at table bottom (outside gallery, above footer): fill #D5EDFF, 2px top line #0303B8, Bold black; "Total" in Name col, sum per visible week col (same paging/offset as header), period total under Period total col.
-- Reserve scrollbar width: header, rows, total row same right edge.
-
-PART 3 — GEA colors app-wide (presentation only)
-- Title bars, table headers, nav buttons: #0303B8, white text. Nav hover/pressed #000F41.
-- Primary actions only (btnSaveWeek, btnAddtoTeam): fill #1AFF80, text #000F41 (never white), hover/pressed #18DD6E.
-- Secondary actions (all Refresh, week arrows): fill white, 1px border + text #0303B8, hover fill #D5EDFF.
-- Disabled all buttons: fill #E6E6E6, text #787878.
-- Inputs/dropdowns: fill #F0F0F0, border #DCDCDC, focus/hover border #0303B8, selection fill #0303B8 white text. Week total cells (scrHours lblWeekTotal): fill #D5EDFF, text #000F41.
-- Errors #DB1E28. Body text black.
-- Replace every non-GEA color literal: #7040A0 #593080 #194296 #123273 #E8EDF5 #EEE7F5 #193F83 #EAF1FC #F4F6FA, RGBA(25,66,150), RGBA(0,120,212), RGBA(16,110,190), RGBA(231,240,252), RGBA(244,246,250) etc. Grep all hex/RGBA/ColorValue literals; map each to GEA token; leave Color.White/Black/Transparent. Report mapping table.
-- Never Energetic Pink / Active Blue as fill.
-
-AGENTS.md: replace Weekly Hours dropdown rule (part 1), Hours Summary table/accent rules (part 2), "Appbrede knopkleuren" (part 3) with GEA palette + roles + hex list.
-
-Verify: grep 0x for all old literals; dd refs 0; Test-WeeklyCalculations (monday, KW53, no reload same week), Test-SaveRegression (guards equivalent), Test-SummaryStyle/Labels/Dates, Test-FooterRow -GeometryOnly, Measure-FontFit Inter+Arial. Pack ONE msapp, give exact path + SHA-256 + table item|Src|build. Update PROJECT_STATUS.md.
+Combined build check. No app changes, no rebuild, no pack. Delegate to verifier.
+1. Verify Src contains parts 1-3 with grep evidence: part 1 week picker (dpHoursWeek, lblHoursWeekKW, 0 refs ddHoursYear/ddHoursWeek, no year-range loading); part 2 Hours Summary restyle (zebra #F0F0F0, "–" for 0, galReportTotalWeeks total row, Width-616); part 3 GEA colors (recHoursHeaderBar, 0 old literals #7040A0 #593080 #194296 #123273 #E8EDF5 #EEE7F5 #193F83 #EAF1FC #F4F6FA and old RGBA values).
+2. Confirm Src is byte-equal to artifacts/combined-gea-20261022_134040/source/Src.
+3. Name the existing build: artifacts/combined-gea-20261022_134040/SiteManagement_CombinedGea_20261022_134040.msapp + SHA-256 (recorded: C7616A268B6B6FF7F303F8E88C9C33D63B12674641EC598950BB5E338FCE3B6C).
+Report table part | evidence. Update PROJECT_STATUS.md only if something differs.
 EOF
 ```
+
+Then Eddy imports this build, tests and approves. After approval: record it in PROJECT_STATUS.md (docs-keeper) and delete this section.
 
 **Test after import:** one date picker with `2026 KW43`; Wednesday picked → loads once; same-week Friday → no reload; 01-01-2027 → `2026 KW53`; unsaved input blocks week change. Vibrant Blue headers, one green Save with dark text, white Refresh with blue border, no purple. Summary: grey/white rows, "–" for 0, blue total row aligned under columns.
 
-## 6. Housekeeping (after combined build approved)
-
-```bash
-claude << 'EOF'
-Housekeeping, no app changes. Delegate to docs-keeper.
-1. PROJECT_STATUS.md: move all except current state to PROJECT_STATUS_ARCHIVE.md (never read unless asked). Keep ≤80 lines: current baseline build path+SHA, open items, open MS items, known limits.
-2. AGENTS.md: rewrite as current rules only, ≤150 lines. No dates/history/superseded rules. Keep all active rules (data/keys, load/save safety, delegation, layout, GEA colors/fonts, week label format, export spec, MS steps, home screen exception). Old version -> AGENTS_ARCHIVE.md.
-3. Test tiers in AGENTS.md: quick (relevant test only) per change; full suite + pack once at task end.
-Report before/after line counts. Commit.
-EOF
-```
-
-## 7. Landing screen + Week Report
+## 4. Landing screen + Week Report
 
 ```bash
 claude << 'EOF'
@@ -117,7 +78,7 @@ Quick tests per change; full suite + pack once at end. Update PROJECT_STATUS.md.
 EOF
 ```
 
-## 8. Export spec (record now, build after Week Report)
+## 5. Export spec (record now, build after Week Report)
 
 ```bash
 claude << 'EOF'
@@ -132,11 +93,11 @@ Update PROJECT_STATUS.md.
 EOF
 ```
 
-## 9. Roadmap into repo
+## 6. Roadmap into repo
 
 ```bash
 claude << 'EOF'
-Create/replace ROADMAP.md. Read only when task says so (add to AGENTS.md). Content:
+MERGE into ROADMAP.md (do not replace). Keep the existing sections: Open decisions (incl. the EmployerCode row) and Parked (WP Document Generator). Add the plan below above them; merge open decisions into the existing table without duplicates. Content:
 Principle: every module standalone; integrations optional, never required; modules talk via JSON/CSV files or optional API.
 Site Management (Power Apps + Lists):
 1. Hours finish: combined build, Week Report, export PDF+CSV via generic flow, housekeeping, git push.
@@ -148,12 +109,12 @@ pidtracker extension (React + r3f/three.js):
 6. 3D viewer standalone: opens GLB or configuration JSON; tag labels, tap for tag/DN/status; QR from WP PDF = one entry. WP PDF: generated iso/front/side/top + cut/weld lists. No 3D PDF. Test 1 hand-modelled skid.
 7. Configurator (after viewer proven), standalone: full library, save/open JSON + local browser storage. Optional filter source: none | pidtracker (tags + P&ID connection check) | CSV/Excel (tag, type, DN). Placed/not-placed. Port snapping, auto pipe, cut/weld lists. Later hygienic checks.
 Component library (separate, versioned): typecode (aligned with pidtracker Family-Housing), visual GLB fine + lod1 (stainless material, real actuator/pump colors), logic JSON (ports: position, direction, DN, connection type; dims; meta), parametric fallback when no GLB. Instancing. Pipe color by medium (pidtracker MediumColor or standalone picklist, aligned NEN 3050), legend always visible, weld points numbered rings, clamp accent color, tag labels toggle.
-Open decisions: hosting local/central; who draws layout; test skid export; GEA Sans in PDFs.
+Open decisions to merge (already in the table): hosting local/central; who draws layout; test skid export; GEA Sans in PDFs.
 Commit "Full roadmap".
 EOF
 ```
 
-## 10. Component library pipeline (pidtracker repo, later)
+## 7. Component library pipeline (pidtracker repo, later)
 
 ```bash
 claude << 'EOF'

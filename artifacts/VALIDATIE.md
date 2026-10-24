@@ -4,7 +4,7 @@
 
 # Hours Summary in Studio valideren
 
-Gebruik uitsluitend de nieuwste testbuild: C:\Users\vandergoot.ed\Dev\Sitemanagment\SiteManagement_20261019_232919\artifacts\footer-row-20261020_215936\SiteManagement_OneFooterRow_20261020_215936.msapp
+Gebruik uitsluitend de nieuwste testbuild: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\footer-row-20261020_215936\SiteManagement_OneFooterRow_20261020_215936.msapp
 
 1. Importeer als aparte testapp via make.powerapps.com > Apps > Import app > From file (.msapp). Open Studio en laat YAML verwerken. Controleer App checker: geen formule- of schemafouten op scrWeeklyHours, vooral btnRefreshReport.OnSelect, btnBuildReport.OnSelect en de geneste weekgallery. Bewaar datarijlimiet 500 en formulefoutafhandeling.
 2. Kies een project en daarna Alle contractors en iedere contractor afzonderlijk. Vergelijk met bekende Hours-regels: gelijke begin-/eindweek, meerdere weken en een jaargrens met week 53. Jaren/weken mogen alleen uit dit project komen. Controleer namen, projectnummer/reference, gehele uren zonder decimaalteken en gezamenlijk verschuiven via < en >.

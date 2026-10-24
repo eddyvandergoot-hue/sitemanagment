@@ -2,7 +2,7 @@
 *.msapp
 
 # Build/test output in artifacts: ignore all subfolders, keep top-level scripts and small text/config files
-SiteManagement_*/artifacts/*/
+artifacts/*/
 
 # Folder-copy checkpoints (replaced by git commits)
 checkpoints/

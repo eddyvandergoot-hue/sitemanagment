@@ -98,7 +98,7 @@ Dates: 21–24 October 2026.
 
 | # | Decision | Why |
 |---|---|---|
-| X1 | Project moved to `C:\Users\vandergoot.ed\Dev\Sitemanagment` (outside OneDrive); **git**, private GitHub repo `eddyvandergoot-hue/Sitemanagement`. | Speed (no sync/scan), real history, backup. |
+| X1 | Project moved to `C:\Users\vandergoot.ed\Dev\Sitemanagment` (outside OneDrive); **git**, private GitHub repo `eddyvandergoot-hue/sitemanagment`. | Speed (no sync/scan), real history, backup. |
 | X2 | **One topic, one file**: README (index), AGENTS (rules), PROJECT_STATUS (status), ROADMAP (plan), MANUAL_STEPS (MS items), DECISIONS (why), NEXT_COMMANDS (queue). | No drift between copies. |
 | X3 | PROJECT_STATUS ≤ 80 lines, AGENTS ≤ 150 lines; history in archive files. | Less reading per task = faster. |
 | X4 | Claude Code v2.1.308 auto-loads AGENTS.md; commands do not ask to read it again. | Avoid double reading. |
@@ -109,10 +109,4 @@ Dates: 21–24 October 2026.
 
 ## 10. Open decisions
 
-| Decision | Needed for |
-|---|---|
-| Hosting pidtracker + 3D viewer: local or central | 3D viewer |
-| Who draws skid layouts: supervisor or lead fitter | Configurator |
-| Source of STEP files (GEA Inventor / supplier / Plant 3D catalog) and first test skid | Library, viewer |
-| GEA Sans allowed in generated PDFs | Documents |
-| Whether a single Employers column holds the business code (EMP-001) | Export CSV |
+See **ROADMAP.md** → Open decisions.
