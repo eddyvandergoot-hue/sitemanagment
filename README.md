@@ -14,7 +14,7 @@ Power Apps canvas app on SharePoint Lists for GEA site management: project/team 
 | Decision log: what was decided and why | **DECISIONS.md** | Only when the task says so |
 | Commands still to run | **NEXT_COMMANDS.md** | No (queue for Eddy) |
 | Subagents (who does which kind of task) | **.claude/agents/*.md** | Descriptions always; full text only when the agent runs |
-| History | **PROJECT_STATUS_ARCHIVE.md**, **AGENTS_ARCHIVE.md** | Only when asked |
+| History (do not read unless asked) | **PROJECT_STATUS_ARCHIVE.md**, **AGENTS_ARCHIVE.md**, **NEXT_COMMANDS_ARCHIVE.md** | No, niet lezen tenzij gevraagd |
 
 One topic, one file. Other files link here instead of repeating content.
 
@@ -41,7 +41,7 @@ Sitemanagment/
 │  └─ <build-name>/          Packed test builds (*.msapp) — git-ignored
 ├─ .claude/agents/          Subagents: powerfx-logic, powerfx-ui, verifier, reviewer, docs-keeper
 ├─ README.md  AGENTS.md  PROJECT_STATUS.md  ROADMAP.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md
-├─ PROJECT_STATUS_ARCHIVE.md  AGENTS_ARCHIVE.md
+├─ PROJECT_STATUS_ARCHIVE.md  AGENTS_ARCHIVE.md  NEXT_COMMANDS_ARCHIVE.md
 └─ .gitignore
 ```
 

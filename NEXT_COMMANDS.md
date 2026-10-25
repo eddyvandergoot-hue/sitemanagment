@@ -1,46 +1,25 @@
 # Next commands (queue)
 
-Run top to bottom in Claude Code, started in `C:\Users\vandergoot.ed\Dev\Sitemanagment` (last command, in the pidtracker repo).
-After a command is done and its build is approved: delete its section here and commit.
+Run top to bottom in Claude Code, started in `C:\Users\vandergoot.ed\Dev\Sitemanagment`.
+After a command is done and its build is approved: remove its section here (history goes to NEXT_COMMANDS_ARCHIVE.md only if not already in PROJECT_STATUS_ARCHIVE.md) and commit.
 Rules live in AGENTS.md (auto-loaded by Claude Code, no need to tell it to read), status in PROJECT_STATUS.md, plan in ROADMAP.md.
 Agents: subagents in .claude/agents/ are picked automatically by task; commands below also name them explicitly.
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
 
-## 1. Housekeeping (next, before testing the combined build)
+## 1. TEST-000 setup (MS-005)
 
-```bash
-claude << 'EOF'
-Housekeeping, no app changes. Delegate to docs-keeper.
-1. PROJECT_STATUS.md: move all except current state to PROJECT_STATUS_ARCHIVE.md (never read unless asked). Keep ≤80 lines: current baseline build path+SHA, open items, open MS items, known limits.
-2. AGENTS.md: rewrite as current rules only, ≤150 lines. No dates/history/superseded rules. Keep all active rules (data/keys, load/save safety, delegation, layout, GEA colors/fonts, week label format, export spec, MS steps, home screen exception). Old version -> AGENTS_ARCHIVE.md.
-Report before/after line counts. Commit.
-EOF
-```
+Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vastgelegd; geen MS-005 in MANUAL_STEPS.md tot Eddy de inhoud aanlevert.
 
-## 2. Combined build: verify + import (no rebuild)
+## 2. Discard changes button
 
-The combined build (week picker, table restyle, GEA colors) was built on 22-10-2026; Src already contains it.
-
-```bash
-claude << 'EOF'
-Combined build check. No app changes, no rebuild, no pack. Delegate to verifier.
-1. Verify Src contains parts 1-3 with grep evidence: part 1 week picker (dpHoursWeek, lblHoursWeekKW, 0 refs ddHoursYear/ddHoursWeek, no year-range loading); part 2 Hours Summary restyle (zebra #F0F0F0, "–" for 0, galReportTotalWeeks total row, Width-616); part 3 GEA colors (recHoursHeaderBar, 0 old literals #7040A0 #593080 #194296 #123273 #E8EDF5 #EEE7F5 #193F83 #EAF1FC #F4F6FA and old RGBA values).
-2. Confirm Src is byte-equal to artifacts/combined-gea-20261022_134040/source/Src.
-3. Name the existing build: artifacts/combined-gea-20261022_134040/SiteManagement_CombinedGea_20261022_134040.msapp + SHA-256 (recorded: C7616A268B6B6FF7F303F8E88C9C33D63B12674641EC598950BB5E338FCE3B6C).
-Report table part | evidence. Update PROJECT_STATUS.md only if something differs.
-EOF
-```
-
-Then Eddy imports this build, tests and approves. After approval: record it in PROJECT_STATUS.md (docs-keeper) and delete this section.
-
-**Test after import:** one date picker with `2026 KW43`; Wednesday picked → loads once; same-week Friday → no reload; 01-01-2027 → `2026 KW53`; unsaved input blocks week change. Vibrant Blue headers, one green Save with dark text, white Refresh with blue border, no purple. Summary: grey/white rows, "–" for 0, blue total row aligned under columns.
+Inhoud nog vast te leggen (aanleveren door Eddy). Nog niet in de repo beschreven. Relevante regels: onopgeslagen invoer blokkeert Refresh/navigatie (AGENTS.md, Laden en opslagveiligheid).
 
 ## 3. Landing screen + Week Report
 
 ```bash
 claude << 'EOF'
-Task after housekeeping. AGENTS.md auto-loaded. Read PROJECT_STATUS.md + relevant Src. Commit checkpoint.
+Task. AGENTS.md auto-loaded. Read PROJECT_STATUS.md + relevant Src. Commit checkpoint.
 Delegate: 1 + 2 logic -> powerfx-logic; layout/tiles/footer -> powerfx-ui; tests + pack -> verifier; reviewer before pack; docs -> docs-keeper.
 
 1. New screen scrWeekReport, visible title "Week Report". Read-only, no writes.
@@ -64,7 +43,7 @@ Quick tests per change; full suite + pack once at end. Update PROJECT_STATUS.md.
 EOF
 ```
 
-## 4. Export spec (record now, build after Week Report)
+## 4. Export spec/build (build after Week Report)
 
 ```bash
 claude << 'EOF'
@@ -100,7 +79,15 @@ Commit "Full roadmap".
 EOF
 ```
 
-## 6. Component library pipeline (pidtracker repo, later)
+## 6. Production go-live (later)
+
+Inhoud nog vast te leggen (aanleveren door Eddy). Er is nog geen productieapp; alleen testimports tot de functies compleet zijn (PROJECT_STATUS.md).
+
+---
+
+## Geparkeerd (andere repo)
+
+### Component library pipeline (pidtracker repo, later)
 
 ```bash
 claude << 'EOF'
