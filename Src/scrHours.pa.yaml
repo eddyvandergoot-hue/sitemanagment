@@ -259,7 +259,7 @@ Screens:
                   DisabledColor: =ColorValue("#787878")
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
-                  Height: =52
+                  Height: =If(IsBlank(lblItemWarning.Text),52,26)
                   OnSelect: =Select(Parent)
                   PaddingBottom: =0
                   PaddingLeft: =8
@@ -269,6 +269,29 @@ Screens:
                   Text: =ThisItem.Worker.Value
                   Width: =270
                   X: =8
+            - lblItemWarning:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =If(Self.Text="Trade onbekend",ColorValue("#000000"),ColorValue("#DB1E28"))
+                  BorderColor: =ColorValue("#0303B8")
+                  BorderThickness: =If(Self.Text="Trade onbekend",1,0)
+                  Fill: =If(Self.Text="Trade onbekend",Color.White,Color.Transparent)
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Height: =18
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =6
+                  PaddingRight: =6
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =With({w:LookUp(colWorkersCache,ID=ThisItem.Worker.Id)},With({noT:IsBlank(w.Trade.Value),noE:IsBlank(w.Employer.Id) || IsBlank(w.Employer.Value)},If(IsBlank(w.ID),"Niet in Workers (Refresh Project / team)",noE && noT,"Employer + Trade ontbreken",noE,"Employer ontbreekt",noT,"Trade ontbreekt",w.Trade.Value="Unknown","Trade onbekend","")))
+                  VerticalAlign: =VerticalAlign.Middle
+                  Visible: =!IsBlank(Self.Text)
+                  Width: =If(Self.Text="Trade onbekend",124,If(StartsWith(Self.Text,"Niet in"),272,262))
+                  X: =lblItemTitle.X+8
+                  Y: =26
             - txtMon:
                 Control: Classic/TextInput@2.3.2
                 Properties:
@@ -284,7 +307,7 @@ Screens:
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
-                  HintText: ="0"
+                  HintText: =""
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
@@ -318,7 +341,7 @@ Screens:
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
-                  HintText: ="0"
+                  HintText: =""
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
@@ -352,7 +375,7 @@ Screens:
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
-                  HintText: ="0"
+                  HintText: =""
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
@@ -386,7 +409,7 @@ Screens:
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
-                  HintText: ="0"
+                  HintText: =""
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
@@ -420,7 +443,7 @@ Screens:
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
-                  HintText: ="0"
+                  HintText: =""
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
@@ -454,7 +477,7 @@ Screens:
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
-                  HintText: ="0"
+                  HintText: =""
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
@@ -488,7 +511,7 @@ Screens:
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
-                  HintText: ="0"
+                  HintText: =""
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
@@ -536,13 +559,13 @@ Screens:
                If(!Coalesce(varWeekForceRefresh,false) && varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && IsEmpty(colWeekLoadErrors) && !IsBlank(varWeekLoadedProjectID) &&
                 varWeekLoadedProjectID=Coalesce(varProject.Id,ddProject.Selected.Id) && varWeekLoadedTeam=Coalesce(varTeam.Value,ddTeam.Selected.Value) &&
                 varLoadedWeekMonday=varHoursWeekMonday && Coalesce(varWeekLoadedTeamVersion,-1)=Coalesce(varTeamDataVersion,0),
-                Trace("DIAG|Week|CacheHit",TraceSeverity.Information,{Scenario:"Week",Step:"CacheHit",ProjectID:varWeekLoadedProjectID,Team:varWeekLoadedTeam,Year:varWeekLoadedISOYear,KW:varWeekLoadedKW,Rows:CountRows(colWeekRows)}),
+                Trace("DIAG|Week|CacheHit",TraceSeverity.Information,{Scenario:"Week",Step:"CacheHit",ProjectID:varWeekLoadedProjectID,Team:varWeekLoadedTeam,Year:varWeekLoadedISOYear,KW:varWeekLoadedKW,Rows:CountRows(colWeekRows)}); Clear(colHoursErrors),
                Set(varWeekLoading,true); Set(varWeekLoadState,"Loading"); Set(varWeekReady,false); Set(varPendingWeekKeyIssue,false);
                Set(varDiagWeekT0,Now()); Trace("DIAG|Week|Start",TraceSeverity.Information,{Scenario:"Week",Step:"Start",Monday:Coalesce(Text(varHoursWeekMonday,"yyyy-mm-dd"),""),ProjectID:Coalesce(varProject.Id,ddProject.Selected.Id,0),Team:Coalesce(varTeam.Value,ddTeam.Selected.Value,""),Forced:Coalesce(varWeekForceRefresh,false)});
                Set(varPendingLoadedWeekMonday,Blank());
                Set(varPendingHoursProjectID,Coalesce(varProject.Id,ddProject.Selected.Id));
                Set(varPendingHoursProjectKey,Text(varPendingHoursProjectID)); Set(varPendingHoursTeam,Coalesce(varTeam.Value,ddTeam.Selected.Value));
-               Clear(colWeekLoadErrors); Clear(colPendingWeekAssignments); Clear(colPendingWeekKeys);
+               Clear(colWeekLoadErrors); Clear(colHoursErrors); Clear(colPendingWeekAssignments); Clear(colPendingWeekKeys);
                Clear(colPendingWeekRows); Clear(colPendingWeekOriginal); Clear(colPendingWeekStored);
                If(IsBlank(varPendingHoursProjectID) || IsBlank(varPendingHoursTeam),
                 Set(varWeekMessage,"Kies eerst project en team via Project / team. Uren zijn opgeslagen in SharePoint, niet in deze lege schermselectie."),
@@ -667,15 +690,21 @@ Screens:
       - lblWeekLoadStatus:
           Control: Label@2.5.1
           Properties:
-            Text: =Switch(Coalesce(varWeekLoadState,"NotLoaded"),"Loading","Opgeslagen week ophalen; vorige invoer blijft behouden tot laden slaagt...","NotLoaded",Coalesce(varWeekMessage,"Nog niet geladen. Kies project, team en week; opslaan geblokkeerd."),varWeekMessage)
+            Text: |-
+              =If(Coalesce(varWeekLoadState,"NotLoaded")<>"Loading" && !Coalesce(varWeekSaving,false) && IsEmpty(colWeekLoadErrors) && !IsEmpty(colHoursErrors),
+              If(Coalesce(varDiagSaveWrites,0)>0,"Opslag niet volledig bevestigd; opslaan geblokkeerd. ","Niet opgeslagen; niets geschreven. ") &
+              If(IsBlank(First(colHoursErrors).WorkerName),"",First(colHoursErrors).WorkerName & ": ") & First(colHoursErrors).Message &
+              If(IsBlank(First(colHoursErrors).KeyValue),""," [" & First(colHoursErrors).KeyValue & "]") &
+              If(CountRows(colHoursErrors)>1," (+" & Text(CountRows(colHoursErrors)-1) & " meer)",""),
+              Switch(Coalesce(varWeekLoadState,"NotLoaded"),"Loading","Opgeslagen week ophalen; vorige invoer blijft behouden tot laden slaagt...","NotLoaded",Coalesce(varWeekMessage,"Nog niet geladen. Kies project, team en week; opslaan geblokkeerd."),varWeekMessage))
             X: =40
             Y: =dpHoursWeek.Y+dpHoursWeek.Height+8
             Width: =Parent.Width-80
-            Height: =32
+            Height: =40
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
             Size: =11
-            Color: =If(!IsEmpty(colWeekLoadErrors),ColorValue("#DB1E28"),ColorValue("#000000"))
+            Color: =If(!IsEmpty(colWeekLoadErrors) || (Coalesce(varWeekLoadState,"NotLoaded")<>"Loading" && !Coalesce(varWeekSaving,false) && !IsEmpty(colHoursErrors)),ColorValue("#DB1E28"),ColorValue("#000000"))
       - navWeeklyHours:
           Control: GroupContainer@1.5.0
           Variant: AutoLayout
@@ -940,35 +969,68 @@ Screens:
                           
                                   CountIf(
                                       colHoursChanges,
-                                      !IsBlank(NewHours) &&
-                                      (
-                                          NewHours < 0 ||
-                                          NewHours > 24 ||
-                                          Abs(
-                                              NewHours * 100 -
-                                              Round(NewHours * 100, 0)
-                                          ) > 0.000001
-                                      )
-                                  ) > 0,
-                                  Notify(
-                                      "Gebruik 0 t/m 24 uur, met maximaal twee decimalen.",
-                                      NotificationType.Error
-                                  ),
-                          
-                                  CountIf(
-                                      colHoursChanges,
                                       IsBlank(NewHours) && !IsBlank(OldHours)
                                   ) > 0,
                                   Notify(
                                       "Gebruik 0 om eerder ingevulde uren te corrigeren naar geen gewerkte uren.",
                                       NotificationType.Warning
                                   ),
-                          
+
+                                      ForAll(
+                                          colHoursChanges As c,
+                                          With(
+                                              {
+                                                  assignmentRecord: LookUp(colWeekAssignments, ID = c.AssignmentID),
+                                                  workerRecord: LookUp(colWorkersCache, ID = c.WorkerID),
+                                                  workDate: DateAdd(varLoadedWeekMonday, c.DayIndex, TimeUnit.Days)
+                                              },
+                                              If(
+                                                  IsBlank(assignmentRecord.ID),
+                                                  Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"koppeling ontbreekt in Project Workers (Refresh op Project / team)"}),
+
+                                                  assignmentRecord.Worker.Id <> c.WorkerID ||
+                                                  IsBlank(assignmentRecord.AssignmentKey) ||
+                                                  assignmentRecord.AssignmentKey <> Text(varWeekLoadedProjectID) & "|" & Text(c.WorkerID) ||
+                                                  c.KeyValue <> assignmentRecord.AssignmentKey & "|" & Text(workDate, "[$-en-US]yyyymmdd"),
+                                                  Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"koppelingssleutel (AssignmentKey/EntryKey) wijkt af in Project Workers; gegevens laten controleren"})
+                                              );
+                                              If(
+                                                  IsBlank(workerRecord.ID),
+                                                  Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"medewerker ontbreekt in Workers (Refresh op Project / team)"}),
+
+                                                  If(
+                                                      IsBlank(workerRecord.Employer.Id) || IsBlank(workerRecord.Employer.Value),
+                                                      Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"Employer ontbreekt in Workers (aanvullen in SharePoint, daarna Refresh op Project / team)"})
+                                                  );
+                                                  If(
+                                                      IsBlank(workerRecord.Trade.Value),
+                                                      Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"Trade ontbreekt in Workers (aanvullen in SharePoint, daarna Refresh op Project / team)"})
+                                                  )
+                                              );
+                                              If(
+                                                  IsBlank(c.TeamValue),
+                                                  Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"team ontbreekt in Project Workers"})
+                                              );
+                                              If(
+                                                  !IsBlank(c.NewHours) &&
+                                                  (
+                                                      c.NewHours < 0 ||
+                                                      c.NewHours > 24 ||
+                                                      Abs(
+                                                          c.NewHours * 100 -
+                                                          Round(c.NewHours * 100, 0)
+                                                      ) > 0.000001
+                                                  ),
+                                                  Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"uren " & Text(c.NewHours) & " op " & Text(workDate, "[$-en-GB]ddd dd-mm-yyyy") & " ongeldig (0-24, max. 2 decimalen)"})
+                                              )
+                                          )
+                                      );
+
                                       Set(varSaveQueryPrefix,Text(varWeekLoadedProjectID) & "|");
                                       Set(varSaveQueryFrom,varLoadedWeekMonday);
                                       Set(varSaveQueryUntil,DateAdd(varLoadedWeekMonday,7,TimeUnit.Days));
-                          
-                                      IfError(Refresh(Hours),Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+
+                                      If(IsEmpty(colHoursErrors),IfError(Refresh(Hours),Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false));
                                       If(IsEmpty(colHoursErrors),
                                           Set(varDiagSaveReads,varDiagSaveReads+1);
                                           IfError(CountRows(ClearCollect(colSaveCheckRaw,Filter(Hours,StartsWith(EntryKey,varSaveQueryPrefix) && 'Work Date'>=varSaveQueryFrom && 'Work Date'<varSaveQueryUntil)))>=0,
@@ -1068,7 +1130,9 @@ Screens:
                                                           Assignment:{Id:n.AssignmentID,Value:n.AssignmentTitle},
                                                           Employer:{Id:n.EmployerID,Value:n.EmployerValue},
                                                           Team:{Value:n.TeamValue},Trade:{Value:n.TradeValue},Hours:n.NewHours}))))>=0,
-                                                      Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});false);
+                                                      Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:FirstError.Message});
+                                                      If(CountIf(newRows,TradeValue="Unknown")>0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Mogelijk ontbreekt Trade 'Unknown' in de Hours-lijst (MS-008)"}));
+                                                      false);
                                                   If(CountRows(colHoursPatchedNew)<>CountRows(newRows) || CountIf(colHoursPatchedNew,IsBlank(ID))>0,
                                                       Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Opslaan leverde geen SharePoint-record-ID op."}))
                                               )
@@ -1144,7 +1208,17 @@ Screens:
                                           " dagregistratie(s).",
                                           NotificationType.Success
                                       ),
-                          
+
+                                      !IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0,
+                                      Notify(
+                                          "Niet opgeslagen; er is niets naar SharePoint geschreven. " &
+                                          If(IsBlank(First(colHoursErrors).WorkerName), "", First(colHoursErrors).WorkerName & ": ") &
+                                          First(colHoursErrors).Message &
+                                          If(CountRows(colHoursErrors) > 1, " (+" & Text(CountRows(colHoursErrors) - 1) & " meer)", ""),
+                                          NotificationType.Error,
+                                          15000
+                                      ),
+
                                       Notify(
                                           "Niet alles kon worden opgeslagen en gecontroleerd. " &
                                           If(
@@ -1167,7 +1241,7 @@ Screens:
                           
                           Trace("DIAG|SaveWeek|End",TraceSeverity.Information,{Scenario:"SaveWeek",Step:"End",ElapsedMs:DateDiff(varDiagSaveT0,Now(),TimeUnit.Milliseconds),Changes:CountRows(colHoursChanges),Reads:Coalesce(varDiagSaveReads,0),Writes:Coalesce(varDiagSaveWrites,0),PatchedRows:CountRows(colHoursPatchedExisting)+CountRows(colHoursPatchedNew),VerifiedRows:CountRows(colHoursWritten),Errors:CountRows(colHoursErrors)});
                           Set(varWeekSaving, false);
-                          If(!IsEmpty(colHoursErrors),Set(varWeekLoadState,"Failed" ); Set(varWeekReady,false); Notify("Opslag niet volledig bevestigd. Invoer behouden; controleer SharePoint-versies voordat u verdergaat.",NotificationType.Error,15000)),
+                          If(!IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites,0)>0,Set(varWeekLoadState,"Failed" ); Set(varWeekReady,false); Notify("Opslag niet volledig bevestigd. Invoer behouden; controleer SharePoint-versies voordat u verdergaat.",NotificationType.Error,15000)),
                           Notify("Save week geblokkeerd: week niet volledig geladen, laadfout of selectie komt niet overeen.",NotificationType.Error,15000))
                         PressedColor: =ColorValue("#000F41")
                         PressedFill: =ColorValue("#18DD6E")

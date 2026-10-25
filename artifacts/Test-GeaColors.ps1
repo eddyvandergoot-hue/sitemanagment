@@ -45,5 +45,6 @@ foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){
  if($c['Control'] -like 'ModernDatePicker@*' -and ($p['Fill'] -ne (CV '#F0F0F0') -or $p['BorderColor'] -ne (CV '#DCDCDC') -or $p['BorderThickness'] -ne '=1')){throw "Date picker $screen.$name"}
 }}
 $p=$indexes.scrHours['lblWeekTotal']['Properties'];if($p['Fill'] -ne (CV '#D5EDFF') -or $p['Color'] -ne (CV '#000F41')){throw 'Week total cell'}
-foreach($t in @(@('Screen1','lblSelectionLoadStatus','colSelectionLoadErrors'),@('scrHours','lblWeekLoadStatus','colWeekLoadErrors'))){if($indexes[$t[0]][$t[1]]['Properties']['Color'] -ne ('=If(!IsEmpty('+$t[2]+'),ColorValue("#DB1E28"),ColorValue("#000000"))')){throw "Error colour $($t[1])"}}
+if($indexes['Screen1']['lblSelectionLoadStatus']['Properties']['Color'] -ne '=If(!IsEmpty(colSelectionLoadErrors),ColorValue("#DB1E28"),ColorValue("#000000"))'){throw 'Error colour lblSelectionLoadStatus'}
+if($indexes['scrHours']['lblWeekLoadStatus']['Properties']['Color'] -ne '=If(!IsEmpty(colWeekLoadErrors) || (Coalesce(varWeekLoadState,"NotLoaded")<>"Loading" && !Coalesce(varWeekSaving,false) && !IsEmpty(colHoursErrors)),ColorValue("#DB1E28"),ColorValue("#000000"))'){throw 'Error colour lblWeekLoadStatus'}
 Write-Output 'PASS inputs/dropdowns/date pickers #F0F0F0 with 1px #DCDCDC border, hover/focus border #0303B8, selection #0303B8/white; week total cells #D5EDFF/#000F41; errors #DB1E28, body black.'

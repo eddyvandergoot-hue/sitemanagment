@@ -66,7 +66,7 @@ Screens:
                   Size: =12
                   Text: =ThisItem.'First Name' & " " & ThisItem.Surname
                   VerticalAlign: =VerticalAlign.Top
-                  Width: =Parent.TemplateWidth - 80
+                  Width: =Max(100,If(lblWorkerWarning.Visible,lblWorkerWarning.X,Parent.TemplateWidth - 24) - Self.X - 8)
                   X: =64
                   Y: =8
             - Subtitle4:
@@ -86,9 +86,32 @@ Screens:
                   Size: =10
                   Text: =ThisItem.'Employer Name'
                   VerticalAlign: =VerticalAlign.Top
-                  Width: =Parent.TemplateWidth - 80
+                  Width: =Max(100,If(lblWorkerWarning.Visible,lblWorkerWarning.X,Parent.TemplateWidth - 24) - Self.X - 8)
                   X: =Title4.X
                   Y: =Title4.Y+Title4.Height+3
+            - lblWorkerWarning:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =If(Self.Text="Trade onbekend",ColorValue("#000000"),ColorValue("#DB1E28"))
+                  BorderColor: =ColorValue("#0303B8")
+                  BorderThickness: =If(Self.Text="Trade onbekend",1,0)
+                  Fill: =If(Self.Text="Trade onbekend",Color.White,Color.Transparent)
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Height: =24
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =0
+                  Size: =11
+                  Text: =With({noT:IsBlank(ThisItem.Trade.Value),noE:IsBlank(ThisItem.Employer.Id) || IsBlank(ThisItem.Employer.Value)},If(noE && noT,"Employer + Trade ontbreken (SharePoint)",noE,"Employer ontbreekt (SharePoint)",noT,"Trade ontbreekt (SharePoint)",ThisItem.Trade.Value="Unknown","Trade onbekend",""))
+                  VerticalAlign: =VerticalAlign.Middle
+                  Visible: =!IsBlank(Self.Text)
+                  Width: =If(Self.Text="Trade onbekend",136,316)
+                  X: =Parent.TemplateWidth - Self.Width - 24
+                  Y: =18
             - NextArrow4:
                 Control: Classic/Icon@2.5.0
                 Properties:

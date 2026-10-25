@@ -106,6 +106,8 @@ Dates: 21–24 October 2026.
 | X6 | **Project subagents** in `.claude/agents/` route work to the right model and tools (see README). | Right agent per task, logs out of the main context. |
 | X7 | Tests in two tiers: quick relevant test per change; full suite + pack once at task end. Checkpoint = git commit. | Speed with safety. |
 | X8 | Claude chat writes Power Automate code (expressions, Office Scripts, import packages) and SharePoint steps. | Claude Code cannot touch those. |
+| X9 | Save week validates all changes locally before any read/write; zero-write errors show the real reason and keep the week Loaded. Trade on Hours is a snapshot of Workers.Trade (Fitter/Welder/Unknown). | Incident 25-10-2026: a correct block was reported as "Opslag niet volledig bevestigd"; misleading messages hide the real fix. |
+| X10 | Claude Code may push after verifier + reviewer pass; `approved-*` tags only after Eddy's Studio test. | Pack and tests do not prove Studio behaviour. |
 
 ## 10. Open decisions
 

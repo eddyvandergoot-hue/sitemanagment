@@ -118,7 +118,8 @@ Assert-Regression ('With({'+$weekFixture+'},'+$guards.week+')') $true 'Week guar
 Assert-Regression ('With({'+$weekFixture.Replace('varHoursWeekMonday:Date(2020,12,28)','varHoursWeekMonday:Date(2021,1,4)')+'},'+$guards.week+')') $false 'Week guard: other picked week blocks Save'
 Assert-Regression ('With({'+$weekFixture.Replace('varHoursWeekMonday:Date(2020,12,28)','varHoursWeekMonday:If(false,Date(2000,1,1))')+'},'+$guards.week+')') $false 'Week guard: no picked week blocks Save'
 $week=$indexes.scrHours['btnSaveWeek']['Properties']['OnSelect']
-foreach($msg in @('Open eerst een project, team en werkweek.','Geen gewijzigde uren.','Gebruik 0 t/m 24 uur, met maximaal twee decimalen.','Gebruik 0 om eerder ingevulde uren te corrigeren naar geen gewerkte uren.',
+# 25-10-2026: the global range Notify 'Gebruik 0 t/m 24 uur, met maximaal twee decimalen.' was replaced by a per-cell collected error (checked in the incident section below).
+foreach($msg in @('Open eerst een project, team en werkweek.','Geen gewijzigde uren.','Gebruik 0 om eerder ingevulde uren te corrigeren naar geen gewerkte uren.',
  'De opgeslagen sleutel hoort bij een andere koppeling of werkdatum. Opslaan gestopt; gegevens laten controleren.','Deze uren zijn sinds het laden gewijzigd. Open de week opnieuw.','Deze registratie hoort bij een ander team.',
  'Assignment, Employer, Team of Trade ontbreekt.','Opslaan leverde geen SharePoint-record-ID op.','De opgeslagen registratie kon niet correct worden teruggelezen.','Werkweek opgeslagen en gecontroleerd. ','Niet alles kon worden opgeslagen en gecontroleerd. ','Opslag niet volledig bevestigd. Invoer behouden; controleer SharePoint-versies voordat u verdergaat.')){
  Assert-True ($week.Contains($msg)) "Save week message kept: $msg"
@@ -190,6 +191,68 @@ foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){forea
 }}}
 Assert-True ($strNl -eq 0) 'No string literal contains a line break (all screens)'
 Assert-True ($sites -gt 0) "All $sites Hours/'Project Workers' predicates use only columns + global vars; StartsWith 2nd arg is a global var (report month/day paging documented exception)"
+# Incident 25-10-2026 (Save week with empty Workers.Trade): local pre-save validation of every change, zero-write outcome
+# kept usable, persistent error detail in lblWeekLoadStatus, Trade snapshot on new Hours records, MS-008 hint.
+function Norm($s){ [regex]::Replace([string]$s,'\s+',' ') }
+$weekN=Norm $week
+$firstWriteInc=$week.IndexOf('Set(varDiagSaveWrites,varDiagSaveWrites+1)')
+$firstPatch=$week.IndexOf('Patch(Hours,')
+$preRead=$week.IndexOf('ClearCollect(colSaveCheckRaw')
+Assert-True ($firstWriteInc -gt 0 -and $firstWriteInc -lt $firstPatch) 'Write counter incremented before (each) Patch attempt: any attempted Patch counts as a write'
+# New-record path present and complete
+Assert-True ($week.Contains('ClearCollect(colHoursPatchedNew,Patch(Hours,') -and $week.Contains('ForAll(newRows As n,Defaults(Hours))')) 'New-record path: table Patch with Defaults(Hours) base records'
+Assert-True ($week.Contains('Trade:{Value:n.TradeValue}') -and $week.Contains('TradeValue:workerRecord.Trade.Value') -and $week.Contains('EmployerID:workerRecord.Employer.Id,EmployerValue:workerRecord.Employer.Value')) 'New records snapshot Trade {Value} and Employer {Id,Value} from colWorkersCache at save time'
+Assert-True ($week -notmatch '\bChoices\(' -and $week -notmatch "\bLookUp\(\s*Workers\s*,") 'Trade/Employer snapshot without Choices() or remote Workers LookUp'
+# Local validation (all changes, new and existing) before any read/write
+Assert-True ($weekN.Contains('ForAll( colHoursChanges As c, With( { assignmentRecord: LookUp(colWeekAssignments, ID = c.AssignmentID), workerRecord: LookUp(colWorkersCache, ID = c.WorkerID),')) 'Local validation loops over every change (new and existing), lookups from session collections'
+foreach($msg in @('koppeling ontbreekt in Project Workers (Refresh op Project / team)','koppelingssleutel (AssignmentKey/EntryKey) wijkt af in Project Workers; gegevens laten controleren','medewerker ontbreekt in Workers (Refresh op Project / team)','Employer ontbreekt in Workers (aanvullen in SharePoint, daarna Refresh op Project / team)','Trade ontbreekt in Workers (aanvullen in SharePoint, daarna Refresh op Project / team)','team ontbreekt in Project Workers',' ongeldig (0-24, max. 2 decimalen)')){
+ $i=$week.IndexOf($msg)
+ Assert-True ($i -gt 0 -and $i -lt $preRead -and $i -lt $firstWriteInc -and $i -lt $firstPatch) "Validation error collected before pre-read and before first write: $msg"
+}
+Assert-True ($week.Contains('If(IsEmpty(colHoursErrors),IfError(Refresh(Hours),') -and $week.IndexOf('If(IsEmpty(colHoursErrors),IfError(Refresh(Hours),') -lt $preRead) 'Validation errors skip the pre-read (Refresh + Filter guarded by IsEmpty(colHoursErrors))'
+Assert-True ($week.IndexOf('If(IsEmpty(colHoursErrors) && CountRows(colHoursWritePlan) = CountRows(colHoursChanges),') -lt $firstWriteInc) 'Any collected error => zero writes (write gate precedes first write counter)'
+$tradePred='IsBlank(workerRecord.Trade.Value)'
+$empPred='IsBlank(workerRecord.Employer.Id) || IsBlank(workerRecord.Employer.Value)'
+Assert-True ($week.Contains($tradePred) -and $week.Contains($empPred)) 'Trade and Employer (Id and Value) predicates present'
+Assert-Regression ('With({workerRecord:{Trade:{Value:Blank()}}},'+$tradePred+')') $true 'Trade blank blocks'
+Assert-Regression ('With({workerRecord:{Trade:If(false,{Value:"Fitter"})}},'+$tradePred+')') $true 'Trade record missing blocks'
+foreach($t in @('Fitter','Welder','Unknown')){ Assert-Regression ('With({workerRecord:{Trade:{Value:"'+$t+'"}}},'+$tradePred+')') $false "Trade '$t' allowed" }
+Assert-Regression ('With({workerRecord:{Employer:{Id:3,Value:Blank()}}},'+$empPred+')') $true 'Employer without Value blocks'
+Assert-Regression ('With({workerRecord:{Employer:{Id:3,Value:"EMP-001"}}},'+$empPred+')') $false 'Employer with Id and Value allowed'
+# Trade "Unknown" never blocked: the only "Unknown" literal is the MS-008 hint after a failed new-row Patch
+Assert-True ((Count-Of $week '"Unknown"') -eq 1 -and $week.Contains('If(CountIf(newRows,TradeValue="Unknown")>0,Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Mogelijk ontbreekt Trade ''Unknown'' in de Hours-lijst (MS-008)"}));')) 'No rule rejects Trade "Unknown"; only MS-008 hint uses the literal'
+$ms8=$week.IndexOf("Mogelijk ontbreekt Trade 'Unknown' in de Hours-lijst (MS-008)")
+Assert-True ($ms8 -gt $week.IndexOf('ClearCollect(colHoursPatchedNew,Patch(Hours,') -and $ms8 -lt $week.IndexOf('If(CountRows(colHoursPatchedNew)<>CountRows(newRows)')) 'MS-008 hint only in the IfError fallback of the new-row Patch'
+# Hours range / decimals; explicit 0 allowed, blank cell handled by the unchanged clear-cell rule
+$rangePred='!IsBlank(c.NewHours) && ( c.NewHours < 0 || c.NewHours > 24 || Abs( c.NewHours * 100 - Round(c.NewHours * 100, 0) ) > 0.000001 )'
+Assert-True ($weekN.Contains($rangePred)) 'Hours range/decimals predicate present (per change)'
+foreach($case in @(@('0',$false),@('24',$false),@('7.25',$false),@('Blank()',$false),@('-1',$true),@('24.01',$true),@('7.255',$true))){
+ Assert-Regression ('With({c:{NewHours:'+$case[0]+'}},'+$rangePred+')') $case[1] "Hours $($case[0]) -> blocked=$($case[1])"
+}
+Assert-True ($week -notmatch 'NewHours\s*(=|<=)\s*0\b' -and $week -notmatch '\b0\s*=\s*\w*\.?NewHours') 'No rule rejects NewHours = 0 (explicit 0 on a new record allowed)'
+Assert-True ($week.Contains('IsBlank(NewHours) && !IsBlank(OldHours)')) 'Cleared-cell rule unchanged (blank needs explicit 0)'
+$keyPredN='assignmentRecord.Worker.Id <> c.WorkerID || IsBlank(assignmentRecord.AssignmentKey) || assignmentRecord.AssignmentKey <> Text(varWeekLoadedProjectID) & "|" & Text(c.WorkerID) || c.KeyValue <> assignmentRecord.AssignmentKey & "|" & Text(workDate, "[$-en-US]yyyymmdd")'
+Assert-True ($weekN.Contains($keyPredN)) 'AssignmentKey = projectID|workerID and EntryKey = AssignmentKey|yyyymmdd checked per change'
+# The standalone interpreter rejects the Canvas language tag '[$-en-US]' (also used by the existing loaders); strip it for evaluation only.
+$keyPredN=$keyPredN.Replace('[$-en-US]','')
+$kfx='With({varWeekLoadedProjectID:7,c:{WorkerID:3,KeyValue:"7|3|20261020"},assignmentRecord:{Worker:{Id:3},AssignmentKey:"7|3"},workDate:Date(2026,10,20)},'
+Assert-Regression ($kfx+$keyPredN+')') $false 'Consistent AssignmentKey/EntryKey passes'
+Assert-Regression ($kfx.Replace('KeyValue:"7|3|20261020"','KeyValue:"7|3|20261021"')+$keyPredN+')') $true 'EntryKey with other date blocks'
+Assert-Regression ($kfx.Replace('AssignmentKey:"7|3"','AssignmentKey:"8|3"')+$keyPredN+')') $true 'AssignmentKey of other project blocks'
+# Outcomes: zero writes keep the week usable; uncertainty only after >=1 write
+$lastLines=$week.Split("`n")
+$failLine=@($lastLines | Where-Object { $_.Contains('Opslag niet volledig bevestigd') })
+Assert-True ($failLine.Count -eq 1 -and $failLine[0].Trim().StartsWith('If(!IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites,0)>0,Set(varWeekLoadState,"Failed" ); Set(varWeekReady,false);')) '"Opslag niet volledig bevestigd" + Failed only when varDiagSaveWrites > 0'
+Assert-True ((Count-Of $week 'Set(varWeekLoadState,"Failed"') -eq 1) 'Save week sets Failed in exactly one place'
+Assert-True ($weekN.Contains('!IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0, Notify( "Niet opgeslagen; er is niets naar SharePoint geschreven. " &')) 'Zero-write outcome shows the real first error (no SharePoint uncertainty)'
+# Persistent error detail
+$lbl=$indexes.scrHours['lblWeekLoadStatus']['Properties']
+$lblText=[string]$lbl['Text']
+Assert-True ($lblText.Contains('First(colHoursErrors).WorkerName') -and $lblText.Contains('First(colHoursErrors).Message') -and $lblText.Contains('First(colHoursErrors).KeyValue') -and $lblText.Contains('CountRows(colHoursErrors)>1')) 'lblWeekLoadStatus shows first save error WorkerName/Message/KeyValue (+N meer)'
+Assert-True ($lblText.Contains('"Opgeslagen week ophalen; vorige invoer blijft behouden tot laden slaagt..."') -and $lblText.Contains('"Nog niet geladen. Kies project, team en week; opslaan geblokkeerd."') -and $lblText.Contains('IsEmpty(colWeekLoadErrors) && !IsEmpty(colHoursErrors)')) 'lblWeekLoadStatus keeps load texts; load errors take precedence over save errors'
+$readWeek=$indexes.scrHours['btnReadWeek']['Properties']['OnSelect']
+$dirtyEnd=$readWeek.IndexOf('Set(varWeekForceRefresh,false),')
+Assert-True ((Count-Of $readWeek 'Clear(colHoursErrors)') -eq 2 -and $readWeek.IndexOf('Clear(colHoursErrors)') -gt $dirtyEnd -and $readWeek.Contains('Rows:CountRows(colWeekRows)}); Clear(colHoursErrors),') -and $readWeek.Contains('Clear(colWeekLoadErrors); Clear(colHoursErrors);')) 'Save error detail cleared on cache hit and at start of a real load (incl. no project/team), never when blocked by unsaved input'
 Write-Output 'PASS batch save structure. Studio binding (table Patch on collection base records, lookup/choice records), delegation and online behaviour NOT verified.'
 Write-Output 'LIVE STILL OPEN: actual incident edits, connector auth, Studio binding/delegation, failure injection and online loading.'
 

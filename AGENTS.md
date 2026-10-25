@@ -11,7 +11,7 @@ De projectmap is ook de bronmap en de git-root (sinds 25-10-2026 platgeslagen): 
 
 - De oude map C:\Users\vandergoot.ed\OneDrive - GEA\Projects\Development\Sitemanagment is een alleen-lezen backup. Schrijf daar nooit.
 - Scripts in artifacts gebruiken alleen paden relatief aan $PSScriptRoot. Pointerbestanden (artifacts/*-backup.txt, *-builddir.txt, *-buildpath.txt) bevatten paden relatief aan de bronmap. Zet geen absolute paden in scripts of pointerbestanden.
-- Git (sinds 25-10-2026): repository in de projectmap, branch main. Checkpoint = een git commit vóór elke opdracht (werkboom schoon, daarna pas wijzigen). Maak geen mapkopieën meer in checkpoints/; de bestaande map checkpoints/ is historisch en staat in .gitignore. Niet pushen tenzij gevraagd.
+- Git (sinds 25-10-2026): repository in de projectmap, branch main. Checkpoint = een git commit vóór elke opdracht (werkboom schoon, daarna pas wijzigen). Maak geen mapkopieën meer in checkpoints/; de bestaande map checkpoints/ is historisch en staat in .gitignore. Claude Code mag na een opdracht naar origin pushen als verifier (volledige set + pack) en reviewer (geen blokkerende bevindingen) slagen. Tag `approved-<datum>-<onderwerp>` alleen na Eddy's Studio-test en bevestiging (dan ook "approved by Eddy" in PROJECT_STATUS.md en de tag pushen). Tag nooit approved op basis van pack of tests alleen.
 - Goedgekeurde baseline: tag baseline-footer-row-20261020_215936 (losse commit met de bronnen uit het baselinecheckpoint).
 
 Platform:
@@ -44,7 +44,7 @@ Controleer de werkelijke kolomnamen en typen in de lokale metadata en formules. 
 5. Actieve projectleden blijven zichtbaar in de ureninvoer, ook bij 0 uur of ziekte.
 6. Gebruik geen verplichte inzetperiode. Planning komt later vanuit WorkPackages.
 7. Team is een keuzelijst, voorlopig 1 t/m 10.
-8. Trade: F betekent Fitter, W betekent Welder. Documenten moeten de volledige functienaam kunnen gebruiken.
+8. Trade: Workers.Trade en Hours.Trade zijn keuzekolommen met Fitter / Welder / Unknown (Workers: standaard Unknown, verplicht). Documenten gebruiken de volledige naam direct. Historische Hours-regels kunnen nog F/W bevatten (F = Fitter, W = Welder); map bij rapportage.
 9. Voor weergave en documenten wordt de volledige naam samengesteld uit voornaam en achternaam.
 
 ## Uren en rapportage
@@ -92,6 +92,7 @@ In de onderzochte app:
 - Hours heeft momenteel geen aparte ISO Year- en KW-kolommen; deze worden uit Work Date afgeleid.
 - Bewaar historische werkgevergegevens op de urenregistratie. Een latere werkgeverswijziging mag oude uren niet naar een andere contractor verplaatsen.
 - De zakelijke Employer Code, zoals EMP-001, is uniek. Maak geen tweede handmatig ingevoerde werkgeversidentificatie. SharePoint heeft daarnaast zijn interne numerieke ID voor lookups.
+- Trade op Hours is een momentopname van Workers.Trade bij opslaan (zoals Employer): Patch als `{Value: <trade van medewerker>}`, nooit `Choices()`. Bestaande Hours-regels krijgen nooit een herschreven Trade/Employer.
 - Historische projectkoppelingen worden inactief gezet en niet zomaar verwijderd.
 
 ## Werkwijze voor wijzigingen
@@ -139,6 +140,7 @@ Subagents staan in .claude/agents/ (overzicht in README.md).
 - Tests en pack → verifier.
 - Builds met logicawijzigingen: eerst review door reviewer, daarna pas pack.
 - Documentatie, status en MS-items → docs-keeper.
+- Veiligheid: definieer geen hulpfuncties/aliassen die PowerShell-aliassen overschrijven (Rd/rm/del/ri = Remove-Item); verwijder nooit Src-bestanden; gebruik geen git stash/checkout/reset op een werkboom met niet-gecommitte wijzigingen (voor HEAD-vergelijkingen: `git worktree add` in de scratchpad). Langlopende meetscripts (Measure-FontFit) draaien met een timeout.
 
 ## Technische randvoorwaarden
 
@@ -309,6 +311,7 @@ Subagents staan in .claude/agents/ (overzicht in README.md).
   - Pre-read en verify read gebruiken hetzelfde gedelegeerde filter: `Filter(Hours, StartsWith(EntryKey, "<projectID>|") && 'Work Date' >= maandag && < maandag+7)`.
   - Een volle batch (500) valt terug op 7 dagbatches. Een volle dag blokkeert.
   - Alle controles gebeuren lokaal vóór het schrijven: sleutel/koppeling/datum, opgeslagen uren = OldHours, team en ontbrekende velden. Eén fout betekent nul writes.
+  - Alle lokale validatie per wijziging (ook expliciete 0) loopt vóór de eerste read/write; fouten worden verzameld. Bij nul writes + fout: toon de echte reden, week blijft Loaded. Pas bij ≥1 write + fout: Failed + opslag geblokkeerd (gedeeltelijke-opslagregel hieronder). Trade "Unknown" is toegestaan, lege Trade blokkeert. Meldingen zeggen wat in SharePoint aangepast moet worden.
   - Na het schrijven wordt colWeekOriginal alleen bijgewerkt vanuit de verify read.
 - Er zijn hooguit twee table-Patches per Save week, omdat een changetabel één uniform schema heeft:
   - Bestaande regels: alleen Title + Hours. Employer/Team/Trade/Assignment blijven onaangeroerd (historie).
@@ -362,7 +365,9 @@ Subagents staan in .claude/agents/ (overzicht in README.md).
   - **Uitgeschakelde knoppen:** vlak en rand #E6E6E6, tekst #787878.
   - **Invoer, dropdowns, datumkiezers:** Fill #F0F0F0, 1 px rand #DCDCDC, hover- en focusrand #0303B8. Selectie in dropdowns #0303B8 met witte tekst.
   - **Weektotaal-cellen** (lblWeekTotal): #D5EDFF met tekst #000F41.
-  - **Fouten** #DB1E28; body-tekst zwart.
+  - **Fouten** #DB1E28; body-tekst zwart. Rode tekst is ook toegestaan voor blokkerende stamgegevenswaarschuwingen in galleryrijen/kaarten (niet alleen statusregels).
+  - **Zachte waarschuwingschip** voor niet-blokkerende notities zoals "Trade onbekend": witte Fill, 1 px rand #0303B8, zwarte tekst.
+  - Kleur is nooit het enige signaal; de tekst draagt de betekenis.
 - Gebruik duidelijke bestaande knopteksten naast kleur; kleur mag nooit het enige onderscheid zijn. Verborgen technische knoppen hebben geen rol, maar wel GEA-literals.
 - Behoud de vaste onderste balk: navigatie links, alle zichtbare acties rechts binnen dezelfde rij. Een kleuropdracht verandert geen posities, afmetingen, acties, validaties, Visible of DisplayMode.
 - artifacts/Test-GeaColors.ps1 controleert:

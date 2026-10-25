@@ -14,12 +14,55 @@
 | Projectmap naar Dev-map | Klaar | Hashvergelijking Src 5/5; commit ec0d408 |
 | Bronmap platgeslagen naar projectmap (git-root) | Klaar, 25-10-2026 | Paden in docs/manifesten aangepast; pac pack vanuit de projectmap geslaagd; Test-SaveRegression PASS |
 | Gecombineerde build (weekkiezer Weekly Hours, tabelrestyle, GEA-kleuren) | Gebouwd, niet geïmporteerd/goedgekeurd. Build: artifacts\combined-gea-20261022_134040\SiteManagement_CombinedGea_20261022_134040.msapp, SHA-256 C7616A268B6B6FF7F303F8E88C9C33D63B12674641EC598950BB5E338FCE3B6C (opnieuw gecontroleerd 25-10; Src 5/5 bytegelijk aan de bron in deze build) | Src: `dpHoursWeek`, 0× `ddHoursYear`, `recHoursHeaderBar`, `galReportTotalWeeks`, 0× oude paarse literals |
+| **Save week-fix + Trade Unknown (nieuwste build)** | Gebouwd, niet geïmporteerd/goedgekeurd, niet functioneel getest. Build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\savefix-trade-20261025_163517\SiteManagement_SaveFixTrade_20261025_163517.msapp, 101640 bytes, SHA-256 1891281F7F62DF1F739BA282D11B8218DEDBECF74066027731394BF8CF4033C7 (pac 2.11.2; Src 5/5 bytegelijk aan de bron). Details: sectie hieronder | Src: lokale validatie in `btnSaveWeek`; verifier 0 FAIL |
+| MS-008 Trade-keuzes Workers/Hours | Workers.Trade klaar (Eddy, 25-10-2026); Hours.Trade-keuzes: bevestiging Eddy open | MANUAL_STEPS.md |
 | Git: repository, branch main, baselinetag | Klaar | Commits ec0d408, 1fa3b94; tag baseline-footer-row-20261020_215936 |
-| Push naar private GitHub | Remote ingesteld; Eddy pusht na iedere goedgekeurde stap | origin = github.com/eddyvandergoot-hue/sitemanagment |
+| Push naar private GitHub | Remote ingesteld; Claude Code mag pushen na geslaagde verifier + reviewer (AGENTS.md); approved-tags alleen na Eddy | origin = github.com/eddyvandergoot-hue/sitemanagment |
 | Housekeeping (status archiveren, AGENTS inkorten) | Open | — |
 | Startscherm + Week Report | Open | Src: 0× `scrHome`, 0× `scrWeekReport` |
 | Export (PDF + CSV, generieke flow) | Open; afspraak in AGENTS.md | — |
 | Volledige roadmap in repo | Open; ROADMAP.md bevat nu alleen open beslissingen en geparkeerde punten | — |
+
+## Save week-fix + Trade Unknown - 25 oktober 2026
+
+Status: **geïmplementeerd en technisch gecontroleerd; niet in Studio geïmporteerd, niet functioneel getest, niet goedgekeurd door Eddy.**
+
+**Incident (testbuild 22-10 op de echte lijsten):** Save week gaf "Opslag niet volledig bevestigd". Enige wijziging: Rafal Wielgos di 20-10-2026 = 10 u (nieuwe Hours-regel). Geen gegevensschade: er is niets geschreven (Writes=0, afgeleid uit de code en Eddy's waarneming: geen nieuwe regel, overige rijen ongewijzigd, geen duplicaten).
+- Oorzaak: Workers.Trade was leeg voor Rafal (Trade kwam uit een Excel-import; de keuzekolom had geen keuzes). De bestaande controle in btnSaveWeek blokkeerde terecht (nul writes) met "Assignment, Employer, Team of Trade ontbreekt.", maar de eindhandler toonde bij elke fout "Opslag niet volledig bevestigd...", zette de week op Failed en verving de echte melding. Dus: juiste blokkade, misleidende melding; geen Patch-fout en geen verify-mismatch.
+- SharePoint door Eddy hersteld: MS-008 (Workers.Trade Fitter / Welder / Unknown, standaard Unknown, verplicht, lege waarden gevuld). Hours.Trade-keuzes: bevestiging Eddy open.
+
+**Geïmplementeerd (Src):**
+- btnSaveWeek: lokale validatie per wijziging (nieuw + bestaand, ook expliciete 0) vóór Refresh/pre-read/write: koppeling en AssignmentKey/EntryKey consistent, medewerker in colWorkersCache, Employer.Id/Value, Trade (Fitter/Welder/Unknown toegestaan, leeg blokkeert), Team, uren 0-24 met max 2 decimalen (lege cel ongewijzigd). Alle fouten verzameld; één fout = nul writes.
+- Nul writes + fout: echte eerste melding ("Niet opgeslagen; er is niets naar SharePoint geschreven. ..."), week blijft Loaded. ≥1 write + fout: Failed, opslag geblokkeerd, invoer behouden, geen automatisch ongedaanmaken (ongewijzigd). Gedragswijziging: sleutel-/duplicaatfouten uit de pre-read zetten varWeekReady niet meer op false (veilig: iedere Save leest opnieuw en schrijft dan niets).
+- Trade op Hours = momentopname van Workers bij opslaan; nieuwe regels `Trade:{Value:<trade>}`, geen Choices(); bestaande regels alleen Title + Hours. Bij mislukte Patch van nieuwe regels met Trade Unknown: extra melding over MS-008.
+- Patroon ongewijzigd: 1 pre-read + max 2 table-Patches + 1 verify read; 500/dag-terugval.
+- lblWeekLoadStatus toont blijvende opslagfout ("Medewerker: melding [sleutel] (+N meer)"), rood #DB1E28, hoogte 40. btnReadWeek wist colHoursErrors bij echte load en cache-hit (achter de onopgeslagen-invoerpoort).
+- UI: Screen1 lblWorkerWarning en scrHours lblItemWarning: chip "Trade onbekend" (niet-blokkerend) en rode blokkerende waarschuwingen voor ontbrekende Employer/Trade; alleen lokale colWorkersCache-lookups. Urenvelden HintText "" zodat leeg versus opgeslagen 0 zichtbaar is. Tekstbreedtes gemeten (Inter/Arial slechtste geval), passen op één regel.
+- Tests uitgebreid: Test-SaveRegression (nieuw-recordpad, lege Trade, Unknown, expliciete 0, urenbereik/decimalen, "Opslag niet volledig bevestigd" alleen bij writes > 0, label, MS-008-melding); Test-GeaColors (kleur lblWeekLoadStatus).
+
+**Technisch gecontroleerd:** reviewer tweemaal, geen blokkerende bevindingen. Verifier volledige set, 0 FAIL: Test-SaveRegression 175, Test-WeeklyCalculations 65, Test-GeaColors 179, Test-Fonts 177, Test-FooterRow -GeometryOnly 196, Test-SummaryDates 186, Test-SummaryStyle 197, Test-SummaryLabels 183, Check-WeeklySource OK. Vijf historische scripts falen identiek op HEAD 8d09ec8 (geverifieerd in aparte worktree) en zijn geen acceptatietests: Test-NavigationLayout, Test-Performance, Test-ReadExisting, Test-PerformanceFix, Test-SummaryFields (vergelijken met oude checkpoints).
+
+**Functioneel getest: nee.** Studio-importcontrole, App checker en functionele test staan open.
+
+**Studio-testlijst voor Eddy:**
+1. Import + App checker op btnSaveWeek, btnReadWeek, lblWeekLoadStatus, lblItemWarning, lblWorkerWarning.
+2. Medewerker met lege Trade + nieuwe cel: echte melding, week blijft Loaded, Trace `DIAG|SaveWeek|End` Writes=0.
+3. Trade Unknown + nieuwe cel en expliciete 0: opgeslagen met Trade Unknown op Hours (faalt als Hours.Trade geen Unknown heeft; dan MS-008).
+4. Uren 24,01 / 7,255: melding per cel.
+5. Gewone Save met een bestaande + een nieuwe cel.
+6. Chip/waarschuwing zichtbaar en niet afgekapt op Screen1 en Weekly Hours; leeg versus 0 in urenvelden.
+7. Daarna: tag `approved-<datum>-savefix`, hier "approved by Eddy", tag pushen. Tot dan NIET goedgekeurd.
+
+**Bekende beperkingen / niet-blokkerende reviewpunten:**
+1. Na aanvullen van Trade/Employer in SharePoint: eerst onopgeslagen invoer terugdraaien (Refresh/Project-team-navigatie is geblokkeerd bij onopgeslagen invoer), dan Refresh op Project / team, dan opnieuw invoeren. Mogelijke latere verbetering: veilige Workers-cache-reload op scrHours.
+2. Employer/Trade-validatie blokkeert ook correcties van bestaande Hours-regels (velden worden daar niet geschreven): bewust, fail-closed.
+3. Screen1: naam kan de rode waarschuwing overlappen bij zeer smalle galleries (TemplateWidth < ~512, scherm < ~604 px).
+4. lblWeekLoadStatus (2 regels) kan een zeer lange melding op smalle schermen afkappen.
+5. Rode tekst in galleryrijen voor blokkerende stamgegevenswaarschuwingen (AGENTS.md aangepast).
+6. Logica en presentatie zitten in één build (op verzoek).
+7. Historische Hours-regels kunnen F/W bevatten, nieuwe Fitter/Welder/Unknown: relevant voor groepering in rapport/export.
+
+**Procesincident:** een PowerShell-hulpfunctie `Rd` (alias van Remove-Item) van een subagent verwijderde Src/scrHours.pa.yaml met niet-gecommitte wijzigingen. Herbouwd uit de vastgelegde edits van de logica-agent; orchestrator verifieerde gelijkwaardigheid (alleen witregels verschilden). Geen verlies; regel toegevoegd aan AGENTS.md (Agents).
 
 ## Verhuizing projectmap naar C:\Users\vandergoot.ed\Dev\Sitemanagment - 22 oktober 2026
 
@@ -1279,7 +1322,11 @@ Screen1.pa.yaml, scrHours.pa.yaml en App.pa.yaml zijn bytegewijs ongewijzigd vol
 
 ## Nieuwste testbuild
 
-De gecombineerde build (zie "Gecombineerde build" bovenaan):
+Nieuwste: Save week-fix + Trade Unknown (25-10-2026), zie het overzicht bovenaan:
+C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\savefix-trade-20261025_163517\SiteManagement_SaveFixTrade_20261025_163517.msapp
+SHA-256: 1891281F7F62DF1F739BA282D11B8218DEDBECF74066027731394BF8CF4033C7 (101640 bytes). Niet geïmporteerd/goedgekeurd.
+
+Vorige: de gecombineerde build (zie "Gecombineerde build" hieronder):
 C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\combined-gea-20261022_134040\SiteManagement_CombinedGea_20261022_134040.msapp
 
 Grootte: 100294 bytes.
