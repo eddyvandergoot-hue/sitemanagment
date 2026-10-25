@@ -4,7 +4,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 | ID | Added | Status |
 |---|---|---|
-| MS-001 | ≤ 24-10-2026 | Open — do / verify |
+| MS-001 | ≤ 24-10-2026 | Done 25-10-2026 (Eddy) |
 | MS-008 | 25-10-2026 | Done (Workers.Trade); Hours.Trade-keuzes: bevestiging Eddy open |
 
 ---
@@ -24,6 +24,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Check first:** whether each index already exists. Local app metadata does not show index presence; do not assume it is missing. Background: `artifacts/PERFORMANCE_EN_INDEXEN.md`.
 - **Also check (not part of this item):** no Project Workers row with empty ProjectKey (AGENTS.md, Save team known risk).
 - **Done when:** all three indexes listed under Indexed columns; report back date + who.
+- **Status:** Done 25-10-2026 (Eddy): Hours.EntryKey, Hours.'Work Date' and 'Project Workers'.ProjectKey created and confirmed under Indexed columns. The "no empty ProjectKey" check above was not part of this report.
 
 ## MS-008 — Trade choices in Workers and Hours
 

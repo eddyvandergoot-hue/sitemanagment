@@ -8,7 +8,7 @@
 |---|---|---|
 | Batch-opslag Save week / Save team + Concurrent loads | Gebouwd. Laden getest door Eddy 22-10-2026: snel, geen fouten. **Open controle:** opslagsnelheid (Save week / Save team) nog niet expliciet bevestigd | Src: `Concurrent(`, `DIAG\|SaveWeek\|End` |
 | Delegatiecorrectie Save team (ProjectKey = globale var) | Gebouwd. App checker: geen fouten en geen delegatiewaarschuwingen (gemeld door Eddy 22-10-2026) | Src: `varTeamSaveProjectKey` (4×) |
-| MS-001 indexen (Hours.EntryKey, Hours.'Work Date', Project Workers.ProjectKey) | Open: uitvoeren / controleren | MANUAL_STEPS.md |
+| MS-001 indexen (Hours.EntryKey, Hours.'Work Date', Project Workers.ProjectKey) | Gedaan 25-10-2026 (Eddy): alle drie aangemaakt en bevestigd onder Indexed columns. Controle "geen lege ProjectKey" niet in deze melding | MANUAL_STEPS.md |
 | Hours Summary-datumkiezers: KW-label, geen sprong | Gebouwd | Src: `lblReportFromWeek` |
 | Lettertype Inter + Arial | Gebouwd | Src: 69× `"Inter, Arial, sans-serif"` |
 | Projectmap naar Dev-map | Klaar | Hashvergelijking Src 5/5; commit ec0d408 |
