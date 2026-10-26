@@ -2,6 +2,12 @@
 
 Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen deze niet. Status per case: open / geslaagd / mislukt, met datum en wie. Huidige testbuild: PROJECT_STATUS.md.
 
+## Testgegevens
+
+- Functionele tests met opslaan uitsluitend op project TEST-000 (MS-005); echte projecten alleen leescontroles. Alle testcases met opslaan draaien op TEST-000.
+- Projecten met Project Number-prefix "TEST-" en de werkgever TEST Employer horen niet in Week Report, Hours Summary-exports en een toekomstige health check (uitsluiting nog niet gebouwd; zie AGENTS.md).
+- MS-005 (testgegevens aanmaken): open, wacht op Eddy.
+
 | Case | Onderwerp | Status | Datum | Wie |
 |---|---|---|---|---|
 | TP-DD-01 | Dropdown hover zichtbaar | geslaagd | 26-10-2026 | Eddy |
@@ -71,7 +77,7 @@ Setup: Studio > Advanced tools > Open monitor > Play; zoek op DIAG.
 | 6 | Refresh op Project / team, daarna Weekly Hours | laadt (teamversie gewijzigd) |
 | 7 | Uren typen zonder opslaan | weekkiezer, Refresh en navigatie uitgeschakeld; alleen Save actief |
 
-Niet getest: "wijziging van een andere gebruiker verschijnt pas na Refresh" (vereist TEST-000; geen echte uren wijzigen).
+Niet getest: "wijziging van een andere gebruiker verschijnt pas na Refresh" (testen met TEST-000 zodra MS-005 klaar is; geen echte uren wijzigen).
 
 ## TP-DISCARD-01 Discard changes (geslaagd met 2 open stappen)
 
@@ -86,4 +92,4 @@ Build: discard-20261026_151949 (PROJECT_STATUS.md). Eddy, 26-10-2026: stappen 1-
 | 5 | Waarde typen zonder het veld te verlaten | eerste klik blurt alleen het veld; daarna wordt Discard actief |
 | 6 | Monitor, zoek DIAG | DIAG\|Week\|Discard zichtbaar (OVERGESLAGEN, niet getest) |
 | 7 | Tekst "Discard changes" en footerrij op uw vensterbreedte | tekst past, rij Refresh / Discard changes / Save zonder overlap (min. 734 px) |
-| 8 | State Failed (na deels/onzeker opslaan) | lokaal verwijderd en geforceerd opnieuw gelezen; alleen testbaar met TEST-000 (lastig na te bootsen) (OPEN) |
+| 8 | State Failed (na deels/onzeker opslaan) | lokaal verwijderd en geforceerd opnieuw gelezen; alleen testbaar met TEST-000 zodra MS-005 klaar is (lastig na te bootsen) (OPEN) |

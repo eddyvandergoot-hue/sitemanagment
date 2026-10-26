@@ -9,7 +9,7 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 ## 1. TEST-000 setup (MS-005)
 
-Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vastgelegd; geen MS-005 in MANUAL_STEPS.md tot Eddy de inhoud aanlevert.
+Inhoud: zie MANUAL_STEPS.md MS-005. Status: open; Eddy doet de SharePoint-stappen en Save team in de app.
 
 ## 2b. ModernDatePicker 1.0.2
 
@@ -38,6 +38,8 @@ Delegate: 1 + 2 logic -> powerfx-logic; layout/tiles/footer -> powerfx-ui; tests
 4. All screens: Home button left in footer (nav style). Update footer min widths, Test-FooterRow.
 
 5. AGENTS.md: home screen exception (tiles = content, no footer actions on home); Week Report rules; active-row rule.
+
+6. Uitsluiting TEST- projecten/TEST Employer in Week Report, Hours Summary-export en health check implementeren (zie AGENTS.md).
 
 Quick tests per change; full suite + pack once at end. Update PROJECT_STATUS.md. Open MS items in reply. No Studio/functional pass claims.
 EOF

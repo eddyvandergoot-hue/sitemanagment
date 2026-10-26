@@ -6,6 +6,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 |---|---|---|
 | MS-001 | ≤ 24-10-2026 | Done 25-10-2026 (Eddy) |
 | MS-008 | 25-10-2026 | Done (Workers.Trade 25-10-2026, Hours.Trade 26-10-2026, Eddy) |
+| MS-005 | 26-10-2026 | Open |
 
 ---
 
@@ -35,3 +36,14 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **App behaviour:** blank Workers.Trade blocks Save week before any write ("Trade ontbreekt in Workers (aanvullen in SharePoint, daarna Refresh op Project / team)"). If the new-rows Patch fails while a row has Trade Unknown, the app adds "Mogelijk ontbreekt Trade 'Unknown' in de Hours-lijst (MS-008)".
 - **Done when:** Hours.Trade choices confirmed as Fitter / Welder / Unknown; report back date + who.
 - **Status:** Done. Workers.Trade 25-10-2026; Hours.Trade choices Fitter / Welder / Unknown confirmed by Eddy 26-10-2026 ("Done when" satisfied).
+
+## MS-005 — TEST-000 test data
+
+- **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment (lists Employers, Projects, Workers) and the app screen Project / team.
+- **Reason:** all functional tests with saves must run on a test project so real hours and projects are never touched.
+- **Employers:** new item "TEST Employer", Employer Code "TEST-EMP" (Employer Code is unique; existing business-code rule).
+- **Projects:** new item Title "TEST-000 Testproject", Project Number "TEST-000", Project Reference "Test only - not for reports".
+- **Workers** (Employer = TEST Employer): "Test Fitter" (Trade Fitter), "Test Welder" (Trade Welder), "Test Unknown" (Trade Unknown). Assumption, Eddy to confirm: Workers has 'First Name' + Surname, so First Name "Test" and Surname "Fitter" / "Welder" / "Unknown" (display name "Test Fitter" etc.).
+- **In the app:** Project / team: link all 3 workers to TEST-000, team 1, Save team.
+- **Done when:** Eddy confirms; report back date + who.
+- **Status:** Open (26-10-2026), waiting for Eddy.
