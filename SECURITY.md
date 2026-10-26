@@ -12,9 +12,9 @@ Gebruikte indeling: SE:01 t/m SE:12 zoals bekend uit Microsoft Learn; de titels 
 |---|---|---|---|
 | SE:01 Baseline | GEA M365-baseline (MFA, encryptie, DLP) plus de regels in AGENTS.md. De M365-baseline is een aanname van Eddy, niet door ons gecontroleerd. | deels | Te bevestigen door IT. |
 | SE:02 Veilige ontwikkelcyclus | Private git-repo, reviewer-agent, tests, SHA-256 bij elke build, goedgekeurde tags, geen secrets in de repo. | deels | GitHub 2FA: Eddy bevestigt (open). |
-| SE:03 Classificatie | Label Confidential (MS-011, gepland). Data-inventaris: namen van medewerkers, telefoon, werkgever, uren. Geen ID/BSN, bankgegevens of geboortedatum. | open | MS-011 plannen en uitvoeren; inventaris door Eddy bevestigen. |
+| SE:03 Classificatie | Label Confidential (MS-011, gepland). Data-inventaris: namen van medewerkers, telefoon, werkgever, uren. Geen ID/BSN, bankgegevens of geboortedatum. Telefoon/e-mail staan nu in Workers en verhuizen naar de lijst Worker Contacts (MS-012, gepland). Hours.Title bevat nu naam | datum en wordt EntryKey (gepland, DECISIONS.md D7). | open | MS-011 en MS-012 plannen en uitvoeren; inventaris door Eddy bevestigen. |
 | SE:04 Segmentatie | Test- en productie-app gescheiden; testgegevens alleen op TEST-000. | deels | IT vragen om een aparte omgeving. |
-| SE:05 Identiteit en toegang | Entra ID met MFA, least privilege, geen verwijderrechten (MS-004, gepland), tweede eigenaar, kwartaalreview van toegang. | open | MS-004 uitvoeren; tweede eigenaar benoemen; eerste kwartaalreview plannen. |
+| SE:05 Identiteit en toegang | Entra ID met MFA, least privilege, geen verwijderrechten (MS-004, gepland), tweede eigenaar, kwartaalreview van toegang. Groep "Contact readers" met unieke rechten op Worker Contacts (MS-012, gepland). | open | MS-004 uitvoeren; tweede eigenaar benoemen; eerste kwartaalreview plannen; MS-012 (groep en rechten). |
 | SE:06 Netwerk | Alleen Microsoft-gehoste onderdelen (Power Apps, SharePoint, Power Automate); geen eigen netwerk. | open, te bevestigen | Eddy/IT bevestigt. |
 | SE:07 Encryptie | Uitsluitend native M365-encryptie; geen eigen versleuteling in de app. | open, te bevestigen | IT bevestigt. |
 | SE:08 Hardening | Least privilege op lijsten, geen verwijderrechten, vastgelegde app-eigenaren. | open, te bevestigen | Via MS-004 en eigenaarsoverzicht. |
@@ -29,7 +29,7 @@ Gebruikte indeling: SE:01 t/m SE:12 zoals bekend uit Microsoft Learn; de titels 
 |---|---|---|
 | 1 | Onbedoeld of kwaadwillend wijzigen of verwijderen van uren en koppelingen in SharePoint | Geen verwijderrechten (MS-004), versiegeschiedenis, Save-validatie, fail-closed opslaan, inactief zetten in plaats van verwijderen |
 | 2 | Misbruik van brede rechten, te veel eigenaren | Least privilege, tweede eigenaar, kwartaalreview van toegang |
-| 3 | Datalek van persoonsgegevens (namen, telefoon, werkgever) via export of delen | Labels en DLP (MS-011, IT), export alleen via de gecontroleerde flow, geen automatische e-mail |
+| 3 | Datalek van persoonsgegevens (namen, telefoon, werkgever) via export of delen | Labels en DLP (MS-011, IT), export alleen via de gecontroleerde flow, geen automatische e-mail. Gepland: dataminimalisatie (telefoon/e-mail uit Workers naar Worker Contacts met unieke rechten: eigenaren + Contact readers, MS-012; Hours.Title = EntryKey), nog niet uitgevoerd |
 | 4 | Fouten door testen op echte gegevens | TEST-000, op echte projecten alleen leescontroles, TEST-uitsluiting in rapporten (gepland) |
 | 5 | Onbetrouwbare app-wijzigingen, supply chain | Private repo, reviewer, tests, SHA-controle, goedgekeurde tags, geen onbekende controls |
 | 6 | Verlies van gegevens of beschikbaarheid | Versiegeschiedenis, recycle bin, backup, herstel van een eerdere app-versie |
@@ -50,3 +50,7 @@ Gebruikte indeling: SE:01 t/m SE:12 zoals bekend uit Microsoft Learn; de titels 
 - Tweede eigenaar benoemen; eerste kwartaalreview van toegang plannen.
 - TP-SEC-01 uitvoeren (TESTPLAN.md).
 - Titels van de SE-punten vergelijken met Microsoft Learn.
+- MS-012 (Worker Contacts, unieke rechten, Workers.Phone verwijderen): open.
+- Monitor-controle: gaan volledige Workers-rijen (incl. Phone/Email) naar het clientgeheugen van de app? Niet geverifieerd.
+- De versiegeschiedenis van Workers bevat nog telefoonnummers; opschonen na MS-012 (beslissing Eddy).
+- Email wel/niet opslaan: Eddy beslist bij MS-012 (niet opslaan zonder concreet gebruik).

@@ -76,3 +76,21 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Indexes:** AssignmentKey and ProjectKey. Check online first whether they exist; local metadata does not show this.
 - **Migration:** each existing active assignment (Project Workers) gets one period: From = Monday of the week of its earliest Hours record (if there are no Hours: the project start), Until blank.
 - **Done when:** list, columns, indexes and migration are in place and Eddy confirms; report back date + who. Test on TEST-000 (MS-005).
+
+## MS-012 — Worker Contacts list (phone/email out of Workers)
+
+- **Added:** 26-10-2026. **Status:** Open. Not needed until the Workers admin task starts; removing/migrating Workers.Phone may be done earlier at Eddy's discretion.
+- **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment (new list; list Workers for the migration).
+- **Reason:** data minimisation (DECISIONS.md D7, SECURITY.md): phone/email must not be readable by everyone with read access to Workers. The current screens do not read or show them.
+- **List:** "Worker Contacts" with columns:
+
+  | Column | Type | Note |
+  |---|---|---|
+  | WorkerID | Number | required, unique, indexed; intended meaning = the SharePoint item ID of the Workers item |
+  | Phone | type: to be confirmed (assumption: single line of text) | |
+  | Email | type: to be confirmed (assumption: single line of text) | only if needed: Eddy decides at MS-012 time whether this column is created at all (do not store without a concrete use) |
+
+- **Permissions:** break permission inheritance on the list ("unique permissions"); give access to the owners + a new group "Contact readers" only.
+- **Migration:** copy the existing phone numbers from Workers.Phone to Worker Contacts; clear the values; then remove the column Workers.Phone. Workers.Email: same, if a value exists.
+- **Version history:** Workers version history still contains the phone numbers. Decide (Eddy) whether to clean old versions.
+- **Done when:** list, columns, unique permissions and group are in place, numbers are migrated and Workers.Phone is removed; Eddy confirms; report back date + who. Also check in Studio Monitor whether Workers rows (incl. Phone/Email) are transferred to the client (SECURITY.md open points).

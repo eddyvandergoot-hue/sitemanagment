@@ -28,6 +28,7 @@ Dates: 21–24 October 2026.
 | D4 | Fail closed: load first, then save; partial results block saving; no automatic repairs. | Prevent duplicates and silent data loss. |
 | D5 | **Indexes** on Hours.EntryKey, Hours.'Work Date', Project Workers.ProjectKey (MS-001). | Stay fast past 5,000 items. |
 | D6 | SharePoint/Power Automate changes are logged as **MS-xxx** in MANUAL_STEPS.md and handled in the Claude chat. | Claude Code cannot change SharePoint or flows. |
+| D7 | **Dataminimalisatie (26-10-2026, ontwerp, nog niet gebouwd):** telefoon en e-mail van medewerkers staan niet in Workers maar in een nieuwe lijst "Worker Contacts" (WorkerID, Phone, Email alleen indien nodig) met unieke rechten (overerving verbroken): eigenaren + groep "Contact readers" (MS-012). Workers houdt naam, werkgever, trade en de bestaande velden. Huidige schermen lezen/tonen telefoon/e-mail niet; het toekomstige Workers-beheerscherm toont contacten alleen bij toegang (bij geen toegang niets tonen, geen fout). E-mail niet opslaan zonder concreet gebruik (Eddy bevestigt). Hours.Title wordt = EntryKey voor nieuwe en bijgewerkte rijen (gepland bij de volgende Save-taak; bestaande rijen blijven staan tenzij Eddy anders besluit; open). | Persoonsgegevens beperken tot wat nodig is en scheiden van de lijst die iedereen leest; Title dupliceert nu naam + datum. |
 
 ## 3. Hours and reports
 

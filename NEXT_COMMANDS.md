@@ -37,6 +37,7 @@ To-do for the build (consequences, no design yet):
 - Hours Summary is Hours-based and unaffected.
 - Check online the indexes on the new list's AssignmentKey/ProjectKey (MS-010).
 - Test on TEST-000 (MS-005).
+- Ook Save week: Hours.Title = EntryKey (nieuwe/bijgewerkte rijen; DECISIONS.md D7), beide table-Patches en de Save-regressietests die Title vastleggen.
 - Update AGENTS.md (replace the design marker by the built rule, revisit the Save team line) and PROJECT_STATUS.md.
 
 ## 5. Week Report
@@ -104,6 +105,8 @@ EOF
 ## 8. Production go-live (later)
 
 Inhoud nog vast te leggen (aanleveren door Eddy). Er is nog geen productieapp; alleen testimports tot de functies compleet zijn (PROJECT_STATUS.md).
+
+Notitie, beheerschermen (later, Workers-scherm): Worker Contacts (MS-012) + Contact readers in het Workers-scherm; contacten alleen tonen bij toegang, zonder toegang niets en geen fout (DECISIONS.md D7).
 
 ---
 
