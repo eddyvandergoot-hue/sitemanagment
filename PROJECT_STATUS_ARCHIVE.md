@@ -30,8 +30,8 @@ Niet lezen tenzij de opdracht erom vraagt.
 
 Status: **geïmplementeerd en technisch gecontroleerd; niet in Studio geïmporteerd, niet functioneel getest, niet goedgekeurd door Eddy.**
 
-**Incident (testbuild 22-10 op de echte lijsten):** Save week gaf "Opslag niet volledig bevestigd". Enige wijziging: Rafal Wielgos di 20-10-2026 = 10 u (nieuwe Hours-regel). Geen gegevensschade: er is niets geschreven (Writes=0, afgeleid uit de code en Eddy's waarneming: geen nieuwe regel, overige rijen ongewijzigd, geen duplicaten).
-- Oorzaak: Workers.Trade was leeg voor Rafal (Trade kwam uit een Excel-import; de keuzekolom had geen keuzes). De bestaande controle in btnSaveWeek blokkeerde terecht (nul writes) met "Assignment, Employer, Team of Trade ontbreekt.", maar de eindhandler toonde bij elke fout "Opslag niet volledig bevestigd...", zette de week op Failed en verving de echte melding. Dus: juiste blokkade, misleidende melding; geen Patch-fout en geen verify-mismatch.
+**Incident (testbuild 22-10 op de echte lijsten):** Save week gaf "Opslag niet volledig bevestigd". Enige wijziging: worker A di 20-10-2026 = 10 u (nieuwe Hours-regel). Geen gegevensschade: er is niets geschreven (Writes=0, afgeleid uit de code en Eddy's waarneming: geen nieuwe regel, overige rijen ongewijzigd, geen duplicaten).
+- Oorzaak: Workers.Trade was leeg voor worker A (Trade kwam uit een Excel-import; de keuzekolom had geen keuzes). De bestaande controle in btnSaveWeek blokkeerde terecht (nul writes) met "Assignment, Employer, Team of Trade ontbreekt.", maar de eindhandler toonde bij elke fout "Opslag niet volledig bevestigd...", zette de week op Failed en verving de echte melding. Dus: juiste blokkade, misleidende melding; geen Patch-fout en geen verify-mismatch.
 - SharePoint door Eddy hersteld: MS-008 (Workers.Trade Fitter / Welder / Unknown, standaard Unknown, verplicht, lege waarden gevuld). Hours.Trade-keuzes: bevestiging Eddy open.
 
 **Geïmplementeerd (Src):**

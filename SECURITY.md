@@ -23,16 +23,18 @@ Gebruikte indeling: SE:01 t/m SE:12 zoals bekend uit Microsoft Learn; de titels 
 | SE:11 Testen | TESTPLAN.md en een permissietest met een niet-eigenaar account (TP-SEC-01, open). | deels | TP-SEC-01 uitvoeren op TEST-000. |
 | SE:12 Incidentrespons | Plan hieronder. | deels | Contactpersonen invullen; plan oefenen. |
 
-## Dreigingen (voorstel, Eddy bevestigt)
+## Dreigingen (de zes van Eddy; maatregelen zijn voorstel, Eddy bevestigt)
 
-| # | Dreiging | Maatregelen |
+Maatregelen met "gepland" bestaan nog niet als MS-item in MANUAL_STEPS.md (alleen MS-001, -005, -008, -009, -010, -012 bestaan).
+
+| # | Dreiging | Maatregelen (bestaand of voorgesteld) |
 |---|---|---|
-| 1 | Onbedoeld of kwaadwillend wijzigen of verwijderen van uren en koppelingen in SharePoint | Geen verwijderrechten (MS-004), versiegeschiedenis, Save-validatie, fail-closed opslaan, inactief zetten in plaats van verwijderen |
-| 2 | Misbruik van brede rechten, te veel eigenaren | Least privilege, tweede eigenaar, kwartaalreview van toegang |
-| 3 | Datalek van persoonsgegevens (namen, telefoon, werkgever) via export of delen | Labels en DLP (MS-011, IT), export alleen via de gecontroleerde flow, geen automatische e-mail. Gepland: dataminimalisatie (telefoon uit Workers naar Worker Contacts met unieke rechten: eigenaren Full control + Site Supervisors Edit, MS-012; e-mail niet opgeslagen; Hours.Title = EntryKey), nog niet uitgevoerd |
-| 4 | Fouten door testen op echte gegevens | TEST-000, op echte projecten alleen leescontroles, TEST-uitsluiting in rapporten (gepland) |
-| 5 | Onbetrouwbare app-wijzigingen, supply chain | Private repo, reviewer, tests, SHA-controle, goedgekeurde tags, geen onbekende controls |
-| 6 | Verlies van gegevens of beschikbaarheid | Versiegeschiedenis, recycle bin, backup, herstel van een eerdere app-versie |
+| 1 | Verkeerde toegang: te brede rechten, verkeerde mensen | Least privilege op de site en lijsten; geen verwijderrechten (MS-004, gepland); groep "Site Supervisors" (Edit) en unieke rechten op Worker Contacts, eigenaren Full control (MS-012); dataminimalisatie (telefoon uit Workers, e-mail niet opgeslagen); kwartaalreview van toegang |
+| 2 | Verwijderen of overschrijven van uren of koppelingen | Geen verwijderrechten (MS-004, gepland); versiegeschiedenis (MS-002, gepland) en recycle bin; fail-closed Save met nul writes bij een afwijking; koppelingen worden inactief gezet, niet verwijderd (AGENTS.md); Save week wijzigt bestaande Employer/Team/Trade niet; backupflow (MS-006, gepland) |
+| 3 | Dubbele records en fouten in de app | Unieke sleutels in SharePoint (MS-003, gepland; Employer Code is al verplicht en uniek, MS-009); EntryKey/AssignmentKey-controles en verify read na Save; reviewer, tests, TEST-000 voor opslaantests; health check (MS-007, gepland) |
+| 4 | Export of bestanden gelekt | Export alleen via de generieke flow naar de bibliotheek Exports, geen automatische e-mail (nog niet gebouwd); Exports-bibliotheek met beperkte rechten; label Confidential (MS-011, gepland); DLP-beleid via IT |
+| 5 | Gekaapt account | Entra ID met MFA (GEA-baseline, aanname, IT bevestigt); least privilege beperkt de schade; geen secrets in de app of repo; GitHub 2FA (open); audit log via IT; incidentplan hieronder |
+| 6 | Eén eigenaar = single point of failure | Tweede eigenaar van site, app en flow (open); eigenaarsoverzicht; backupflow (MS-006, gepland); documentatie in de repo (private GitHub) |
 
 ## Incidentplan (voorstel, Eddy bevestigt)
 
@@ -46,8 +48,9 @@ Gebruikte indeling: SE:01 t/m SE:12 zoals bekend uit Microsoft Learn; de titels 
 
 - GitHub 2FA bevestigen (Eddy).
 - IT-vragen: aparte omgeving voor test, audit log, DLP en labels, M365-baseline (SE:01), netwerk en encryptie (SE:06, SE:07).
-- MS-011 (label Confidential), MS-004 (geen verwijderrechten), MS-007 (health check): gepland, bestaan nog niet in MANUAL_STEPS.md.
-- Tweede eigenaar benoemen; eerste kwartaalreview van toegang plannen.
+- Gepland, bestaan nog niet in MANUAL_STEPS.md: MS-002 (versiegeschiedenis), MS-003 (unieke sleutels), MS-004 (geen verwijderrechten), MS-006 (backupflow), MS-007 (health check), MS-011 (label Confidential). Inhoud volgt van Eddy.
+- Geen persoonsgegevens in de repo (AGENTS.md); geschiedenis kan nog oude gegevens bevatten (zie RISK_ANALYSIS.md).
+- Tweede eigenaar benoemen (site, app, flow); eerste kwartaalreview van toegang plannen.
 - TP-SEC-01 uitvoeren (TESTPLAN.md).
 - Titels van de SE-punten vergelijken met Microsoft Learn.
 - MS-012 (Worker Contacts, unieke rechten, Workers.Phone verwijderen): open.
