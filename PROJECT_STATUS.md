@@ -28,6 +28,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Opslagsnelheid Save week / Save team niet expliciet bevestigd (laden is door Eddy getest: snel, geen fouten).
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
+- SECURITY.md aangemaakt (WAF SE-checklist); open: GitHub 2FA bevestigen, IT-vragen, MS-004/007/011 (gepland), TP-SEC-01.
 - Volgende werk (volgorde: NEXT_COMMANDS.md): Studio-test TP-HOME-01 van de Home-build, daarna Assignment periods (besluit 26-10-2026, DECISIONS.md H9; ontwerp, niet gebouwd), Week Report, export, roadmap-merge.
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.

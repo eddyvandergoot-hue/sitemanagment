@@ -16,6 +16,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-WEEK-01 | Weeklabel 01-01-2027 = 2026 KW53 (Weekly Hours) | geslaagd | 26-10-2026 | Eddy |
 | TP-SUM-01 | Hours Summary restyle | geslaagd | 26-10-2026 | Eddy |
 | TP-REUSE-01 | Hergebruik geladen selecties | geslaagd | 26-10-2026 | Eddy |
+| TP-SEC-01 | Permissietest met niet-eigenaar account | OPEN | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -111,3 +112,19 @@ Build: home-20261026_165630 (PROJECT_STATUS.md). Niet geimporteerd in Studio, ni
 | 9 | Uren typen en direct op Home klikken | geen navigatie met onopgeslagen invoer |
 | 10 | Venster >= 728 px en smal | 3 kolommen naast elkaar; smal 1 kolom met scrollen; geen overlap of afsnijden |
 | 11 | Logo op alle vier schermen | zichtbaar in de titelbalk |
+
+## TP-SEC-01 Permissietest met niet-eigenaar account (OPEN)
+
+Doel: aantonen dat een gebruiker zonder eigenaarsrechten alleen kan wat de bedoelde rol toestaat (zie SECURITY.md, SE:05/SE:08). Opslaan-stappen uitsluitend op TEST-000; op echte projecten alleen lezen.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Aanmelden met een account dat geen eigenaar is (collega- of testaccount met de bedoelde rol) | aanmelden lukt (MFA zoals GEA-beleid) |
+| 2 | App openen | opent; noteer welke schermen bereikbaar zijn (volgens de bedoelde rol) |
+| 3 | Lijsten lezen (Projects, Workers, Project Workers, Hours) in de app en in SharePoint | alleen wat de rol toestaat |
+| 4 | Een Hours- of Project Workers-item verwijderen in SharePoint (alleen TEST-000-gegevens) | moet mislukken zodra MS-004 (gepland) is uitgevoerd |
+| 5 | Site-instellingen / lijstinstellingen openen | moet mislukken |
+| 6 | Proberen te exporteren zonder de flow (rechtstreeks bestanden of lijsten downloaden/delen) | niet mogelijk buiten de gecontroleerde flow (export nog niet gebouwd) |
+| 7 | Opslaan (Save week) als TEST-000 met dit account | alleen toegestaan als de rol dat omvat |
+
+Uitkomst per stap noteren met datum en account/rol. Stap 4 is pas bindend na MS-004.
