@@ -500,11 +500,46 @@ Screens:
                 Control: GroupContainer@1.5.0
                 Variant: ManualLayout
                 Properties:
-                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnGotoHours.Width+btnGotoHoursSummary.Width+btnRefreshTeam.Width+btnAddtoTeam.Width+3*lblFooterButtonMetrics.Width)
+                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnHomeScreen1.Width+btnGotoHours.Width+btnGotoHoursSummary.Width+btnRefreshTeam.Width+btnAddtoTeam.Width+4*lblFooterButtonMetrics.Width)
                   Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height
                   FillPortions: =0
                   Fill: =Color.Transparent
                 Children:
+                  - btnHomeScreen1:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        Color: =Color.White
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        DisplayMode: =If(!Coalesce(varSaving,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varTeamDirty,false),DisplayMode.Edit,DisplayMode.Disabled)
+                        Fill: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#000F41")
+                        HoverColor: =Color.White
+                        HoverFill: =ColorValue("#000F41")
+                        OnSelect: =If(!Coalesce(varSaving,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varTeamDirty,false),Navigate(scrHome))
+                        PressedBorderColor: =ColorValue("#000F41")
+                        PressedColor: =Color.White
+                        PressedFill: =ColorValue("#000F41")
+                        Text: ="Home"
+                        X: =lblFooterButtonMetrics.X
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =90
+                        Height: =lblFooterButtonMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
                   - btnGotoHours:
                       Control: Classic/Button@2.2.0
                       Properties:
@@ -541,7 +576,7 @@ Screens:
                         RadiusTopRight: =8
                         Text: ="Weekly Hours"
                         Width: =170
-                        X: =lblFooterButtonMetrics.X
+                        X: =btnHomeScreen1.X+btnHomeScreen1.Width+lblFooterButtonMetrics.Width
                         Y: =lblFooterButtonMetrics.Y
                         Height: =lblFooterButtonMetrics.Height
                         Size: =14

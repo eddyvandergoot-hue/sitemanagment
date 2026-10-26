@@ -856,11 +856,46 @@ Screens:
               Control: GroupContainer@1.5.0
               Variant: ManualLayout
               Properties:
-                Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnSummaryProjectTeam.Width+btnReportPreviousWeeks.Width+btnReportNextWeeks.Width+btnRefreshReport.Width+3*lblFooterButtonMetrics.Width)
+                Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnHomeSummary.Width+btnSummaryProjectTeam.Width+btnReportPreviousWeeks.Width+btnReportNextWeeks.Width+btnRefreshReport.Width+4*lblFooterButtonMetrics.Width)
                 Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height
                 FillPortions: =0
                 Fill: =Color.Transparent
               Children:
+                - btnHomeSummary:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#0303B8")
+                      Color: =Color.White
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =If(!Coalesce(varReportBusy,false),DisplayMode.Edit,DisplayMode.Disabled)
+                      Fill: =ColorValue("#0303B8")
+                      HoverBorderColor: =ColorValue("#000F41")
+                      HoverColor: =Color.White
+                      HoverFill: =ColorValue("#000F41")
+                      OnSelect: =If(!Coalesce(varReportBusy,false),Navigate(scrHome))
+                      PressedBorderColor: =ColorValue("#000F41")
+                      PressedColor: =Color.White
+                      PressedFill: =ColorValue("#000F41")
+                      Text: ="Home"
+                      X: =lblFooterButtonMetrics.X
+                      Y: =lblFooterButtonMetrics.Y
+                      Width: =90
+                      Height: =lblFooterButtonMetrics.Height
+                      Font: ="Inter, Arial, sans-serif"
+                      Size: =14
+                      FontWeight: =FontWeight.Semibold
+                      Align: =Align.Center
+                      VerticalAlign: =VerticalAlign.Middle
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =16
+                      PaddingRight: =16
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
                 - btnSummaryProjectTeam:
                     Control: Classic/Button@2.2.0
                     Properties:
@@ -877,7 +912,7 @@ Screens:
                       HoverFill: =ColorValue("#000F41")
                       Fill: =ColorValue("#0303B8")
                       Text: ="Project / team"
-                      X: =lblFooterButtonMetrics.X
+                      X: =btnHomeSummary.X+btnHomeSummary.Width+lblFooterButtonMetrics.Width
                       Y: =lblFooterButtonMetrics.Y
                       Width: =180
                       Height: =lblFooterButtonMetrics.Height

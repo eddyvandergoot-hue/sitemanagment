@@ -31,6 +31,18 @@ $fonts=@{
 }
 # Name, text, pt, weight (Normal/Semibold/Bold), available content width in px (control width minus padding).
 $cases=@(
+ @('Screen1.btnHomeScreen1','Home',14,'Semibold',(90-32)),@('scrHours.btnHomeHours','Home',14,'Semibold',(90-32)),@('scrWeeklyHours.btnHomeSummary','Home',14,'Semibold',(90-32)),
+ @('scrHome.lblHomeTitle @480 (Parent.Width-80, PaddingLeft 129, 5 px margin)','Site Management',22,'Semibold',(480-80-129-5)),
+ @('scrHome.lblHomeHeader (narrowest column 200)','Administration',16,'Semibold',200),@('scrHome.lblHomeHeader (narrowest column 200)','CAD tools',16,'Semibold',200),@('scrHome.lblHomeHeader (narrowest column 200)','Inventory',16,'Semibold',200),
+ @('scrHome.btnTile (tile 200 min, padding 12)','Project / team',14,'Semibold',(200-24)),@('scrHome.btnTile (tile 200 min, padding 12)','Weekly Hours',14,'Semibold',(200-24)),
+ @('scrHome.btnTile (tile 200 min, padding 12)','Hours Summary',14,'Semibold',(200-24)),@('scrHome.btnTile (tile 200 min, padding 12)','Week Report',14,'Semibold',(200-24)),
+ @('scrHome.btnTile (tile 200 min, padding 12)','Workers',14,'Semibold',(200-24)),@('scrHome.btnTile (tile 200 min, padding 12)','Employers',14,'Semibold',(200-24)),
+ @('scrHome.btnTile (tile 200 min, padding 12)','Projects',14,'Semibold',(200-24)),@('scrHome.btnTile (tile 200 min, padding 12)','3D viewer',14,'Semibold',(200-24)),
+ @('scrHome.btnTile (tile 200 min, padding 12)','P&ID tracker',14,'Semibold',(200-24)),@('scrHome.btnTile (tile 200 min, padding 12)','Component library',14,'Semibold',(200-24)),
+ @('scrHome.btnTile (tile 200 min, padding 12)','Skid configurator',14,'Semibold',(200-24)),@('scrHome.btnTile (tile 200 min, padding 12)','Stock overview',14,'Semibold',(200-24)),
+ @('scrHome.btnTile (tile 200 min, padding 12)','Locations',14,'Semibold',(200-24)),@('scrHome.btnTile (tile 200 min, padding 12)','Usage',14,'Semibold',(200-24)),
+ @('scrHome.btnTile (tile 200 min, padding 12)','Requests',14,'Semibold',(200-24)),
+ @('scrHome.lblTileSub (tile 200 min, padding 12)','Coming soon',12,'Normal',(200-24)),
  @('Screen1.btnGotoHours','Weekly Hours',14,'Semibold',(170-32)),
  @('Screen1.btnAddtoTeam','Save team',14,'Semibold',(160-32)),@('Screen1.btnAddtoTeam','Saving...',14,'Semibold',(160-32)),
  @('Screen1.btnGotoHoursSummary','Hours Summary',14,'Semibold',(190-32)),

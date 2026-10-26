@@ -10,7 +10,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Eerdere goedgekeurde: approved-20261026-savefix (commit 01af074; logo-build, SHA-256 8EAE873731E01A50C49A50F02D31153C4ECCA52EDB0A30CE25CA298168FF2085). Eerdere baseline: baseline-footer-row-20261020_215936 (archief).
 
 ## Huidige build
-- Huidige build = de goedgekeurde Discard-build hierboven (pac 2.11.2). Geen openstaande testbuild. Gedrag: AGENTS.md; testplan: TESTPLAN.md.
+- Huidige build = Home-testbuild (pac 2.11.2): C:SERSANDERGOOT.EDDEVSITEMANAGMENTRTIFACTSHOME-20261026_165630SITEMANAGEMENT_HOME_20261026_165630.MSAPP, 110979 BYTES, SHA-256 55F62B4D6397E5BB2C6205145C341CB782CADC6B339965C2EAAC11FF8F80EE4E (21 ENTRIES = DISCARD-BUILD + SRCSCRHOME.PA.YAML; LOGO ONGEWIJZIGD; SRC 6/6 BYTEGELIJK; UNPACK ROUND TRIP OK). STATUS: GEIMPLEMENTEERD EN TECHNISCH GECONTROLEERD (VERIFIER VOLLEDIG, REVIEWER ZONDER BLOKKERENDE PUNTEN); NIET IN STUDIO GEIMPORTEERD, NIET FUNCTIONEEL GETEST, NIET GOEDGEKEURD (TP-HOME-01). DE GOEDGEKEURDE BASELINE BLIJFT APPROVED-20261026-DISCARD. GEDRAG: AGENTS.MD; TESTPLAN: TESTPLAN.MD.
 - TP-DD-01, TP-SAVE-01, TP-LOGO-01: geslaagd (Eddy, 26-10-2026, zonder detailrapport). TP-DISCARD-01: stappen 1-5 en 7 geslaagd (Eddy, 26-10-2026; footer past, geen overlap); stap 6 (Monitor) overgeslagen; stap 8 (Failed) open tot TEST-000. De oude Studio-testlijst staat in het archief.
 - Bevestigd door Eddy in Studio op 26-10-2026: weeklabel van dpHoursWeek toont voor 01-01-2027 `2026 KW53` (TP-WEEK-01); Hours Summary-restyle (zebra, "–" bij 0, totaalrij, Period total-kolom, scrollbarruimte, GEA-tabelkop) is visueel ok (TP-SUM-01); hergebruik van geladen selecties, scenario 1-7 via Monitor (TP-REUSE-01, op Eddy's melding "alles werkt"; Monitor-regels niet afzonderlijk gemeld); weekkiezer: een andere week laadt automatisch en onopgeslagen invoer blokkeert wisselen (kiezer uitgeschakeld, Refresh grijs, alleen Save actief). Verder niets bevestigd.
 - Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek: andere dag in dezelfde week bewaart de dag zonder herlaad; overige GEA-kleuren; fail-closed blokkades (rest); Monitor-delegatie; wijziging van een andere gebruiker verschijnt pas na Refresh (vereist TEST-000).
@@ -28,7 +28,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Opslagsnelheid Save week / Save team niet expliciet bevestigd (laden is door Eddy getest: snel, geen fouten).
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
-- Volgende werk (volgorde: NEXT_COMMANDS.md): Home + logo (in uitvoering), Assignment periods (besluit 26-10-2026, DECISIONS.md H9; ontwerp, niet gebouwd), Week Report, export, roadmap-merge.
+- Volgende werk (volgorde: NEXT_COMMANDS.md): Studio-test TP-HOME-01 van de Home-build, daarna Assignment periods (besluit 26-10-2026, DECISIONS.md H9; ontwerp, niet gebouwd), Week Report, export, roadmap-merge.
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 
@@ -64,6 +64,7 @@ Algemeen:
 - Historische scripts falen ook op HEAD en zijn geen acceptatietests: Test-NavigationLayout, Test-Performance, Test-ReadExisting, Test-PerformanceFix, Test-SummaryFields (vergelijken met oude checkpoints).
 - Save week/team zijn geen SharePoint-transactie; gedeeltelijke opslag blijft mogelijk (invoer behouden, opslag geblokkeerd).
 - Bekende delegatie-uitzondering: maand-/dagpaginering van Hours Summary binnen ForAll(Sequence(monthCount)).
+- Home (niet-blokkerend, reviewer): (a) btnWeeklyProjectTeam (scrHours), btnSummaryProjectTeam (Summary) en btnGotoHoursSummary (Screen1) hebben hun guard alleen in DisplayMode, niet als eerste OnSelect-voorwaarde (bestaand; later logicataak); (b) Studio: uren typen en direct op Home klikken (OnChange-on-blur versus OnSelect), de OnSelect-guard beperkt het risico; (c) de Weekly Hours-tegel leest ddProject/ddTeam van Screen1 (app-CrossScreenEventDependencies); (d) Notify op Home is Engels, de meeste meldingen Nederlands; (e) "Component library" past krap (173/176 px bij tegel 200 px); (f) geen schermovergang op Home-navigatie (cosmetisch). Placeholder-tegels zijn bewust zonder logica.
 - Logo: 13 px vrije ruimte boven/onder in de balk van 56 px (de regel ≥15 px geldt horizontaal).
 - ModernDatePicker: Src 1.0.0 versus Studio 1.0.2 (zie Studio-bewijs).
 - artifacts\Logo_download\20261026-Sitemanagment_logo.msapp bevat een read-only SAS-token, geldig tot 27-10-2026 10:57 UTC; lokaal en gitignored; Eddy mag het verwijderen.

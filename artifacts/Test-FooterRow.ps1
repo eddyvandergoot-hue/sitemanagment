@@ -4,7 +4,7 @@ $ErrorActionPreference='Stop'
 $backup=Join-Path $projectRoot (Get-Content (Join-Path $PSScriptRoot 'footer-row-backup.txt') -Raw).Trim()
 if(!$GeometryOnly){
 $allowed=@('X','Y','Width','Height','Font','Size','FontWeight','Align','VerticalAlign','PaddingTop','PaddingBottom','PaddingLeft','PaddingRight','RadiusTopLeft','RadiusTopRight','RadiusBottomLeft','RadiusBottomRight','LayoutDirection','LayoutAlignItems','LayoutJustifyContent','LayoutWrap','LayoutOverflowX','LayoutOverflowY','LayoutGap')
-foreach($screen in $indexes.Keys){
+foreach($screen in $indexes.Keys){ if($screen -eq 'scrHome'){continue}
  $old=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $backup ('Src/'+$screen+'.pa.yaml'))));$oldIndex=@{};Index-RegressionControls $old['Screens'][$screen]['Children'] $oldIndex
  foreach($name in $oldIndex.Keys){
   if(!$indexes[$screen].ContainsKey($name)){throw "Removed control $name"}
@@ -34,9 +34,9 @@ function Measure-Rect($name,$props,$parent){
 $metric=Measure-Rect 'lblFooterButtonMetrics' $indexes.Screen1['lblFooterButtonMetrics']['Properties'] @{Width=1366;Height=768}
 if($metric.Y -ne 16 -or $metric.Height -ne 40 -or $metric.Width -ne 12){throw 'Shared metrics invalid'}
 $configs=@(
- @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnGotoHours','btnGotoHoursSummary');Actions=@('btnRefreshTeam','btnAddtoTeam')},
- @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
- @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')}
+ @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnHomeScreen1','btnGotoHours','btnGotoHoursSummary');Actions=@('btnRefreshTeam','btnAddtoTeam')},
+ @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
+ @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnHomeSummary','btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')}
 )
 foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){
  foreach($cfg in $configs){
@@ -55,6 +55,10 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   foreach($group in @($cfg.Nav,$cfg.Actions)){for($i=1;$i -lt $group.Count;$i++){if($rects[$group[$i]].X-($rects[$group[$i-1]].X+$rects[$group[$i-1]].Width) -ne 12){throw 'Incorrect group gap'}}}
   if($bar.Y+$bar.Height -ne $h -or $index[$cfg.Bar]['Properties']['LayoutWrap'] -ne '=false' -or $index[$cfg.Bar]['Properties']['LayoutOverflowX'] -ne '=LayoutOverflow.Scroll'){throw 'Footer not fixed/single row/scrollable'}
   $children=@($index[$cfg.Row]['Children']|ForEach-Object {@($_.Keys)[0]});foreach($name in $buttons){if($name -notin $children){throw 'Button in separate parent'}}
+  # 26-10-2026 (powerfx-logic): Home has its own guard, identical in DisplayMode and OnSelect (If(<guard>,Navigate(scrHome))); the guard values are checked in Test-SaveRegression.ps1.
+  $homeBtn=$cfg.Nav[0];$homeDm=[string]$index[$homeBtn]['Properties']['DisplayMode'];$homeOs=[string]$index[$homeBtn]['Properties']['OnSelect']
+  $homeGuardOk=$homeDm.StartsWith('=If(') -and $homeDm.EndsWith(',DisplayMode.Edit,DisplayMode.Disabled)') -and $homeOs -ceq ('=If('+$homeDm.Substring(4,$homeDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)+',Navigate(scrHome))')
+  if($children[0] -ne $homeBtn -or !$homeGuardOk -or $index[$homeBtn]['Properties']['Text'] -ne '="Home"' -or $rects[$homeBtn].X -ne 40 -or $rects[$cfg.Nav[1]].X-($rects[$homeBtn].X+$rects[$homeBtn].Width) -ne 12){throw "Home button must be first (X=40, 12 px before next nav button) and navigate to scrHome behind the same guard in DisplayMode and OnSelect: $($cfg.Screen)"}
   if($cfg.Screen -eq 'Screen1'){
    foreach($name in @('conSelection','lblProject','lblTeam','ddTeam','lblSelectionLoadStatus','Label2','Gallery1')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    if($rects.Gallery1.Y+$rects.Gallery1.Height -gt $rects.Label2.Y-12 -or $rects.Label2.Y+$rects.Label2.Height -gt $bar.Y){throw 'Team content behind footer'}
@@ -84,3 +88,5 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
 }
 Write-Output 'Geometry and source invariants only; native AutoLayout scrollbar, visual rendering, Studio import and online data tests remain open. Small-width table redesign is outside this footer change.'
 
+if(@($indexes['scrHome'].Keys | Where-Object {$indexes['scrHome'][$_]['Control'] -like 'Classic/Button@*' -and $_ -notlike 'btnTile*'}).Count){throw 'Home has a non-tile button (no footer on Home)'}
+Write-Output 'PASS Home screen has no footer/action row; Home button is first (X=40) in each footer, 12 px before the next navigation button, OnSelect If(<guard>,Navigate(scrHome)) with the same guard as its DisplayMode (guard values: Test-SaveRegression.ps1).'

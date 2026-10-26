@@ -105,4 +105,23 @@ function Check-Control($entry,[bool]$autoLayoutChild=$false) {
     foreach($child in $control['Children']) { Check-Control $child ($control['Variant'] -eq 'AutoLayout') }
 }
 foreach($entry in $yaml['Screens']['scrWeeklyHours']['Children']) { Check-Control $entry }
+$homeYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrHome.pa.yaml')))
+foreach($entry in $homeYaml['Screens']['scrHome']['Children']) { Check-Control $entry }
 Write-Output "Structuur en bestaande templates: $script:controlCount controls gecontroleerd; rijlimiet 500 en errorhandling bevestigd."
+# 26-10-2026: every Icon.<Name> in Src must exist in the Classic/Icon 2.5.0 template enum of the .msapr (read-only).
+$iconTemplate = $templates | Where-Object { $_.Name -eq 'icon' -and $_.Version -eq '2.5.0' }
+if(!$iconTemplate) { throw 'Classic/Icon 2.5.0-template ontbreekt in Templates.json.' }
+$iconEnum = @([regex]::Matches($iconTemplate.Template,'Icon\.RESERVED%\.(\w+)') | ForEach-Object { $_.Groups[1].Value })
+$iconFold = [regex]::Match($iconTemplate.Template,'foldVariants="([^"]+)"')
+if($iconFold.Success) { $iconEnum += $iconFold.Groups[1].Value.Split('|') }
+$iconEnum = @($iconEnum | Sort-Object -Unique)
+if($iconEnum.Count -lt 100) { throw "Icon-enumlijst niet gevonden in template ($($iconEnum.Count) namen)." }
+$iconUses = 0
+foreach($srcFile in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter '*.pa.yaml') {
+    foreach($iconMatch in [regex]::Matches([IO.File]::ReadAllText($srcFile.FullName),'(?<![\w.%])Icon\.(\w+)')) {
+        $iconUses++
+        if($iconMatch.Groups[1].Value -cnotin $iconEnum) { throw "Onbekende Icon-naam in $($srcFile.Name): Icon.$($iconMatch.Groups[1].Value)" }
+    }
+}
+if($iconUses -eq 0) { throw 'Geen Icon.<Naam>-verwijzingen gevonden in Src.' }
+Write-Output "Icon-namen: $iconUses verwijzingen in Src bestaan in de Classic/Icon 2.5.0-enum ($($iconEnum.Count) namen)."

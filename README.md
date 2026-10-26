@@ -49,7 +49,7 @@ Sitemanagment/
 
 | Internal name | Visible title | Purpose |
 |---|---|---|
-| `scrHome` *(planned)* | Site Management | Landing tiles |
+| `scrHome` | Site Management | Startscherm: tegels naar de schermen (placeholders "Coming soon") |
 | `Screen1` | Project / team | Choose project + team, link workers, Save team |
 | `scrHours` | Weekly Hours | Enter hours Mon–Sun per team |
 | `scrWeekReport` *(planned)* | Week Report | Daily hours per worker for one week; export PDF + CSV |

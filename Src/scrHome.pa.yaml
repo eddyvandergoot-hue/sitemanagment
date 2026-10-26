@@ -1,0 +1,964 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrHome:
+    Properties:
+      Fill: =Color.White
+      LoadingSpinnerColor: =ColorValue("#0303B8")
+    Children:
+    - lblHomeTitle:
+        Control: Label@2.5.1
+        Properties:
+          Color: =Color.White
+          Fill: =ColorValue("#0303B8")
+          Font: ="Inter, Arial, sans-serif"
+          FontWeight: =FontWeight.Semibold
+          Height: =56
+          PaddingLeft: =129
+          Size: =22
+          Text: ="Site Management"
+          Width: =Parent.Width-80
+          X: =40
+          Y: =24
+    - imgLogoHome:
+        Control: Image@2.2.3
+        Properties:
+          AccessibleLabel: ="GEA"
+          BorderColor: =Color.Transparent
+          BorderThickness: =0
+          Height: =30
+          Image: =GEA_logo_white
+          ImagePosition: =ImagePosition.Fit
+          Width: =99
+          X: =lblHomeTitle.X+15
+          Y: =lblHomeTitle.Y+(lblHomeTitle.Height-Self.Height)/2
+    - lblHomeLayout:
+        Control: Label@2.5.1
+        Properties:
+          Text: =""
+          Visible: =false
+          X: =If(conHomeScroll.Width-80>=648,3,1)
+          Y: =If(Self.X=3,(conHomeScroll.Width-80-48)/3,conHomeScroll.Width-80)
+          Width: =Max(1,RoundDown((Self.Y+12)/212,0))
+          Height: =(Self.Y-(Self.Width-1)*12)/Self.Width
+    - lblHomeRows:
+        Control: Label@2.5.1
+        Properties:
+          Text: =""
+          Visible: =false
+          X: =RoundUp(7/lblHomeLayout.Width,0)
+          Y: =RoundUp(4/lblHomeLayout.Width,0)
+          Width: =RoundUp(4/lblHomeLayout.Width,0)
+          Height: =0
+    - lblHomeColumns:
+        Control: Label@2.5.1
+        Properties:
+          Text: =""
+          Visible: =false
+          X: =0
+          Y: =If(lblHomeLayout.X=3,0,34+122*lblHomeRows.X+24)
+          Width: =If(lblHomeLayout.X=3,0,Self.Y+34+122*lblHomeRows.Y+24)
+          Height: =If(lblHomeLayout.X=3,Max(34+122*lblHomeRows.X,34+122*lblHomeRows.Y,34+122*lblHomeRows.Width),Self.Width+34+122*lblHomeRows.Width)+24
+    - conHomeScroll:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          X: =0
+          Y: =lblHomeTitle.Y+lblHomeTitle.Height+12
+          Width: =Parent.Width
+          Height: =Max(0,Parent.Height-Self.Y)
+          Fill: =Color.White
+          LayoutDirection: =LayoutDirection.Vertical
+          LayoutAlignItems: =LayoutAlignItems.Start
+          LayoutJustifyContent: =LayoutJustifyContent.Start
+          LayoutWrap: =false
+          LayoutOverflowX: =LayoutOverflow.Hide
+          LayoutOverflowY: =LayoutOverflow.Scroll
+          LayoutGap: =0
+          PaddingTop: =0
+          PaddingBottom: =0
+          PaddingLeft: =0
+          PaddingRight: =0
+        Children:
+          - conHomeCanvas:
+              Control: GroupContainer@1.5.0
+              Variant: ManualLayout
+              Properties:
+                Width: =Parent.Width
+                Height: =lblHomeColumns.Height
+                FillPortions: =0
+                Fill: =Color.Transparent
+              Children:
+                - lblHomeHeaderAdmin:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#000F41")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      Height: =32
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =16
+                      Text: ="Administration"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =lblHomeLayout.Y
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)
+                      Y: =lblHomeColumns.X
+                - recHomeLineAdmin:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Fill: =ColorValue("#0303B8")
+                      Height: =2
+                      Width: =lblHomeLayout.Y
+                      X: =lblHomeHeaderAdmin.X
+                      Y: =lblHomeHeaderAdmin.Y+lblHomeHeaderAdmin.Height
+                - lblHomeHeaderCad:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#000F41")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      Height: =32
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =16
+                      Text: ="CAD tools"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =lblHomeLayout.Y
+                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)
+                      Y: =lblHomeColumns.Y
+                - recHomeLineCad:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Fill: =ColorValue("#0303B8")
+                      Height: =2
+                      Width: =lblHomeLayout.Y
+                      X: =lblHomeHeaderCad.X
+                      Y: =lblHomeHeaderCad.Y+lblHomeHeaderCad.Height
+                - lblHomeHeaderInventory:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#000F41")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      Height: =32
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =16
+                      Text: ="Inventory"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =lblHomeLayout.Y
+                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)
+                      Y: =lblHomeColumns.Width
+                - recHomeLineInventory:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Fill: =ColorValue("#0303B8")
+                      Height: =2
+                      Width: =lblHomeLayout.Y
+                      X: =lblHomeHeaderInventory.X
+                      Y: =lblHomeHeaderInventory.Y+lblHomeHeaderInventory.Height
+                - btnTileProjectTeam:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#0303B8")
+                      Color: =Color.White
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      Fill: =ColorValue("#0303B8")
+                      HoverBorderColor: =ColorValue("#000F41")
+                      HoverColor: =Color.White
+                      HoverFill: =ColorValue("#000F41")
+                      OnSelect: =Navigate(Screen1)
+                      PressedBorderColor: =ColorValue("#000F41")
+                      PressedColor: =Color.White
+                      PressedFill: =ColorValue("#000F41")
+                      Text: ="Project / team"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.X+46+RoundDown(0/lblHomeLayout.Width,0)*122
+                - icoTileProjectTeam:
+                    Control: Classic/Icon@2.5.0
+                    Properties:
+                      AccessibleLabel: =""
+                      BorderColor: =Color.Transparent
+                      Color: =Color.White
+                      DisabledBorderColor: =Color.Transparent
+                      DisabledColor: =Color.White
+                      DisabledFill: =Color.Transparent
+                      Fill: =Color.Transparent
+                      Height: =28
+                      HoverBorderColor: =Color.Transparent
+                      HoverColor: =Color.White
+                      HoverFill: =Color.Transparent
+                      Icon: =Icon.People
+                      OnSelect: =Select(btnTileProjectTeam)
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      PaddingTop: =0
+                      PressedBorderColor: =Color.Transparent
+                      PressedColor: =Color.White
+                      PressedFill: =Color.Transparent
+                      TabIndex: =-1
+                      Width: =28
+                      X: =btnTileProjectTeam.X+12
+                      Y: =btnTileProjectTeam.Y+12
+                - btnTileWeeklyHours:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#0303B8")
+                      Color: =Color.White
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      Fill: =ColorValue("#0303B8")
+                      HoverBorderColor: =ColorValue("#000F41")
+                      HoverColor: =Color.White
+                      HoverFill: =ColorValue("#000F41")
+                      OnSelect: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value),Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected); Trace("DIAG|Nav|HomeToWeeklyHours",TraceSeverity.Information,{Scenario:"Nav",Step:"HomeToWeeklyHours"}); Navigate(scrHours),Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning))
+                      PressedBorderColor: =ColorValue("#000F41")
+                      PressedColor: =Color.White
+                      PressedFill: =ColorValue("#000F41")
+                      Text: ="Weekly Hours"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.X+46+RoundDown(1/lblHomeLayout.Width,0)*122
+                - icoTileWeeklyHours:
+                    Control: Classic/Icon@2.5.0
+                    Properties:
+                      AccessibleLabel: =""
+                      BorderColor: =Color.Transparent
+                      Color: =Color.White
+                      DisabledBorderColor: =Color.Transparent
+                      DisabledColor: =Color.White
+                      DisabledFill: =Color.Transparent
+                      Fill: =Color.Transparent
+                      Height: =28
+                      HoverBorderColor: =Color.Transparent
+                      HoverColor: =Color.White
+                      HoverFill: =Color.Transparent
+                      Icon: =Icon.Clock
+                      OnSelect: =Select(btnTileWeeklyHours)
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      PaddingTop: =0
+                      PressedBorderColor: =Color.Transparent
+                      PressedColor: =Color.White
+                      PressedFill: =Color.Transparent
+                      TabIndex: =-1
+                      Width: =28
+                      X: =btnTileWeeklyHours.X+12
+                      Y: =btnTileWeeklyHours.Y+12
+                - btnTileHoursSummary:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#0303B8")
+                      Color: =Color.White
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      Fill: =ColorValue("#0303B8")
+                      HoverBorderColor: =ColorValue("#000F41")
+                      HoverColor: =Color.White
+                      HoverFill: =ColorValue("#000F41")
+                      OnSelect: =Navigate(scrWeeklyHours)
+                      PressedBorderColor: =ColorValue("#000F41")
+                      PressedColor: =Color.White
+                      PressedFill: =ColorValue("#000F41")
+                      Text: ="Hours Summary"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.X+46+RoundDown(2/lblHomeLayout.Width,0)*122
+                - icoTileHoursSummary:
+                    Control: Classic/Icon@2.5.0
+                    Properties:
+                      AccessibleLabel: =""
+                      BorderColor: =Color.Transparent
+                      Color: =Color.White
+                      DisabledBorderColor: =Color.Transparent
+                      DisabledColor: =Color.White
+                      DisabledFill: =Color.Transparent
+                      Fill: =Color.Transparent
+                      Height: =28
+                      HoverBorderColor: =Color.Transparent
+                      HoverColor: =Color.White
+                      HoverFill: =Color.Transparent
+                      Icon: =Icon.DetailList
+                      OnSelect: =Select(btnTileHoursSummary)
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      PaddingTop: =0
+                      PressedBorderColor: =Color.Transparent
+                      PressedColor: =Color.White
+                      PressedFill: =Color.Transparent
+                      TabIndex: =-1
+                      Width: =28
+                      X: =btnTileHoursSummary.X+12
+                      Y: =btnTileHoursSummary.Y+12
+                - btnTileWeekReport:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Week Report"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.X+46+RoundDown(3/lblHomeLayout.Width,0)*122
+                - lblTileSubWeekReport:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileWeekReport.Width-24
+                      X: =btnTileWeekReport.X+12
+                      Y: =btnTileWeekReport.Y+12
+                - btnTileWorkers:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Workers"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(4,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.X+46+RoundDown(4/lblHomeLayout.Width,0)*122
+                - lblTileSubWorkers:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileWorkers.Width-24
+                      X: =btnTileWorkers.X+12
+                      Y: =btnTileWorkers.Y+12
+                - btnTileEmployers:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Employers"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(5,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.X+46+RoundDown(5/lblHomeLayout.Width,0)*122
+                - lblTileSubEmployers:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileEmployers.Width-24
+                      X: =btnTileEmployers.X+12
+                      Y: =btnTileEmployers.Y+12
+                - btnTileProjects:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Projects"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(6,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.X+46+RoundDown(6/lblHomeLayout.Width,0)*122
+                - lblTileSubProjects:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileProjects.Width-24
+                      X: =btnTileProjects.X+12
+                      Y: =btnTileProjects.Y+12
+                - btnTileViewer3D:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="3D viewer"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Y+46+RoundDown(0/lblHomeLayout.Width,0)*122
+                - lblTileSubViewer3D:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileViewer3D.Width-24
+                      X: =btnTileViewer3D.X+12
+                      Y: =btnTileViewer3D.Y+12
+                - btnTilePIDTracker:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="P&ID tracker"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Y+46+RoundDown(1/lblHomeLayout.Width,0)*122
+                - lblTileSubPIDTracker:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTilePIDTracker.Width-24
+                      X: =btnTilePIDTracker.X+12
+                      Y: =btnTilePIDTracker.Y+12
+                - btnTileComponentLibrary:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Component library"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Y+46+RoundDown(2/lblHomeLayout.Width,0)*122
+                - lblTileSubComponentLibrary:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileComponentLibrary.Width-24
+                      X: =btnTileComponentLibrary.X+12
+                      Y: =btnTileComponentLibrary.Y+12
+                - btnTileSkidConfigurator:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Skid configurator"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Y+46+RoundDown(3/lblHomeLayout.Width,0)*122
+                - lblTileSubSkidConfigurator:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileSkidConfigurator.Width-24
+                      X: =btnTileSkidConfigurator.X+12
+                      Y: =btnTileSkidConfigurator.Y+12
+                - btnTileStockOverview:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Stock overview"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Width+46+RoundDown(0/lblHomeLayout.Width,0)*122
+                - lblTileSubStockOverview:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileStockOverview.Width-24
+                      X: =btnTileStockOverview.X+12
+                      Y: =btnTileStockOverview.Y+12
+                - btnTileLocations:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Locations"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Width+46+RoundDown(1/lblHomeLayout.Width,0)*122
+                - lblTileSubLocations:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileLocations.Width-24
+                      X: =btnTileLocations.X+12
+                      Y: =btnTileLocations.Y+12
+                - btnTileUsage:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Usage"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Width+46+RoundDown(2/lblHomeLayout.Width,0)*122
+                - lblTileSubUsage:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileUsage.Width-24
+                      X: =btnTileUsage.X+12
+                      Y: =btnTileUsage.Y+12
+                - btnTileRequests:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Requests"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeColumns.Width+46+RoundDown(3/lblHomeLayout.Width,0)*122
+                - lblTileSubRequests:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileRequests.Width-24
+                      X: =btnTileRequests.X+12
+                      Y: =btnTileRequests.Y+12

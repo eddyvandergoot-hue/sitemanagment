@@ -9,5 +9,5 @@
 App:
   Properties:
     OnStart: =Set(varSaving, false); Set(varWeekSaving, false)
-    StartScreen: =Screen1
+    StartScreen: =scrHome
     Theme: =PowerAppsTheme

@@ -93,3 +93,21 @@ Build: discard-20261026_151949 (PROJECT_STATUS.md). Eddy, 26-10-2026: stappen 1-
 | 6 | Monitor, zoek DIAG | DIAG\|Week\|Discard zichtbaar (OVERGESLAGEN, niet getest) |
 | 7 | Tekst "Discard changes" en footerrij op uw vensterbreedte | tekst past, rij Refresh / Discard changes / Save zonder overlap (min. 734 px) |
 | 8 | State Failed (na deels/onzeker opslaan) | lokaal verwijderd en geforceerd opnieuw gelezen; alleen testbaar met TEST-000 zodra MS-005 klaar is (lastig na te bootsen) (OPEN) |
+
+## TP-HOME-01 Home-scherm en Home-knop (OPEN)
+
+Build: home-20261026_165630 (PROJECT_STATUS.md). Niet geimporteerd in Studio, niet getest. Opslaan alleen op TEST-000.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | App openen | start op Home; titelbalk "Site Management" met logo; drie kolommen Administration / CAD tools / Inventory met kop en blauwe lijn |
+| 2 | Tegel Project / team | Screen1 opent en laadt via OnVisible |
+| 3 | Tegel Hours Summary, project kiezen | Hours Summary opent; rapport laadt |
+| 4 | Tegel Weekly Hours zonder geladen project/team | Screen1 + melding "Choose project and team first" |
+| 5 | Project/team laden, Home, tegel Weekly Hours | Weekly Hours laadt; invoer bewerkbaar |
+| 6 | Placeholder-tegels | grijs, "Coming soon", niet klikbaar |
+| 7 | Home-knop in de footer van elk scherm | staat links; Weekly Hours uitgeschakeld met onopgeslagen uren of tijdens opslaan; Screen1 met onopgeslagen selectie; Hours Summary terwijl het rapport laadt |
+| 8 | Screen1 na mislukte/lege load | Home werkt |
+| 9 | Uren typen en direct op Home klikken | geen navigatie met onopgeslagen invoer |
+| 10 | Venster >= 728 px en smal | 3 kolommen naast elkaar; smal 1 kolom met scrollen; geen overlap of afsnijden |
+| 11 | Logo op alle vier schermen | zichtbaar in de titelbalk |

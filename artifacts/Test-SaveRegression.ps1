@@ -6,7 +6,7 @@ $regressionOptions=New-Object Microsoft.PowerFx.ParserOptions
 $regressionOptions.Culture=[Globalization.CultureInfo]::GetCultureInfo('en-US')
 function Index-RegressionControls($entries,$index){foreach($entry in $entries){$name=@($entry.Keys)[0];$index[$name]=$entry[$name];Index-RegressionControls $entry[$name]['Children'] $index}}
 $indexes=@{};$count=0
-foreach($screen in @('Screen1','scrHours','scrWeeklyHours')){
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours')){
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  if($screen -ne 'scrWeeklyHours'){Check-Node $doc $screen}
  $index=@{};Index-RegressionControls $doc['Screens'][$screen]['Children'] $index;$indexes[$screen]=$index
@@ -295,6 +295,84 @@ Assert-True ($dOs.Contains('Notify("Discard geblokkeerd: laden/opslaan bezig of 
 $readWeekNow=[string]$indexes.scrHours['btnReadWeek']['Properties']['OnSelect']
 Assert-True ($readWeekNow.StartsWith('=If('+$weekDirty+',') -and $readWeekNow.Contains('If(!Coalesce(varWeekForceRefresh,false) && varWeekLoadState="Loaded"')) 'Loader still gated on the same dirty check; force flag bypasses cache hit (used by Discard Failed branch)'
 Write-Output 'PASS Discard changes structure/guard (local only). Studio behaviour of the inputs after restore NOT verified.'
+# Home screen (26-10-2026): scrHome is the start screen; tiles and Home buttons only navigate (no data actions).
+Assert-True (([string]$app['App']['Properties']['StartScreen']).Trim() -ceq '=scrHome') 'App.StartScreen = scrHome'
+$homeIdx=$indexes.scrHome
+$homeOn=0
+foreach($name in $homeIdx.Keys){foreach($prop in @($homeIdx[$name]['Properties'].Keys)){
+ if($prop -notlike 'On*'){continue}
+ $fx=[string]$homeIdx[$name]['Properties'][$prop];$homeOn++
+ Assert-True ($fx -notmatch '\b(Patch|Update|UpdateIf|Remove|RemoveIf|Collect|ClearCollect|Clear|Refresh|SubmitForm|Defaults|Concurrent|Reset)\s*\(' -and $fx -notmatch '\.Run\(') "scrHome.$name.$prop has no data mutation, refresh, reset or flow"
+ Assert-True ($fx -notmatch "(?<![\w])(?:Hours|Workers|Projects|Employers)\b\s*[,)]" -and $fx -notmatch "'Project Workers'" -and $fx -notmatch '\bChoices\(') "scrHome.$name.$prop reads no SharePoint source"
+ $homeSets=@([regex]::Matches($fx,'\bSet\(\s*(\w+)\s*,') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+ Assert-True (@($homeSets | Where-Object { $_ -notin @('varProject','varTeam') }).Count -eq 0) "scrHome.$name.$prop sets no state other than varProject/varTeam"
+ foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($sel.Groups[1].Value -in @('btnTileProjectTeam','btnTileWeeklyHours','btnTileHoursSummary')) "scrHome.$name.$prop selects only a navigation tile ($($sel.Groups[1].Value))" }
+ foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
+}}
+Assert-True ($homeOn -gt 0) "scrHome event formulas checked: $homeOn"
+# Non-event properties (Text, Visible, DisplayMode, layout...) on scrHome must not read SharePoint either.
+$homeAll=0
+foreach($name in $homeIdx.Keys){foreach($prop in @($homeIdx[$name]['Properties'].Keys)){
+ if($prop -like 'On*'){continue}
+ $fx=[string]$homeIdx[$name]['Properties'][$prop];$homeAll++
+ Assert-True ($fx -notmatch "(?<![\w`"])(?:Hours|Workers|Projects|Employers)\b\s*[,)]" -and $fx -notmatch "'Project Workers'" -and $fx -notmatch '\b(Choices|LookUp|Filter|Search|First|CountRows)\(\s*(Hours|Workers|Projects|Employers|''Project Workers'')\b') "scrHome.$name.$prop reads no SharePoint source"
+}}
+Assert-True ($homeAll -gt 0) "scrHome non-event formulas checked: $homeAll"
+# Weekly Hours tile: 'loaded' = exactly the btnGotoHours (Screen1) DisplayMode predicate + its OnSelect blank checks.
+$gotoDm=$indexes.Screen1['btnGotoHours']['Properties']['DisplayMode'].Trim()
+$navSuffix=',DisplayMode.Edit,DisplayMode.Disabled)'
+Assert-True ($gotoDm.StartsWith('=If(') -and $gotoDm.EndsWith($navSuffix)) 'btnGotoHours DisplayMode shape If(<pred>,Edit,Disabled)'
+$gotoPred=$gotoDm.Substring(4,$gotoDm.Length-4-$navSuffix.Length)
+Assert-True ($gotoPred -ceq 'varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value') 'Screen1 btnGotoHours guard unchanged'
+$tileLoaded=$gotoPred+' && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value)'
+$tile=([string]$homeIdx['btnTileWeeklyHours']['Properties']['OnSelect']).Trim()
+$tileElse=',Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning))'
+Assert-True ($tile.StartsWith('=If('+$tileLoaded+',') -and $tile.EndsWith($tileElse)) 'Weekly Hours tile: If(<btnGotoHours guard + project/team not blank>, ..., Navigate(Screen1); Notify("Choose project and team first"))'
+$tileThen=$tile.Substring(('=If('+$tileLoaded+',').Length);$tileThen=$tileThen.Substring(0,$tileThen.Length-$tileElse.Length)
+Assert-True ($tileThen.StartsWith('Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected);') -and $tileThen.EndsWith('Navigate(scrHours)') -and (Count-Of $tileThen 'Navigate(') -eq 1 -and $tileThen -notmatch 'Notify\(') 'Weekly Hours tile loaded branch: same varProject/varTeam as btnGotoHours, then Navigate(scrHours) only'
+Assert-True ($tile -notmatch 'Select\(') 'Weekly Hours tile does not trigger a load (scrHours.OnVisible loads)'
+$navFx='With({varTeamLoadState:"Loaded",varTeamDirty:false,varSelectionBusy:false,varSaving:false,varTeamLoadedProjectID:7,varTeamLoadedTeam:"2",ddProject:{Selected:{Id:7}},ddTeam:{Selected:{Value:"2"}}},'
+Assert-Regression ($navFx+$tileLoaded+')') $true 'Tile: loaded matching selection -> scrHours'
+foreach($state in @('"NotLoaded"','"Loading"','"Failed"','Blank()')){ Assert-Regression ($navFx.Replace('varTeamLoadState:"Loaded"','varTeamLoadState:'+$state)+$tileLoaded+')') $false "Tile: team state $state -> Screen1 + Notify" }
+foreach($flag in @('varTeamDirty','varSelectionBusy','varSaving')){ Assert-Regression ($navFx.Replace($flag+':false',$flag+':true')+$tileLoaded+')') $false "Tile: $flag -> Screen1 + Notify" }
+Assert-Regression ($navFx.Replace('ddProject:{Selected:{Id:7}}','ddProject:{Selected:{Id:8}}')+$tileLoaded+')') $false 'Tile: dropdown project differs from loaded -> Screen1'
+Assert-Regression ($navFx.Replace('ddTeam:{Selected:{Value:"2"}}','ddTeam:{Selected:{Value:"3"}}')+$tileLoaded+')') $false 'Tile: dropdown team differs from loaded -> Screen1'
+Assert-Regression ($navFx.Replace('varTeamLoadedProjectID:7','varTeamLoadedProjectID:Blank()').Replace('ddProject:{Selected:{Id:7}}','ddProject:{Selected:{Id:Blank()}}')+$tileLoaded+')') $false 'Tile: blank project (Blank=Blank) with stale Loaded -> Screen1'
+Assert-Regression ($navFx.Replace('varTeamLoadedTeam:"2"','varTeamLoadedTeam:Blank()').Replace('ddTeam:{Selected:{Value:"2"}}','ddTeam:{Selected:{Value:Blank()}}')+$tileLoaded+')') $false 'Tile: blank team with stale Loaded -> Screen1'
+# Home buttons: identical guard in DisplayMode and as (only) OnSelect condition.
+$weekClean=$weekDirty.Replace(')<>JSON(',')=JSON(')
+$homeButtons=@(
+ @('Screen1','btnHomeScreen1','!Coalesce(varSaving,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varTeamDirty,false)'),
+ @('scrHours','btnHomeHours',('!Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && '+$weekClean)),
+ @('scrWeeklyHours','btnHomeSummary','!Coalesce(varReportBusy,false)'))
+foreach($hb in $homeButtons){
+ $hp=$indexes[$hb[0]][$hb[1]]['Properties']
+ Assert-True (([string]$hp['DisplayMode']).Trim() -ceq ('=If('+$hb[2]+$navSuffix)) "$($hb[1]) DisplayMode = If(<home guard>,Edit,Disabled)"
+ Assert-True (([string]$hp['OnSelect']).Trim() -ceq ('=If('+$hb[2]+',Navigate(scrHome))')) "$($hb[1]) OnSelect = If(<same guard>,Navigate(scrHome))"
+}
+$h1=$homeButtons[0][2]
+Assert-True ($h1 -notmatch 'varTeamLoadState|varTeamLoaded|ddProject|ddTeam') 'Screen1 Home does not require a successful load (no trap after failed/empty load)'
+foreach($case in @(@('false','false','false',$true,'idle'),@('Blank()','Blank()','Blank()',$true,'cold start / failed load'),@('true','false','false',$false,'saving'),@('false','true','false',$false,'loading'),@('false','false','true',$false,'unsaved team selection'))){
+ Assert-Regression ('With({varSaving:'+$case[0]+',varSelectionBusy:'+$case[1]+',varTeamDirty:'+$case[2]+'},'+$h1+')') $case[3] "Screen1 Home: $($case[4]) -> allowed=$($case[3])"
+}
+foreach($sib in @('btnGotoHours','btnGotoHoursSummary')){ Assert-True (([string]$indexes.Screen1[$sib]['Properties']['DisplayMode']).Trim() -ceq $gotoDm) "Screen1 $sib DisplayMode unchanged (requires Loaded)" }
+$h2=$homeButtons[1][2].Replace($weekClean,'!isDirty')
+$sibWeek=([string]$indexes.scrHours['btnWeeklyProjectTeam']['Properties']['DisplayMode']).Trim().Substring(1).Replace($weekDirty,'isDirty').Replace('DisplayMode.Edit','true').Replace('DisplayMode.Disabled','false')
+foreach($l in @('false','true')){foreach($s in @('false','true')){foreach($d in @('false','true')){
+ $fxw='With({varWeekLoading:'+$l+',varWeekSaving:'+$s+',isDirty:'+$d+'},'
+ $exp=($l -eq 'false' -and $s -eq 'false' -and $d -eq 'false')
+ Assert-Regression ($fxw+$h2+')') $exp "scrHours Home: loading=$l saving=$s unsaved=$d -> allowed=$exp"
+ Assert-Regression ($fxw+$sibWeek+')') $exp "scrHours Project / team (sibling) same outcome: loading=$l saving=$s unsaved=$d"
+}}}
+Assert-Regression ('With({varWeekLoading:Blank(),varWeekSaving:Blank(),isDirty:false},'+$h2+')') $true 'scrHours Home: cold flags without input allowed'
+$h3=$homeButtons[2][2]
+$sibSum=([string]$indexes.scrWeeklyHours['btnSummaryProjectTeam']['Properties']['DisplayMode']).Trim().Substring(1).Replace('DisplayMode.Edit','true').Replace('DisplayMode.Disabled','false')
+foreach($b in @('false','true')){
+ Assert-Regression ('With({varReportBusy:'+$b+'},'+$h3+')') ($b -eq 'false') "Hours Summary Home: busy=$b"
+ Assert-Regression ('With({varReportBusy:'+$b+'},'+$sibSum+')') ($b -eq 'false') "Hours Summary Project / team (sibling) same outcome: busy=$b"
+}
+Assert-Regression ('With({varReportBusy:Blank()},'+$h3+')') $true 'Hours Summary Home: cold flag allowed'
+Write-Output 'PASS Home screen navigation and guards (local). Studio navigation, Notify and OnVisible loads NOT verified.'
 Write-Output 'PASS batch save structure. Studio binding (table Patch on collection base records, lookup/choice records), delegation and online behaviour NOT verified.'
 Write-Output 'LIVE STILL OPEN: actual incident edits, connector auth, Studio binding/delegation, failure injection and online loading.'
 
