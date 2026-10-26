@@ -28,7 +28,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Opslagsnelheid Save week / Save team niet expliciet bevestigd (laden is door Eddy getest: snel, geen fouten).
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
-- Volgende werk (volgorde: NEXT_COMMANDS.md): TEST-000 setup, Home + logo, Assignment periods (besluit 26-10-2026, DECISIONS.md H9; ontwerp, niet gebouwd), Week Report, export, roadmap-merge.
+- Volgende werk (volgorde: NEXT_COMMANDS.md): Home + logo (in uitvoering), Assignment periods (besluit 26-10-2026, DECISIONS.md H9; ontwerp, niet gebouwd), Week Report, export, roadmap-merge.
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 
@@ -36,9 +36,11 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Goedgekeurd in Studio (TP-LOGO-01, Eddy 26-10-2026); regel en maten: AGENTS.md; bron Assets/GEA_logo_white.svg (1130 bytes, SHA-256 5D460376D030AF075E004E50191C8BE0C8DB05C5E0A9E593F53612DA52606087, bytegelijk aan het officiële logobankbestand). Technisch gecontroleerd met artifacts/Test-Logo.ps1. Geen MS-item.
 
 ## Open MS-items (MANUAL_STEPS.md)
-- MS-005 (TEST-000 testgegevens): open, wacht op Eddy (SharePoint-stappen + Save team in de app).
 - MS-010 (lijst Assignment Periods + migratie): open, nog niet nodig tot de taak Assignment periods start.
-- MS-001 (25-10-2026) en MS-008 (Workers.Trade 25-10, Hours.Trade 26-10-2026) zijn gedaan.
+- TEST-000 beschikbaar (MS-005) — open testgevallen met opslaan nu uitvoerbaar: TP-DISCARD-01 stap 8 (Failed), TP-REUSE-01 cross-user.
+- Gecontroleerd door Eddy (26-10-2026): Workers.Title (Worker Name) = First Name + Surname voor alle medewerkers (datacontrole, geen SharePoint-constraint).
+- SharePoint dwingt nu een verplichte, unieke Employer Code af (MS-009, Eddy 26-10-2026).
+- MS-001 (25-10-2026), MS-005 en MS-009 (26-10-2026) en MS-008 (Workers.Trade 25-10, Hours.Trade 26-10-2026) zijn gedaan.
 - De aparte controle "geen lege ProjectKey in Project Workers" is niet gemeld en blijft relevant (Save team-risico).
 
 ## Bekende beperkingen

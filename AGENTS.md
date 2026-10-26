@@ -32,7 +32,7 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
    - Screen1 krijgt een weekkiezer "Week" (elke dag kiest die week; label "YYYY KWxx" zoals Weekly Hours). Aanvinken + Save team: nieuwe periode From = maandag van de gekozen week (eindigde de vorige periode in de gekozen of de voorgaande week: die heropenen). Uitvinken + Save team: open periode krijgt Until = zondag van de gekozen week (die week telt nog mee). Validatie: Until ≥ From en geen overlappende periodes, anders blokkeren met melding. Periodes worden nooit verwijderd; historische koppelingen worden gedeactiveerd, niet verwijderd.
    - Weekly Hours toont per week: medewerkers met een periode die maandag t/m zondag overlapt, plus iedere medewerker met opgeslagen Hours in die week. Niet gewerkte dagen blijven leeg (= 0 in totalen/rapporten/export); de app schrijft nooit automatisch 0. Hours Summary is op Hours gebaseerd en blijft ongewijzigd.
 4. Trade: Workers.Trade en Hours.Trade zijn keuzekolommen Fitter / Welder / Unknown (Workers: standaard Unknown, verplicht). Documenten gebruiken de volledige naam. Historische Hours-regels kunnen F/W bevatten (F = Fitter, W = Welder); map bij rapportage.
-5. Volledige naam = voornaam + achternaam.
+5. Volledige naam = voornaam + achternaam. Workers.Title (Worker Name) bevat dezelfde volledige naam (First Name + Surname).
 
 ## Uren en rapportage
 - Ureninvoer: tabel per werkweek, Mon t/m Sun, met weektotaal. Hele uren zonder losse komma/punt. Uren en weekkoppen gecentreerd.
@@ -47,7 +47,7 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
 ## Gegevens en sleutels
 - SharePoint bevat de blijvende gegevens; collections zijn tijdelijke caches en selecties sessiestaat. Een lege collection/selectie bewijst geen dataverlies. Bij incidenten eerst savepad, Modified/Modified By en versiegeschiedenis onderzoeken; geen nieuwe lijsten, testdata of automatische correcties.
 - Project Workers: Project, Worker, Team, Active, AssignmentKey (= project-ID|worker-ID), ProjectKey. Hours: 'Work Date', Assignment, Employer, Team, Trade, Hours, EntryKey (= AssignmentKey|yyyymmdd); geen aparte ISO-jaar/KW-kolommen (afleiden uit Work Date).
-- Gebruik echte lookup-ID's voor project-, medewerker- en werkgeveridentiteit. Bewaar de werkgever op de urenregistratie (historie); een latere werkgeverswijziging verplaatst oude uren niet. Employer Code (EMP-001) is uniek; maak geen tweede handmatige identificatie.
+- Gebruik echte lookup-ID's voor project-, medewerker- en werkgeveridentiteit. Bewaar de werkgever op de urenregistratie (historie); een latere werkgeverswijziging verplaatst oude uren niet. Employer Code (EMP-001) is uniek (afgedwongen in SharePoint: verplicht + uniek); maak geen tweede handmatige identificatie.
 - Trade op Hours is een momentopname van Workers.Trade bij opslaan: Patch als `{Value: <trade>}`, nooit `Choices()`. Bestaande Hours-regels krijgen nooit een herschreven Trade/Employer.
 - Historische projectkoppelingen worden inactief gezet, niet verwijderd. Schrijf of repareer sleutels nooit automatisch tijdens laden.
 

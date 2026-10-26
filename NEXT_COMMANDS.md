@@ -7,10 +7,6 @@ Agents: subagents in .claude/agents/ are picked automatically by task; commands 
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
 
-## 1. TEST-000 setup (MS-005)
-
-Inhoud: zie MANUAL_STEPS.md MS-005. Status: open; Eddy doet de SharePoint-stappen en Save team in de app.
-
 ## 2b. ModernDatePicker 1.0.2
 
 Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 3 en 5 ook het logo op scrHome en scrWeekReport.

@@ -6,7 +6,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 
 - Functionele tests met opslaan uitsluitend op project TEST-000 (MS-005); echte projecten alleen leescontroles. Alle testcases met opslaan draaien op TEST-000.
 - Projecten met Project Number-prefix "TEST-" en de werkgever TEST Employer horen niet in Week Report, Hours Summary-exports en een toekomstige health check (uitsluiting nog niet gebouwd; zie AGENTS.md).
-- MS-005 (testgegevens aanmaken): open, wacht op Eddy.
+- MS-005 (testgegevens): gedaan 26-10-2026 (Eddy). TEST-000 is beschikbaar met Test Fitter / Test Welder / Test Unknown (team 1, werkgever TEST Employer).
 
 | Case | Onderwerp | Status | Datum | Wie |
 |---|---|---|---|---|

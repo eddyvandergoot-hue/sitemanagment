@@ -6,7 +6,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 |---|---|---|
 | MS-001 | ≤ 24-10-2026 | Done 25-10-2026 (Eddy) |
 | MS-008 | 25-10-2026 | Done (Workers.Trade 25-10-2026, Hours.Trade 26-10-2026, Eddy) |
-| MS-005 | 26-10-2026 | Open |
+| MS-005 | 26-10-2026 | Done 26-10-2026 (Eddy) |
+| MS-009 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-010 | 26-10-2026 | Open (not needed until Assignment periods task) |
 
 ---
@@ -44,10 +45,19 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Reason:** all functional tests with saves must run on a test project so real hours and projects are never touched.
 - **Employers:** new item "TEST Employer", Employer Code "TEST-EMP" (Employer Code is unique; existing business-code rule).
 - **Projects:** new item Title "TEST-000 Testproject", Project Number "TEST-000", Project Reference "Test only - not for reports".
-- **Workers** (Employer = TEST Employer): "Test Fitter" (Trade Fitter), "Test Welder" (Trade Welder), "Test Unknown" (Trade Unknown). Assumption, Eddy to confirm: Workers has 'First Name' + Surname, so First Name "Test" and Surname "Fitter" / "Welder" / "Unknown" (display name "Test Fitter" etc.).
+- **Workers** (Employer = TEST Employer): "Test Fitter" (Trade Fitter), "Test Welder" (Trade Welder), "Test Unknown" (Trade Unknown). First Name "Test" and Surname "Fitter" / "Welder" / "Unknown" (display name "Test Fitter" etc.). Assumption confirmed: Eddy checked 26-10-2026 that Workers.Title (Worker Name) equals First Name + Surname for all workers.
 - **In the app:** Project / team: link all 3 workers to TEST-000, team 1, Save team.
 - **Done when:** Eddy confirms; report back date + who.
-- **Status:** Open (26-10-2026), waiting for Eddy.
+- **Status:** Done 26-10-2026 (Eddy): TEST Employer (Employer Code TEST-EMP), project "TEST-000 Testproject" (Project Number TEST-000), workers Test Fitter / Test Welder / Test Unknown linked to TEST-000 team 1 via Save team ("Done when" satisfied).
+
+## MS-009 — Employer Code required and unique
+
+- **Added:** 26-10-2026. **Status:** Done 26-10-2026 (Eddy): Employers.'Employer Code' set to Required + Enforce unique values (indexed); "Done when" satisfied.
+- **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment → list Employers → Settings → column "Employer Code".
+- **Reason:** Employer Code (e.g. EMP-001, TEST-EMP) is the unique business key (AGENTS.md); this makes SharePoint enforce it.
+- **Settings:** "Require that this column contains information" = Yes; "Enforce unique values" = Yes. SharePoint requires the column to be indexed for unique enforcement and asks for / creates the index.
+- **Check first:** no existing Employer row has an empty or duplicate Employer Code (SharePoint refuses the setting otherwise).
+- **Done when:** both settings are active; report back date + who.
 
 ## MS-010 — Assignment Periods list
 
