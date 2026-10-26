@@ -13,6 +13,8 @@ Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vas
 
 ## 2. Discard changes button
 
+Motivatie: bij onopgeslagen invoer zijn weekkiezer, Refresh en navigatie bewust uitgeschakeld, dus opslaan is nu de enige uitweg (Eddy, 26-10-2026).
+
 Inhoud nog vast te leggen (aanleveren door Eddy). Nog niet in de repo beschreven. Relevante regels: onopgeslagen invoer blokkeert Refresh/navigatie (AGENTS.md, Laden en opslagveiligheid).
 
 ## 2b. ModernDatePicker 1.0.2

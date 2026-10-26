@@ -9,7 +9,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-LOGO-01 | Logo zichtbaar | geslaagd | 26-10-2026 | Eddy |
 | TP-WEEK-01 | Weeklabel 01-01-2027 = 2026 KW53 (Weekly Hours) | geslaagd | 26-10-2026 | Eddy |
 | TP-SUM-01 | Hours Summary restyle | geslaagd | 26-10-2026 | Eddy |
-| TP-REUSE-01 | Hergebruik geladen selecties | open | - | - |
+| TP-REUSE-01 | Hergebruik geladen selecties | geslaagd | 26-10-2026 | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -56,6 +56,19 @@ Geslaagd (Eddy, 26-10-2026: "Hours summary restyle is ok"), visueel in Studio.
 
 ## TP-REUSE-01 hergebruik geladen selecties
 
-Open. Observatie Eddy 26-10-2026: gegevens komen goed terug uit de lijsten; hergebruik "lijkt ok" (indruk, geen gerichte test).
-Stappen: open dezelfde project/team/week twee keer; klik Refresh; laat een andere gebruiker iets wijzigen.
-Verwacht: tweede keer geen herlaad (Trace DIAG|Week|CacheHit); Refresh forceert herlaad; wijziging van de ander verschijnt pas na Refresh.
+Geslaagd (Eddy, 26-10-2026, Studio, goedgekeurde build logo-20261026_120726), scenario 1-7 via Monitor. Op Eddy's melding "alles werkt"; de Monitor-regels (CacheHit versus AfterHoursQueries) zijn niet afzonderlijk gemeld.
+Interpretatie: alle scenario's gedragen zich zoals verwacht. Bij uren typen zonder opslaan is de weekkiezer uitgeschakeld, Refresh grijs en alleen Save actief (Eddy): dat is het ontwerp (AGENTS.md); het blokkeren gaat via uitgeschakelde controls, de melding "Niet geladen: onopgeslagen uren behouden..." is alleen een vangnet.
+
+Setup: Studio > Advanced tools > Open monitor > Play; zoek op DIAG.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Project + Team kiezen, naar Weekly Hours | laadt |
+| 2 | Terug en weer naar Weekly Hours, zonder wijziging | Week\|CacheHit, geen nieuwe Hours-aanroep |
+| 3 | Andere week kiezen | laadt |
+| 4 | Terug naar de eerste week | laadt (cache onthoudt alleen de laatste selectie; geen fout) |
+| 5 | Refresh | laadt, geen CacheHit |
+| 6 | Refresh op Project / team, daarna Weekly Hours | laadt (teamversie gewijzigd) |
+| 7 | Uren typen zonder opslaan | weekkiezer, Refresh en navigatie uitgeschakeld; alleen Save actief |
+
+Niet getest: "wijziging van een andere gebruiker verschijnt pas na Refresh" (vereist TEST-000; geen echte uren wijzigen).
