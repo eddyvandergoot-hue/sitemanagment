@@ -1348,3 +1348,28 @@ Importeer deze aparte testbuild en voer artifacts/VALIDATIE.md uit. Geef eventue
 - Microsoft dropdownlimiet: https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/control-drop-down
 - Microsoft Text en taalplaceholders: https://learn.microsoft.com/en-us/power-platform/power-fx/reference/function-text
 - Officieel SourceCode-schema: https://go.microsoft.com/fwlink/?linkid=2304907
+
+
+## Verplaatst uit PROJECT_STATUS.md (26-10-2026, na Eddy goedkeuring)
+
+## Huidige testbuild (niet goedgekeurd, wacht op Eddy's Studio-test)
+- Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\logo-20261026_120726\SiteManagement_Logo_20261026_120726.msapp
+- 107224 bytes, SHA-256 8EAE873731E01A50C49A50F02D31153C4ECCA52EDB0A30CE25CA298168FF2085 (pac 2.11.2; Src 5/5 bytegelijk aan de bron; 20 entries = vorige 19 + Assets\Images\eb30143f-1bd0-4f86-b62e-527e69d881dc.svg; uitpak-rondrit OK; geen ondertekende URL).
+- Inhoud: savefix + dropdownstatuskleuren + GEA-logo (Image@2.2.3: imgLogoScreen1, imgLogoHours, imgLogoSummary; regel: AGENTS.md).
+- Status: **geïmplementeerd en technisch gecontroleerd** (verifier volledige set geslaagd; 5 historische scripts falen identiek op HEAD; reviewer: geen blokkerende bevindingen). **Niet in Studio geïmporteerd, niet functioneel getest, niet goedgekeurd.**
+- Vorige build (dropdownstaten, Studio-geïmporteerd): artifacts\dropdown-states-20261026_051056\SiteManagement_DropdownStates_20261026_051056.msapp, SHA-256 75819FA0832453672AE8D3D8A9D4479394D0695CBA28956524F62D092B5470A8.
+- Eerdere build (savefix): artifacts\savefix-trade-20261025_163517\SiteManagement_SaveFixTrade_20261025_163517.msapp, SHA-256 1891281F7F62DF1F739BA282D11B8218DEDBECF74066027731394BF8CF4033C7. De savefix zit in de huidige build; de savefix-test staat open.
+- Savefix-inhoud: Save week-fix (lokale pre-save validatie, echte foutmelding bij nul writes, lblWeekLoadStatus) + Trade Unknown (Fitter/Welder/Unknown, Trade-chip en waarschuwingen op Screen1/scrHours).
+- Testcases: TESTPLAN.md (TP-DD-01, TP-SAVE-01, TP-LOGO-01).
+- Studio-testlijst (Eddy):
+  0. Dropdowns (Team, Project, Contractor): rij onder de muis lichtblauw, gekozen item blauw/wit, ingedrukt lichtblauw (TP-DD-01).
+  1. Logo: wit, scherp, niet uitgerekt op alle drie schermen; titels niet afgekapt; projectregel op Hours Summary leesbaar bij uw gebruikelijke venstergrootte (TP-LOGO-01).
+  2. Lege Trade + nieuwe cel: echte melding, week blijft Loaded, Trace `DIAG|SaveWeek|End` Writes=0.
+  3. Trade Unknown + nieuwe cel en expliciete 0: opgeslagen met Trade Unknown (faalt als Hours.Trade geen Unknown heeft: MS-008).
+  4. Uren 24,01 / 7,255: melding per cel.
+  5. Gewone Save met een bestaande + een nieuwe cel.
+  6. Chip/waarschuwing niet afgekapt op Screen1 en Weekly Hours; leeg versus 0 in urenvelden.
+  7. Alleen na Eddy's bevestiging: tag `approved-<datum>-savefix` en "approved by Eddy" hier; tag pushen.
+- Ook nog niet functioneel getest: weekkiezer dpHoursWeek (OnChange, `2026 KW53` voor 01-01-2027, onopgeslagen invoer blokkeert wisselen); Hours Summary-restyle; GEA-kleuren; hergebruik van geladen selecties; fail-closed blokkades; Monitor-delegatie.
+Dropdownbuild:
+8. Het kleuren van de lijstrijen (hover/geselecteerd) gebeurt door de runtime-JS van het control (dropdownStyles); niet aantoonbaar uit template of pack. Toont hover in de browser niet, dan is het alternatief een modern Dropdown/ComboBox (ander controltype; eerst documentatie en importcontrole).

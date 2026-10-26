@@ -5,7 +5,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | ID | Added | Status |
 |---|---|---|
 | MS-001 | ≤ 24-10-2026 | Done 25-10-2026 (Eddy) |
-| MS-008 | 25-10-2026 | Done (Workers.Trade); Hours.Trade-keuzes: bevestiging Eddy open |
+| MS-008 | 25-10-2026 | Done (Workers.Trade 25-10-2026, Hours.Trade 26-10-2026, Eddy) |
 
 ---
 
@@ -31,6 +31,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment → list → Settings → column Trade.
 - **Reason:** incident 25-10-2026: Save week blocked a new Hours record because Workers.Trade was empty for one worker (Trade came from an Excel import; the choice column had no choices). Save week copies Trade from Workers onto each new Hours record as `{Value: <Workers.Trade.Value>}` (snapshot, no Choices()); SharePoint may reject a value that is not a choice in Hours.Trade.
 - **Workers.Trade (choice):** choices Fitter / Welder / Unknown, default Unknown, required; empty values filled. Status: done by Eddy (25-10-2026).
-- **Hours.Trade (choice):** must contain Fitter / Welder / Unknown. Status: **to confirm** (Eddy). Do not change historical Hours rows.
+- **Hours.Trade (choice):** must contain Fitter / Welder / Unknown. Status: done, confirmed by Eddy 26-10-2026. Do not change historical Hours rows.
 - **App behaviour:** blank Workers.Trade blocks Save week before any write ("Trade ontbreekt in Workers (aanvullen in SharePoint, daarna Refresh op Project / team)"). If the new-rows Patch fails while a row has Trade Unknown, the app adds "Mogelijk ontbreekt Trade 'Unknown' in de Hours-lijst (MS-008)".
 - **Done when:** Hours.Trade choices confirmed as Fitter / Welder / Unknown; report back date + who.
+- **Status:** Done. Workers.Trade 25-10-2026; Hours.Trade choices Fitter / Welder / Unknown confirmed by Eddy 26-10-2026 ("Done when" satisfied).

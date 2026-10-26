@@ -4,9 +4,9 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 
 | Case | Onderwerp | Status | Datum | Wie |
 |---|---|---|---|---|
-| TP-DD-01 | Dropdown hover zichtbaar | open | - | - |
-| TP-SAVE-01 | Savefix-controles | open | - | - |
-| TP-LOGO-01 | Logo zichtbaar | open | - | - |
+| TP-DD-01 | Dropdown hover zichtbaar | geslaagd | 26-10-2026 | Eddy |
+| TP-SAVE-01 | Savefix-controles | geslaagd | 26-10-2026 | Eddy |
+| TP-LOGO-01 | Logo zichtbaar | geslaagd | 26-10-2026 | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -21,11 +21,11 @@ Verwacht:
 - Indrukken toont lichtblauw.
 - Het gesloten control is lichtgrijs met een blauwe chevron.
 
-Mislukt: meld in de browser welke rijkleuren wel zichtbaar zijn (hover, gekozen, ingedrukt). Context en alternatief: PROJECT_STATUS.md (Dropdownbuild).
+Mislukt: meld in de browser welke rijkleuren wel zichtbaar zijn (hover, gekozen, ingedrukt). Context: PROJECT_STATUS_ARCHIVE.md.
 
 ## TP-SAVE-01 savefix
 
-Zie PROJECT_STATUS.md, Studio-testlijst.
+Geslaagd (Eddy, 26-10-2026: "savefix ok"). De oorspronkelijke testlijst staat in PROJECT_STATUS_ARCHIVE.md.
 
 ## TP-LOGO-01 logo zichtbaar
 
