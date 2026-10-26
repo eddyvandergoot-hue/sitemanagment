@@ -8,7 +8,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-008 | 25-10-2026 | Done (Workers.Trade 25-10-2026, Hours.Trade 26-10-2026, Eddy) |
 | MS-005 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-009 | 26-10-2026 | Done 26-10-2026 (Eddy) |
-| MS-010 | 26-10-2026 | List done 26-10-2026 (Eddy); open: display-name decision |
+| MS-010 | 26-10-2026 | Done 26-10-2026 (Eddy) |
+| MS-012 | 26-10-2026 | Partly done 26-10-2026 (Eddy); open: group/permissions/version cleanup (unconfirmed) |
 
 ---
 
@@ -62,7 +63,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-010 — Assignment Periods list
 
-- **Added:** 26-10-2026. **Status:** List created 26-10-2026 (Eddy); open: display-name decision (see Note). Migration replaced (see Migration).
+- **Added:** 26-10-2026. **Status:** Done 26-10-2026 (Eddy): list, columns and indexes in place; display name "Until" corrected and From/Until changed to date only (Eddy 26-10-2026). Migration of existing assignments is an app action (see Migration), not a manual step.
 - **Where:** the existing site https://geacloud.sharepoint.com/sites/GEASiteManagment (new list).
 - **Reason:** several periods per worker per project (decision DECISIONS.md H9). Project Workers stays one record per project+worker.
 - **List:** "Assignment Periods" with columns:
@@ -71,18 +72,17 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   |---|---|---|
   | AssignmentKey | Single line of text | indexed; same format as Project Workers.AssignmentKey (project-ID\|worker-ID) |
   | ProjectKey | Single line of text | indexed |
-  | From | Date | always a Monday |
-  | Until | Date | always a Sunday; blank = open |
+  | From | Date only (no time) | the app writes a Monday; required |
+  | Until (internal name Till) | Date only (no time) | the app writes a Sunday; blank = open |
 
 - **Indexes:** AssignmentKey and ProjectKey. Check online first whether they exist; local metadata does not show this.
-- **Migration:** NOT a manual SharePoint step anymore; replaced by an explicit per-project migration action in the app (being built). Original idea (superseded): each existing active assignment gets one period: From = Monday of its earliest Hours record, Until blank.
-- **Created as (26-10-2026, verified by the orchestrator from the Studio metadata):** Title has display name "AssignmentKey" (internal name Title; required; indexed; NOT unique, since several periods per assignment); ProjectKey (text, required, indexed); From (date only, required; internal name From); Until (date only, optional).
-- **Note (open decision, Eddy):** the internal name of Until is "Till" and its display name is currently "Untill" (typo, double l). Eddy still decides whether to rename the display name to "Until". The app uses the internal name. Data source "Assignment Periods" was added to the app in Studio by Eddy (Studio file in Incoming/, not committed).
-- **Done when:** list, columns, indexes and migration are in place and Eddy confirms; report back date + who. Test on TEST-000 (MS-005).
+- **Migration:** NOT a manual SharePoint step; it is an explicit per-project migration action in the app (built, Studio test open: TESTPLAN.md TP-MIGR-01). Original idea (superseded): each existing active assignment gets one period: From = Monday of its earliest Hours record, Until blank.
+- **Created as (26-10-2026, verified from the Studio metadata):** Title has display name "AssignmentKey" (internal name Title; required; indexed; NOT unique, since several periods per assignment); ProjectKey (text, required, indexed); From (date only, required); Until (internal name Till, date only, optional). The app uses the internal names. Data source "Assignment Periods" was added in Studio by Eddy and merged into the .msapr.
+- **Done when:** list, columns and indexes are in place and Eddy confirms (satisfied). Functional test on TEST-000 (MS-005): TESTPLAN.md TP-PERIOD-01.
 
 ## MS-012 — Worker Contacts list (phone out of Workers)
 
-- **Added:** 26-10-2026. **Status:** Open. Not needed until the Workers admin task starts; removing/migrating Workers.Phone may be done earlier at Eddy's discretion.
+- **Added:** 26-10-2026. **Status:** Partly done 26-10-2026 (Eddy reported): list "Worker Contacts" exists with the phones migrated; Workers.Phone removed; Workers.Email removed (no worker email); Workers.'Employer Code' and 'Employer Name' also removed. **Still open / unconfirmed (ask Eddy):** group "Site Supervisors" + unique permissions on Worker Contacts (steps 1, 3, 4) and the version-history cleanup of Workers.
 - **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment (new list; list Workers for the migration).
 - **Reason:** data minimisation (DECISIONS.md D7, SECURITY.md): the phone number must not be readable by everyone with read access to Workers. The current screens do not read or show them.
 - **List:** "Worker Contacts" with columns:
@@ -96,6 +96,6 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 - **Steps:** (1) create the SharePoint group "Site Supervisors" (Eddy decides the members = all supervisors); (2) create the list "Worker Contacts" (WorkerID + Phone); (3) break permission inheritance; (4) owners = Full control, "Site Supervisors" = Edit, nobody else; (5) migrate.
 - **Migration:** copy the existing phone numbers from Workers.Phone to Worker Contacts; clear the values; then remove the column Workers.Phone.
-- **Decision point (Eddy, open):** the Workers schema also has an Email column. Check whether Workers.Email contains data; if unused, clear and remove it like Phone. Email is not moved to Worker Contacts.
+- **Workers.Email:** removed by Eddy (26-10-2026); not moved to Worker Contacts.
 - **Version history:** Workers version history still contains the phone numbers. Decide (Eddy) whether to clean old versions.
 - **Done when:** list, columns, unique permissions and group "Site Supervisors" are in place, numbers are migrated and Workers.Phone is removed (and the Workers.Email decision is made); Eddy confirms; report back date + who. Also check in Studio Monitor whether Workers rows (incl. Phone/Email columns) are transferred to the client (SECURITY.md open points).

@@ -36,13 +36,13 @@ if($odd.Count){throw "Unexpected text colour: $($odd -join ',')"}
 Write-Output 'PASS fonts Inter/Arial; text black, white on blue, Period total values #000F41 (buttons checked by Test-GeaColors.ps1).'
 
 $statusFx=$new['lblReportStatus']['Properties']['Text'].TrimStart('=')
-$note='Geen opgeslagen uren voor dit project; actieve medewerkers staan op 0.'
+$note='Geen opgeslagen uren voor dit project; medewerkers met een periode in de huidige week staan op 0.'
 foreach($c in @(
  @('varReportBusy:true,varReportValid:false,varReportMessage:"x",varReportProjectID:7,varReportHasPeriod:true','Uren ophalen...','busy'),
  @('varReportBusy:false,varReportValid:false,varReportMessage:"Ophalen gestopt: fout",varReportProjectID:7,varReportHasPeriod:true','Ophalen gestopt: fout','load error kept'),
  @('varReportBusy:false,varReportValid:false,varReportMessage:"Rapport gestopt: fout",varReportProjectID:7,varReportHasPeriod:true','Rapport gestopt: fout','build error kept'),
  @('varReportBusy:false,varReportValid:true,varReportMessage:"8 medewerkers/contractors | 3 weken | 178 uur",varReportProjectID:7,varReportHasPeriod:true','','statistics hidden'),
- @('varReportBusy:false,varReportValid:true,varReportMessage:"Geen opgeslagen uren voor dit project; actieve medewerkers staan op 0. 2 medewerkers/contractors | 0 weken | 0 uur",varReportProjectID:7,varReportHasPeriod:false',$note,'empty-project note kept'),
+ @('varReportBusy:false,varReportValid:true,varReportMessage:"Geen opgeslagen uren voor dit project; medewerkers met een periode in de huidige week staan op 0. 2 medewerkers/contractors | 0 weken | 0 uur",varReportProjectID:7,varReportHasPeriod:false',$note,'empty-project note kept'),
  @('varReportBusy:false,varReportValid:true,varReportMessage:"x",varReportProjectID:Blank(),varReportHasPeriod:false','','no project: details label shows selection prompt'))){
  Assert-Regression ('With({'+$c[0]+'},'+$statusFx+')') $c[1] ('Status '+$c[2])
 }

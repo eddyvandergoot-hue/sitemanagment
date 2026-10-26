@@ -577,7 +577,7 @@ Screens:
                Set(varPendingLoadedWeekMonday,Blank());
                Set(varPendingHoursProjectID,Coalesce(varProject.Id,ddProject.Selected.Id));
                Set(varPendingHoursProjectKey,Text(varPendingHoursProjectID)); Set(varPendingHoursTeam,Coalesce(varTeam.Value,ddTeam.Selected.Value));
-               Clear(colWeekLoadErrors); Clear(colHoursErrors); Clear(colPendingWeekAssignments); Clear(colPendingWeekKeys);
+               Clear(colWeekLoadErrors); Clear(colHoursErrors); Clear(colPendingWeekAssignments); Clear(colPendingWeekKeys); Clear(colPendingWeekTeamAssignments); Clear(colPendingWeekPeriods);
                Clear(colPendingWeekRows); Clear(colPendingWeekOriginal); Clear(colPendingWeekStored);
                If(IsBlank(varPendingHoursProjectID) || IsBlank(varPendingHoursTeam),
                 Set(varWeekMessage,"Kies eerst project en team via Project / team. Uren zijn opgeslagen in SharePoint, niet in deze lege schermselectie."),
@@ -586,18 +586,25 @@ Screens:
                  Set(varPendingWeekMonday,varHoursWeekMonday);
                  IfError(Refresh(Hours),Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
                  IfError(Refresh('Project Workers'),Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
+                 IfError(Refresh('Assignment Periods'),Collect(colWeekLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
                  If(IsEmpty(colWeekLoadErrors),
-                  IfError(CountRows(ClearCollect(colPendingWeekAssignments,
-                   Filter('Project Workers',ProjectKey=varPendingHoursProjectKey && Team.Value=varPendingHoursTeam && Active=true)))>=0,
+                  IfError(CountRows(ClearCollect(colPendingWeekTeamAssignments,
+                   Filter('Project Workers',ProjectKey=varPendingHoursProjectKey && Team.Value=varPendingHoursTeam)))>=0,
                    Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
-                  If(CountRows(colPendingWeekAssignments)>=500,
-                   Collect(colWeekLoadErrors,{Message:"500 actieve koppelingen geladen; weekoverzicht gestopt om onvolledige uren te voorkomen."})
+                  If(CountRows(colPendingWeekTeamAssignments)>=500,
+                   Collect(colWeekLoadErrors,{Message:"500 koppelingen voor dit project/team geladen; weekoverzicht gestopt om onvolledige uren te voorkomen."})
                   );
-                  If(CountIf(colPendingWeekAssignments,Project.Id<>varPendingHoursProjectID)>0,
+                  If(CountIf(colPendingWeekTeamAssignments,Project.Id<>varPendingHoursProjectID)>0,
                    Collect(colWeekLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Laden gestopt; gegevens laten controleren."})
                   );
-                  If(CountRows(Distinct(colPendingWeekAssignments,Worker.Id))<>CountRows(colPendingWeekAssignments),
-                   Collect(colWeekLoadErrors,{Message:"Dubbele actieve medewerkerkoppelingen in dit project/team. Laden gestopt; bestaande koppelingen laten controleren."})
+                  IfError(CountRows(ClearCollect(colPendingWeekPeriods,
+                   ForAll(Filter('Assignment Periods',ProjectKey=varPendingHoursProjectKey) As p,{ID:p.ID,AssignmentKey:p.AssignmentKey,ProjectKey:p.ProjectKey,From:If(IsBlank(p.From),Blank(),Date(Year(p.From),Month(p.From),Day(p.From))),Until:If(IsBlank(p.Until),Blank(),Date(Year(p.Until),Month(p.Until),Day(p.Until)))})))>=0,
+                   Collect(colWeekLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+                  If(CountRows(colPendingWeekPeriods)>=500,
+                   Collect(colWeekLoadErrors,{Message:"500 periodes voor dit project geladen; weekoverzicht gestopt om onvolledige rijen te voorkomen."})
+                  );
+                  If(CountIf(colPendingWeekPeriods,ProjectKey<>varPendingHoursProjectKey || !StartsWith(AssignmentKey,varPendingHoursProjectKey & "|"))>0,
+                   Collect(colWeekLoadErrors,{Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project. Laden gestopt; gegevens laten controleren."})
                   )
                  );
                  If(IsEmpty(colWeekLoadErrors),
@@ -630,8 +637,14 @@ Screens:
                   If(CountRows(Distinct(colPendingWeekProjectHours,HourID))<>CountRows(colPendingWeekProjectHours),
                    Collect(colWeekLoadErrors,{Message:"Dezelfde urenregel is meer dan eens teruggelezen. Laden gestopt."})
                   );
+                  Set(varPendingWeekSunday,DateAdd(varPendingWeekMonday,6,TimeUnit.Days));
+                  ClearCollect(colPendingWeekAssignments,Filter(colPendingWeekTeamAssignments As member,CountIf(colPendingWeekPeriods,AssignmentKey=Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id) && From<=varPendingWeekSunday && (IsBlank(Until) || Until>=varPendingWeekMonday))>0 || CountIf(colPendingWeekProjectHours,AssignmentID=member.ID)>0));
+                  If(CountRows(Distinct(colPendingWeekAssignments,Worker.Id))<>CountRows(colPendingWeekAssignments),
+                   Collect(colWeekLoadErrors,{Message:"Dubbele medewerkerkoppelingen in dit project/team voor deze week. Laden gestopt; bestaande koppelingen laten controleren."})
+                  );
+                  Set(varPendingWeekNeedsMigration,CountIf(colPendingWeekTeamAssignments As pw,pw.Active=true && CountIf(colPendingWeekPeriods,AssignmentKey=Text(varPendingHoursProjectID) & "|" & Text(pw.Worker.Id))=0)>0);
                   ClearCollect(colPendingWeekStored,Filter(colPendingWeekProjectHours,AssignmentID in ShowColumns(colPendingWeekAssignments,ID)));
-                  Trace("DIAG|Week|AfterHoursQueries",TraceSeverity.Information,{Scenario:"Week",Step:"AfterHoursQueries",ElapsedMs:DateDiff(varDiagWeekT0,Now(),TimeUnit.Milliseconds),Assignments:CountRows(colPendingWeekAssignments),ProjectDayRows:CountRows(colPendingWeekProjectHours),DayRows:CountRows(colPendingWeekStored),Errors:CountRows(colWeekLoadErrors)});
+                  Trace("DIAG|Week|AfterHoursQueries",TraceSeverity.Information,{Scenario:"Week",Step:"AfterHoursQueries",ElapsedMs:DateDiff(varDiagWeekT0,Now(),TimeUnit.Milliseconds),Assignments:CountRows(colPendingWeekAssignments),TeamAssignments:CountRows(colPendingWeekTeamAssignments),Periods:CountRows(colPendingWeekPeriods),ProjectDayRows:CountRows(colPendingWeekProjectHours),DayRows:CountRows(colPendingWeekStored),Errors:CountRows(colWeekLoadErrors)});
                   If(CountIf(colPendingWeekStored,IsBlank(HourValue))>0,
                    Collect(colWeekLoadErrors,{Message:"Een opgeslagen urenregel heeft een lege urenwaarde. Laden gestopt; voer geen vervangende uren in."})
                   );
@@ -663,6 +676,7 @@ Screens:
                           sat:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,5,TimeUnit.Days)),
                           sun:LookUp(colPendingWeekStored,AssignmentID=member.ID && WorkDay=DateAdd(varPendingWeekMonday,6,TimeUnit.Days))},
                      {ID:member.ID,Worker:member.Worker,Project:member.Project,Team:member.Team,Active:member.Active,
+                      HasPeriod:CountIf(colPendingWeekPeriods,AssignmentKey=Text(varPendingHoursProjectID) & "|" & Text(member.Worker.Id) && From<=varPendingWeekSunday && (IsBlank(Until) || Until>=varPendingWeekMonday))>0,
                       AssignmentKey:member.AssignmentKey,ProjectKey:member.ProjectKey,Title:member.Title,
                       MonKey:Coalesce(mon.EntryKey,member.MonKey),TueKey:Coalesce(tue.EntryKey,member.TueKey),WedKey:Coalesce(wed.EntryKey,member.WedKey),
                       ThuKey:Coalesce(thu.EntryKey,member.ThuKey),FriKey:Coalesce(fri.EntryKey,member.FriKey),SatKey:Coalesce(sat.EntryKey,member.SatKey),SunKey:Coalesce(sun.EntryKey,member.SunKey),
@@ -682,9 +696,10 @@ Screens:
               Set(varWeekLoadedISOYear,Year(DateAdd(varPendingWeekMonday,3,TimeUnit.Days))); Set(varWeekLoadedKW,ISOWeekNum(varPendingWeekMonday));
               Set(varWeekLoadedAssignmentCount,CountRows(colPendingWeekAssignments)); Set(varWeekLoadedTeamVersion,Coalesce(varTeamDataVersion,0)); Set(varWeekLoadState,"Loaded"); Set(varWeekReady,true); Set(varPendingLoadedWeekMonday,varPendingWeekMonday);
                   Set(varWeekMessage,
-                   If(IsEmpty(colPendingWeekAssignments),"Geen actieve koppelingen voor dit project/team. Bekijk historische uren in Hours Summary.",
-                    Text(CountRows(colPendingWeekStored)) & " opgeslagen dagregels teruggelezen voor de gekozen week; " & Text(CountRows(colPendingWeekAssignments)) & " actieve medewerkers." &
-                    If(varPendingWeekKeyIssue," Alleen lezen: ontbrekende, dubbele of afwijkende technische sleutels; opslaan geblokkeerd om duplicaten te voorkomen.",""))
+                   If(IsEmpty(colPendingWeekAssignments),"Geen medewerkers met een periode of opgeslagen uren in deze week voor dit project/team. Bekijk historische uren in Hours Summary.",
+                    Text(CountRows(colPendingWeekStored)) & " opgeslagen dagregels teruggelezen voor de gekozen week; " & Text(CountRows(colPendingWeekAssignments)) & " medewerkers (periode of uren in deze week)." &
+                    If(varPendingWeekKeyIssue," Alleen lezen: ontbrekende, dubbele of afwijkende technische sleutels; opslaan geblokkeerd om duplicaten te voorkomen.","")) &
+                   If(varPendingWeekNeedsMigration," Actieve koppelingen zonder periode in dit team: zij worden alleen getoond als er uren zijn. Voer eerst de migratie uit op Project / team.","")
                   )
                  )
                 )
@@ -935,7 +950,7 @@ Screens:
                           CountRows(colWeekAssignments)=varWeekLoadedAssignmentCount,
                           CountRows(Distinct(colWeekRows,ID))=varWeekLoadedAssignmentCount,
                           CountRows(Distinct(colWeekOriginal,ID))=varWeekLoadedAssignmentCount,
-                          CountIf(colWeekRows,!(ID in ShowColumns(colWeekOriginal,ID)) || !(ID in ShowColumns(colWeekAssignments,ID)) || Project.Id<>varWeekLoadedProjectID || Team.Value<>varWeekLoadedTeam || Active<>true)=0,
+                          CountIf(colWeekRows,!(ID in ShowColumns(colWeekOriginal,ID)) || !(ID in ShowColumns(colWeekAssignments,ID)) || Project.Id<>varWeekLoadedProjectID || Team.Value<>varWeekLoadedTeam)=0,
                           varLoadedWeekMonday=DateAdd(Date(varWeekLoadedISOYear,1,4),1-Weekday(Date(varWeekLoadedISOYear,1,4),StartOfWeek.Monday)+7*(varWeekLoadedKW-1),TimeUnit.Days)),DisplayMode.Edit,DisplayMode.Disabled)
                         Fill: =ColorValue("#1AFF80")
                         Font: ="Inter, Arial, sans-serif"
@@ -962,7 +977,7 @@ Screens:
                           CountRows(colWeekAssignments)=varWeekLoadedAssignmentCount,
                           CountRows(Distinct(colWeekRows,ID))=varWeekLoadedAssignmentCount,
                           CountRows(Distinct(colWeekOriginal,ID))=varWeekLoadedAssignmentCount,
-                          CountIf(colWeekRows,!(ID in ShowColumns(colWeekOriginal,ID)) || !(ID in ShowColumns(colWeekAssignments,ID)) || Project.Id<>varWeekLoadedProjectID || Team.Value<>varWeekLoadedTeam || Active<>true)=0,
+                          CountIf(colWeekRows,!(ID in ShowColumns(colWeekOriginal,ID)) || !(ID in ShowColumns(colWeekAssignments,ID)) || Project.Id<>varWeekLoadedProjectID || Team.Value<>varWeekLoadedTeam)=0,
                           varLoadedWeekMonday=DateAdd(Date(varWeekLoadedISOYear,1,4),1-Weekday(Date(varWeekLoadedISOYear,1,4),StartOfWeek.Monday)+7*(varWeekLoadedKW-1),TimeUnit.Days)),
                           Set(varReportReady,false); Set(varReportValid,false); Set(varWeekSaving, true);
                           Clear(colHoursChanges);
@@ -1037,6 +1052,7 @@ Screens:
                                                       WorkerID: r.Worker.Id,
                                                       WorkerName: r.Worker.Value,
                                                       TeamValue: r.Team.Value,
+                                                      HasPeriod: r.HasPeriod,
                                                       DayIndex: d.DayIndex,
                                                       KeyValue: d.KeyValue,
                                                       NewHours: d.NewHours,
@@ -1104,6 +1120,10 @@ Screens:
                                               If(
                                                   IsBlank(c.TeamValue),
                                                   Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"team ontbreekt in Project Workers"})
+                                              );
+                                              If(
+                                                  !Coalesce(c.HasPeriod,false) && IsBlank(c.OldHours),
+                                                  Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"geen periode in deze week; nieuwe dag niet toegestaan (periode regelen op Project / team)"})
                                               );
                                               If(
                                                   !IsBlank(c.NewHours) &&

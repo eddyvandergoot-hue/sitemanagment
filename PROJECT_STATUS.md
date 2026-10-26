@@ -10,7 +10,10 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Eerdere goedgekeurde: approved-20261026-discard (commit 7c7a46a; Discard changes, SHA-256 6E9C5516387084DAA3163CB653B75E3E51C6A57BB05D3B5C92A190CC75610D72), approved-20261026-savefix (commit 01af074), baseline-footer-row-20261020_215936 (archief).
 
 ## Huidige build
-- Geen openstaande testbuild; de goedgekeurde baseline is de Home-build hierboven. De Assignment Periods-taak is in uitvoering (nog geen build); in Studio is de gegevensbron "Assignment Periods" toegevoegd (Studio-bestand in Incoming/, niet gecommit).
+- Assignment periods-testbuild "C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\periods-20261026_222325\SiteManagement_Periods_20261026_222325.msapp", 120419 bytes, SHA-256 "FECBECBB85BA7B08FBA168170E38C6C6156C9C87DEBF9C1688515C9A509FF889". Status: geïmplementeerd en technisch gecontroleerd; NIET in Studio geïmporteerd, NIET functioneel getest, NIET goedgekeurd. Baseline blijft approved-20261026-home.
+- Inhoud: lijst Assignment Periods (MS-010: AssignmentKey, ProjectKey, From, Until; alleen datum); de metadata uit Studio is door de orchestrator in de .msapr samengevoegd (Assignment Periods plus vernieuwde schema's Workers/Employers/Hours; app-Id, lijst-ID's en verbindingen ongewijzigd). Workers-kolommen Employer Code/Name, Phone en Email zijn door Eddy verwijderd; de app vult het cacheveld 'Employer Name' uit Employer.Value. Regels: AGENTS.md (punt 3); besluit: DECISIONS.md H9.
+- Bekende beperkingen (reviewer, niet blokkerend): een project met alleen inactieve PW krijgt nooit een migratieaanbod (inactief-met-uren-historie wordt niet aangemaakt); Confirm ziet verwijderde uren alleen als de preview niet gepagineerd was (<500 uren); een teamwissel verplaatst de hele PW (oude weken tonen onder het nieuwe team); Test-PerformanceFix (historisch) stopt vroeg bij zijn checkpoint-diff.
+- Alleen in Studio te controleren: Patch {Until: Blank()} wist de datum; JSON() van projecties; Sort op ID/Modified (delegatie); ModernDatePicker 1.0.0 versus template 1.0.2.
 - TP-DD-01, TP-SAVE-01, TP-LOGO-01: geslaagd (Eddy, 26-10-2026, zonder detailrapport). TP-DISCARD-01: stappen 1-5 en 7 geslaagd (Eddy, 26-10-2026; footer past, geen overlap); stap 6 (Monitor) overgeslagen; stap 8 (Failed) open tot TEST-000. De oude Studio-testlijst staat in het archief.
 - Bevestigd door Eddy in Studio op 26-10-2026: weeklabel van dpHoursWeek toont voor 01-01-2027 `2026 KW53` (TP-WEEK-01); Hours Summary-restyle (zebra, "–" bij 0, totaalrij, Period total-kolom, scrollbarruimte, GEA-tabelkop) is visueel ok (TP-SUM-01); hergebruik van geladen selecties, scenario 1-7 via Monitor (TP-REUSE-01, op Eddy's melding "alles werkt"; Monitor-regels niet afzonderlijk gemeld); weekkiezer: een andere week laadt automatisch en onopgeslagen invoer blokkeert wisselen (kiezer uitgeschakeld, Refresh grijs, alleen Save actief). Verder niets bevestigd.
 - Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek: andere dag in dezelfde week bewaart de dag zonder herlaad; overige GEA-kleuren; fail-closed blokkades (rest); Monitor-delegatie; wijziging van een andere gebruiker verschijnt pas na Refresh (vereist TEST-000).
@@ -29,16 +32,18 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
 - SECURITY.md aangemaakt (WAF SE-checklist); open: GitHub 2FA bevestigen, IT-vragen, MS-004/007/011 (gepland), TP-SEC-01.
-- Volgende werk (volgorde: NEXT_COMMANDS.md): Assignment periods (in uitvoering; besluit 26-10-2026, DECISIONS.md H9), daarna Week Report, export, roadmap-merge.
+- Volgende werk (volgorde: NEXT_COMMANDS.md): Assignment periods (gebouwd, wacht op Studio-test TP-PERIOD-01 en TP-MIGR-01, open), daarna Week Report, export, roadmap-merge.
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
-- Dataminimalisatie (DECISIONS.md D7): MS-012 open (niet urgent; groep Site Supervisors, lijst Worker Contacts met WorkerID + Phone, e-mail niet opgeslagen; open: Workers.Email controleren/verwijderen); Monitor-controle of Workers-rijen incl. kolommen Phone/Email naar de client gaan; besluit Hours.Title = EntryKey (bij volgende Save-taak) en of bestaande rijen blijven staan.
+- Dataminimalisatie (DECISIONS.md D7): MS-012 deels gedaan (Worker Contacts bestaat, telefoons gemigreerd, Workers.Phone en Workers.Email verwijderd); open: groep Site Supervisors, unieke rechten, opschonen versiegeschiedenis (status onbekend, Eddy vragen); besluit Hours.Title = EntryKey (bij volgende Save-taak) en of bestaande rijen blijven staan.
 
 ## GEA-logo
 - Goedgekeurd in Studio (TP-LOGO-01, Eddy 26-10-2026); regel en maten: AGENTS.md; bron Assets/GEA_logo_white.svg (1130 bytes, SHA-256 5D460376D030AF075E004E50191C8BE0C8DB05C5E0A9E593F53612DA52606087, bytegelijk aan het officiële logobankbestand). Technisch gecontroleerd met artifacts/Test-Logo.ps1. Geen MS-item.
 
 ## Open MS-items (MANUAL_STEPS.md)
-- MS-010 (lijst Assignment Periods): lijst gedaan 26-10-2026 (Eddy); open: besluit Eddy over weergavenaam "Untill" → "Until"; migratie vervangen door een expliciete migratieactie per project in de app (in bouw).
+- MS-010 (lijst Assignment Periods): gedaan 26-10-2026 (Eddy; From/Until alleen datum, weergavenaam "Until"). Migratie bestaande koppelingen = app-actie (TP-MIGR-01).
+- MS-012 (Worker Contacts): deels gedaan; open: groep Site Supervisors + unieke rechten + opschonen versiegeschiedenis Workers (Eddy bevestigen).
+- Open testgevallen: TP-PERIOD-01, TP-MIGR-01 (TESTPLAN.md).
 - MS-005 uitbreiding (3 extra testmedewerkers Test Fitter 2 / Test Welder 2 / Test Unknown 2): gedaan 26-10-2026 (Eddy: bestaan in Workers; nog niet aan TEST-000 gekoppeld, dat gebeurt in TP-PERIOD-01).
 - TEST-000 beschikbaar (MS-005) — open testgevallen met opslaan nu uitvoerbaar: TP-DISCARD-01 stap 8 (Failed), TP-REUSE-01 cross-user.
 - Gecontroleerd door Eddy (26-10-2026): Workers.Title (Worker Name) = First Name + Surname voor alle medewerkers (datacontrole, geen SharePoint-constraint).

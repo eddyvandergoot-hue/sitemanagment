@@ -17,6 +17,8 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-SUM-01 | Hours Summary restyle | geslaagd | 26-10-2026 | Eddy |
 | TP-REUSE-01 | Hergebruik geladen selecties | geslaagd | 26-10-2026 | Eddy |
 | TP-SEC-01 | Permissietest met niet-eigenaar account | OPEN | - | Eddy |
+| TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | OPEN | - | Eddy |
+| TP-MIGR-01 | Migratieactie per project (Screen1) | OPEN | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -112,6 +114,42 @@ Build: home-20261026_165630 (PROJECT_STATUS.md). Geslaagd in Studio 26-10-2026 (
 | 9 | Uren typen en direct op Home klikken | geen navigatie met onopgeslagen invoer |
 | 10 | Venster >= 728 px en smal | 3 kolommen naast elkaar; smal 1 kolom met scrollen; geen overlap of afsnijden |
 | 11 | Logo op alle vier schermen | zichtbaar in de titelbalk |
+
+## TP-PERIOD-01 Inzetperiodes (OPEN)
+
+Build: PROJECT_STATUS.md (Assignment periods). Uitsluitend op TEST-000 met 6 medewerkers: Test Fitter / Welder / Unknown en de "2"-varianten (MS-005). Regels: AGENTS.md, Functionele afspraken punt 3. Gebruik KW40 t/m KW46 van 2026 (of een andere reeks; noteer de weken). Eerst TP-MIGR-01 als TEST-000 nog actieve koppelingen zonder periode heeft.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Screen1, TEST-000, team 1, week KW40; vink alle 6 aan; Save team | opgeslagen; per medewerker één open periode, From = maandag KW40 |
+| 2 | Weekly Hours KW40 en KW41 | 6 rijen in beide weken |
+| 3 | Screen1 KW42: vink 2 medewerkers uit; Save team | Until = zondag KW42 |
+| 4 | Weekly Hours KW42 en KW43 | die 2 staan nog in KW42, niet in KW43 (zonder opgeslagen uren) |
+| 5 | Screen1 KW44: vink die 2 weer aan; Save team | NIEUWE periodes From = maandag KW44 (niet heropend: ze eindigden KW42, niet KW43) |
+| 6 | Heropenen: KW45 1 medewerker uitvinken, Save team; KW46 weer aanvinken, Save team | de periode van KW45 wordt HEROPEND (Until leeg, geen nieuwe periode) |
+| 7 | Later-periode-blokkade: kies KW39 en vink een medewerker aan die vanaf KW40 een periode heeft; Save team | geblokkeerd met melding; nul writes |
+| 8 | Verkorten: gesloten periode met latere Until in een eerdere week uitvinken | alleen toegestaan als dit de laatste periode is, anders geblokkeerd |
+| 9 | Alle medewerkers expliciet uitvinken; Save team | toegestaan; zonder expliciet uitvinken (lege selectie) blijft Save geblokkeerd |
+| 10 | Weekly Hours: rij zonder periode in die week, nieuwe dag invullen; Save week | geblokkeerd (nul writes); bestaande dag corrigeren lukt |
+| 11 | Gedeelde week: wissel week op Screen1 en open Weekly Hours, en andersom | beide tonen dezelfde week |
+| 12 | Weekwissel met onopgeslagen selectie of uren | geblokkeerd met melding |
+| 13 | Hours Summary over de periode | nulrijen = medewerkers met een periode die het bereik overlapt |
+| 14 | Studio-only: Patch {Until: Blank()} wist de datum; Monitor-queries op Assignment Periods (ProjectKey-filter, geen $top=500 zonder filter) | datum gewist; gedelegeerde query |
+
+Uitkomst per stap noteren met datum. Een mislukte stap: meld de melding en het resultaat in SharePoint (Assignment Periods en Project Workers).
+
+## TP-MIGR-01 Migratieactie (OPEN)
+
+Uitsluitend op TEST-000: maak eerst een toestand met een actieve Project Workers-koppeling zonder periode (anders is de knop niet zichtbaar).
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Screen1, TEST-000 laden | migratieknoppen zichtbaar; Save team geblokkeerd |
+| 2 | Preview | aantallen per categorie; geen writes |
+| 3 | Confirm | één Patch + verify; periodes aangemaakt; migratieknoppen verdwijnen; Save team weer mogelijk |
+| 4 | Preview opnieuw na een gedeeltelijke migratie (alleen de overgebleven koppelingen) | alleen koppelingen zonder periode in de telling |
+| 5 | Na Preview: uren wijzigen (andere sessie/SharePoint), dan Confirm | geblokkeerd; opnieuw Preview nodig |
+| 6 | Confirm voor een ander project dan de Preview | geblokkeerd |
 
 ## TP-SEC-01 Permissietest met niet-eigenaar account (OPEN)
 

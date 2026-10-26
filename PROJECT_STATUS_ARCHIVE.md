@@ -1373,3 +1373,8 @@ Importeer deze aparte testbuild en voer artifacts/VALIDATIE.md uit. Geef eventue
 - Ook nog niet functioneel getest: weekkiezer dpHoursWeek (OnChange, `2026 KW53` voor 01-01-2027, onopgeslagen invoer blokkeert wisselen); Hours Summary-restyle; GEA-kleuren; hergebruik van geladen selecties; fail-closed blokkades; Monitor-delegatie.
 Dropdownbuild:
 8. Het kleuren van de lijstrijen (hover/geselecteerd) gebeurt door de runtime-JS van het control (dropdownStyles); niet aantoonbaar uit template of pack. Toont hover in de browser niet, dan is het alternatief een modern Dropdown/ComboBox (ander controltype; eerst documentatie en importcontrole).
+
+## Vervangen op 26-10-2026 (Assignment periods-build)
+- Was Huidige build: "Geen openstaande testbuild; de goedgekeurde baseline is de Home-build. De Assignment Periods-taak is in uitvoering (nog geen build); in Studio is de gegevensbron 'Assignment Periods' toegevoegd (Studio-bestand in Incoming/, niet gecommit)."
+- Was MS-010: "lijst gedaan 26-10-2026 (Eddy); open: besluit Eddy over weergavenaam 'Untill' naar 'Until'; migratie vervangen door een expliciete migratieactie per project in de app (in bouw)."
+- Was MS-012/D7: "MS-012 open (niet urgent; open: Workers.Email controleren/verwijderen); Monitor-controle of Workers-rijen incl. kolommen Phone/Email naar de client gaan."

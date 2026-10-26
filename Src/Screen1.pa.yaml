@@ -11,7 +11,7 @@ Screens:
     Properties:
       Fill: =ColorValue("#F0F0F0")
       LoadingSpinnerColor: =ColorValue("#0303B8")
-      OnVisible: =If(IsBlank(varTeamLoadState),Set(varTeamLoadState,"NotLoaded")); With({cacheValid:Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false) && varTeamLoadState="Loaded" && Coalesce(varSelectionLoaded,false) && IsEmpty(colSelectionLoadErrors) && !IsBlank(ddProject.Selected.Id) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value}, Trace("DIAG|Screen1|OnVisible",TraceSeverity.Information,{Scenario:"Screen1",Step:"OnVisible",Dirty:Coalesce(varTeamDirty,false),LoadState:Coalesce(varTeamLoadState,""),CacheValid:cacheValid}); If(!Coalesce(varTeamDirty,false) && !cacheValid,Select(btnReadTeam)))
+      OnVisible: =If(IsBlank(varTeamLoadState),Set(varTeamLoadState,"NotLoaded")); If(IsBlank(varHoursPickedDay),Set(varHoursPickedDay,Today())); Set(varHoursWeekMonday,DateAdd(varHoursPickedDay,1-Weekday(varHoursPickedDay,StartOfWeek.Monday),TimeUnit.Days)); With({cacheValid:Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false) && varTeamLoadState="Loaded" && Coalesce(varSelectionLoaded,false) && IsEmpty(colSelectionLoadErrors) && !IsBlank(ddProject.Selected.Id) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value}, Trace("DIAG|Screen1|OnVisible",TraceSeverity.Information,{Scenario:"Screen1",Step:"OnVisible",Dirty:Coalesce(varTeamDirty,false),LoadState:Coalesce(varTeamLoadState,""),CacheValid:cacheValid,WeekMatch:varTeamLoadedWeekMonday=varHoursWeekMonday}); If(!Coalesce(varTeamDirty,false) && !cacheValid,Select(btnReadTeam),!Coalesce(varTeamDirty,false) && varTeamLoadedWeekMonday<>varHoursWeekMonday,Select(btnApplyTeamWeek)))
     Children:
       - Gallery1:
           Control: Gallery@2.15.0
@@ -169,9 +169,9 @@ Screens:
                   HoverBorderColor: =Color.Transparent
                   HoverColor: =ColorValue("#000000")
                   HoverFill: =Color.Transparent
-                  OnCheck: =If(Self.Value && varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,If(!(ThisItem.ID in ShowColumns(colSelectedWorkers,ID)),Collect(colSelectedWorkers,ThisItem)); RemoveIf(colTeamRemovedIDs,WorkerID=ThisItem.ID); Set(varTeamDirty,JSON(Sort(ShowColumns(colSelectedWorkers,ID),ID,SortOrder.Ascending))<>JSON(Sort(ShowColumns(colTeamOriginalSelection,ID),ID,SortOrder.Ascending))))
+                  OnCheck: =If(Self.Value && varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && varTeamLoadedWeekMonday=varHoursWeekMonday,If(!(ThisItem.ID in ShowColumns(colSelectedWorkers,ID)),Collect(colSelectedWorkers,ThisItem)); RemoveIf(colTeamRemovedIDs,WorkerID=ThisItem.ID); Set(varTeamDirty,JSON(Sort(ShowColumns(colSelectedWorkers,ID),ID,SortOrder.Ascending))<>JSON(Sort(ShowColumns(colTeamOriginalSelection,ID),ID,SortOrder.Ascending))))
                   OnSelect: =
-                  OnUncheck: =If(!Self.Value && varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,RemoveIf(colSelectedWorkers,ID=ThisItem.ID); If(ThisItem.ID in ShowColumns(colTeamOriginalSelection,ID) && !(ThisItem.ID in ShowColumns(colTeamRemovedIDs,WorkerID)),Collect(colTeamRemovedIDs,{WorkerID:ThisItem.ID})); Set(varTeamDirty,JSON(Sort(ShowColumns(colSelectedWorkers,ID),ID,SortOrder.Ascending))<>JSON(Sort(ShowColumns(colTeamOriginalSelection,ID),ID,SortOrder.Ascending))))
+                  OnUncheck: =If(!Self.Value && varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && varTeamLoadedWeekMonday=varHoursWeekMonday,RemoveIf(colSelectedWorkers,ID=ThisItem.ID); If(ThisItem.ID in ShowColumns(colTeamOriginalSelection,ID) && !(ThisItem.ID in ShowColumns(colTeamRemovedIDs,WorkerID)),Collect(colTeamRemovedIDs,{WorkerID:ThisItem.ID})); Set(varTeamDirty,JSON(Sort(ShowColumns(colSelectedWorkers,ID),ID,SortOrder.Ascending))<>JSON(Sort(ShowColumns(colTeamOriginalSelection,ID),ID,SortOrder.Ascending))))
                   PressedBorderColor: =Color.Transparent
                   PressedColor: =ColorValue("#000000")
                   PressedFill: =Color.Transparent
@@ -179,7 +179,7 @@ Screens:
                   Width: =40
                   X: =24
                   Y: =10
-                  DisplayMode: =If(varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varTeamLoadState="Loaded" && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && varTeamLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varTeamMigrationBlocksSave,false),DisplayMode.Edit,DisplayMode.Disabled)
             - Rectangle4:
                 Control: Rectangle@2.3.0
                 Properties:
@@ -198,7 +198,7 @@ Screens:
           Variant: ManualLayout
           Properties:
             Fill: =Color.White
-            Height: =120
+            Height: =Max(ddTeam.Y+ddTeam.Height,dpTeamWeek.Y+dpTeamWeek.Height)+20-Self.Y
             RadiusBottomLeft: =conSelection.RadiusTopLeft
             RadiusBottomRight: =conSelection.RadiusTopLeft
             RadiusTopLeft: '=10  '
@@ -290,6 +290,69 @@ Screens:
             Y: =lblTeam.Y
             Height: =40
             DisplayMode: =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false) || Coalesce(varTeamDirty,false),DisplayMode.Disabled,DisplayMode.Edit)
+      - lblTeamWeek:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000000")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =12
+            Text: ="Week"
+            VerticalAlign: =VerticalAlign.Bottom
+            Width: =Min(256,Parent.Width-80)
+            X: =If(ddProject.X+ddProject.Width+24+256+40<=Parent.Width,ddProject.X+ddProject.Width+24,conSelection.X)
+            Y: =If(ddProject.X+ddProject.Width+24+256+40<=Parent.Width,ddTeam.Y-32,ddTeam.Y+ddTeam.Height+12)
+            Height: =28
+      - dpTeamWeek:
+          Control: ModernDatePicker@1.0.0
+          Properties:
+            AccessibleLabel: '="Week: any day of the work week"'
+            DefaultDate: =Coalesce(varHoursPickedDay,Today())
+            Format: ="dd-mm-yyyy"
+            StartOfWeek: =StartOfWeek.Monday
+            OnChange: |-
+              =If(!Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false),
+               If(IsBlank(Self.SelectedDate),Reset(dpTeamWeek),
+                With({selectedDay:Date(Year(Self.SelectedDate),Month(Self.SelectedDate),Day(Self.SelectedDate))},
+                 If(selectedDay<>Coalesce(varHoursPickedDay,Date(1900,1,1)),
+                  With({monday:DateAdd(selectedDay,1-Weekday(selectedDay,StartOfWeek.Monday),TimeUnit.Days)},
+                   If(monday=varHoursWeekMonday,
+                    Set(varHoursPickedDay,selectedDay),
+                    Coalesce(varTeamDirty,false) || JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),
+                    Reset(dpTeamWeek); Notify("Week niet gewisseld: onopgeslagen selectie of uren behouden. Sla eerst op.",NotificationType.Warning,15000),
+                    Set(varHoursPickedDay,selectedDay); Set(varHoursWeekMonday,monday); Select(btnApplyTeamWeek)
+                   )
+                  )
+                 )
+                )
+               )
+              )
+            DisplayMode: =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false) || Coalesce(varTeamDirty,false) || JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),DisplayMode.Disabled,DisplayMode.Edit)
+            X: =lblTeamWeek.X
+            Y: =lblTeamWeek.Y+lblTeamWeek.Height+4
+            Width: =lblTeamWeek.Width
+            Height: =40
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =12
+            Color: =ColorValue("#000000")
+            Fill: =ColorValue("#F0F0F0")
+            BorderColor: =ColorValue("#DCDCDC")
+            BorderThickness: =1
+      - lblTeamWeekKW:
+          Control: Label@2.5.1
+          Properties:
+            Text: =If(IsBlank(varHoursWeekMonday),"",Text(Year(DateAdd(varHoursWeekMonday,3,TimeUnit.Days)),"0000") & " KW" & Text(ISOWeekNum(varHoursWeekMonday),"00"))
+            Align: =Align.Right
+            X: =lblTeamWeek.X
+            Y: =lblTeamWeek.Y
+            Width: =lblTeamWeek.Width
+            Height: =lblTeamWeek.Height
+            VerticalAlign: =VerticalAlign.Bottom
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =12
+            Color: =ColorValue("#000000")
       - lblProject:
           Control: Label@2.5.1
           Properties:
@@ -391,12 +454,14 @@ Screens:
                 Set(varDiagTeamT0,Now()); Trace("DIAG|Team|Start",TraceSeverity.Information,{Scenario:"Team",Step:"Start",ProjectID:Coalesce(ddProject.Selected.Id,0),Team:Coalesce(ddTeam.Selected.Value,""),Forced:Coalesce(varForceTeamRefresh,false),MastersCached:Coalesce(varMastersReady,false),WorkersCached:Coalesce(varWorkersCacheReady,false)});
                 Set(varSelectionProjectID,ddProject.Selected.Id); Set(varSelectionTeam,ddTeam.Selected.Value);
                 Set(varSelectionProjectKey,Text(varSelectionProjectID));
-                Clear(colSelectionLoadErrors); Clear(colPendingTeamAssignments); Clear(colPendingSelectedWorkers);
+                Clear(colSelectionLoadErrors); Clear(colPendingTeamProjectAssignments); Clear(colPendingTeamPeriods); Set(varMigrationPreviewOK,false);
+                If(IsBlank(varHoursPickedDay),Set(varHoursPickedDay,Today())); If(IsBlank(varHoursWeekMonday),Set(varHoursWeekMonday,DateAdd(varHoursPickedDay,1-Weekday(varHoursPickedDay,StartOfWeek.Monday),TimeUnit.Days)));
                 If(Coalesce(varForceTeamRefresh,false),
                  IfError(Refresh(Projects),Collect(colSelectionLoadErrors,{Message:FirstError.Message});false);
                  IfError(Refresh(Workers),Collect(colSelectionLoadErrors,{Message:FirstError.Message});false)
                 );
                 IfError(Refresh('Project Workers'),Collect(colSelectionLoadErrors,{Message:FirstError.Message});false);
+                IfError(Refresh('Assignment Periods'),Collect(colSelectionLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
                 If(!Coalesce(varMastersReady,false) || !Coalesce(varWorkersCacheReady,false) || Coalesce(varForceTeamRefresh,false),
                  Clear(colProjectsLoadErrors); Clear(colTeamChoicesLoadErrors); Clear(colWorkersLoadErrors);
                  Concurrent(
@@ -404,7 +469,7 @@ Screens:
                    Collect(colProjectsLoadErrors,{Message:"Projects: " & FirstError.Message});false),
                   IfError(CountRows(ClearCollect(colPendingTeamChoices,Choices('Project Workers'.Team)))>=0,
                    Collect(colTeamChoicesLoadErrors,{Message:"Teamkeuzes: " & FirstError.Message});false),
-                  IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.'Employer Name',Employer:worker.Employer,Trade:worker.Trade})))>=0,
+                  IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})))>=0,
                    Collect(colWorkersLoadErrors,{Message:"Workers: " & FirstError.Message});false)
                  );
                  Collect(colSelectionLoadErrors,colProjectsLoadErrors,colTeamChoicesLoadErrors,colWorkersLoadErrors);
@@ -428,28 +493,31 @@ Screens:
                  Set(varSelectionProjectID,ddProject.Selected.Id); Set(varSelectionProjectKey,Text(varSelectionProjectID));
                  Set(varSelectionTeam,ddTeam.Selected.Value);
                  If(!IsBlank(varSelectionProjectID) && !IsBlank(varSelectionTeam),
-                  IfError(CountRows(ClearCollect(colPendingTeamAssignments,
-                   Filter('Project Workers',ProjectKey=varSelectionProjectKey && Team.Value=varSelectionTeam && Active=true)))>=0,
+                  IfError(CountRows(ClearCollect(colPendingTeamProjectAssignments,
+                   Filter('Project Workers',ProjectKey=varSelectionProjectKey)))>=0,
                    Collect(colSelectionLoadErrors,{Message:FirstError.Message});false);
-                  If(CountRows(colPendingTeamAssignments)>=500,Collect(colSelectionLoadErrors,{Message:"500 koppelingen geladen; volledigheid niet gegarandeerd."}));
-                  If(CountIf(colPendingTeamAssignments,Project.Id<>varSelectionProjectID)>0,Collect(colSelectionLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Gegevens laten controleren; opslaan geblokkeerd."}));
-                  If(CountRows(Distinct(colPendingTeamAssignments,Worker.Id))<>CountRows(colPendingTeamAssignments),Collect(colSelectionLoadErrors,{Message:"Dubbele actieve medewerkerkoppelingen; opslaan geblokkeerd."}));
+                  If(CountRows(colPendingTeamProjectAssignments)>=500,Collect(colSelectionLoadErrors,{Message:"500 koppelingen voor dit project geladen; volledigheid niet gegarandeerd. Laden gestopt."}));
                   If(IsEmpty(colSelectionLoadErrors),
-                   ForAll(colPendingTeamAssignments As member,
-                    With({person:LookUp(colWorkersCache,ID=member.Worker.Id)},
-                     If(IsBlank(person.ID),Collect(colSelectionLoadErrors,{Message:"Medewerker ontbreekt bij koppeling " & Text(member.ID)});false,
-                      CountRows(Collect(colPendingSelectedWorkers,person))>=0))
-                   )
+                   IfError(CountRows(ClearCollect(colPendingTeamPeriods,
+                    ForAll(Filter('Assignment Periods',ProjectKey=varSelectionProjectKey) As p,{ID:p.ID,AssignmentKey:p.AssignmentKey,ProjectKey:p.ProjectKey,From:If(IsBlank(p.From),Blank(),Date(Year(p.From),Month(p.From),Day(p.From))),Until:If(IsBlank(p.Until),Blank(),Date(Year(p.Until),Month(p.Until),Day(p.Until)))})))>=0,
+                    Collect(colSelectionLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false)
                   );
+                  If(CountRows(colPendingTeamPeriods)>=500,Collect(colSelectionLoadErrors,{Message:"500 periodes voor dit project geladen; volledigheid niet gegarandeerd. Laden gestopt."}));
+                  If(CountIf(colPendingTeamProjectAssignments,Project.Id<>varSelectionProjectID)>0,Collect(colSelectionLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Gegevens laten controleren; opslaan geblokkeerd."}));
+                  If(CountRows(Distinct(colPendingTeamProjectAssignments,Worker.Id))<>CountRows(colPendingTeamProjectAssignments),Collect(colSelectionLoadErrors,{Message:"Dubbele medewerkerkoppelingen in dit project; opslaan geblokkeerd."}));
+                  If(CountIf(colPendingTeamPeriods,ProjectKey<>varSelectionProjectKey || !StartsWith(AssignmentKey,varSelectionProjectKey & "|"))>0,Collect(colSelectionLoadErrors,{Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project. Laden gestopt; gegevens laten controleren."}));
                   If(IsEmpty(colSelectionLoadErrors),
-                   ClearCollect(colCurrentTeamAssignments,colPendingTeamAssignments); ClearCollect(colSelectedWorkers,colPendingSelectedWorkers);
-                   ClearCollect(colTeamOriginalSelection,colPendingSelectedWorkers); Clear(colTeamRemovedIDs);
+                   ClearCollect(colTeamProjectAssignments,colPendingTeamProjectAssignments); ClearCollect(colTeamPeriods,colPendingTeamPeriods);
+                   ClearCollect(colTeamPWSnapshot,ForAll(colPendingTeamProjectAssignments As a,{ID:a.ID,ProjectID:a.Project.Id,WorkerID:a.Worker.Id,TeamValue:a.Team.Value,Active:a.Active,AssignmentKey:a.AssignmentKey,ProjectKey:a.ProjectKey}));
                    Set(varTeamLoadedProjectID,varSelectionProjectID); Set(varTeamLoadedTeam,varSelectionTeam);
-                   Set(varTeamLoadedAssignmentCount,CountRows(colPendingTeamAssignments)); Set(varTeamDirty,false);
-                   Set(varSelectionKeysValid,CountIf(colPendingTeamAssignments,AssignmentKey<>Text(varSelectionProjectID) & "|" & Text(Worker.Id) || ProjectKey<>Text(varSelectionProjectID))=0);
+                   Set(varTeamNeedsMigration,CountIf(colTeamProjectAssignments As pw,pw.Active=true && CountIf(colTeamPeriods,AssignmentKey=Text(varSelectionProjectID) & "|" & Text(pw.Worker.Id))=0)>0);
+                   Set(varTeamMigrationBlocksSave,varTeamNeedsMigration);
+                   Set(varTeamActiveMismatchCount,CountIf(colTeamProjectAssignments As pw,With({periodCount:CountIf(colTeamPeriods,AssignmentKey=Text(varSelectionProjectID) & "|" & Text(pw.Worker.Id)),openCount:CountIf(colTeamPeriods,AssignmentKey=Text(varSelectionProjectID) & "|" & Text(pw.Worker.Id) && IsBlank(Until))},(pw.Active=true && periodCount>0 && openCount=0) || (pw.Active<>true && openCount>0))));
+                   Set(varTeamPeriodsValid,CountIf(colTeamPeriods,IsBlank(From) || Weekday(From,StartOfWeek.Monday)<>1 || (!IsBlank(Until) && (Weekday(Until,StartOfWeek.Monday)<>7 || Until<From)))=0 && CountIf(colTeamPeriods As p,CountIf(colTeamPeriods As q,q.ID<>p.ID && q.AssignmentKey=p.AssignmentKey && q.From<=Coalesce(p.Until,Date(9999,12,31)) && Coalesce(q.Until,Date(9999,12,31))>=p.From)>0)=0);
+                   Set(varSelectionKeysValid,varTeamPeriodsValid && varTeamActiveMismatchCount=0 && CountIf(colTeamProjectAssignments,AssignmentKey<>Text(varSelectionProjectID) & "|" & Text(Worker.Id) || ProjectKey<>Text(varSelectionProjectID))=0);
                    Set(varTeamDataVersion,Coalesce(varTeamDataVersion,0)+1);
-                   Set(varSelectionLoaded,true); Set(varTeamLoadState,"Loaded");
-                   Set(varSelectionMessage,Text(varTeamLoadedAssignmentCount) & " actieve koppelingen volledig geladen." & If(!varSelectionKeysValid," Alleen lezen: afwijkende sleutels; opslaan geblokkeerd.",""))
+                   Set(varTeamWeekMonday,varHoursWeekMonday); Set(varTeamWeekSunday,DateAdd(varHoursWeekMonday,6,TimeUnit.Days)); ClearCollect(colCurrentTeamAssignments,Filter(colTeamProjectAssignments As member,member.Team.Value=varTeamLoadedTeam && CountIf(colTeamPeriods,AssignmentKey=Text(varTeamLoadedProjectID) & "|" & Text(member.Worker.Id) && From<=varTeamWeekSunday && (IsBlank(Until) || Until>=varTeamWeekMonday))>0)); ClearCollect(colTeamOriginalSelection,Filter(colWorkersCache As person,CountIf(colCurrentTeamAssignments,Worker.Id=person.ID)>0)); ClearCollect(colSelectedWorkers,colTeamOriginalSelection); Clear(colTeamRemovedIDs); Set(varTeamLoadedAssignmentCount,CountRows(colCurrentTeamAssignments)); Set(varTeamDirty,false); Set(varSelectionMessage,"Week " & Text(Year(DateAdd(varTeamWeekMonday,3,TimeUnit.Days)),"0000") & " KW" & Text(ISOWeekNum(varTeamWeekMonday),"00") & ": " & Text(varTeamLoadedAssignmentCount) & " medewerkers met een periode in team " & varTeamLoadedTeam & "." & If(CountRows(colTeamOriginalSelection)<>varTeamLoadedAssignmentCount," Medewerker ontbreekt in Workers; opslaan geblokkeerd.","") & If(Coalesce(varTeamActiveMismatchCount,0)>0," Active komt bij " & Text(varTeamActiveMismatchCount) & " koppeling(en) niet overeen met een open periode (bijvoorbeeld na gedeeltelijke opslag of migratie); gegevens laten controleren.","") & If(!Coalesce(varSelectionKeysValid,false)," Alleen lezen: afwijkende sleutels of periodes (From maandag, Until zondag, geen overlap, Active = open periode); opslaan geblokkeerd.","") & If(Coalesce(varTeamNeedsMigration,false)," Er zijn actieve koppelingen zonder periode: eerst Preview migration en daarna Confirm migration (eerst op TEST-000). Opslaan geblokkeerd tot de migratie is uitgevoerd.","")); Set(varTeamLoadedWeekMonday,varTeamWeekMonday);
+                   Set(varSelectionLoaded,true); Set(varTeamLoadState,"Loaded")
                   ),
                   Set(varTeamLoadState,"NotLoaded"); Set(varSelectionMessage,"Projecten en teamkeuzes geladen. Kies project en team. Opslaan blijft geblokkeerd tot de selectie volledig is gelezen.")
                  )
@@ -459,16 +527,32 @@ Screens:
                  Set(varSelectionMessage,"Laden mislukt; opslaan geblokkeerd. Vorige selectie behouden. " & First(colSelectionLoadErrors).Message);
                  Notify(varSelectionMessage,NotificationType.Error,15000)
                 );
-                Trace("DIAG|Team|End",TraceSeverity.Information,{Scenario:"Team",Step:"End",ElapsedMs:DateDiff(varDiagTeamT0,Now(),TimeUnit.Milliseconds),State:Coalesce(varTeamLoadState,""),Assignments:CountRows(colCurrentTeamAssignments),Errors:CountRows(colSelectionLoadErrors)});
+                Trace("DIAG|Team|End",TraceSeverity.Information,{Scenario:"Team",Step:"End",ElapsedMs:DateDiff(varDiagTeamT0,Now(),TimeUnit.Milliseconds),State:Coalesce(varTeamLoadState,""),Assignments:CountRows(colCurrentTeamAssignments),ProjectAssignments:CountRows(colTeamProjectAssignments),Periods:CountRows(colTeamPeriods),NeedsMigration:Coalesce(varTeamNeedsMigration,false),Errors:CountRows(colSelectionLoadErrors)});
                 Set(varSelectionBusy,false)
                ))
               )
+      - btnApplyTeamWeek:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Week"
+            Visible: =false
+            DisplayMode: =DisplayMode.Edit
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            OnSelect: |-
+              =If(varTeamLoadState="Loaded" && Coalesce(varSelectionLoaded,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && !IsBlank(varHoursWeekMonday),
+               Set(varTeamWeekMonday,varHoursWeekMonday); Set(varTeamWeekSunday,DateAdd(varHoursWeekMonday,6,TimeUnit.Days)); ClearCollect(colCurrentTeamAssignments,Filter(colTeamProjectAssignments As member,member.Team.Value=varTeamLoadedTeam && CountIf(colTeamPeriods,AssignmentKey=Text(varTeamLoadedProjectID) & "|" & Text(member.Worker.Id) && From<=varTeamWeekSunday && (IsBlank(Until) || Until>=varTeamWeekMonday))>0)); ClearCollect(colTeamOriginalSelection,Filter(colWorkersCache As person,CountIf(colCurrentTeamAssignments,Worker.Id=person.ID)>0)); ClearCollect(colSelectedWorkers,colTeamOriginalSelection); Clear(colTeamRemovedIDs); Set(varTeamLoadedAssignmentCount,CountRows(colCurrentTeamAssignments)); Set(varTeamDirty,false); Set(varSelectionMessage,"Week " & Text(Year(DateAdd(varTeamWeekMonday,3,TimeUnit.Days)),"0000") & " KW" & Text(ISOWeekNum(varTeamWeekMonday),"00") & ": " & Text(varTeamLoadedAssignmentCount) & " medewerkers met een periode in team " & varTeamLoadedTeam & "." & If(CountRows(colTeamOriginalSelection)<>varTeamLoadedAssignmentCount," Medewerker ontbreekt in Workers; opslaan geblokkeerd.","") & If(Coalesce(varTeamActiveMismatchCount,0)>0," Active komt bij " & Text(varTeamActiveMismatchCount) & " koppeling(en) niet overeen met een open periode (bijvoorbeeld na gedeeltelijke opslag of migratie); gegevens laten controleren.","") & If(!Coalesce(varSelectionKeysValid,false)," Alleen lezen: afwijkende sleutels of periodes (From maandag, Until zondag, geen overlap, Active = open periode); opslaan geblokkeerd.","") & If(Coalesce(varTeamNeedsMigration,false)," Er zijn actieve koppelingen zonder periode: eerst Preview migration en daarna Confirm migration (eerst op TEST-000). Opslaan geblokkeerd tot de migratie is uitgevoerd.","")); Set(varTeamLoadedWeekMonday,varTeamWeekMonday);
+               Trace("DIAG|Team|WeekApplied",TraceSeverity.Information,{Scenario:"Team",Step:"WeekApplied",Monday:Text(varTeamLoadedWeekMonday,"yyyy-mm-dd"),Selected:varTeamLoadedAssignmentCount}))
       - lblSelectionLoadStatus:
           Control: Label@2.5.1
           Properties:
             Text: =Switch(Coalesce(varTeamLoadState,"NotLoaded"),"Loading","Projecten, teamkeuzes en bestaande koppelingen ophalen...","NotLoaded",Coalesce(varSelectionMessage,"Nog niet geladen. Opslaan geblokkeerd; kies project en team."),varSelectionMessage)
             X: =40
-            Y: =ddTeam.Y+ddTeam.Height+12
+            Y: =Max(ddTeam.Y+ddTeam.Height,dpTeamWeek.Y+dpTeamWeek.Height)+12
             Width: =Parent.Width-80
             Height: =34
             Font: ="Inter, Arial, sans-serif"
@@ -500,7 +584,7 @@ Screens:
                 Control: GroupContainer@1.5.0
                 Variant: ManualLayout
                 Properties:
-                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnHomeScreen1.Width+btnGotoHours.Width+btnGotoHoursSummary.Width+btnRefreshTeam.Width+btnAddtoTeam.Width+4*lblFooterButtonMetrics.Width)
+                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnHomeScreen1.Width+btnGotoHours.Width+btnGotoHoursSummary.Width+btnRefreshTeam.Width+btnAddtoTeam.Width+4*lblFooterButtonMetrics.Width+If(btnMigratePreview.Visible,btnMigratePreview.Width+btnMigrateConfirm.Width+2*lblFooterButtonMetrics.Width,0))
                   Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height
                   FillPortions: =0
                   Fill: =Color.Transparent
@@ -683,10 +767,13 @@ Screens:
                           !IsBlank(ddTeam.Selected.Value),
                           varTeamLoadedProjectID=ddProject.Selected.Id,
                           varTeamLoadedTeam=ddTeam.Selected.Value,
+                          !IsBlank(varTeamLoadedWeekMonday),
+                          varTeamLoadedWeekMonday=varHoursWeekMonday,
+                          !Coalesce(varTeamMigrationBlocksSave,true),
                           CountRows(colCurrentTeamAssignments)=varTeamLoadedAssignmentCount,
                           CountRows(colTeamOriginalSelection)=varTeamLoadedAssignmentCount,
-                          CountIf(colCurrentTeamAssignments,Project.Id<>varTeamLoadedProjectID || Team.Value<>varTeamLoadedTeam || Active<>true)=0,
-                          !IsEmpty(colSelectedWorkers),
+                          CountIf(colCurrentTeamAssignments,Project.Id<>varTeamLoadedProjectID || Team.Value<>varTeamLoadedTeam)=0,
+                          !IsEmpty(colSelectedWorkers) || (!IsEmpty(colTeamOriginalSelection) && Coalesce(varTeamPeriodsValid,false) && CountRows(Distinct(colTeamRemovedIDs,WorkerID))=CountRows(colTeamRemovedIDs) && CountRows(colTeamRemovedIDs)=CountRows(colTeamOriginalSelection) && CountIf(colTeamRemovedIDs,!(WorkerID in ShowColumns(colTeamOriginalSelection,ID)))=0),
                           CountIf(colSelectedWorkers,IsBlank(ID))=0,
                           CountRows(Distinct(colSelectedWorkers,ID))=CountRows(colSelectedWorkers),
                           CountIf(colTeamOriginalSelection,!(ID in ShowColumns(colSelectedWorkers,ID)) && !(ID in ShowColumns(colTeamRemovedIDs,WorkerID)))=0),DisplayMode.Edit,DisplayMode.Disabled)
@@ -705,10 +792,13 @@ Screens:
                           !IsBlank(ddTeam.Selected.Value),
                           varTeamLoadedProjectID=ddProject.Selected.Id,
                           varTeamLoadedTeam=ddTeam.Selected.Value,
+                          !IsBlank(varTeamLoadedWeekMonday),
+                          varTeamLoadedWeekMonday=varHoursWeekMonday,
+                          !Coalesce(varTeamMigrationBlocksSave,true),
                           CountRows(colCurrentTeamAssignments)=varTeamLoadedAssignmentCount,
                           CountRows(colTeamOriginalSelection)=varTeamLoadedAssignmentCount,
-                          CountIf(colCurrentTeamAssignments,Project.Id<>varTeamLoadedProjectID || Team.Value<>varTeamLoadedTeam || Active<>true)=0,
-                          !IsEmpty(colSelectedWorkers),
+                          CountIf(colCurrentTeamAssignments,Project.Id<>varTeamLoadedProjectID || Team.Value<>varTeamLoadedTeam)=0,
+                          !IsEmpty(colSelectedWorkers) || (!IsEmpty(colTeamOriginalSelection) && Coalesce(varTeamPeriodsValid,false) && CountRows(Distinct(colTeamRemovedIDs,WorkerID))=CountRows(colTeamRemovedIDs) && CountRows(colTeamRemovedIDs)=CountRows(colTeamOriginalSelection) && CountIf(colTeamRemovedIDs,!(WorkerID in ShowColumns(colTeamOriginalSelection,ID)))=0),
                           CountIf(colSelectedWorkers,IsBlank(ID))=0,
                           CountRows(Distinct(colSelectedWorkers,ID))=CountRows(colSelectedWorkers),
                           CountIf(colTeamOriginalSelection,!(ID in ShowColumns(colSelectedWorkers,ID)) && !(ID in ShowColumns(colTeamRemovedIDs,WorkerID)))=0),
@@ -731,6 +821,9 @@ Screens:
                                   colCurrentTeamAssignments
                               );
                               Clear(colTeamSaveCheck); Clear(colTeamToDeactivate); Clear(colTeamPatched); Clear(colTeamDeactivated);
+                              Clear(colPeriodSaveCheckRaw); Clear(colPeriodSaveCheck); Clear(colTeamCandidates); Clear(colTeamPlan);
+                              Clear(colPeriodsCreated); Clear(colPeriodsUpdated); Clear(colTeamVerifyRaw); Clear(colPeriodVerify);
+                              Set(varDiagTeamSaveT0,Now()); Set(varDiagTeamSaveReads,0); Set(varDiagTeamSaveWrites,0);
                           
                               IfError(
                                   With(
@@ -741,16 +834,33 @@ Screens:
                                       },
                           
                                       Set(varTeamSaveProjectKey,Text(varTeamLoadedProjectID));
+                                      Set(varTeamSaveWeekMonday,varTeamLoadedWeekMonday);
                                       IfError(Refresh('Project Workers'),Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false);
+                                      IfError(Refresh('Assignment Periods'),Collect(colAssignmentErrors,{WorkerID:0,Message:"Assignment Periods: " & FirstError.Message});false);
                                       If(IsEmpty(colAssignmentErrors),
+                                          Set(varDiagTeamSaveReads,varDiagTeamSaveReads+1);
                                           IfError(CountRows(ClearCollect(colTeamSaveCheck,Filter('Project Workers',ProjectKey=varTeamSaveProjectKey)))>=0,
-                                              Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false)
+                                              Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false);
+                                          IfError(CountRows(ClearCollect(colPeriodSaveCheckRaw,Filter('Assignment Periods',ProjectKey=varTeamSaveProjectKey)))>=0,
+                                              Collect(colAssignmentErrors,{WorkerID:0,Message:"Assignment Periods: " & FirstError.Message});false)
                                       );
                                       If(CountRows(colTeamSaveCheck)>=500,
                                           Collect(colAssignmentErrors,{WorkerID:0,Message:"500 koppelingen voor dit project gelezen; volledigheid niet gegarandeerd. Opslaan gestopt."})
                                       );
+                                      If(CountRows(colPeriodSaveCheckRaw)>=500,
+                                          Collect(colAssignmentErrors,{WorkerID:0,Message:"500 periodes voor dit project gelezen; volledigheid niet gegarandeerd. Opslaan gestopt."})
+                                      );
                                       If(CountIf(colTeamSaveCheck,Project.Id<>varTeamLoadedProjectID)>0,
                                           Collect(colAssignmentErrors,{WorkerID:0,Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Gegevens laten controleren; opslaan geblokkeerd."})
+                                      );
+                                      ClearCollect(colPeriodSaveCheck,ForAll(colPeriodSaveCheckRaw As p,{ID:p.ID,AssignmentKey:p.AssignmentKey,ProjectKey:p.ProjectKey,From:If(IsBlank(p.From),Blank(),Date(Year(p.From),Month(p.From),Day(p.From))),Until:If(IsBlank(p.Until),Blank(),Date(Year(p.Until),Month(p.Until),Day(p.Until)))}));
+                                      If(CountIf(colPeriodSaveCheck,ProjectKey<>varTeamSaveProjectKey || !StartsWith(AssignmentKey,varTeamSaveProjectKey & "|"))>0,
+                                          Collect(colAssignmentErrors,{WorkerID:0,Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project. Gegevens laten controleren; opslaan geblokkeerd."})
+                                      );
+                                      If(IsEmpty(colAssignmentErrors) &&
+                                          (JSON(Sort(ForAll(colTeamSaveCheck As a,{ID:a.ID,ProjectID:a.Project.Id,WorkerID:a.Worker.Id,TeamValue:a.Team.Value,Active:a.Active,AssignmentKey:a.AssignmentKey,ProjectKey:a.ProjectKey}),ID,SortOrder.Ascending))<>JSON(Sort(colTeamPWSnapshot,ID,SortOrder.Ascending)) ||
+                                           JSON(Sort(colPeriodSaveCheck,ID,SortOrder.Ascending))<>JSON(Sort(colTeamPeriods,ID,SortOrder.Ascending))),
+                                          Collect(colAssignmentErrors,{WorkerID:0,Message:"Koppelingen of periodes van dit project zijn sinds het laden gewijzigd (mogelijk door een andere gebruiker). Niets opgeslagen; zet de selectie terug en gebruik Refresh."})
                                       );
                           
                                       If(IsEmpty(colAssignmentErrors),
@@ -786,68 +896,169 @@ Screens:
                                       );
                           
                                       If(IsEmpty(colAssignmentErrors),
-                                          IfError(CountRows(ClearCollect(colTeamPatched,Patch(
-                                              'Project Workers',
-                                              ForAll(
-                                                  colTeamSelectionToSave As person,
-                                                  With(
-                                                      {
-                                                          existingAssignment: LookUp(
-                                                              colTeamSaveCheck As stored,
-                                                              stored.AssignmentKey = varTeamSaveProjectKey & "|" & Text(person.ID)
+                                          ForAll(colTeamSelectionToSave As person,Collect(colTeamCandidates,{WorkerID:person.ID,WorkerName:Trim(person.'First Name' & " " & person.Surname),IsSelected:true,WasSelected:person.ID in ShowColumns(colTeamOriginalSelection,ID),IsRemoved:false}));
+                                          ForAll(colTeamToDeactivate As removed,Collect(colTeamCandidates,{WorkerID:removed.WorkerID,WorkerName:Coalesce(LookUp(colWorkersCache,ID=removed.WorkerID,Trim('First Name' & " " & Surname)),"Medewerker " & Text(removed.WorkerID)),IsSelected:false,WasSelected:true,IsRemoved:true}))
+                                      );
+                          
+                                      If(IsEmpty(colAssignmentErrors),
+                                          ForAll(colTeamCandidates As candidate,
+                                              With({workerPeriods:Filter(colPeriodSaveCheck,AssignmentKey=varTeamSaveProjectKey & "|" & Text(candidate.WorkerID)),weekMonday:varTeamSaveWeekMonday,isSel:candidate.IsSelected,wasSel:candidate.WasSelected,isRem:candidate.IsRemoved},
+                                                  With({decision:With({weekSunday:DateAdd(weekMonday,6,TimeUnit.Days)},With({overlapping:Filter(workerPeriods,From<=weekSunday && (IsBlank(Until) || Until>=weekMonday)),latest:First(Sort(workerPeriods,From,SortOrder.Descending))},If(isSel && wasSel,{Action:"NONE",PeriodID:Blank(),NewUntil:Blank(),Message:""},isSel,If(CountRows(overlapping)>0,{Action:"TEAM",PeriodID:Blank(),NewUntil:Blank(),Message:""},CountIf(workerPeriods,From>weekMonday)>0,{Action:"BLOCK",PeriodID:Blank(),NewUntil:Blank(),Message:"er bestaat al een latere periode; aanmelden vanaf deze week zou daarmee overlappen."},!IsBlank(latest.ID) && !IsBlank(latest.Until) && latest.Until=DateAdd(weekMonday,-1,TimeUnit.Days),{Action:"REOPEN",PeriodID:latest.ID,NewUntil:Blank(),Message:""},{Action:"NEW",PeriodID:Blank(),NewUntil:Blank(),Message:""}),wasSel && isRem,If(CountRows(overlapping)<>1,{Action:"BLOCK",PeriodID:Blank(),NewUntil:Blank(),Message:"geen eenduidige periode in deze week gevonden; gegevens laten controleren."},IsBlank(First(overlapping).Until),{Action:"CLOSE",PeriodID:First(overlapping).ID,NewUntil:weekSunday,Message:""},First(overlapping).Until=weekSunday,{Action:"NONE",PeriodID:Blank(),NewUntil:Blank(),Message:""},First(overlapping).Until>weekSunday && CountIf(workerPeriods,From>First(overlapping).From)=0,{Action:"SHORTEN",PeriodID:First(overlapping).ID,NewUntil:weekSunday,Message:""},First(overlapping).Until>weekSunday,{Action:"BLOCK",PeriodID:Blank(),NewUntil:Blank(),Message:"er volgt nog een latere periode; alleen de laatste periode mag worden ingekort."},{Action:"BLOCK",PeriodID:Blank(),NewUntil:Blank(),Message:"de periode in deze week eindigt niet op zondag; gegevens laten controleren."}),{Action:"NONE",PeriodID:Blank(),NewUntil:Blank(),Message:""})))},
+                                                      With({problem:With({farDate:Date(9999,12,31),target:LookUp(workerPeriods,ID=decision.PeriodID)},If(CountIf(workerPeriods,IsBlank(From) || (!IsBlank(Until) && Until<From))>0,"bestaande periode zonder From of met Until vóór From; gegevens laten controleren.",CountIf(workerPeriods As p,CountIf(workerPeriods As q,q.ID<>p.ID && q.From<=Coalesce(p.Until,farDate) && Coalesce(q.Until,farDate)>=p.From)>0)>0,"bestaande periodes overlappen; gegevens laten controleren.",decision.Action="NEW" && CountIf(workerPeriods,Coalesce(Until,farDate)>=weekMonday)>0,"een nieuwe periode vanaf deze week zou overlappen met een bestaande periode.",decision.Action="REOPEN" && CountIf(workerPeriods,ID<>target.ID && Coalesce(Until,farDate)>=target.From)>0,"heropenen zou overlappen met een latere periode.",(decision.Action="CLOSE" || decision.Action="SHORTEN") && decision.NewUntil<target.From,"Until zou vóór From komen te liggen.",(decision.Action="CLOSE" || decision.Action="SHORTEN") && CountIf(workerPeriods,ID<>target.ID && From<=decision.NewUntil && Coalesce(Until,farDate)>=target.From)>0,"afsluiten zou overlappen met een andere periode.","")),storedAssignment:LookUp(colTeamSaveCheck As stored,stored.AssignmentKey = varTeamSaveProjectKey & "|" & Text(candidate.WorkerID))},
+                                                          If(decision.Action="BLOCK",
+                                                              Collect(colAssignmentErrors,{WorkerID:candidate.WorkerID,Message:candidate.WorkerName & ": " & decision.Message}),
+                                                              !IsBlank(problem),
+                                                              Collect(colAssignmentErrors,{WorkerID:candidate.WorkerID,Message:candidate.WorkerName & ": " & problem}),
+                                                              Collect(colTeamPlan,{WorkerID:candidate.WorkerID,WorkerName:candidate.WorkerName,Action:decision.Action,PeriodID:decision.PeriodID,NewUntil:decision.NewUntil,AssignmentID:storedAssignment.ID,CurrentActive:storedAssignment.Active,
+                                                                  ActiveAfter:If(decision.Action="NEW" || decision.Action="REOPEN",true,decision.Action="CLOSE" || decision.Action="SHORTEN",false,CountIf(workerPeriods,IsBlank(Until))>0)})
                                                           )
-                                                      },
-                                                      If(
-                                                          IsBlank(existingAssignment.ID),
-                                                          Defaults('Project Workers'),
-                                                          existingAssignment
                                                       )
                                                   )
-                                              ),
-                                              ForAll(
-                                                  colTeamSelectionToSave As person,
-                                                  {
-                                                      Title: Left(
-                                                          Trim(
-                                                              person.'First Name' &
-                                                              " " &
-                                                              person.Surname
-                                                          ) &
-                                                          " | " &
-                                                          chosenProject.Value,
-                                                          255
-                                                      ),
-                                                      AssignmentKey: projectKeyValue & "|" & Text(person.ID),
-                                                      ProjectKey: projectKeyValue,
-                                                      Project: chosenProject,
-                                                      Worker: {
-                                                          Id: person.ID,
-                                                          Value: Trim(
-                                                              person.'First Name' &
-                                                              " " &
-                                                              person.Surname
-                                                          )
-                                                      },
-                                                      Team: chosenTeam,
-                                                      Active: true
-                                                  }
                                               )
-                                          )))>=0,
-                                              Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false);
-                                          If(CountRows(colTeamPatched)<>CountRows(colTeamSelectionToSave) || CountIf(colTeamPatched,IsBlank(ID))>0,
-                                              Collect(colAssignmentErrors,{WorkerID:0,Message:"De koppeling leverde geen SharePoint-ID op."})
+                                          )
+                                      );
+                                      If(IsEmpty(colAssignmentErrors) && CountRows(colPeriodSaveCheck)+CountIf(colTeamPlan,Action="NEW")>=500,
+                                          Collect(colAssignmentErrors,{WorkerID:0,Message:"Na opslaan zouden 500 of meer periodes bestaan; controle na opslaan niet mogelijk. Opslaan gestopt."})
+                                      );
+                                      If(IsEmpty(colAssignmentErrors) && CountRows(colTeamSaveCheck)+CountIf(colTeamPlan,(Action="NEW" || Action="REOPEN" || Action="TEAM") && IsBlank(AssignmentID))>=500,
+                                          Collect(colAssignmentErrors,{WorkerID:0,Message:"Na opslaan zouden 500 of meer koppelingen bestaan; controle na opslaan niet mogelijk. Opslaan gestopt."})
+                                      );
+                          
+                                      If(IsEmpty(colAssignmentErrors),
+                                          With({upsertRows:Filter(colTeamPlan,Action="NEW" || Action="REOPEN" || Action="TEAM")},
+                                              If(!IsEmpty(upsertRows),
+                                                  Set(varDiagTeamSaveWrites,varDiagTeamSaveWrites+1);
+                                                  IfError(CountRows(ClearCollect(colTeamPatched,Patch(
+                                                      'Project Workers',
+                                                      ForAll(
+                                                          upsertRows As row,
+                                                          With(
+                                                              {
+                                                                  existingAssignment: LookUp(
+                                                                      colTeamSaveCheck As stored,
+                                                                      stored.AssignmentKey = varTeamSaveProjectKey & "|" & Text(row.WorkerID)
+                                                                  )
+                                                              },
+                                                              If(
+                                                                  IsBlank(existingAssignment.ID),
+                                                                  Defaults('Project Workers'),
+                                                                  existingAssignment
+                                                              )
+                                                          )
+                                                      ),
+                                                      ForAll(
+                                                          upsertRows As row,
+                                                          With(
+                                                              {
+                                                                  person: LookUp(colWorkersCache,ID=row.WorkerID)
+                                                              },
+                                                              {
+                                                                  Title: Left(
+                                                                      Trim(
+                                                                          person.'First Name' &
+                                                                          " " &
+                                                                          person.Surname
+                                                                      ) &
+                                                                      " | " &
+                                                                      chosenProject.Value,
+                                                                      255
+                                                                  ),
+                                                                  AssignmentKey: projectKeyValue & "|" & Text(row.WorkerID),
+                                                                  ProjectKey: projectKeyValue,
+                                                                  Project: chosenProject,
+                                                                  Worker: {
+                                                                      Id: row.WorkerID,
+                                                                      Value: Trim(
+                                                                          person.'First Name' &
+                                                                          " " &
+                                                                          person.Surname
+                                                                      )
+                                                                  },
+                                                                  Team: chosenTeam,
+                                                                  Active: row.ActiveAfter
+                                                              }
+                                                          )
+                                                      )
+                                                  )))>=0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false);
+                                                  If(CountRows(colTeamPatched)<>CountRows(upsertRows) || CountIf(colTeamPatched,IsBlank(ID))>0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:"De koppeling leverde geen SharePoint-ID op."})
+                                                  )
+                                              )
                                           )
                                       );
                           
-                                      If(IsEmpty(colAssignmentErrors) && !IsEmpty(colTeamToDeactivate),
-                                          IfError(CountRows(ClearCollect(colTeamDeactivated,Patch(
-                                              'Project Workers',
-                                              ForAll(colTeamToDeactivate As removed,LookUp(colTeamSaveCheck As stored,stored.ID = removed.ID)),
-                                              ForAll(colTeamToDeactivate As removed,{Active: false})
-                                          )))>=0,
+                                      If(IsEmpty(colAssignmentErrors),
+                                          With({newPeriods:Filter(colTeamPlan,Action="NEW")},
+                                              If(!IsEmpty(newPeriods),
+                                                  Set(varDiagTeamSaveWrites,varDiagTeamSaveWrites+1);
+                                                  IfError(CountRows(ClearCollect(colPeriodsCreated,Patch('Assignment Periods',
+                                                      ForAll(newPeriods As row,Defaults('Assignment Periods')),
+                                                      ForAll(newPeriods As row,{AssignmentKey:varTeamSaveProjectKey & "|" & Text(row.WorkerID),ProjectKey:varTeamSaveProjectKey,From:varTeamSaveWeekMonday}))))>=0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:"Assignment Periods: " & FirstError.Message});false);
+                                                  If(CountRows(colPeriodsCreated)<>CountRows(newPeriods) || CountIf(colPeriodsCreated,IsBlank(ID))>0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:"De nieuwe periode leverde geen SharePoint-ID op."})
+                                                  )
+                                              )
+                                          )
+                                      );
+                          
+                                      If(IsEmpty(colAssignmentErrors),
+                                          With({periodUpdates:Filter(colTeamPlan,Action="REOPEN" || Action="CLOSE" || Action="SHORTEN")},
+                                              If(!IsEmpty(periodUpdates),
+                                                  Set(varDiagTeamSaveWrites,varDiagTeamSaveWrites+1);
+                                                  IfError(CountRows(ClearCollect(colPeriodsUpdated,Patch('Assignment Periods',
+                                                      ForAll(periodUpdates As row,LookUp(colPeriodSaveCheckRaw As stored,stored.ID = row.PeriodID)),
+                                                      ForAll(periodUpdates As row,{Until:row.NewUntil}))))>=0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:"Assignment Periods: " & FirstError.Message});false);
+                                                  If(CountRows(colPeriodsUpdated)<>CountRows(periodUpdates) || CountIf(colPeriodsUpdated,IsBlank(ID))>0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:"Een periode kon niet worden bijgewerkt."})
+                                                  )
+                                              )
+                                          )
+                                      );
+                          
+                                      If(IsEmpty(colAssignmentErrors),
+                                          With({deactivateRows:Filter(colTeamPlan,(Action="CLOSE" || Action="SHORTEN") && CurrentActive=true && !IsBlank(AssignmentID))},
+                                              If(!IsEmpty(deactivateRows),
+                                                  Set(varDiagTeamSaveWrites,varDiagTeamSaveWrites+1);
+                                                  IfError(CountRows(ClearCollect(colTeamDeactivated,Patch(
+                                                      'Project Workers',
+                                                      ForAll(deactivateRows As removed,LookUp(colTeamSaveCheck As stored,stored.ID = removed.AssignmentID)),
+                                                      ForAll(deactivateRows As removed,{Active: false})
+                                                  )))>=0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false);
+                                                  If(CountRows(colTeamDeactivated)<>CountRows(deactivateRows) || CountIf(colTeamDeactivated,IsBlank(ID))>0,
+                                                      Collect(colAssignmentErrors,{WorkerID:0,Message:"De toewijzing kon niet worden gedeactiveerd."})
+                                                  )
+                                              )
+                                          )
+                                      );
+                          
+                                      If(varDiagTeamSaveWrites>0,
+                                          IfError(Refresh('Project Workers'),Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false);
+                                          IfError(Refresh('Assignment Periods'),Collect(colAssignmentErrors,{WorkerID:0,Message:"Assignment Periods: " & FirstError.Message});false);
+                                          Set(varDiagTeamSaveReads,varDiagTeamSaveReads+1);
+                                          IfError(CountRows(ClearCollect(colTeamVerifyRaw,Filter('Project Workers',ProjectKey=varTeamSaveProjectKey)))>=0,
                                               Collect(colAssignmentErrors,{WorkerID:0,Message:FirstError.Message});false);
-                                          If(CountRows(colTeamDeactivated)<>CountRows(colTeamToDeactivate) || CountIf(colTeamDeactivated,IsBlank(ID))>0,
-                                              Collect(colAssignmentErrors,{WorkerID:0,Message:"De toewijzing kon niet worden gedeactiveerd."})
+                                          IfError(CountRows(ClearCollect(colPeriodVerify,ForAll(Filter('Assignment Periods',ProjectKey=varTeamSaveProjectKey) As p,{ID:p.ID,AssignmentKey:p.AssignmentKey,ProjectKey:p.ProjectKey,From:If(IsBlank(p.From),Blank(),Date(Year(p.From),Month(p.From),Day(p.From))),Until:If(IsBlank(p.Until),Blank(),Date(Year(p.Until),Month(p.Until),Day(p.Until)))})))>=0,
+                                              Collect(colAssignmentErrors,{WorkerID:0,Message:"Assignment Periods: " & FirstError.Message});false);
+                                          If(CountRows(colTeamVerifyRaw)>=500 || CountRows(colPeriodVerify)>=500,
+                                              Collect(colAssignmentErrors,{WorkerID:0,Message:"Controle na opslaan niet volledig (500 regels gelezen)."})
+                                          );
+                                          ForAll(Filter(colTeamPlan,Action<>"NONE") As row,
+                                              With({verifiedAssignment:LookUp(colTeamVerifyRaw,AssignmentKey=varTeamSaveProjectKey & "|" & Text(row.WorkerID)),verifiedPeriods:Filter(colPeriodVerify,AssignmentKey=varTeamSaveProjectKey & "|" & Text(row.WorkerID)),farDate:Date(9999,12,31)},
+                                                  With({verifiedPeriod:LookUp(verifiedPeriods,ID=row.PeriodID)},
+                                                      If(CountIf(colTeamVerifyRaw,AssignmentKey=varTeamSaveProjectKey & "|" & Text(row.WorkerID))<>1 ||
+                                                          verifiedAssignment.Active<>row.ActiveAfter ||
+                                                          ((row.Action="NEW" || row.Action="REOPEN" || row.Action="TEAM") && verifiedAssignment.Team.Value<>chosenTeam.Value) ||
+                                                          (row.Action="NEW" && CountIf(verifiedPeriods,From=varTeamSaveWeekMonday && IsBlank(Until))<>1) ||
+                                                          ((row.Action="REOPEN" || row.Action="CLOSE" || row.Action="SHORTEN") && (IsBlank(verifiedPeriod.ID) || IsBlank(verifiedPeriod.Until)<>IsBlank(row.NewUntil) || (!IsBlank(row.NewUntil) && verifiedPeriod.Until<>row.NewUntil))) ||
+                                                          CountIf(verifiedPeriods As p,CountIf(verifiedPeriods As q,q.ID<>p.ID && q.From<=Coalesce(p.Until,farDate) && Coalesce(q.Until,farDate)>=p.From)>0)>0,
+                                                          Collect(colAssignmentErrors,{WorkerID:row.WorkerID,Message:row.WorkerName & ": de opgeslagen koppeling of periode kon niet correct worden teruggelezen."})
+                                                      )
+                                                  )
+                                              )
                                           )
                                       );
                           
@@ -855,13 +1066,19 @@ Screens:
                                           IsEmpty(colAssignmentErrors),
                           
                                           Notify(
-                                              "Teamwijzigingen opgeslagen. Bestaande koppelingen worden opnieuw gelezen.",
+                                              If(varDiagTeamSaveWrites=0,
+                                                  "Geen wijzigingen nodig; niets geschreven.",
+                                                  "Teamwijzigingen opgeslagen. Bestaande koppelingen worden opnieuw gelezen." &
+                                                  If(CountIf(colTeamPlan,Action="CLOSE" || Action="SHORTEN")>0," " & Text(CountIf(colTeamPlan,Action="CLOSE" || Action="SHORTEN")) & " medewerker(s) afgemeld per einde van deze week; vanaf volgende week niet meer geselecteerd.","")
+                                              ),
                                               NotificationType.Success
                                           ),
                           
+                                          Set(varSelectionMessage,If(varDiagTeamSaveWrites=0,"Niet opgeslagen; er is niets naar SharePoint geschreven. ","Niet alle wijzigingen zijn opgeslagen: ") & Concat(colAssignmentErrors,Message,"; "));
                                           Notify(
-                                              "Niet alle wijzigingen zijn opgeslagen: " &
-                                              First(colAssignmentErrors).Message,
+                                              If(varDiagTeamSaveWrites=0,"Niet opgeslagen; er is niets naar SharePoint geschreven. ","Niet alle wijzigingen zijn opgeslagen: ") &
+                                              First(colAssignmentErrors).Message &
+                                              If(CountRows(colAssignmentErrors)>1," (+" & Text(CountRows(colAssignmentErrors)-1) & " meer)",""),
                                               NotificationType.Error,
                                               15000
                                           )
@@ -875,9 +1092,10 @@ Screens:
                                   )
                               );
                           
+                              Trace("DIAG|SaveTeam|End",TraceSeverity.Information,{Scenario:"SaveTeam",Step:"End",ElapsedMs:DateDiff(varDiagTeamSaveT0,Now(),TimeUnit.Milliseconds),Candidates:CountRows(colTeamCandidates),Reads:Coalesce(varDiagTeamSaveReads,0),Writes:Coalesce(varDiagTeamSaveWrites,0),UpsertedAssignments:CountRows(colTeamPatched),DeactivatedAssignments:CountRows(colTeamDeactivated),CreatedPeriods:CountRows(colPeriodsCreated),UpdatedPeriods:CountRows(colPeriodsUpdated),Errors:CountRows(colAssignmentErrors)});
                               Set(varSaving, false)
                           );
-                          Set(varSelectionLoaded,false); Set(varSelectionKeysValid,false); If(IsEmpty(colAssignmentErrors),Set(varTeamDirty,false); Set(varTeamLoadState,"NotLoaded"); Select(btnReadTeam),Set(varTeamLoadState,"Failed"); Notify("Opslag mogelijk gedeeltelijk uitgevoerd. Selectie behouden; opslaan geblokkeerd. Controleer SharePoint-versies voordat u opnieuw laadt.",NotificationType.Error,15000)),
+                          If(IsEmpty(colAssignmentErrors),Set(varSelectionLoaded,false); Set(varSelectionKeysValid,false); Set(varTeamDirty,false); Set(varTeamLoadState,"NotLoaded"); Select(btnReadTeam),Coalesce(varDiagTeamSaveWrites,0)=0,Set(varTeamLoadState,"Loaded"),Set(varSelectionLoaded,false); Set(varSelectionKeysValid,false); Set(varTeamLoadState,"Failed"); Notify("Opslag mogelijk gedeeltelijk uitgevoerd. Selectie behouden; opslaan geblokkeerd. Controleer SharePoint-versies voordat u opnieuw laadt.",NotificationType.Error,15000)),
                           Notify("Save team geblokkeerd: selectie niet volledig geladen, gewijzigd, leeg of niet passend bij huidig project/team.",NotificationType.Error,15000))
                         PressedColor: =ColorValue("#000F41")
                         PressedFill: =ColorValue("#18DD6E")
@@ -898,6 +1116,245 @@ Screens:
                         PaddingLeft: =16
                         PaddingRight: =16
                         Width: =160
+                  - btnMigratePreview:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        BorderColor: =ColorValue("#0303B8")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        PressedColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        Color: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        Fill: =Color.White
+                        Text: ="Preview migration"
+                        Visible: =Coalesce(varTeamNeedsMigration,false) && varTeamLoadState="Loaded" && varTeamLoadedProjectID=ddProject.Selected.Id
+                        DisplayMode: =If(varTeamLoadState="Loaded" && Coalesce(varSelectionLoaded,false) && Coalesce(varTeamNeedsMigration,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && IsEmpty(colSelectionLoadErrors) && !IsBlank(varTeamLoadedProjectID) && varTeamLoadedProjectID=ddProject.Selected.Id,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: |-
+                          =If(varTeamLoadState="Loaded" && Coalesce(varSelectionLoaded,false) && Coalesce(varTeamNeedsMigration,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && IsEmpty(colSelectionLoadErrors) && !IsBlank(varTeamLoadedProjectID) && varTeamLoadedProjectID=ddProject.Selected.Id,
+                           Set(varSelectionBusy,true); Set(varMigrationPreviewOK,false); Set(varMigrationPreviewProjectID,Blank());
+                           Clear(colMigrationErrors); Clear(colMigrationPlan); Clear(colMigrationPWRaw); Clear(colMigrationPWSnapshot); Clear(colMigrationPeriodsCheck); Clear(colMigrationHours);
+                           Set(varDiagMigrationT0,Now()); Set(varMigrationHoursPaged,false);
+                           Set(varMigrationProjectID,varTeamLoadedProjectID); Set(varMigrationProjectKey,Text(varTeamLoadedProjectID)); Set(varMigrationPrefix,varMigrationProjectKey & "|");
+                           Set(varMigrationTodayMonday,DateAdd(Today(),1-Weekday(Today(),StartOfWeek.Monday),TimeUnit.Days));
+                           IfError(Refresh('Project Workers'),Collect(colMigrationErrors,{Message:FirstError.Message});false);
+                           IfError(Refresh('Assignment Periods'),Collect(colMigrationErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+                           IfError(Refresh(Hours),Collect(colMigrationErrors,{Message:FirstError.Message});false);
+                           If(IsEmpty(colMigrationErrors),
+                            IfError(CountRows(ClearCollect(colMigrationPWRaw,Filter('Project Workers',ProjectKey=varMigrationProjectKey)))>=0,Collect(colMigrationErrors,{Message:FirstError.Message});false);
+                            IfError(CountRows(ClearCollect(colMigrationPeriodsCheck,Filter('Assignment Periods',ProjectKey=varMigrationProjectKey)))>=0,Collect(colMigrationErrors,{Message:"Assignment Periods: " & FirstError.Message});false)
+                           );
+                           If(CountRows(colMigrationPWRaw)>=500,Collect(colMigrationErrors,{Message:"500 koppelingen voor dit project gelezen; volledigheid niet gegarandeerd. Migratie gestopt."}));
+                           If(CountRows(colMigrationPeriodsCheck)>=500,Collect(colMigrationErrors,{Message:"500 periodes voor dit project gelezen; volledigheid niet gegarandeerd. Migratie gestopt."}));
+                           If(IsEmpty(colMigrationErrors) && CountIf(colMigrationPWRaw As pw,pw.Active=true && CountIf(colMigrationPeriodsCheck,AssignmentKey=varMigrationProjectKey & "|" & Text(pw.Worker.Id))=0)=0,Collect(colMigrationErrors,{Message:"Geen actieve koppelingen zonder periode; migratie is niet (meer) nodig. Gebruik Refresh."}));
+                           If(IsEmpty(colMigrationErrors) && IsEmpty(colMigrationPWRaw),Collect(colMigrationErrors,{Message:"Geen koppelingen voor dit project teruggelezen; niets te migreren."}));
+                           If(CountIf(colMigrationPWRaw,IsBlank(Worker.Id) || Project.Id<>varMigrationProjectID || ProjectKey<>varMigrationProjectKey || AssignmentKey<>varMigrationProjectKey & "|" & Text(Worker.Id))>0,Collect(colMigrationErrors,{Message:"Een koppeling heeft een afwijkende Project, ProjectKey of AssignmentKey. Migratie gestopt; gegevens laten controleren."}));
+                           If(CountRows(Distinct(colMigrationPWRaw,Worker.Id))<>CountRows(colMigrationPWRaw),Collect(colMigrationErrors,{Message:"Dubbele medewerkerkoppelingen in dit project. Migratie gestopt; gegevens laten controleren."}));
+                           If(IsEmpty(colMigrationErrors),
+                            IfError(With({batch:ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
+                             If(CountRows(batch)<500,
+                              CountRows(Collect(colMigrationHours,batch))>=0,
+                              Set(varMigrationHoursPaged,true); true
+                             )),Collect(colMigrationErrors,{Message:FirstError.Message});false
+                            )
+                           );
+                           If(IsEmpty(colMigrationErrors) && varMigrationHoursPaged,
+                            Clear(colMigrationHours);
+                            IfError(
+                             With({firstHour:First(Sort(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)),'Work Date',SortOrder.Ascending)),
+                                   lastHour:First(Sort(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)),'Work Date',SortOrder.Descending))},
+                              If(IsBlank(firstHour.'Work Date') || IsBlank(lastHour.'Work Date') || Year(lastHour.'Work Date')-Year(firstHour.'Work Date')>499,
+                               Collect(colMigrationErrors,{Message:"Ongeldig datumbereik in de uren van dit project. Migratie gestopt; gegevens laten controleren."});false,
+                               With({firstMonth:Date(Year(firstHour.'Work Date'),Month(firstHour.'Work Date'),1),
+                                     monthCount:12*(Year(lastHour.'Work Date')-Year(firstHour.'Work Date'))+Month(lastHour.'Work Date')-Month(firstHour.'Work Date')+1},
+                                CountRows(ForAll(Sequence(monthCount) As monthIndex,
+                                 With({monthFrom:DateAdd(firstMonth,monthIndex.Value-1,TimeUnit.Months),monthUntil:DateAdd(firstMonth,monthIndex.Value,TimeUnit.Months)},
+                                  IfError(
+                                   With({monthBatch:ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix) && 'Work Date'>=monthFrom && 'Work Date'<monthUntil) As entry,
+                                    {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
+                                    If(CountRows(monthBatch)<500,
+                                     CountRows(Collect(colMigrationHours,monthBatch))>=0,
+                                     CountRows(ForAll(Sequence(DateDiff(monthFrom,monthUntil,TimeUnit.Days)) As dayIndex,
+                                      With({dayFrom:DateAdd(monthFrom,dayIndex.Value-1,TimeUnit.Days),dayUntil:DateAdd(monthFrom,dayIndex.Value,TimeUnit.Days)},
+                                       IfError(
+                                        With({dayBatch:ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix) && 'Work Date'>=dayFrom && 'Work Date'<dayUntil) As entry,
+                                         {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
+                                         If(CountRows(dayBatch)>=500,
+                                          Collect(colMigrationErrors,{Message:"Limiet bereikt bij uren op " & Text(dayFrom,"dd-mm-yyyy") & ". Migratie gestopt."});false,
+                                          CountRows(Collect(colMigrationHours,dayBatch))>=0
+                                         )
+                                        ),Collect(colMigrationErrors,{Message:FirstError.Message});false
+                                       )
+                                      )
+                                     ))>=0
+                                    )
+                                   ),Collect(colMigrationErrors,{Message:FirstError.Message});false
+                                  )
+                                 )
+                                ))>=0
+                               )
+                              )
+                             ),Collect(colMigrationErrors,{Message:FirstError.Message});false
+                            )
+                           );
+                           If(IsEmpty(colMigrationErrors),
+                            If(CountRows(Distinct(colMigrationHours,HourID))<>CountRows(colMigrationHours),Collect(colMigrationErrors,{Message:"Dezelfde urenregel is meer dan eens teruggelezen. Migratie gestopt."}));
+                            If(CountIf(colMigrationHours,IsBlank(WorkDay) || IsBlank(AssignmentID))>0,Collect(colMigrationErrors,{Message:"Urenregel zonder werkdatum of koppeling in dit project. Migratie gestopt; gegevens laten controleren."}));
+                            If(CountIf(colMigrationHours,!(AssignmentID in ShowColumns(colMigrationPWRaw,ID)))>0,Collect(colMigrationErrors,{Message:"Een urenregel met de projectsleutel van dit project hoort niet bij een koppeling van dit project. Migratie gestopt; gegevens laten controleren."}))
+                           );
+                           If(IsEmpty(colMigrationErrors),
+                            ClearCollect(colMigrationPWSnapshot,ForAll(colMigrationPWRaw As a,{ID:a.ID,ProjectID:a.Project.Id,WorkerID:a.Worker.Id,TeamValue:a.Team.Value,Active:a.Active,AssignmentKey:a.AssignmentKey,ProjectKey:a.ProjectKey}));
+                            Set(varMigrationHoursCount,CountRows(colMigrationHours)); Set(varMigrationHoursMaxID,First(Sort(colMigrationHours,HourID,SortOrder.Descending)).HourID); Set(varMigrationHoursMaxModified,First(Sort(colMigrationHours,Modified,SortOrder.Descending)).Modified);
+                            ForAll(Filter(colMigrationPWRaw As candidate,CountIf(colMigrationPeriodsCheck,AssignmentKey=varMigrationProjectKey & "|" & Text(candidate.Worker.Id))=0) As member,
+                             With({memberHours:Filter(colMigrationHours,AssignmentID=member.ID)},
+                              With({firstDay:First(Sort(memberHours,WorkDay,SortOrder.Ascending)).WorkDay,lastDay:First(Sort(memberHours,WorkDay,SortOrder.Descending)).WorkDay},
+                               With({migActive:member.Active=true,migHasHours:!IsEmpty(memberHours),migTodayMonday:varMigrationTodayMonday,
+                                     migFirstMonday:If(IsEmpty(memberHours),Blank(),DateAdd(Date(Year(firstDay),Month(firstDay),Day(firstDay)),1-Weekday(firstDay,StartOfWeek.Monday),TimeUnit.Days)),
+                                     migLastSunday:If(IsEmpty(memberHours),Blank(),DateAdd(Date(Year(lastDay),Month(lastDay),Day(lastDay)),7-Weekday(lastDay,StartOfWeek.Monday),TimeUnit.Days))},
+                                With({rule:If(migActive && migHasHours,{Category:"ActiveWithHours",HasPeriod:true,From:migFirstMonday,Until:Blank()},migActive,{Category:"ActiveWithoutHours",HasPeriod:true,From:migTodayMonday,Until:Blank()},migHasHours,{Category:"InactiveWithHours",HasPeriod:true,From:migFirstMonday,Until:migLastSunday},{Category:"InactiveWithoutHours",HasPeriod:false,From:Blank(),Until:Blank()})},
+                                 Collect(colMigrationPlan,{PWID:member.ID,WorkerID:member.Worker.Id,WorkerName:member.Worker.Value,AssignmentKey:varMigrationProjectKey & "|" & Text(member.Worker.Id),Category:rule.Category,HasPeriod:rule.HasPeriod,From:rule.From,Until:rule.Until})
+                                )
+                               )
+                              )
+                             )
+                            );
+                            If(CountIf(colMigrationPlan,HasPeriod && (IsBlank(From) || Weekday(From,StartOfWeek.Monday)<>1 || (!IsBlank(Until) && (Weekday(Until,StartOfWeek.Monday)<>7 || Until<From))))>0,Collect(colMigrationErrors,{Message:"Interne controle: een berekende periode loopt niet van maandag t/m zondag. Migratie gestopt."}));
+                            If(CountRows(colMigrationPeriodsCheck)+CountIf(colMigrationPlan,HasPeriod)>=500,Collect(colMigrationErrors,{Message:"500 of meer periodes na schrijven; controle na schrijven niet mogelijk. Migratie gestopt."}));
+                            If(CountIf(colMigrationPlan,HasPeriod)=0,Collect(colMigrationErrors,{Message:"Niets te migreren: geen koppeling zonder periode heeft een periode nodig."}))
+                           );
+                           If(IsEmpty(colMigrationErrors),
+                            Set(varMigrationPreviewOK,true); Set(varMigrationPreviewProjectID,varMigrationProjectID);
+                            Set(varSelectionMessage,"Migratie-preview (" & Coalesce(ddProject.Selected.Value,"") & "): " & Text(CountIf(colMigrationPlan,HasPeriod)) & " periodes te schrijven: " & Text(CountIf(colMigrationPlan,Category="ActiveWithHours")) & " actief met uren (vanaf eerste urenweek, open), " & Text(CountIf(colMigrationPlan,Category="ActiveWithoutHours")) & " actief zonder uren (vanaf deze week, open), " & Text(CountIf(colMigrationPlan,Category="InactiveWithHours")) & " inactief met uren (eerste t/m laatste urenweek); " & Text(CountIf(colMigrationPlan,Category="InactiveWithoutHours")) & " inactief zonder uren (geen periode). Alleen koppelingen zonder periode; " & Text(CountRows(colMigrationPeriodsCheck)) & " bestaande periodes blijven ongewijzigd. Eerst op TEST-000 uitvoeren. Controleer de aantallen; Confirm migration schrijft.");
+                            Notify(varSelectionMessage,NotificationType.Information,15000),
+                            Set(varSelectionMessage,"Migratie-preview gestopt; niets geschreven. " & First(colMigrationErrors).Message);
+                            Notify(varSelectionMessage,NotificationType.Error,15000)
+                           );
+                           Trace("DIAG|Migration|Preview",TraceSeverity.Information,{Scenario:"Migration",Step:"Preview",ElapsedMs:DateDiff(varDiagMigrationT0,Now(),TimeUnit.Milliseconds),ProjectID:Coalesce(varMigrationProjectID,0),Assignments:CountRows(colMigrationPWRaw),HourRows:CountRows(colMigrationHours),Paged:Coalesce(varMigrationHoursPaged,false),Periods:CountIf(colMigrationPlan,HasPeriod),Errors:CountRows(colMigrationErrors)});
+                           Set(varSelectionBusy,false),
+                          Notify("Migratie-preview geblokkeerd: project niet volledig geladen, geen actieve koppeling zonder periode, onopgeslagen selectie of laden/opslaan bezig.",NotificationType.Warning,15000))
+                        X: =btnMigrateConfirm.X-lblFooterButtonMetrics.Width-Self.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =204
+                        Height: =lblFooterButtonMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnMigrateConfirm:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        BorderColor: =ColorValue("#0303B8")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        PressedColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        Color: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        Fill: =Color.White
+                        Text: ="Confirm migration"
+                        Visible: =Coalesce(varTeamNeedsMigration,false) && varTeamLoadState="Loaded" && varTeamLoadedProjectID=ddProject.Selected.Id
+                        DisplayMode: =If(varTeamLoadState="Loaded" && Coalesce(varSelectionLoaded,false) && Coalesce(varTeamNeedsMigration,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && IsEmpty(colSelectionLoadErrors) && !IsBlank(varTeamLoadedProjectID) && varTeamLoadedProjectID=ddProject.Selected.Id && Coalesce(varMigrationPreviewOK,false) && varMigrationPreviewProjectID=varTeamLoadedProjectID && CountIf(colMigrationPlan,HasPeriod)>0 && CountIf(colMigrationPlan,HasPeriod)<500,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: |-
+                          =If(varTeamLoadState="Loaded" && Coalesce(varSelectionLoaded,false) && Coalesce(varTeamNeedsMigration,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && IsEmpty(colSelectionLoadErrors) && !IsBlank(varTeamLoadedProjectID) && varTeamLoadedProjectID=ddProject.Selected.Id && Coalesce(varMigrationPreviewOK,false) && varMigrationPreviewProjectID=varTeamLoadedProjectID && CountIf(colMigrationPlan,HasPeriod)>0 && CountIf(colMigrationPlan,HasPeriod)<500,
+                           Set(varSaving,true); Clear(colMigrationErrors); Clear(colMigrationPWCheck); Clear(colMigrationPeriodsCheck); Clear(colMigrationCreated); Clear(colMigrationVerify); Clear(colMigrationHoursCheck);
+                           Set(varDiagMigrationT0,Now()); Set(varDiagMigrationReads,0); Set(varDiagMigrationWrites,0); Set(varMigrationCheckMaxID,Blank()); Set(varMigrationCheckMaxModified,Blank());
+                           IfError(Refresh('Project Workers'),Collect(colMigrationErrors,{Message:FirstError.Message});false);
+                           IfError(Refresh('Assignment Periods'),Collect(colMigrationErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+                           IfError(Refresh(Hours),Collect(colMigrationErrors,{Message:FirstError.Message});false);
+                           If(IsEmpty(colMigrationErrors),
+                            Set(varDiagMigrationReads,varDiagMigrationReads+1);
+                            IfError(CountRows(ClearCollect(colMigrationPWCheck,Filter('Project Workers',ProjectKey=varMigrationProjectKey)))>=0,Collect(colMigrationErrors,{Message:FirstError.Message});false);
+                            IfError(CountRows(ClearCollect(colMigrationPeriodsCheck,Filter('Assignment Periods',ProjectKey=varMigrationProjectKey)))>=0,Collect(colMigrationErrors,{Message:"Assignment Periods: " & FirstError.Message});false)
+                           );
+                           If(CountRows(colMigrationPWCheck)>=500,Collect(colMigrationErrors,{Message:"500 koppelingen gelezen; volledigheid niet gegarandeerd. Niets geschreven."}));
+                           If(CountRows(colMigrationPeriodsCheck)>=500,Collect(colMigrationErrors,{Message:"500 periodes gelezen; volledigheid niet gegarandeerd. Niets geschreven."}));
+                           If(IsEmpty(colMigrationErrors) && CountIf(colMigrationPeriodsCheck,AssignmentKey in ShowColumns(Filter(colMigrationPlan,HasPeriod),AssignmentKey))>0,Collect(colMigrationErrors,{Message:"Er bestaan inmiddels periodes voor een of meer van deze koppelingen. Niets geschreven; gebruik Refresh."}));
+                           If(IsEmpty(colMigrationErrors) && JSON(Sort(ForAll(colMigrationPWCheck As a,{ID:a.ID,ProjectID:a.Project.Id,WorkerID:a.Worker.Id,TeamValue:a.Team.Value,Active:a.Active,AssignmentKey:a.AssignmentKey,ProjectKey:a.ProjectKey}),ID,SortOrder.Ascending))<>JSON(Sort(colMigrationPWSnapshot,ID,SortOrder.Ascending)),Collect(colMigrationErrors,{Message:"Koppelingen zijn sinds de preview gewijzigd. Niets geschreven; maak een nieuwe preview."}));
+                           If(IsEmpty(colMigrationErrors),
+                            Set(varDiagMigrationReads,varDiagMigrationReads+1);
+                            IfError(With({latestById:First(Sort(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)),ID,SortOrder.Descending)),latestByModified:First(Sort(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)),Modified,SortOrder.Descending))},Set(varMigrationCheckMaxID,latestById.ID); Set(varMigrationCheckMaxModified,latestByModified.Modified); true),Collect(colMigrationErrors,{Message:FirstError.Message});false);
+                            If(!Coalesce(varMigrationHoursPaged,false),
+                             IfError(CountRows(ClearCollect(colMigrationHoursCheck,ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)) As entry,{HourID:entry.ID})))>=0,Collect(colMigrationErrors,{Message:FirstError.Message});false)
+                            )
+                           );
+                           If(IsEmpty(colMigrationErrors) && (Coalesce(varMigrationCheckMaxID,0)<>Coalesce(varMigrationHoursMaxID,0) || IsBlank(varMigrationCheckMaxModified)<>IsBlank(varMigrationHoursMaxModified) || (!IsBlank(varMigrationCheckMaxModified) && varMigrationCheckMaxModified<>varMigrationHoursMaxModified) || (!Coalesce(varMigrationHoursPaged,false) && CountRows(colMigrationHoursCheck)<>varMigrationHoursCount)),
+                            Collect(colMigrationErrors,{Message:"Uren gewijzigd sinds preview; voer Preview opnieuw uit. Niets geschreven."})
+                           );
+                           If(IsEmpty(colMigrationErrors),
+                            With({migrationRows:Filter(colMigrationPlan,HasPeriod)},
+                             Set(varDiagMigrationWrites,varDiagMigrationWrites+1);
+                             IfError(CountRows(ClearCollect(colMigrationCreated,Patch('Assignment Periods',
+                              ForAll(migrationRows As row,Defaults('Assignment Periods')),
+                              ForAll(migrationRows As row,{AssignmentKey:varMigrationProjectKey & "|" & Text(row.WorkerID),ProjectKey:varMigrationProjectKey,From:row.From,Until:row.Until}))))>=0,
+                              Collect(colMigrationErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+                             If(CountRows(colMigrationCreated)<>CountRows(migrationRows) || CountIf(colMigrationCreated,IsBlank(ID))>0,Collect(colMigrationErrors,{Message:"Niet alle periodes leverden een SharePoint-ID op."}))
+                            )
+                           );
+                           If(varDiagMigrationWrites>0,
+                            IfError(Refresh('Assignment Periods'),Collect(colMigrationErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+                            Set(varDiagMigrationReads,varDiagMigrationReads+1);
+                            IfError(CountRows(ClearCollect(colMigrationVerify,ForAll(Filter('Assignment Periods',ProjectKey=varMigrationProjectKey) As p,{ID:p.ID,AssignmentKey:p.AssignmentKey,ProjectKey:p.ProjectKey,From:If(IsBlank(p.From),Blank(),Date(Year(p.From),Month(p.From),Day(p.From))),Until:If(IsBlank(p.Until),Blank(),Date(Year(p.Until),Month(p.Until),Day(p.Until)))})))>=0,
+                             Collect(colMigrationErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+                            If(CountRows(colMigrationVerify)>=500,Collect(colMigrationErrors,{Message:"Controle na schrijven niet volledig (500 periodes gelezen)."}));
+                            If(CountRows(colMigrationVerify)<>CountRows(colMigrationPeriodsCheck)+CountIf(colMigrationPlan,HasPeriod),Collect(colMigrationErrors,{Message:"Aantal teruggelezen periodes (" & Text(CountRows(colMigrationVerify)) & ") wijkt af van bestaande + geschreven periodes (" & Text(CountRows(colMigrationPeriodsCheck)+CountIf(colMigrationPlan,HasPeriod)) & ")."}));
+                            ForAll(Filter(colMigrationPlan,HasPeriod) As row,
+                             With({verified:LookUp(colMigrationVerify,AssignmentKey=varMigrationProjectKey & "|" & Text(row.WorkerID))},
+                              If(CountIf(colMigrationVerify,AssignmentKey=varMigrationProjectKey & "|" & Text(row.WorkerID))<>1 || verified.From<>row.From || IsBlank(verified.Until)<>IsBlank(row.Until) || (!IsBlank(row.Until) && verified.Until<>row.Until),
+                               Collect(colMigrationErrors,{Message:row.WorkerName & ": de periode kon niet correct worden teruggelezen."})
+                              )
+                             )
+                            )
+                           );
+                           Trace("DIAG|Migration|Confirm",TraceSeverity.Information,{Scenario:"Migration",Step:"Confirm",ElapsedMs:DateDiff(varDiagMigrationT0,Now(),TimeUnit.Milliseconds),ProjectID:Coalesce(varMigrationProjectID,0),Reads:Coalesce(varDiagMigrationReads,0),Writes:Coalesce(varDiagMigrationWrites,0),Planned:CountIf(colMigrationPlan,HasPeriod),Created:CountRows(colMigrationCreated),Verified:CountRows(colMigrationVerify),Errors:CountRows(colMigrationErrors)});
+                           Set(varSaving,false); Set(varMigrationPreviewOK,false);
+                           If(IsEmpty(colMigrationErrors),
+                            Notify("Migratie voltooid en gecontroleerd: " & Text(CountRows(colMigrationCreated)) & " periodes geschreven. De selectie wordt opnieuw gelezen.",NotificationType.Success);
+                            Set(varSelectionLoaded,false); Set(varTeamLoadState,"NotLoaded"); Select(btnReadTeam),
+                            Coalesce(varDiagMigrationWrites,0)=0,
+                            Set(varSelectionMessage,"Migratie niet uitgevoerd; niets geschreven. " & First(colMigrationErrors).Message); Notify(varSelectionMessage,NotificationType.Error,15000),
+                            Set(varSelectionLoaded,false); Set(varSelectionKeysValid,false); Set(varTeamLoadState,"Failed");
+                            Set(varSelectionMessage,"Migratie mogelijk gedeeltelijk uitgevoerd; opslaan geblokkeerd. Controleer de lijst Assignment Periods (Modified/Modified By) voordat u Refresh gebruikt. " & First(colMigrationErrors).Message);
+                            Notify(varSelectionMessage,NotificationType.Error,15000)
+                           ),
+                          Notify("Confirm migration geblokkeerd: eerst een geslaagde preview van hetzelfde geladen project.",NotificationType.Warning,15000))
+                        X: =btnRefreshTeam.X-lblFooterButtonMetrics.Width-Self.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =204
+                        Height: =lblFooterButtonMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
       - lblFooterButtonMetrics:
           Control: Label@2.5.1
           Properties:

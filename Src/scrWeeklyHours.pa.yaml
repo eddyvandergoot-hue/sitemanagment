@@ -93,7 +93,11 @@ Screens:
                 ContractorName,First(reportRow.WorkerEntries).ContractorName,
                 PeriodTotal,Sum(reportRow.WorkerEntries,HourValue))))>=0,
                Collect(colReportBuildErrors,{Message:FirstError.Message});false);
-              ForAll(Filter(colReportWorkers,IsActive=true) As person,
+              If(varReportHasPeriod,
+               Set(varReportZeroFrom,varReportFrom); Set(varReportZeroUntil,varReportUntil),
+               Set(varReportZeroFrom,DateAdd(Today(),1-Weekday(Today(),StartOfWeek.Monday),TimeUnit.Days)); Set(varReportZeroUntil,DateAdd(varReportZeroFrom,7,TimeUnit.Days))
+              );
+              ForAll(Filter(colReportWorkers As candidate,candidate.HasPeriod && CountIf(colReportAssignmentPeriods,AssignmentKey=varReportProjectKey & "|" & Text(candidate.WorkerID) && From<varReportZeroUntil && (IsBlank(Until) || Until>=varReportZeroFrom))>0) As person,
                If((Coalesce(ddReportContractor.Selected.ID,0)=0 || person.ContractorID=ddReportContractor.Selected.ID) &&
                   IsBlank(LookUp(colReportRows,WorkerID=person.WorkerID && ContractorID=person.ContractorID)),
                 IfError(CountRows(Collect(colReportRows,{WorkerID:person.WorkerID,ContractorID:person.ContractorID,
@@ -106,7 +110,7 @@ Screens:
              If(IsEmpty(colReportBuildErrors),
               Set(varReportColumnOffset,1); Set(varReportValid,true);
               Trace("DIAG|Build|End",TraceSeverity.Information,{Scenario:"Build",Step:"End",ElapsedMs:DateDiff(varDiagBuildT0,Now(),TimeUnit.Milliseconds),Rows:CountRows(colReportRows),Columns:CountRows(colReportColumns),SelectedHours:CountRows(colReportSelectedHours),PeriodTotal:Sum(colReportRows,PeriodTotal)});
-              Set(varReportMessage,If(!varReportHasPeriod,"Geen opgeslagen uren voor dit project; actieve medewerkers staan op 0. ","") &
+              Set(varReportMessage,If(!varReportHasPeriod,"Geen opgeslagen uren voor dit project; medewerkers met een periode in de huidige week staan op 0. ","") &
                Text(CountRows(colReportRows)) & " medewerkers/contractors | " & Text(CountRows(colReportColumns)) & " weken | " &
                Text(Sum(colReportRows,PeriodTotal),If(Sum(colReportRows,PeriodTotal)=Round(Sum(colReportRows,PeriodTotal),0),"[$-en-US]0","[$-en-US]0.00"),"nl-NL") & " uur"),
               Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
@@ -127,7 +131,7 @@ Screens:
     - lblReportStatus:
         Control: Label@2.5.1
         Properties:
-          Text: =If(varReportBusy,"Uren ophalen...",!varReportValid,varReportMessage,IsBlank(varReportProjectID) || varReportHasPeriod,"","Geen opgeslagen uren voor dit project; actieve medewerkers staan op 0.")
+          Text: =If(varReportBusy,"Uren ophalen...",!varReportValid,varReportMessage,IsBlank(varReportProjectID) || varReportHasPeriod,"","Geen opgeslagen uren voor dit project; medewerkers met een periode in de huidige week staan op 0.")
           X: =40
           Y: =conSummarySelectors.Y+conSummarySelectors.Height+If(Len(Self.Text)>0,12,0)
           Width: =Parent.Width-80
@@ -653,7 +657,7 @@ Screens:
              Set(varReportProjectID,ddReportProject.Selected.ID); Set(varReportHoursPaged,false);
              Clear(colReportLoadErrors); Clear(colReportFacts); Clear(colReportRows);
              Clear(colReportColumns); Clear(colReportSelectedHours); Clear(colReportAssignments);
-             Clear(colReportWorkers); Clear(colReportPeriods); Clear(colReportHourStaging);
+             Clear(colReportWorkers); Clear(colReportPeriods); Clear(colReportHourStaging); Clear(colReportAssignmentPeriods);
              Clear(colReportContractors); Clear(colReportContractorCandidates);
              If(Coalesce(varReportForceRefresh,false),
               IfError(Refresh(Projects),Collect(colReportLoadErrors,{Message:FirstError.Message});false);
@@ -668,7 +672,7 @@ Screens:
               If(IsEmpty(colReportLoadErrors),ClearCollect(colProjectsCache,colPendingProjects); Set(varProjectsCacheReady,true))
              );
              If(IsEmpty(colReportLoadErrors) && (Coalesce(varReportForceRefresh,false) || !Coalesce(varWorkersCacheReady,false)),
-              IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.'Employer Name',Employer:worker.Employer,Trade:worker.Trade})))>=0,
+              IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})))>=0,
                Collect(colReportLoadErrors,{Message:"Workers: " & FirstError.Message});false);
               If(CountRows(colPendingWorkers)>=500,
                Collect(colReportLoadErrors,{Message:"500 medewerkers geladen; medewerkerslijst mogelijk onvolledig. Rapportage gestopt."})
@@ -696,19 +700,32 @@ Screens:
                Collect(colReportLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Rapportage gestopt; gegevens laten controleren."})
               );
               If(IsEmpty(colReportLoadErrors),
+               IfError(Refresh('Assignment Periods'),Collect(colReportLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+               IfError(CountRows(ClearCollect(colReportAssignmentPeriods,
+                ForAll(Filter('Assignment Periods',ProjectKey=varReportProjectKey) As p,{ID:p.ID,AssignmentKey:p.AssignmentKey,ProjectKey:p.ProjectKey,From:If(IsBlank(p.From),Blank(),Date(Year(p.From),Month(p.From),Day(p.From))),Until:If(IsBlank(p.Until),Blank(),Date(Year(p.Until),Month(p.Until),Day(p.Until)))})))>=0,
+                Collect(colReportLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false)
+              );
+              If(CountRows(colReportAssignmentPeriods)>=500,
+               Collect(colReportLoadErrors,{Message:"500 periodes geladen. Volledigheid niet gegarandeerd; rapportage gestopt."})
+              );
+              If(CountIf(colReportAssignmentPeriods,ProjectKey<>varReportProjectKey || !StartsWith(AssignmentKey,varReportProjectKey & "|"))>0,
+               Collect(colReportLoadErrors,{Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project. Rapportage gestopt; gegevens laten controleren."})
+              );
+              If(IsEmpty(colReportLoadErrors),
                ForAll(Distinct(colReportAssignments,Worker.Id) As person,
                 With({profile:LookUp(colWorkersCache,ID=person.Value),
-                      activeMember:CountIf(colReportAssignments,Worker.Id=person.Value && Active=true)>0},
-                 If(IsBlank(person.Value) || (activeMember && (IsBlank(profile.ID) || IsBlank(profile.Employer.Id))),
+                      activeMember:CountIf(colReportAssignments,Worker.Id=person.Value && Active=true)>0,
+                      hasPeriod:CountIf(colReportAssignmentPeriods,AssignmentKey=varReportProjectKey & "|" & Text(person.Value))>0},
+                 If(IsBlank(person.Value) || ((activeMember || hasPeriod) && (IsBlank(profile.ID) || IsBlank(profile.Employer.Id))),
                   Collect(colReportLoadErrors,{Message:"Actieve medewerker of werkgever ontbreekt bij worker-ID " & Text(person.Value)});false,
                   CountRows(Collect(colReportWorkers,{WorkerID:person.Value,
                    WorkerName:Coalesce(Trim(profile.'First Name' & " " & profile.Surname),LookUp(colReportAssignments,Worker.Id=person.Value,Worker.Value)),
-                   ContractorID:profile.Employer.Id,ContractorName:profile.Employer.Value,IsActive:activeMember}))>=0
+                   ContractorID:profile.Employer.Id,ContractorName:profile.Employer.Value,IsActive:activeMember,HasPeriod:hasPeriod}))>=0
                  )
                 )
                )
               );
-              Trace("DIAG|Report|AfterAssignments",TraceSeverity.Information,{Scenario:"Report",Step:"AfterAssignments",ElapsedMs:DateDiff(varDiagReportT0,Now(),TimeUnit.Milliseconds),Assignments:CountRows(colReportAssignments),Workers:CountRows(colReportWorkers),Errors:CountRows(colReportLoadErrors)});
+              Trace("DIAG|Report|AfterAssignments",TraceSeverity.Information,{Scenario:"Report",Step:"AfterAssignments",ElapsedMs:DateDiff(varDiagReportT0,Now(),TimeUnit.Milliseconds),Assignments:CountRows(colReportAssignments),Periods:CountRows(colReportAssignmentPeriods),Workers:CountRows(colReportWorkers),Errors:CountRows(colReportLoadErrors)});
               If(IsEmpty(colReportLoadErrors),
                Set(varReportQueryPrefix,varReportProjectKey & "|");
                 IfError(
@@ -801,7 +818,7 @@ Screens:
                ForAll(Distinct(colReportFacts,ContractorID) As contractor,
                 Collect(colReportContractorCandidates,{ID:contractor.Value,Value:Coalesce(LookUp(colReportFacts,ContractorID=contractor.Value,ContractorName),"Werkgever " & Text(contractor.Value))})
                );
-               ForAll(Filter(colReportWorkers,IsActive=true) As person,
+               ForAll(Filter(colReportWorkers,IsActive=true || HasPeriod=true) As person,
                 Collect(colReportContractorCandidates,{ID:person.ContractorID,Value:Coalesce(person.ContractorName,"Werkgever " & Text(person.ContractorID))})
                );
                ClearCollect(colReportContractors,DropColumns(AddColumns(GroupBy(colReportContractorCandidates,ID,ContractorRecords),Value,First(ContractorRecords).Value),ContractorRecords));
@@ -820,7 +837,7 @@ Screens:
              If(!IsEmpty(colReportLoadErrors),
               Set(varReportReady,false); Set(varReportValid,false);
               Clear(colReportFacts); Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
-              Clear(colReportPeriods); Clear(colReportContractors);
+              Clear(colReportPeriods); Clear(colReportContractors); Clear(colReportAssignmentPeriods);
               Set(varReportStartMonday,Blank()); Set(varReportEndSunday,Blank()); Set(varReportFromPickedDay,Blank()); Set(varReportUntilPickedDay,Blank()); Reset(dpReportFrom); Reset(dpReportUntil);
               Set(varReportLoadState,"Failed"); Set(varReportMessage,"Ophalen gestopt: " & First(colReportLoadErrors).Message);
               Notify(varReportMessage,NotificationType.Error),

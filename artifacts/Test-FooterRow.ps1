@@ -34,7 +34,7 @@ function Measure-Rect($name,$props,$parent){
 $metric=Measure-Rect 'lblFooterButtonMetrics' $indexes.Screen1['lblFooterButtonMetrics']['Properties'] @{Width=1366;Height=768}
 if($metric.Y -ne 16 -or $metric.Height -ne 40 -or $metric.Width -ne 12){throw 'Shared metrics invalid'}
 $configs=@(
- @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnHomeScreen1','btnGotoHours','btnGotoHoursSummary');Actions=@('btnRefreshTeam','btnAddtoTeam')},
+ @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnHomeScreen1','btnGotoHours','btnGotoHoursSummary');Actions=@('btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam')},
  @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
  @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnHomeSummary','btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')}
 )
@@ -60,8 +60,19 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   $homeGuardOk=$homeDm.StartsWith('=If(') -and $homeDm.EndsWith(',DisplayMode.Edit,DisplayMode.Disabled)') -and $homeOs -ceq ('=If('+$homeDm.Substring(4,$homeDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)+',Navigate(scrHome))')
   if($children[0] -ne $homeBtn -or !$homeGuardOk -or $index[$homeBtn]['Properties']['Text'] -ne '="Home"' -or $rects[$homeBtn].X -ne 40 -or $rects[$cfg.Nav[1]].X-($rects[$homeBtn].X+$rects[$homeBtn].Width) -ne 12){throw "Home button must be first (X=40, 12 px before next nav button) and navigate to scrHome behind the same guard in DisplayMode and OnSelect: $($cfg.Screen)"}
   if($cfg.Screen -eq 'Screen1'){
-   foreach($name in @('conSelection','lblProject','lblTeam','ddTeam','lblSelectionLoadStatus','Label2','Gallery1')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
+   foreach($name in @('ddTeam','ddProject','lblTeamWeek','dpTeamWeek','lblProject','lblTeam')){Publish-Rect $name @{X=0;Y=0;Width=0;Height=0}}
+   foreach($name in @('conSelection','lblProject','lblTeam','ddProject','ddTeam','lblTeamWeek','dpTeamWeek','lblTeamWeekKW','lblSelectionLoadStatus','Label2','Gallery1')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    if($rects.Gallery1.Y+$rects.Gallery1.Height -gt $rects.Label2.Y-12 -or $rects.Label2.Y+$rects.Label2.Height -gt $bar.Y){throw 'Team content behind footer'}
+   # 26-10-2026 week picker group: label "Week" 28 px directly above the picker (4 px gap), KW label in the label row, same box; wide = right of the dropdowns, narrow = stacked under Team.
+   $rects['conSelection']=Measure-Rect 'conSelection' $index['conSelection']['Properties'] $screen
+   $wk=$rects.lblTeamWeek;$dp=$rects.dpTeamWeek;$kw=$rects.lblTeamWeekKW
+   if($dp.Y -ne $wk.Y+$wk.Height+4 -or $dp.X -ne $wk.X -or $dp.Width -ne $wk.Width -or $kw.X -ne $wk.X -or $kw.Y -ne $wk.Y -or $kw.Width -ne $wk.Width -or $kw.Height -ne $wk.Height){throw "Week group misaligned at $w"}
+   if($w -ge 336 -and $dp.Width -ne 256){throw "Week picker not 256 at $w"}
+   if($dp.X+$dp.Width -gt $w-40 -or $dp.X -lt 40){throw "Week picker outside margins at $w"}
+   foreach($other in @('lblProject','lblTeam','ddProject','ddTeam')){foreach($grp in @($wk,$dp)){$o=$rects[$other];if($grp.X -lt $o.X+$o.Width -and $o.X -lt $grp.X+$grp.Width -and $grp.Y -lt $o.Y+$o.Height -and $o.Y -lt $grp.Y+$grp.Height){throw "Week group overlaps $other at $w"}}}
+   if($w -ge 899 -and $dp.Y -ne $rects.ddTeam.Y){throw "Wide: picker must share the Team row at $w"}
+   if($w -lt 899 -and $wk.Y -lt $rects.ddTeam.Y+$rects.ddTeam.Height+12){throw "Narrow: week group must stack under Team at $w"}
+   if($dp.Y+$dp.Height+12 -gt $rects.lblSelectionLoadStatus.Y -or $dp.Y+$dp.Height+20 -gt $rects.conSelection.Y+$rects.conSelection.Height -or $dp.Y -lt $rects.conSelection.Y){throw "Week group outside selection block/behind status at $w"}
   }elseif($cfg.Screen -eq 'scrHours'){
    foreach($name in @('dpHoursWeek','lblWeekLoadStatus','galHours','lblHeaderMon')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    if($rects.galHours.Y+$rects.galHours.Height -gt $bar.Y-12 -or $rects.lblHeaderMon.Y+$rects.lblHeaderMon.Height -gt $rects.galHours.Y){throw 'Hours content behind footer'}

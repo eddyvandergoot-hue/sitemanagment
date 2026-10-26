@@ -11,19 +11,13 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 5 ook het logo op scrWeekReport.
 
-## 4. Assignment periods (in progress; design: DECISIONS.md H9)
+## 4. Assignment periods (built 26-10-2026, waiting for Studio test; design: DECISIONS.md H9)
 
-In progress (26-10-2026). MS-010 list is done (columns: MANUAL_STEPS.md; the migration is replaced by an explicit per-project migration action in the app) and TEST-000 (MS-005) exists for testing. Rules to implement: AGENTS.md, Functionele afspraken punt 3.
+Built (not imported, not functionally tested, not approved): build and known limits in PROJECT_STATUS.md; rules in AGENTS.md. Waiting for the Studio tests TESTPLAN.md TP-PERIOD-01 and TP-MIGR-01 on TEST-000 (MS-005). After approval: remove this section.
 
-To-do for the build (consequences, no design yet):
-- Screen1: week picker "Week" (label "YYYY KWxx"); Save team creates/reopens/closes periods; validation Until >= From and no overlap, otherwise block with a message; periods never deleted.
-- Save team also writes Assignment Periods: the current pattern "1 pre-read + max 2 table-Patches" in AGENTS.md must be revisited at build time; fail-closed validation before any write stays. Active flag on Project Workers = has an open period.
-- Weekly Hours row source changes from "active Project Workers" to period overlap with Monday..Sunday + any worker with stored Hours in that week. Days not worked stay blank (= 0 in totals/reports/export); the app never auto-writes 0.
-- Hours Summary is Hours-based and unaffected.
+Still to do:
 - Check online the indexes on the new list's AssignmentKey/ProjectKey (MS-010).
-- Test on TEST-000 (MS-005).
-- Ook Save week: Hours.Title = EntryKey (nieuwe/bijgewerkte rijen; DECISIONS.md D7), beide table-Patches en de Save-regressietests die Title vastleggen.
-- Update AGENTS.md (replace the design marker by the built rule, revisit the Save team line) and PROJECT_STATUS.md.
+- Save week: Hours.Title = EntryKey (nieuwe/bijgewerkte rijen; DECISIONS.md D7), beide table-Patches en de Save-regressietests die Title vastleggen (not part of this build).
 
 ## 5. Week Report
 

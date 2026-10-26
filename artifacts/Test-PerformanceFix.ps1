@@ -75,7 +75,7 @@ $wsel=[regex]::Matches($team+$report,"ForAll\(Workers As worker,\{[^}]*\}\)")|Fo
 if(!$wsel){Fail 'worker cache projection not found'}
 $psel=[regex]::Matches($team+$report,"ForAll\(Sort\(Projects,Title,SortOrder\.Ascending\) As project,\{[^}]*\}\)")|ForEach-Object Value|Select-Object -Unique
 if(@($wsel).Count -ne 1 -or @($psel).Count -ne 1){Fail 'worker/project cache columns differ between Screen1 and Hours Summary'}
-foreach($c in @("ID:worker.ID","'First Name':worker.'First Name'","Surname:worker.Surname","'Employer Name':worker.'Employer Name'","Employer:worker.Employer")){if($wsel -notmatch [regex]::Escape($c)){Fail "worker cache misses $c"}}
+foreach($c in @("ID:worker.ID","'First Name':worker.'First Name'","Surname:worker.Surname","'Employer Name':worker.Employer.Value","Employer:worker.Employer")){if($wsel -notmatch [regex]::Escape($c)){Fail "worker cache misses $c"}}
 foreach($c in @('ID:project.ID','Title:project.Title',"'Project Number':project.'Project Number'","'Project Reference':project.'Project Reference'")){if($psel -notmatch [regex]::Escape($c)){Fail "project cache misses $c"}}
 if((P 'Screen1' 'Gallery1' 'Items') -ne '=colWorkersCache'){Fail 'Gallery1 not on worker cache'}
 Pass "one worker cache shape ($wsel) and one project cache shape used by both screens; Gallery1 shows the cache."
@@ -131,7 +131,7 @@ Eq "With({$($keyData.Replace('EntryKey:"1|5|20261019"','EntryKey:"1|5|20261020"'
 Eq "With({$($keyData.Replace('EntryKey:"1|5|20261019"','EntryKey:Blank()'))},$keyFx)" $true 'week key cross-check flags missing key'
 # Worker chain: Workers -> projection in the loader -> gallery/selection -> Save team title, with the projection taken from the source.
 $wfx=[string]$wsel
-$src='Table({ID:5,''First Name'':"Jan",Surname:"de Vries",''Employer Name'':"Alfa BV",Employer:{Id:3,Value:"Alfa BV"},Trade:{Value:"F"}})'
+$src='Table({ID:5,''First Name'':"Jan",Surname:"de Vries",Employer:{Id:3,Value:"Alfa BV"},Trade:{Value:"F"}})'
 Eq ("With({Workers:$src},With({cache:$wfx},Left(Trim(First(cache).'First Name' & "" "" & First(cache).Surname) & "" | "" & ""P1"",255)))") 'Jan de Vries | P1' 'Save team title from cached worker record'
 Eq ("With({Workers:$src},With({cache:$wfx},First(cache).'Employer Name' & ""/"" & Text(First(cache).Employer.Id)))") 'Alfa BV/3' 'employer name and employer ID kept separately'
 Eq ("With({Workers:$src},With({cache:$wfx},With({selected:Filter(cache,ID=5)},CountRows(Filter(cache,ID in ShowColumns(selected,ID))))))") 1 'selection by worker ID from the same cache'

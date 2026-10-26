@@ -12,7 +12,7 @@ Gebruikte indeling: SE:01 t/m SE:12 zoals bekend uit Microsoft Learn; de titels 
 |---|---|---|---|
 | SE:01 Baseline | GEA M365-baseline (MFA, encryptie, DLP) plus de regels in AGENTS.md. De M365-baseline is een aanname van Eddy, niet door ons gecontroleerd. | deels | Te bevestigen door IT. |
 | SE:02 Veilige ontwikkelcyclus | Private git-repo, reviewer-agent, tests, SHA-256 bij elke build, goedgekeurde tags, geen secrets in de repo. | deels | GitHub 2FA: Eddy bevestigt (open). |
-| SE:03 Classificatie | Label Confidential (MS-011, gepland). Data-inventaris: namen van medewerkers, telefoon, werkgever, uren. Geen ID/BSN, bankgegevens of geboortedatum. Telefoon staat nu in Workers en verhuist naar de lijst Worker Contacts (alleen WorkerID + Phone; MS-012, gepland); e-mail wordt niet opgeslagen. Hours.Title bevat nu naam | datum en wordt EntryKey (gepland, DECISIONS.md D7). | open | MS-011 en MS-012 plannen en uitvoeren; inventaris door Eddy bevestigen. |
+| SE:03 Classificatie | Label Confidential (MS-011, gepland). Data-inventaris: namen van medewerkers, telefoon, werkgever, uren. Geen ID/BSN, bankgegevens of geboortedatum. Workers bevat geen telefoon of e-mail meer; telefoons staan in de lijst Worker Contacts (alleen WorkerID + Phone; MS-012, deels gedaan, rechten open); e-mail wordt niet opgeslagen. Hours.Title bevat nu naam | datum en wordt EntryKey (gepland, DECISIONS.md D7). | open | MS-011 plannen en uitvoeren; MS-012 rechten afronden; inventaris door Eddy bevestigen. |
 | SE:04 Segmentatie | Test- en productie-app gescheiden; testgegevens alleen op TEST-000. | deels | IT vragen om een aparte omgeving. |
 | SE:05 Identiteit en toegang | Entra ID met MFA, least privilege, geen verwijderrechten (MS-004, gepland), tweede eigenaar, kwartaalreview van toegang. Groep "Site Supervisors" (Edit) met unieke rechten op Worker Contacts, eigenaren Full control (MS-012, gepland). | open | MS-004 uitvoeren; tweede eigenaar benoemen; eerste kwartaalreview plannen; MS-012 (groep en rechten). |
 | SE:06 Netwerk | Alleen Microsoft-gehoste onderdelen (Power Apps, SharePoint, Power Automate); geen eigen netwerk. | open, te bevestigen | Eddy/IT bevestigt. |
@@ -29,7 +29,7 @@ Maatregelen met "gepland" bestaan nog niet als MS-item in MANUAL_STEPS.md (allee
 
 | # | Dreiging | Maatregelen (bestaand of voorgesteld) |
 |---|---|---|
-| 1 | Verkeerde toegang: te brede rechten, verkeerde mensen | Least privilege op de site en lijsten; geen verwijderrechten (MS-004, gepland); groep "Site Supervisors" (Edit) en unieke rechten op Worker Contacts, eigenaren Full control (MS-012); dataminimalisatie (telefoon uit Workers, e-mail niet opgeslagen); kwartaalreview van toegang |
+| 1 | Verkeerde toegang: te brede rechten, verkeerde mensen | Least privilege op de site en lijsten; geen verwijderrechten (MS-004, gepland); groep "Site Supervisors" (Edit) en unieke rechten op Worker Contacts, eigenaren Full control (MS-012); dataminimalisatie (telefoon en e-mail uit Workers verwijderd, telefoon in Worker Contacts); kwartaalreview van toegang |
 | 2 | Verwijderen of overschrijven van uren of koppelingen | Geen verwijderrechten (MS-004, gepland); versiegeschiedenis (MS-002, gepland) en recycle bin; fail-closed Save met nul writes bij een afwijking; koppelingen worden inactief gezet, niet verwijderd (AGENTS.md); Save week wijzigt bestaande Employer/Team/Trade niet; backupflow (MS-006, gepland) |
 | 3 | Dubbele records en fouten in de app | Unieke sleutels in SharePoint (MS-003, gepland; Employer Code is al verplicht en uniek, MS-009); EntryKey/AssignmentKey-controles en verify read na Save; reviewer, tests, TEST-000 voor opslaantests; health check (MS-007, gepland) |
 | 4 | Export of bestanden gelekt | Export alleen via de generieke flow naar de bibliotheek Exports, geen automatische e-mail (nog niet gebouwd); Exports-bibliotheek met beperkte rechten; label Confidential (MS-011, gepland); DLP-beleid via IT |
@@ -53,7 +53,7 @@ Maatregelen met "gepland" bestaan nog niet als MS-item in MANUAL_STEPS.md (allee
 - Tweede eigenaar benoemen (site, app, flow); eerste kwartaalreview van toegang plannen.
 - TP-SEC-01 uitvoeren (TESTPLAN.md).
 - Titels van de SE-punten vergelijken met Microsoft Learn.
-- MS-012 (Worker Contacts, unieke rechten, Workers.Phone verwijderen): open.
-- Monitor-controle: gaan volledige Workers-rijen (incl. kolommen Phone/Email) naar het clientgeheugen van de app? Niet geverifieerd.
-- De versiegeschiedenis van Workers bevat nog telefoonnummers; opschonen na MS-012 (beslissing Eddy).
-- Workers.Email: bevat de bestaande kolom data? Zo nee/ongebruikt: legen en verwijderen zoals Phone (Eddy beslist, MS-012).
+- MS-012: Worker Contacts bestaat, telefoons gemigreerd, Workers.Phone/Email/Employer Code/Employer Name verwijderd (Eddy 26-10-2026). Open (onbevestigd): groep Site Supervisors en unieke rechten op Worker Contacts.
+- Monitor-controle Phone/Email in het clientgeheugen: opgelost door verwijdering (de kolommen bestaan niet meer in Workers).
+- De versiegeschiedenis van Workers kan nog telefoonnummers bevatten; opschonen (beslissing Eddy, open).
+- Workers.Email is verwijderd (Eddy 26-10-2026); e-mail wordt niet opgeslagen.
