@@ -35,7 +35,7 @@ $metric=Measure-Rect 'lblFooterButtonMetrics' $indexes.Screen1['lblFooterButtonM
 if($metric.Y -ne 16 -or $metric.Height -ne 40 -or $metric.Width -ne 12){throw 'Shared metrics invalid'}
 $configs=@(
  @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnGotoHours','btnGotoHoursSummary');Actions=@('btnRefreshTeam','btnAddtoTeam')},
- @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnSaveWeek')},
+ @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
  @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')}
 )
 foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){

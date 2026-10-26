@@ -10,7 +10,8 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Eerdere baseline: baseline-footer-row-20261020_215936 (details in het archief).
 
 ## Huidige build
-- Er is geen openstaande testbuild; de goedgekeurde build hierboven is de laatste build.
+- Testbuild (Discard changes): C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\discard-20261026_151949\SiteManagement_Discard_20261026_151949.msapp, 107489 bytes, SHA-256 6E9C5516387084DAA3163CB653B75E3E51C6A57BB05D3B5C92A190CC75610D72 (pac 2.11.2; t.o.v. de goedgekeurde build alleen Src\scrHours.pa.yaml gewijzigd). Geimplementeerd + technisch gecontroleerd (verifier volledig; 5 historische scripts falen ongewijzigd; reviewer: geen blokkerende punten). NIET in Studio geimporteerd, NIET functioneel getest, NIET goedgekeurd. Gedrag: AGENTS.md. Studio-checklist: TP-DISCARD-01 (TESTPLAN.md).
+- De goedgekeurde baseline blijft de build hierboven tot Eddy de Discard-build test.
 - Testcases TP-DD-01, TP-SAVE-01, TP-LOGO-01: geslaagd (Eddy, 26-10-2026, zonder detailrapport; zie TESTPLAN.md). De oude Studio-testlijst staat in het archief.
 - Bevestigd door Eddy in Studio op 26-10-2026: weeklabel van dpHoursWeek toont voor 01-01-2027 `2026 KW53` (TP-WEEK-01); Hours Summary-restyle (zebra, "–" bij 0, totaalrij, Period total-kolom, scrollbarruimte, GEA-tabelkop) is visueel ok (TP-SUM-01); hergebruik van geladen selecties, scenario 1-7 via Monitor (TP-REUSE-01, op Eddy's melding "alles werkt"; Monitor-regels niet afzonderlijk gemeld); weekkiezer: een andere week laadt automatisch en onopgeslagen invoer blokkeert wisselen (kiezer uitgeschakeld, Refresh grijs, alleen Save actief). Verder niets bevestigd.
 - Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek: andere dag in dezelfde week bewaart de dag zonder herlaad; overige GEA-kleuren; fail-closed blokkades (rest); Monitor-delegatie; wijziging van een andere gebruiker verschijnt pas na Refresh (vereist TEST-000).
@@ -27,7 +28,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Opslagsnelheid Save week / Save team niet expliciet bevestigd (laden is door Eddy getest: snel, geen fouten).
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
-- Volgende werk (volgorde: NEXT_COMMANDS.md): TEST-000 setup, Discard changes-knop, startscherm + Week Report, export, roadmap-merge.
+- Volgende werk (volgorde: NEXT_COMMANDS.md): TEST-000 setup, Studio-test Discard changes, startscherm + Week Report, export, roadmap-merge.
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 
 ## GEA-logo
@@ -46,6 +47,12 @@ Savefix-build (goedgekeurd):
 5. Rode tekst in galleryrijen voor blokkerende stamgegevenswaarschuwingen (toegestaan in AGENTS.md).
 6. Logica en presentatie zitten in één build (op verzoek).
 7. Historische Hours-regels kunnen F/W bevatten, nieuwe Fitter/Welder/Unknown: relevant voor groepering in rapport/export.
+
+Discard-build (niet getest):
+8. Na Discard in Failed met mislukte geforceerde herlaad meldt de loader "Vorige invoer behouden" terwijl de invoer is verwijderd; het grid toont colWeekOriginal (deels geverifieerde waarden), de gedetailleerde opslagfout is gewist; opslaan blijft geblokkeerd.
+9. Na geslaagde Discard-herlaad in Failed: controleer SharePoint-versies (Modified/Modified By) van de betrokken rijen; de eerdere deelopslag is dan alleen nog in Notify/Trace zichtbaar.
+10. Getypte waarde waarvan OnChange nog niet is afgegaan is niet dirty: de eerste klik op de nog uitgeschakelde Discard laat alleen het veld los; daarna wordt de knop actief.
+11. Screen1: na mislukte/deels bevestigde Save team is de staat Failed maar blijft varTeamDirty true; checkboxes vereisen Loaded en niet dirty, Refresh en dropdowns zijn geblokkeerd: alleen herstart helpt. Discard voor Screen1 is een open beslissing (NEXT_COMMANDS.md).
 
 Algemeen:
 - Smalle vensters: Hours Summary-tabel heeft onder ~666 px geen weekkolom, footer scrolt horizontaal; zes bekende tekstoverschrijdingen; geen telefoonlayout voor de rapporttabel. Door het logo (lblReportProjectDetails 120 px smaller) knipt de projectregel onder ~810 px (was ~690), titels op Screen1/scrHours knippen onder ~430 px en de Hours Summary-titelbalk past onder ~440 px niet.

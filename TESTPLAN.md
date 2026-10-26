@@ -72,3 +72,18 @@ Setup: Studio > Advanced tools > Open monitor > Play; zoek op DIAG.
 | 7 | Uren typen zonder opslaan | weekkiezer, Refresh en navigatie uitgeschakeld; alleen Save actief |
 
 Niet getest: "wijziging van een andere gebruiker verschijnt pas na Refresh" (vereist TEST-000; geen echte uren wijzigen).
+
+## TP-DISCARD-01 Discard changes (open)
+
+Build: zie PROJECT_STATUS.md (discard-20261026_151949). Nog niet in Studio getest.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Loaded + uren wijzigen (ook leeg maken en 0), Discard | waarden terug naar laatst geladen/opgeslagen, incl. leeg en 0; melding "Wijzigingen ongedaan gemaakt." |
+| 2 | Direct daarna | weekkiezer, Refresh en navigatie weer actief; Save toont geen wijzigingen |
+| 3 | Validatiefout in invoer, Discard | foutmelding verdwenen |
+| 4 | Tijdens laden/opslaan, en zonder wijziging | Discard uitgeschakeld |
+| 5 | Waarde typen zonder het veld te verlaten | eerste klik blurt alleen het veld; daarna wordt Discard actief |
+| 6 | Monitor, zoek DIAG | DIAG\|Week\|Discard zichtbaar |
+| 7 | Tekst "Discard changes" en footerrij op uw vensterbreedte | tekst past, rij Refresh / Discard changes / Save zonder overlap (min. 734 px) |
+| 8 | State Failed (na deels/onzeker opslaan) | lokaal verwijderd en geforceerd opnieuw gelezen; alleen testbaar met TEST-000 (lastig na te bootsen) |

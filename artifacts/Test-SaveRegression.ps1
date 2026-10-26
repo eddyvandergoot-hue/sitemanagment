@@ -253,6 +253,48 @@ Assert-True ($lblText.Contains('"Opgeslagen week ophalen; vorige invoer blijft b
 $readWeek=$indexes.scrHours['btnReadWeek']['Properties']['OnSelect']
 $dirtyEnd=$readWeek.IndexOf('Set(varWeekForceRefresh,false),')
 Assert-True ((Count-Of $readWeek 'Clear(colHoursErrors)') -eq 2 -and $readWeek.IndexOf('Clear(colHoursErrors)') -gt $dirtyEnd -and $readWeek.Contains('Rows:CountRows(colWeekRows)}); Clear(colHoursErrors),') -and $readWeek.Contains('Clear(colWeekLoadErrors); Clear(colHoursErrors);')) 'Save error detail cleared on cache hit and at start of a real load (incl. no project/team), never when blocked by unsaved input'
+# Discard changes (26-10-2026): btnDiscardWeek throws away unsaved local week input; local only, same guard in DisplayMode and OnSelect.
+$discard=$indexes.scrHours['btnDiscardWeek']
+Assert-True ($null -ne $discard -and $discard['Control'] -eq 'Classic/Button@2.2.0' -and $discard['Properties']['Text'] -ceq '="Discard changes"') 'btnDiscardWeek exists: Classic/Button@2.2.0, Text "Discard changes"'
+Assert-True (!$discard['Properties'].ContainsKey('AccessibleLabel')) 'btnDiscardWeek has no AccessibleLabel (PA2108)'
+$rowChildren=@($indexes.scrHours['conWeekButtonRow']['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True ($rowChildren -contains 'btnDiscardWeek' -and $rowChildren -contains 'btnRefreshWeek' -and $rowChildren -contains 'btnSaveWeek') 'btnDiscardWeek is a direct child of conWeekButtonRow (same row as Refresh/Save)'
+$dDm=$discard['Properties']['DisplayMode'].Trim();$dOs=[string]$discard['Properties']['OnSelect']
+Assert-True ($dDm.StartsWith('=If(') -and $dDm.EndsWith(',DisplayMode.Edit,DisplayMode.Disabled)')) 'Discard DisplayMode shape If(<guard>,Edit,Disabled)'
+$dGuard=$dDm.Substring(4,$dDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)
+Assert-True ($dOs.StartsWith('=If('+$dGuard+',')) 'Discard: same guard text in DisplayMode and as first OnSelect condition'
+$weekDirty='JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))'
+Assert-True ($dGuard.Contains($weekDirty) -and ([string]$indexes.scrHours['btnRefreshWeek']['Properties']['DisplayMode']).Contains($weekDirty)) 'Discard guard uses the existing Weekly Hours dirty check (identical to Refresh)'
+Assert-True ($dGuard.Contains('!Coalesce(varWeekLoading,false)') -and $dGuard.Contains('!Coalesce(varWeekSaving,false)')) 'Discard guard excludes loading and saving'
+# The interpreter has no JSON(); the dirty check is supplied as a boolean (same approach as Test-WeeklyCalculations).
+$dGuardFx=$dGuard.Replace($weekDirty,'isDirty')
+foreach($case in @(
+ @('"Loaded"','false','false','true',$true,'Loaded + dirty allows Discard'),
+ @('"Failed"','false','false','true',$true,'Failed (partial save) + dirty allows Discard'),
+ @('"Loaded"','false','false','false',$false,'Loaded without unsaved input: Discard disabled'),
+ @('"Failed"','false','false','false',$false,'Failed without unsaved input: Discard disabled (Refresh available)'),
+ @('"Loading"','true','false','true',$false,'Loading blocks Discard'),
+ @('"Loaded"','false','true','true',$false,'Saving blocks Discard'),
+ @('"Loaded"','true','false','true',$false,'Loading flag blocks Discard even with stale Loaded state'),
+ @('"NotLoaded"','false','false','true',$false,'NotLoaded blocks Discard'),
+ @('Blank()','Blank()','Blank()','true',$false,'Cold start blocks Discard'))){
+ Assert-Regression ('With({varWeekLoadState:'+$case[0]+',varWeekLoading:'+$case[1]+',varWeekSaving:'+$case[2]+',isDirty:'+$case[3]+'},'+$dGuardFx+')') $case[4] $case[5]
+}
+Assert-True ($dOs -notmatch '\b(Patch|Update|UpdateIf|Remove|RemoveIf|Refresh|SubmitForm|Defaults)\s*\(' -and $dOs -notmatch '\.Run\(') 'Discard OnSelect: no Patch/Update/Remove/RemoveIf/Refresh/flow'
+Assert-True ($dOs -notmatch "\b(?:Collect|ClearCollect|Clear)\(\s*(?:Hours|'Project Workers'|Workers|Projects|Employers)\b" -and $dOs -notmatch "\b(?:Filter|LookUp)\(\s*(?:Hours|'Project Workers'|Workers|Projects|Employers)\s*,") 'Discard OnSelect: no Collect into or read from SharePoint sources'
+$dSets=@([regex]::Matches($dOs,'\bSet\(\s*(\w+)\s*,') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+Assert-True ($dSets.Count -eq 1 -and $dSets[0] -eq 'varWeekForceRefresh') 'Discard sets only varWeekForceRefresh (no load state, loaded selection, project/team/week or version variables)'
+$dFailed=$dOs.IndexOf('If(varWeekLoadState="Failed",');$dElse=$dOs.IndexOf('Select(btnReadWeek),')
+Assert-True ($dFailed -gt 0 -and $dElse -gt $dFailed) 'Discard branches on varWeekLoadState="Failed"'
+$failedBranch=$dOs.Substring($dFailed,$dElse-$dFailed);$loadedBranch=$dOs.Substring($dElse+'Select(btnReadWeek),'.Length)
+Assert-True ($failedBranch.Contains('ClearCollect(colWeekRows,colWeekOriginal); Set(varWeekForceRefresh,true);') -and $failedBranch.IndexOf('ClearCollect(colWeekRows,colWeekOriginal)') -lt $failedBranch.IndexOf('Set(varWeekForceRefresh,true)')) 'Failed branch: input reset to baseline first (dirty gate of loader passes), then force refresh'
+Assert-True ($failedBranch.Contains('Notify(') -and $failedBranch -notmatch 'Select\(|Clear\(colWeekOriginal\)' -and $dOs.Substring($dElse).StartsWith('Select(btnReadWeek),') -and (Count-Of $dOs 'Select(btnReadWeek)') -eq 1)'Failed branch reloads from SharePoint through btnReadWeek (staged loader; no own read)'
+Assert-True ($loadedBranch.Contains('ClearCollect(colWeekRows,colWeekOriginal); Clear(colHoursErrors);') -and $loadedBranch.Contains('Notify("Wijzigingen ongedaan gemaakt.",NotificationType.Information)') -and $loadedBranch -notmatch 'Select\(') 'Loaded branch: colWeekRows restored from colWeekOriginal, save errors cleared, no reload'
+Assert-True ($dOs.Contains('Trace("DIAG|Week|Discard",TraceSeverity.Information,{Scenario:"Week",Step:"Discard",State:Coalesce(varWeekLoadState,""),Rows:CountRows(colWeekRows)})') -and $dOs.IndexOf('Trace("DIAG|Week|Discard"') -lt $dFailed) 'Discard DIAG trace before the action'
+Assert-True ($dOs.Contains('Notify("Discard geblokkeerd: laden/opslaan bezig of geen onopgeslagen uren.",NotificationType.Warning,15000))')) 'Discard blocked path notifies, no action'
+$readWeekNow=[string]$indexes.scrHours['btnReadWeek']['Properties']['OnSelect']
+Assert-True ($readWeekNow.StartsWith('=If('+$weekDirty+',') -and $readWeekNow.Contains('If(!Coalesce(varWeekForceRefresh,false) && varWeekLoadState="Loaded"')) 'Loader still gated on the same dirty check; force flag bypasses cache hit (used by Discard Failed branch)'
+Write-Output 'PASS Discard changes structure/guard (local only). Studio behaviour of the inputs after restore NOT verified.'
 Write-Output 'PASS batch save structure. Studio binding (table Patch on collection base records, lookup/choice records), delegation and online behaviour NOT verified.'
 Write-Output 'LIVE STILL OPEN: actual incident edits, connector auth, Studio binding/delegation, failure injection and online loading.'
 

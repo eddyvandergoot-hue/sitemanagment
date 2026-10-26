@@ -37,6 +37,7 @@ $cases=@(
  @('Screen1.btnRefreshTeam','Refresh',14,'Semibold',(110-32)),
  @('scrHours.btnWeeklyProjectTeam','Project / team',14,'Semibold',(180-32)),
  @('scrHours.btnRefreshWeek','Refresh',14,'Semibold',(110-32)),
+ @('scrHours.btnDiscardWeek','Discard changes',14,'Semibold',(188-32)),
  @('scrHours.btnSaveWeek','Saving...',14,'Semibold',(140-32)),
  @('scrWeeklyHours.btnSummaryProjectTeam','Project / team',14,'Semibold',(180-32)),
  @('scrWeeklyHours.btnRefreshReport','Refresh',14,'Semibold',(110-32)),

@@ -13,9 +13,9 @@ Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vas
 
 ## 2. Discard changes button
 
-Motivatie: bij onopgeslagen invoer zijn weekkiezer, Refresh en navigatie bewust uitgeschakeld, dus opslaan is nu de enige uitweg (Eddy, 26-10-2026).
+Gebouwd (btnDiscardWeek op Weekly Hours); wacht op Studio-test TP-DISCARD-01 (TESTPLAN.md). Build en status: PROJECT_STATUS.md.
 
-Inhoud nog vast te leggen (aanleveren door Eddy). Nog niet in de repo beschreven. Relevante regels: onopgeslagen invoer blokkeert Refresh/navigatie (AGENTS.md, Laden en opslagveiligheid).
+Vervolg: Screen1: Discard/ontsnapping voor Save team Failed (beslissing Eddy).
 
 ## 2b. ModernDatePicker 1.0.2
 

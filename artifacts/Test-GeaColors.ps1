@@ -22,7 +22,7 @@ $roles=@{
 $assign=@(
  @('Screen1','btnGotoHours','nav'),@('Screen1','btnGotoHoursSummary','nav'),@('scrHours','btnWeeklyProjectTeam','nav'),@('scrWeeklyHours','btnSummaryProjectTeam','nav'),
  @('scrHours','btnSaveWeek','primary'),@('Screen1','btnAddtoTeam','primary'),
- @('Screen1','btnRefreshTeam','secondary'),@('scrHours','btnRefreshWeek','secondary'),@('scrWeeklyHours','btnRefreshReport','secondary'),@('scrWeeklyHours','btnReportPreviousWeeks','secondary'),@('scrWeeklyHours','btnReportNextWeeks','secondary'))
+ @('Screen1','btnRefreshTeam','secondary'),@('scrHours','btnRefreshWeek','secondary'),@('scrHours','btnDiscardWeek','secondary'),@('scrWeeklyHours','btnRefreshReport','secondary'),@('scrWeeklyHours','btnReportPreviousWeeks','secondary'),@('scrWeeklyHours','btnReportNextWeeks','secondary'))
 foreach($a in $assign){
  $p=$indexes[$a[0]][$a[1]]['Properties']
  foreach($kv in @($roles[$a[2]].GetEnumerator())+@($disabled.GetEnumerator())){ if($p[$kv.Key] -ne $kv.Value){throw "$($a[0]).$($a[1]).$($kv.Key) = $($p[$kv.Key]) (expected $($kv.Value) for $($a[2]))"} }

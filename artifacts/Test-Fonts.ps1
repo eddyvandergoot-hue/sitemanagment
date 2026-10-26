@@ -6,7 +6,7 @@ $technical=@('btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFo
 $textTypes='^(Label@|Classic/Button@|Classic/DropDown@|Classic/TextInput@|Classic/CheckBox@|ModernDatePicker@)'
 $semibold=@{
  'Screen1'=@('lblProjectTeamTitle','btnGotoHours','btnGotoHoursSummary','btnRefreshTeam','btnAddtoTeam')
- 'scrHours'=@('lblWeeklyHoursEntryTitle','lblHeaderWorker','lblHeaderMon','lblHeaderTue','lblHeaderWed','lblHeaderThu','lblHeaderFri','lblHeaderSat','lblHeaderSun','lblHeaderTotal','btnWeeklyProjectTeam','btnRefreshWeek','btnSaveWeek')
+ 'scrHours'=@('lblWeeklyHoursEntryTitle','lblHeaderWorker','lblHeaderMon','lblHeaderTue','lblHeaderWed','lblHeaderThu','lblHeaderFri','lblHeaderSat','lblHeaderSun','lblHeaderTotal','btnWeeklyProjectTeam','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')
  'scrWeeklyHours'=@('lblWeeklyHoursTitle','lblReportNameHeader','lblReportEmployerHeader','lblReportWeekHeader','btnSummaryProjectTeam','btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')
 }
 $bold=@{'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
