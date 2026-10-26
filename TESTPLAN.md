@@ -95,9 +95,9 @@ Build: discard-20261026_151949 (PROJECT_STATUS.md). Eddy, 26-10-2026: stappen 1-
 | 7 | Tekst "Discard changes" en footerrij op uw vensterbreedte | tekst past, rij Refresh / Discard changes / Save zonder overlap (min. 734 px) |
 | 8 | State Failed (na deels/onzeker opslaan) | lokaal verwijderd en geforceerd opnieuw gelezen; alleen testbaar met TEST-000 zodra MS-005 klaar is (lastig na te bootsen) (OPEN) |
 
-## TP-HOME-01 Home-scherm en Home-knop (OPEN)
+## TP-HOME-01 Home-scherm en Home-knop (geslaagd 26-10-2026, Eddy)
 
-Build: home-20261026_165630 (PROJECT_STATUS.md). Niet geimporteerd in Studio, niet getest. Opslaan alleen op TEST-000.
+Build: home-20261026_165630 (PROJECT_STATUS.md). Geslaagd in Studio 26-10-2026 (Eddy, zonder detailrapport). Opslaan alleen op TEST-000.
 
 | # | Stap | Verwacht |
 |---|---|---|

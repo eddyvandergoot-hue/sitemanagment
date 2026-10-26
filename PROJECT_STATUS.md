@@ -5,12 +5,12 @@ Geschiedenis en eerdere builds: PROJECT_STATUS_ARCHIVE.md (niet lezen tenzij gev
 Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies compleet zijn.
 
 ## Goedgekeurde baseline
-- Git-tag approved-20261026-discard (annotated, commit 7c7a46a). Approved by Eddy (Studio-test 26-10-2026): Discard changes (TP-DISCARD-01), met 2 open teststappen (zie Open items).
-- Build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\discard-20261026_151949\SiteManagement_Discard_20261026_151949.msapp, 107489 bytes, SHA-256 6E9C5516387084DAA3163CB653B75E3E51C6A57BB05D3B5C92A190CC75610D72 (Src en .msapr van de commit bytegelijk aan deze build).
-- Eerdere goedgekeurde: approved-20261026-savefix (commit 01af074; logo-build, SHA-256 8EAE873731E01A50C49A50F02D31153C4ECCA52EDB0A30CE25CA298168FF2085). Eerdere baseline: baseline-footer-row-20261020_215936 (archief).
+- Git-tag approved-20261026-home (annotated, commit f33f360). Approved by Eddy (Studio-test TP-HOME-01 geslaagd 26-10-2026): Home-scherm (scrHome) en Home-knoppen.
+- Build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\home-20261026_165630\SiteManagement_Home_20261026_165630.msapp, 110979 bytes, SHA-256 55F62B4D6397E5BB2C6205145C341CB782CADC6B339965C2EAAC11FF8F80EE4E. Gedrag: AGENTS.md; test: TESTPLAN.md.
+- Eerdere goedgekeurde: approved-20261026-discard (commit 7c7a46a; Discard changes, SHA-256 6E9C5516387084DAA3163CB653B75E3E51C6A57BB05D3B5C92A190CC75610D72), approved-20261026-savefix (commit 01af074), baseline-footer-row-20261020_215936 (archief).
 
 ## Huidige build
-- Huidige build = Home-testbuild (pac 2.11.2): C:SERSANDERGOOT.EDDEVSITEMANAGMENTRTIFACTSHOME-20261026_165630SITEMANAGEMENT_HOME_20261026_165630.MSAPP, 110979 BYTES, SHA-256 55F62B4D6397E5BB2C6205145C341CB782CADC6B339965C2EAAC11FF8F80EE4E (21 ENTRIES = DISCARD-BUILD + SRCSCRHOME.PA.YAML; LOGO ONGEWIJZIGD; SRC 6/6 BYTEGELIJK; UNPACK ROUND TRIP OK). STATUS: GEIMPLEMENTEERD EN TECHNISCH GECONTROLEERD (VERIFIER VOLLEDIG, REVIEWER ZONDER BLOKKERENDE PUNTEN); NIET IN STUDIO GEIMPORTEERD, NIET FUNCTIONEEL GETEST, NIET GOEDGEKEURD (TP-HOME-01). DE GOEDGEKEURDE BASELINE BLIJFT APPROVED-20261026-DISCARD. GEDRAG: AGENTS.MD; TESTPLAN: TESTPLAN.MD.
+- Geen openstaande testbuild; de goedgekeurde baseline is de Home-build hierboven. De Assignment Periods-taak is in uitvoering (nog geen build); in Studio is de gegevensbron "Assignment Periods" toegevoegd (Studio-bestand in Incoming/, niet gecommit).
 - TP-DD-01, TP-SAVE-01, TP-LOGO-01: geslaagd (Eddy, 26-10-2026, zonder detailrapport). TP-DISCARD-01: stappen 1-5 en 7 geslaagd (Eddy, 26-10-2026; footer past, geen overlap); stap 6 (Monitor) overgeslagen; stap 8 (Failed) open tot TEST-000. De oude Studio-testlijst staat in het archief.
 - Bevestigd door Eddy in Studio op 26-10-2026: weeklabel van dpHoursWeek toont voor 01-01-2027 `2026 KW53` (TP-WEEK-01); Hours Summary-restyle (zebra, "–" bij 0, totaalrij, Period total-kolom, scrollbarruimte, GEA-tabelkop) is visueel ok (TP-SUM-01); hergebruik van geladen selecties, scenario 1-7 via Monitor (TP-REUSE-01, op Eddy's melding "alles werkt"; Monitor-regels niet afzonderlijk gemeld); weekkiezer: een andere week laadt automatisch en onopgeslagen invoer blokkeert wisselen (kiezer uitgeschakeld, Refresh grijs, alleen Save actief). Verder niets bevestigd.
 - Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek: andere dag in dezelfde week bewaart de dag zonder herlaad; overige GEA-kleuren; fail-closed blokkades (rest); Monitor-delegatie; wijziging van een andere gebruiker verschijnt pas na Refresh (vereist TEST-000).
@@ -29,7 +29,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
 - SECURITY.md aangemaakt (WAF SE-checklist); open: GitHub 2FA bevestigen, IT-vragen, MS-004/007/011 (gepland), TP-SEC-01.
-- Volgende werk (volgorde: NEXT_COMMANDS.md): Studio-test TP-HOME-01 van de Home-build, daarna Assignment periods (besluit 26-10-2026, DECISIONS.md H9; ontwerp, niet gebouwd), Week Report, export, roadmap-merge.
+- Volgende werk (volgorde: NEXT_COMMANDS.md): Assignment periods (in uitvoering; besluit 26-10-2026, DECISIONS.md H9), daarna Week Report, export, roadmap-merge.
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 - Dataminimalisatie (DECISIONS.md D7): MS-012 open (niet urgent; groep Site Supervisors, lijst Worker Contacts met WorkerID + Phone, e-mail niet opgeslagen; open: Workers.Email controleren/verwijderen); Monitor-controle of Workers-rijen incl. kolommen Phone/Email naar de client gaan; besluit Hours.Title = EntryKey (bij volgende Save-taak) en of bestaande rijen blijven staan.
@@ -38,7 +38,8 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Goedgekeurd in Studio (TP-LOGO-01, Eddy 26-10-2026); regel en maten: AGENTS.md; bron Assets/GEA_logo_white.svg (1130 bytes, SHA-256 5D460376D030AF075E004E50191C8BE0C8DB05C5E0A9E593F53612DA52606087, bytegelijk aan het officiële logobankbestand). Technisch gecontroleerd met artifacts/Test-Logo.ps1. Geen MS-item.
 
 ## Open MS-items (MANUAL_STEPS.md)
-- MS-010 (lijst Assignment Periods + migratie): open, nog niet nodig tot de taak Assignment periods start.
+- MS-010 (lijst Assignment Periods): lijst gedaan 26-10-2026 (Eddy); open: besluit Eddy over weergavenaam "Untill" → "Until"; migratie vervangen door een expliciete migratieactie per project in de app (in bouw).
+- MS-005 uitbreiding (3 extra testmedewerkers Test Fitter 2 / Test Welder 2 / Test Unknown 2): open tot Eddy bevestigt dat ze bestaan.
 - TEST-000 beschikbaar (MS-005) — open testgevallen met opslaan nu uitvoerbaar: TP-DISCARD-01 stap 8 (Failed), TP-REUSE-01 cross-user.
 - Gecontroleerd door Eddy (26-10-2026): Workers.Title (Worker Name) = First Name + Surname voor alle medewerkers (datacontrole, geen SharePoint-constraint).
 - SharePoint dwingt nu een verplichte, unieke Employer Code af (MS-009, Eddy 26-10-2026).

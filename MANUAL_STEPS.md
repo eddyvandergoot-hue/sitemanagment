@@ -8,7 +8,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-008 | 25-10-2026 | Done (Workers.Trade 25-10-2026, Hours.Trade 26-10-2026, Eddy) |
 | MS-005 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-009 | 26-10-2026 | Done 26-10-2026 (Eddy) |
-| MS-010 | 26-10-2026 | Open (not needed until Assignment periods task) |
+| MS-010 | 26-10-2026 | List done 26-10-2026 (Eddy); open: display-name decision |
 
 ---
 
@@ -49,6 +49,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **In the app:** Project / team: link all 3 workers to TEST-000, team 1, Save team.
 - **Done when:** Eddy confirms; report back date + who.
 - **Status:** Done 26-10-2026 (Eddy): TEST Employer (Employer Code TEST-EMP), project "TEST-000 Testproject" (Project Number TEST-000), workers Test Fitter / Test Welder / Test Unknown linked to TEST-000 team 1 via Save team ("Done when" satisfied).
+- **Extension (added 26-10-2026) — Status: Open until Eddy confirms:** three extra test workers for the Assignment periods test: "Test Fitter 2" (Trade Fitter), "Test Welder 2" (Trade Welder), "Test Unknown 2" (Trade Unknown); Employer = TEST Employer; First Name "Test", Surname "Fitter 2" / "Welder 2" / "Unknown 2" (same naming rule as above). NOT linked to TEST-000: the period test links them. Eddy has not yet confirmed that they exist.
 
 ## MS-009 — Employer Code required and unique
 
@@ -61,7 +62,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-010 — Assignment Periods list
 
-- **Added:** 26-10-2026. **Status:** Open. Not needed until the "Assignment periods" task starts (NEXT_COMMANDS.md).
+- **Added:** 26-10-2026. **Status:** List created 26-10-2026 (Eddy); open: display-name decision (see Note). Migration replaced (see Migration).
 - **Where:** the existing site https://geacloud.sharepoint.com/sites/GEASiteManagment (new list).
 - **Reason:** several periods per worker per project (decision DECISIONS.md H9). Project Workers stays one record per project+worker.
 - **List:** "Assignment Periods" with columns:
@@ -74,7 +75,9 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   | Until | Date | always a Sunday; blank = open |
 
 - **Indexes:** AssignmentKey and ProjectKey. Check online first whether they exist; local metadata does not show this.
-- **Migration:** each existing active assignment (Project Workers) gets one period: From = Monday of the week of its earliest Hours record (if there are no Hours: the project start), Until blank.
+- **Migration:** NOT a manual SharePoint step anymore; replaced by an explicit per-project migration action in the app (being built). Original idea (superseded): each existing active assignment gets one period: From = Monday of its earliest Hours record, Until blank.
+- **Created as (26-10-2026, verified by the orchestrator from the Studio metadata):** Title has display name "AssignmentKey" (internal name Title; required; indexed; NOT unique, since several periods per assignment); ProjectKey (text, required, indexed); From (date only, required; internal name From); Until (date only, optional).
+- **Note (open decision, Eddy):** the internal name of Until is "Till" and its display name is currently "Untill" (typo, double l). Eddy still decides whether to rename the display name to "Until". The app uses the internal name. Data source "Assignment Periods" was added to the app in Studio by Eddy (Studio file in Incoming/, not committed).
 - **Done when:** list, columns, indexes and migration are in place and Eddy confirms; report back date + who. Test on TEST-000 (MS-005).
 
 ## MS-012 — Worker Contacts list (phone out of Workers)

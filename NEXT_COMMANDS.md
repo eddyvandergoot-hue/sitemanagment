@@ -9,26 +9,11 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 ## 2b. ModernDatePicker 1.0.2
 
-Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 3 en 5 ook het logo op scrHome en scrWeekReport.
+Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 5 ook het logo op scrWeekReport.
 
-## 3. Home + logo (landing) — GEBOUWD, wacht op Studio-test TP-HOME-01 (build in PROJECT_STATUS.md)
+## 4. Assignment periods (in progress; design: DECISIONS.md H9)
 
-```bash
-claude << 'EOF'
-Task. AGENTS.md auto-loaded. Read PROJECT_STATUS.md + relevant Src. Commit checkpoint.
-Delegate: layout/tiles/footer -> powerfx-ui; tests + pack -> verifier; docs -> docs-keeper.
-
-1. New screen scrHome = StartScreen, title "Site Management", logo imgLogoHome as on the other screens. Three columns "Administration", "CAD tools", "Inventory" (header Inter Semibold #000F41 + 2 px #0303B8 line); one Classic/Button@2.2.0 per tile, min 200x110, gap 12, radius 8; active tile #0303B8 + white icon, placeholder #E6E6E6 "Coming soon" (disabled, no OnSelect); 3 columns from 728 px, else 1 column, scrolling, no footer. Active: Project / team, Weekly Hours (only with loaded project/team, else Screen1 + Notify "Choose project and team first"), Hours Summary; Week Report tile becomes active with the Week Report task.
-2. Home button (width 90) left in the footer of Screen1, Weekly Hours, Hours Summary; footer min widths 848/836/604.
-3. AGENTS.md: Home rules (done).
-
-Quick tests per change; full suite + pack once at end. Update PROJECT_STATUS.md. Open MS items in reply. No Studio/functional pass claims.
-EOF
-```
-
-## 4. Assignment periods (design: DECISIONS.md H9; MS-010 first)
-
-Design only, not built. Build after Home. Needs MS-010 (list "Assignment Periods": AssignmentKey, ProjectKey, From = Monday, Until = Sunday, blank = open; plus migration) done, and TEST-000 (MS-005) for testing. Rules to implement: AGENTS.md, Functionele afspraken punt 3.
+In progress (26-10-2026). MS-010 list is done (columns: MANUAL_STEPS.md; the migration is replaced by an explicit per-project migration action in the app) and TEST-000 (MS-005) exists for testing. Rules to implement: AGENTS.md, Functionele afspraken punt 3.
 
 To-do for the build (consequences, no design yet):
 - Screen1: week picker "Week" (label "YYYY KWxx"); Save team creates/reopens/closes periods; validation Until >= From and no overlap, otherwise block with a message; periods never deleted.

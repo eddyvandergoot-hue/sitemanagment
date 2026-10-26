@@ -44,3 +44,6 @@ Assets/all.zip
 Assets/*.ai
 Assets/*.eps
 Assets/GEA_Logo_w_Claim_*
+
+# Studio downloads handed in by Eddy (may contain signed URLs); never commit
+Incoming/
