@@ -13,39 +13,63 @@ Inhoud: zie MANUAL_STEPS.md MS-005. Status: open; Eddy doet de SharePoint-stappe
 
 ## 2b. ModernDatePicker 1.0.2
 
-Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 3 ook het logo op scrHome en scrWeekReport.
+Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 3 en 5 ook het logo op scrHome en scrWeekReport.
 
-## 3. Landing screen + Week Report
+## 3. Home + logo (landing)
 
 ```bash
 claude << 'EOF'
 Task. AGENTS.md auto-loaded. Read PROJECT_STATUS.md + relevant Src. Commit checkpoint.
-Delegate: 1 + 2 logic -> powerfx-logic; layout/tiles/footer -> powerfx-ui; tests + pack -> verifier; reviewer before pack; docs -> docs-keeper.
+Delegate: layout/tiles/footer -> powerfx-ui; tests + pack -> verifier; docs -> docs-keeper.
+
+1. New screen scrHome = StartScreen, title "Site Management", logo as on the other screens. Tile grid (Vibrant Blue tiles, white text, Inter Semibold, min 200x120, wrap, no overlap): Project / team, Weekly Hours, Hours Summary (Week Report tile added with the Week Report task). Weekly Hours tile without loaded project/team -> Screen1 + Notify "Choose project and team first".
+2. All screens: Home button left in footer (nav style). Update footer min widths, Test-FooterRow.
+3. AGENTS.md: home screen exception (tiles = content, no footer actions on home).
+
+Quick tests per change; full suite + pack once at end. Update PROJECT_STATUS.md. Open MS items in reply. No Studio/functional pass claims.
+EOF
+```
+
+## 4. Assignment periods (design: DECISIONS.md H9; MS-010 first)
+
+Design only, not built. Build after Home. Needs MS-010 (list "Assignment Periods": AssignmentKey, ProjectKey, From = Monday, Until = Sunday, blank = open; plus migration) done, and TEST-000 (MS-005) for testing. Rules to implement: AGENTS.md, Functionele afspraken punt 3.
+
+To-do for the build (consequences, no design yet):
+- Screen1: week picker "Week" (label "YYYY KWxx"); Save team creates/reopens/closes periods; validation Until >= From and no overlap, otherwise block with a message; periods never deleted.
+- Save team also writes Assignment Periods: the current pattern "1 pre-read + max 2 table-Patches" in AGENTS.md must be revisited at build time; fail-closed validation before any write stays. Active flag on Project Workers = has an open period.
+- Weekly Hours row source changes from "active Project Workers" to period overlap with Monday..Sunday + any worker with stored Hours in that week. Days not worked stay blank (= 0 in totals/reports/export); the app never auto-writes 0.
+- Hours Summary is Hours-based and unaffected.
+- Check online the indexes on the new list's AssignmentKey/ProjectKey (MS-010).
+- Test on TEST-000 (MS-005).
+- Update AGENTS.md (replace the design marker by the built rule, revisit the Save team line) and PROJECT_STATUS.md.
+
+## 5. Week Report
+
+```bash
+claude << 'EOF'
+Task. AGENTS.md auto-loaded. Read PROJECT_STATUS.md + relevant Src. Commit checkpoint.
+Delegate: 1 + 2 logic -> powerfx-logic; layout -> powerfx-ui; tests + pack -> verifier; reviewer before pack; docs -> docs-keeper.
 
 1. New screen scrWeekReport, visible title "Week Report". Read-only, no writes.
 - Selection: ModernDatePicker week (shows chosen day, no jump; week Mon-Sun; label "YYYY KWxx"), project dropdown (colProjectsCache), employer dropdown ("All employers" + employers derived from week data).
-- Default week = current ISO week. Footer actions right: prev week / next week, Refresh (secondary style). Nav left: Home, Project / team, Hours Summary.
+- Default week = current ISO week. Footer actions right: prev week / next week, Refresh (secondary style). Nav left: Home, Project / team, Hours Summary. Add the Week Report tile on scrHome.
 - Table: Name | Employer | Mon..Sun (header day + dd-mm) | Week total. Total row per day + grand total. Whole hours no trailing comma/point, "–" for 0. Hours centered.
-- Rows: workers with Hours entries in week for project; employer = historical Hours.Employer. Current week only: add active Project Workers (all teams) with 0, employer = current Workers.Employer.
+- Rows: workers with Hours entries in week for project; employer = historical Hours.Employer. Current week only: add active Project Workers (all teams) with 0, employer = current Workers.Employer. (Revisit after Assignment periods: row source then follows the period rule.)
 - Load: 1 delegated query StartsWith(EntryKey, varProjectPrefix) + 'Work Date' range Mon..Mon+7 (global var, not With-scoped). Keep 500 guard, fail closed, load states, no Patch in loaders. Local checks as Hours Summary.
 - Shared week/period loading + calc logic with Hours Summary. No duplicate divergent formulas.
 - GEA colors, Inter, table style as Hours Summary.
 
 2. Hours Summary btnBuildReport: active-with-0 rows only if period includes current ISO week. Else only workers with hours.
 
-3. New screen scrHome = StartScreen, title "Site Management". Tile grid (Vibrant Blue tiles, white text, Inter Semibold, min 200x120, wrap, no overlap): Project / team, Weekly Hours, Week Report, Hours Summary. Weekly Hours tile without loaded project/team -> Screen1 + Notify "Choose project and team first".
+3. Uitsluiting TEST- projecten/TEST Employer in Week Report, Hours Summary-export en health check implementeren (zie AGENTS.md).
 
-4. All screens: Home button left in footer (nav style). Update footer min widths, Test-FooterRow.
-
-5. AGENTS.md: home screen exception (tiles = content, no footer actions on home); Week Report rules; active-row rule.
-
-6. Uitsluiting TEST- projecten/TEST Employer in Week Report, Hours Summary-export en health check implementeren (zie AGENTS.md).
+4. AGENTS.md: Week Report rules; active-row rule.
 
 Quick tests per change; full suite + pack once at end. Update PROJECT_STATUS.md. Open MS items in reply. No Studio/functional pass claims.
 EOF
 ```
 
-## 4. Export spec/build (build after Week Report)
+## 6. Export spec/build (build after Week Report)
 
 ```bash
 claude << 'EOF'
@@ -60,7 +84,7 @@ Update PROJECT_STATUS.md.
 EOF
 ```
 
-## 5. Roadmap into repo
+## 7. Roadmap into repo
 
 ```bash
 claude << 'EOF'
@@ -81,7 +105,7 @@ Commit "Full roadmap".
 EOF
 ```
 
-## 6. Production go-live (later)
+## 8. Production go-live (later)
 
 Inhoud nog vast te leggen (aanleveren door Eddy). Er is nog geen productieapp; alleen testimports tot de functies compleet zijn (PROJECT_STATUS.md).
 

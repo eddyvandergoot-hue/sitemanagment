@@ -41,6 +41,7 @@ Dates: 21–24 October 2026.
 | H6 | "Active" rows: workers with hours; active workers with 0 only if the period includes the **current week**. | Active flag has no history. |
 | H7 | Employer in reports = **historical employer on the Hours record**. | Employer changes must not move old hours. |
 | H8 | ISO weeks correct over year boundary: 01-01-2027 → `2026 KW53`. | Week 53 in 2026. |
+| H9 | **Assignment periods (26-10-2026, not built yet; build after Home):** team = entry grouping only (reporting per project + employer, no team history). Multiple periods per worker per project in a new list "Assignment Periods" (MS-010: AssignmentKey, ProjectKey, From = Monday, Until = Sunday, blank = open). Project Workers stays one record per project+worker; Active = has an open period. Screen1 gets a "Week" picker; Save team writes/closes periods (never deleted). Weekly Hours rows = period overlap + any worker with stored Hours; days not worked stay blank, the app never auto-writes 0. Supersedes the earlier period proposal and the "no mandatory assignment period" rule; H6 ("active with 0 only in current week") is superseded for Weekly Hours at build time. | One open period per stint gives history (who was on site which week) without a second record per worker, and keeps Hours linked to one assignment. |
 
 ## 4. Export
 
