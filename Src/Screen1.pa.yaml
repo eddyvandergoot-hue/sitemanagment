@@ -354,11 +354,23 @@ Screens:
             Width: =Parent.Width-80
             Height: =56
             Size: =22
-            PaddingLeft: =16
+            PaddingLeft: =129
             Fill: =ColorValue("#0303B8")
             Color: =Color.White
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Semibold
+      - imgLogoScreen1:
+          Control: Image@2.2.3
+          Properties:
+            AccessibleLabel: ="GEA"
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Height: =30
+            Image: =GEA_logo_white
+            ImagePosition: =ImagePosition.Fit
+            Width: =99
+            X: =lblProjectTeamTitle.X+15
+            Y: =lblProjectTeamTitle.Y+(lblProjectTeamTitle.Height-Self.Height)/2
       - btnReadTeam:
           Control: Classic/Button@2.2.0
           Properties:

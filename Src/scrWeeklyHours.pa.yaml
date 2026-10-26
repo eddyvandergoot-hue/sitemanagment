@@ -13,12 +13,24 @@ Screens:
           Font: ="Inter, Arial, sans-serif"
           FontWeight: =FontWeight.Semibold
           Height: =56
-          PaddingLeft: =16
+          PaddingLeft: =129
           Size: =22
           Text: ="Hours Summary"
-          Width: =280
+          Width: =400
           X: =40
           Y: =24
+    - imgLogoSummary:
+        Control: Image@2.2.3
+        Properties:
+          AccessibleLabel: ="GEA"
+          BorderColor: =Color.Transparent
+          BorderThickness: =0
+          Height: =30
+          Image: =GEA_logo_white
+          ImagePosition: =ImagePosition.Fit
+          Width: =99
+          X: =lblWeeklyHoursTitle.X+15
+          Y: =lblWeeklyHoursTitle.Y+(lblWeeklyHoursTitle.Height-Self.Height)/2
     - lblReportProjectDetails:
         Control: Label@2.5.1
         Properties:

@@ -36,8 +36,20 @@ Screens:
             FontWeight: =FontWeight.Semibold
             Size: =22
             Color: =Color.White
-            PaddingLeft: =16
+            PaddingLeft: =129
             Fill: =ColorValue("#0303B8")
+      - imgLogoHours:
+          Control: Image@2.2.3
+          Properties:
+            AccessibleLabel: ="GEA"
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Height: =30
+            Image: =GEA_logo_white
+            ImagePosition: =ImagePosition.Fit
+            Width: =99
+            X: =lblWeeklyHoursEntryTitle.X+15
+            Y: =lblWeeklyHoursEntryTitle.Y+(lblWeeklyHoursEntryTitle.Height-Self.Height)/2
       - recHoursHeaderBar:
           Control: Rectangle@2.3.0
           Properties:

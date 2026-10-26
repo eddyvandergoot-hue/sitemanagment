@@ -15,9 +15,9 @@ Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vas
 
 Inhoud nog vast te leggen (aanleveren door Eddy). Nog niet in de repo beschreven. Relevante regels: onopgeslagen invoer blokkeert Refresh/navigatie (AGENTS.md, Laden en opslagveiligheid).
 
-## 2b. GEA-logo (eerst Studio-stap Eddy)
+## 2b. Logo Studio-check en ModernDatePicker 1.0.2
 
-Regel: AGENTS.md (GEA-logo); stand en de Studio-stap: PROJECT_STATUS.md (GEA-logo). Na Eddy's Studio-opslag: app opnieuw uitpakken, media-entry en Image-controlversie lezen, logo in de titelbalk van alle schermen plaatsen (titellabels verbreden), Check-WeeklySource.ps1 allow-list uitbreiden. Bij punt 3 ook op scrHome en scrWeekReport.
+Logo is gebouwd (PROJECT_STATUS.md); wacht op Eddy's Studio-import (TP-LOGO-01). Daarna eigen taak: Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); de eerste Studio-import van de nieuwe build bevestigt de combinatie. Bij punt 3 ook het logo op scrHome en scrWeekReport.
 
 ## 3. Landing screen + Week Report
 

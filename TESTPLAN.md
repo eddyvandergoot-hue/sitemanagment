@@ -6,6 +6,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 |---|---|---|---|---|
 | TP-DD-01 | Dropdown hover zichtbaar | open | - | - |
 | TP-SAVE-01 | Savefix-controles | open | - | - |
+| TP-LOGO-01 | Logo zichtbaar | open | - | - |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -25,3 +26,16 @@ Mislukt: meld in de browser welke rijkleuren wel zichtbaar zijn (hover, gekozen,
 ## TP-SAVE-01 savefix
 
 Zie PROJECT_STATUS.md, Studio-testlijst.
+
+## TP-LOGO-01 logo zichtbaar
+
+Stappen:
+1. Open Screen1, Weekly Hours en Hours Summary.
+2. Kijk links in de blauwe titelbalk.
+
+Verwacht:
+- Wit GEA-logo links in de titelbalk, scherp en niet uitgerekt, minstens 15 px vrij links/rechts.
+- De titel staat na het logo en niets is afgekapt bij uw gebruikelijke venstergrootte.
+- Hours Summary: de projectregel (Project Number | Project Reference) blijft leesbaar.
+
+Mislukt: noteer scherm, vensterbreedte en wat is afgekapt.
