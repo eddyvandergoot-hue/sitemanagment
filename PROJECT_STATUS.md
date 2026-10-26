@@ -12,7 +12,8 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 ## Huidige build
 - Er is geen openstaande testbuild; de goedgekeurde build hierboven is de laatste build.
 - Testcases TP-DD-01, TP-SAVE-01, TP-LOGO-01: geslaagd (Eddy, 26-10-2026, zonder detailrapport; zie TESTPLAN.md). De oude Studio-testlijst staat in het archief.
-- Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek (OnChange, `2026 KW53` voor 01-01-2027, onopgeslagen invoer blokkeert wisselen); Hours Summary-restyle; overige GEA-kleuren; hergebruik van geladen selecties; fail-closed blokkades; Monitor-delegatie.
+- Bevestigd door Eddy in Studio op 26-10-2026: weeklabel van dpHoursWeek toont voor 01-01-2027 `2026 KW53` (TP-WEEK-01); Hours Summary-restyle (zebra, "–" bij 0, totaalrij, Period total-kolom, scrollbarruimte, GEA-tabelkop) is visueel ok (TP-SUM-01). Verder niets bevestigd.
+- Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek OnChange (andere week laadt automatisch, andere dag in dezelfde week, onopgeslagen invoer blokkeert wisselen met reset + melding); overige GEA-kleuren; hergebruik van geladen selecties (observatie Eddy 26-10-2026: gegevens komen goed terug uit de lijsten; hergebruik "lijkt ok", indruk, geen gerichte test; gerichte test TP-REUSE-01: zelfde project/team/week twee keer openen zonder herlaad [Trace DIAG|Week|CacheHit], Refresh forceert herlaad, wijziging van een andere gebruiker verschijnt pas na Refresh); fail-closed blokkades; Monitor-delegatie.
 
 ## Studio-bewijs (26-10-2026, opgeslagen app artifacts\Logo_download\20261026-Sitemanagment_logo.msapp)
 - Eddy importeerde de dropdown-build, uploadde het logo en sloeg op: Studio-import geslaagd, alle wijzigingen staan in de opgeslagen Src. Functioneel daarna bevestigd door Eddy (zie Huidige build).
@@ -24,7 +25,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Later, niet blokkerend: App checker-meldingen doorlopen (toegankelijkheid, ongebruikte variabelen, WarnLiteralPredicate).
 - Src en Check-WeeklySource uitlijnen op ModernDatePicker@1.0.2 (NEXT_COMMANDS.md 2b).
 - Opslagsnelheid Save week / Save team niet expliciet bevestigd (laden is door Eddy getest: snel, geen fouten).
-- Jaargrens/week 53 in Hours Summary alleen lokaal getest; natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
+- Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
 - Volgende werk (volgorde: NEXT_COMMANDS.md): TEST-000 setup, Discard changes-knop, startscherm + Week Report, export, roadmap-merge.
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
