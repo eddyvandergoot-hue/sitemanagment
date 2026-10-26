@@ -52,7 +52,7 @@ Discard-build (niet getest):
 8. Na Discard in Failed met mislukte geforceerde herlaad meldt de loader "Vorige invoer behouden" terwijl de invoer is verwijderd; het grid toont colWeekOriginal (deels geverifieerde waarden), de gedetailleerde opslagfout is gewist; opslaan blijft geblokkeerd.
 9. Na geslaagde Discard-herlaad in Failed: controleer SharePoint-versies (Modified/Modified By) van de betrokken rijen; de eerdere deelopslag is dan alleen nog in Notify/Trace zichtbaar.
 10. Getypte waarde waarvan OnChange nog niet is afgegaan is niet dirty: de eerste klik op de nog uitgeschakelde Discard laat alleen het veld los; daarna wordt de knop actief.
-11. Screen1: na mislukte/deels bevestigde Save team is de staat Failed maar blijft varTeamDirty true; checkboxes vereisen Loaded en niet dirty, Refresh en dropdowns zijn geblokkeerd: alleen herstart helpt. Discard voor Screen1 is een open beslissing (NEXT_COMMANDS.md).
+11. Screen1: na mislukte/deels bevestigde Save team is de staat Failed maar blijft varTeamDirty true; checkboxes vereisen Loaded en niet dirty, Refresh en dropdowns zijn geblokkeerd: alleen herstart helpt. Besluit Eddy 26-10-2026: Discard alleen op Weekly Hours; selectiefouten in Loaded worden met een nieuwe Save team gecorrigeerd. Bekende uitzondering: Failed, uitweg = app herstarten (NEXT_COMMANDS.md).
 
 Algemeen:
 - Smalle vensters: Hours Summary-tabel heeft onder ~666 px geen weekkolom, footer scrolt horizontaal; zes bekende tekstoverschrijdingen; geen telefoonlayout voor de rapporttabel. Door het logo (lblReportProjectDetails 120 px smaller) knipt de projectregel onder ~810 px (was ~690), titels op Screen1/scrHours knippen onder ~430 px en de Hours Summary-titelbalk past onder ~440 px niet.

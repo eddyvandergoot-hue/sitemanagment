@@ -15,7 +15,7 @@ Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vas
 
 Gebouwd (btnDiscardWeek op Weekly Hours); wacht op Studio-test TP-DISCARD-01 (TESTPLAN.md). Build en status: PROJECT_STATUS.md.
 
-Vervolg: Screen1: Discard/ontsnapping voor Save team Failed (beslissing Eddy).
+Besluit Eddy 26-10-2026: Discard alleen op Weekly Hours; Screen1 heeft geen data-invoer, selectiefouten worden met een nieuwe Save team gecorrigeerd. Bekende uitzondering: na een mislukte/half bevestigde Save team (Failed) is Save geblokkeerd; uitweg = app herstarten.
 
 ## 2b. ModernDatePicker 1.0.2
 
