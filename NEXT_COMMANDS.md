@@ -11,12 +11,6 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vastgelegd; geen MS-005 in MANUAL_STEPS.md tot Eddy de inhoud aanlevert.
 
-## 2. Discard changes button
-
-Gebouwd (btnDiscardWeek op Weekly Hours); wacht op Studio-test TP-DISCARD-01 (TESTPLAN.md). Build en status: PROJECT_STATUS.md.
-
-Besluit Eddy 26-10-2026: Discard alleen op Weekly Hours; Screen1 heeft geen data-invoer, selectiefouten worden met een nieuwe Save team gecorrigeerd. Bekende uitzondering: na een mislukte/half bevestigde Save team (Failed) is Save geblokkeerd; uitweg = app herstarten.
-
 ## 2b. ModernDatePicker 1.0.2
 
 Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 3 ook het logo op scrHome en scrWeekReport.

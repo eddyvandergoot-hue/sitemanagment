@@ -5,14 +5,13 @@ Geschiedenis en eerdere builds: PROJECT_STATUS_ARCHIVE.md (niet lezen tenzij gev
 Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies compleet zijn.
 
 ## Goedgekeurde baseline
-- Git-tag approved-20261026-savefix (annotated, commit 01af074). Approved by Eddy (Studio-test 26-10-2026): savefix, dropdownhover, logo; MS-008 bevestigd.
-- Build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\logo-20261026_120726\SiteManagement_Logo_20261026_120726.msapp, 107224 bytes, SHA-256 8EAE873731E01A50C49A50F02D31153C4ECCA52EDB0A30CE25CA298168FF2085 (savefix + dropdownstatuskleuren + GEA-logo; Src en .msapr van de commit bytegelijk aan deze build).
-- Eerdere baseline: baseline-footer-row-20261020_215936 (details in het archief).
+- Git-tag approved-20261026-discard (annotated, commit 7c7a46a). Approved by Eddy (Studio-test 26-10-2026): Discard changes (TP-DISCARD-01), met 2 open teststappen (zie Open items).
+- Build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\discard-20261026_151949\SiteManagement_Discard_20261026_151949.msapp, 107489 bytes, SHA-256 6E9C5516387084DAA3163CB653B75E3E51C6A57BB05D3B5C92A190CC75610D72 (Src en .msapr van de commit bytegelijk aan deze build).
+- Eerdere goedgekeurde: approved-20261026-savefix (commit 01af074; logo-build, SHA-256 8EAE873731E01A50C49A50F02D31153C4ECCA52EDB0A30CE25CA298168FF2085). Eerdere baseline: baseline-footer-row-20261020_215936 (archief).
 
 ## Huidige build
-- Testbuild (Discard changes): C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\discard-20261026_151949\SiteManagement_Discard_20261026_151949.msapp, 107489 bytes, SHA-256 6E9C5516387084DAA3163CB653B75E3E51C6A57BB05D3B5C92A190CC75610D72 (pac 2.11.2; t.o.v. de goedgekeurde build alleen Src\scrHours.pa.yaml gewijzigd). Geimplementeerd + technisch gecontroleerd (verifier volledig; 5 historische scripts falen ongewijzigd; reviewer: geen blokkerende punten). NIET in Studio geimporteerd, NIET functioneel getest, NIET goedgekeurd. Gedrag: AGENTS.md. Studio-checklist: TP-DISCARD-01 (TESTPLAN.md).
-- De goedgekeurde baseline blijft de build hierboven tot Eddy de Discard-build test.
-- Testcases TP-DD-01, TP-SAVE-01, TP-LOGO-01: geslaagd (Eddy, 26-10-2026, zonder detailrapport; zie TESTPLAN.md). De oude Studio-testlijst staat in het archief.
+- Huidige build = de goedgekeurde Discard-build hierboven (pac 2.11.2). Geen openstaande testbuild. Gedrag: AGENTS.md; testplan: TESTPLAN.md.
+- TP-DD-01, TP-SAVE-01, TP-LOGO-01: geslaagd (Eddy, 26-10-2026, zonder detailrapport). TP-DISCARD-01: stappen 1-5 en 7 geslaagd (Eddy, 26-10-2026; footer past, geen overlap); stap 6 (Monitor) overgeslagen; stap 8 (Failed) open tot TEST-000. De oude Studio-testlijst staat in het archief.
 - Bevestigd door Eddy in Studio op 26-10-2026: weeklabel van dpHoursWeek toont voor 01-01-2027 `2026 KW53` (TP-WEEK-01); Hours Summary-restyle (zebra, "–" bij 0, totaalrij, Period total-kolom, scrollbarruimte, GEA-tabelkop) is visueel ok (TP-SUM-01); hergebruik van geladen selecties, scenario 1-7 via Monitor (TP-REUSE-01, op Eddy's melding "alles werkt"; Monitor-regels niet afzonderlijk gemeld); weekkiezer: een andere week laadt automatisch en onopgeslagen invoer blokkeert wisselen (kiezer uitgeschakeld, Refresh grijs, alleen Save actief). Verder niets bevestigd.
 - Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek: andere dag in dezelfde week bewaart de dag zonder herlaad; overige GEA-kleuren; fail-closed blokkades (rest); Monitor-delegatie; wijziging van een andere gebruiker verschijnt pas na Refresh (vereist TEST-000).
 
@@ -23,12 +22,13 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 
 ## Open items
 - Functionele Studio-tests van de hierboven genoemde niet-geteste onderdelen.
+- Discard: Monitor-spoor DIAG|Week|Discard niet gecontroleerd (stap 6 overgeslagen); Failed-tak (stap 8) pas testbaar met TEST-000.
 - Later, niet blokkerend: App checker-meldingen doorlopen (toegankelijkheid, ongebruikte variabelen, WarnLiteralPredicate).
 - Src en Check-WeeklySource uitlijnen op ModernDatePicker@1.0.2 (NEXT_COMMANDS.md 2b).
 - Opslagsnelheid Save week / Save team niet expliciet bevestigd (laden is door Eddy getest: snel, geen fouten).
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
-- Volgende werk (volgorde: NEXT_COMMANDS.md): TEST-000 setup, Studio-test Discard changes, startscherm + Week Report, export, roadmap-merge.
+- Volgende werk (volgorde: NEXT_COMMANDS.md): TEST-000 setup, startscherm + Week Report, export, roadmap-merge.
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 
 ## GEA-logo
@@ -39,7 +39,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - De aparte controle "geen lege ProjectKey in Project Workers" is niet gemeld en blijft relevant (Save team-risico).
 
 ## Bekende beperkingen
-Savefix-build (goedgekeurd):
+Savefix (goedgekeurd):
 1. Na aanvullen van Trade/Employer in SharePoint: eerst onopgeslagen invoer terugdraaien, dan Refresh op Project / team, dan opnieuw invoeren.
 2. Employer/Trade-validatie blokkeert ook correcties van bestaande Hours-regels (bewust, fail-closed).
 3. Screen1: naam kan de rode waarschuwing overlappen bij zeer smalle galleries (scherm < ~604 px).
@@ -48,7 +48,7 @@ Savefix-build (goedgekeurd):
 6. Logica en presentatie zitten in één build (op verzoek).
 7. Historische Hours-regels kunnen F/W bevatten, nieuwe Fitter/Welder/Unknown: relevant voor groepering in rapport/export.
 
-Discard-build (niet getest):
+Discard (goedgekeurd):
 8. Na Discard in Failed met mislukte geforceerde herlaad meldt de loader "Vorige invoer behouden" terwijl de invoer is verwijderd; het grid toont colWeekOriginal (deels geverifieerde waarden), de gedetailleerde opslagfout is gewist; opslaan blijft geblokkeerd.
 9. Na geslaagde Discard-herlaad in Failed: controleer SharePoint-versies (Modified/Modified By) van de betrokken rijen; de eerdere deelopslag is dan alleen nog in Notify/Trace zichtbaar.
 10. Getypte waarde waarvan OnChange nog niet is afgegaan is niet dirty: de eerste klik op de nog uitgeschakelde Discard laat alleen het veld los; daarna wordt de knop actief.

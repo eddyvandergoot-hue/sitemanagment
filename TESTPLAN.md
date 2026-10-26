@@ -73,9 +73,9 @@ Setup: Studio > Advanced tools > Open monitor > Play; zoek op DIAG.
 
 Niet getest: "wijziging van een andere gebruiker verschijnt pas na Refresh" (vereist TEST-000; geen echte uren wijzigen).
 
-## TP-DISCARD-01 Discard changes (open)
+## TP-DISCARD-01 Discard changes (geslaagd met 2 open stappen)
 
-Build: zie PROJECT_STATUS.md (discard-20261026_151949). Nog niet in Studio getest.
+Build: discard-20261026_151949 (PROJECT_STATUS.md). Eddy, 26-10-2026: stappen 1-5 en 7 geslaagd; stap 6 (Monitor) overgeslagen; stap 8 open tot TEST-000.
 
 | # | Stap | Verwacht |
 |---|---|---|
@@ -84,6 +84,6 @@ Build: zie PROJECT_STATUS.md (discard-20261026_151949). Nog niet in Studio getes
 | 3 | Validatiefout in invoer, Discard | foutmelding verdwenen |
 | 4 | Tijdens laden/opslaan, en zonder wijziging | Discard uitgeschakeld |
 | 5 | Waarde typen zonder het veld te verlaten | eerste klik blurt alleen het veld; daarna wordt Discard actief |
-| 6 | Monitor, zoek DIAG | DIAG\|Week\|Discard zichtbaar |
+| 6 | Monitor, zoek DIAG | DIAG\|Week\|Discard zichtbaar (OVERGESLAGEN, niet getest) |
 | 7 | Tekst "Discard changes" en footerrij op uw vensterbreedte | tekst past, rij Refresh / Discard changes / Save zonder overlap (min. 734 px) |
-| 8 | State Failed (na deels/onzeker opslaan) | lokaal verwijderd en geforceerd opnieuw gelezen; alleen testbaar met TEST-000 (lastig na te bootsen) |
+| 8 | State Failed (na deels/onzeker opslaan) | lokaal verwijderd en geforceerd opnieuw gelezen; alleen testbaar met TEST-000 (lastig na te bootsen) (OPEN) |

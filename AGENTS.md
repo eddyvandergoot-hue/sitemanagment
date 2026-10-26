@@ -7,7 +7,7 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
 - De oude OneDrive-map (OneDrive - GEA\Projects\Development\Sitemanagment) is een alleen-lezen backup; schrijf daar nooit.
 - Scripts in artifacts gebruiken alleen paden relatief aan $PSScriptRoot; pointerbestanden (artifacts/*-backup.txt, *-builddir.txt, *-buildpath.txt) bevatten paden relatief aan de bronmap. Geen absolute paden in scripts of pointers.
 - Git: branch main. Checkpoint = git commit vóór elke opdracht (werkboom schoon, daarna pas wijzigen). Geen mapkopieën in checkpoints/ (historisch, in .gitignore). Zet geen backupbestanden in Src (PAC weigert bestanden die niet op .pa.yaml eindigen).
-- Push naar origin na een opdracht alleen als verifier (volledige set + pack) en reviewer (geen blokkerende bevindingen) slagen. Tag `approved-<datum>-<onderwerp>` alleen na Eddy's Studio-test en bevestiging (dan ook "approved by Eddy" in PROJECT_STATUS.md en de tag pushen); nooit op basis van pack of tests alleen. Laatste goedgekeurde tag: approved-20261026-savefix.
+- Push naar origin na een opdracht alleen als verifier (volledige set + pack) en reviewer (geen blokkerende bevindingen) slagen. Tag `approved-<datum>-<onderwerp>` alleen na Eddy's Studio-test en bevestiging (dan ook "approved by Eddy" in PROJECT_STATUS.md en de tag pushen); nooit op basis van pack of tests alleen. Laatste goedgekeurde tag: approved-20261026-discard.
 - Overschrijf of publiceer de bestaande productieapp niet automatisch.
 
 ## Platform
