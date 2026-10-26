@@ -106,7 +106,7 @@ EOF
 
 Inhoud nog vast te leggen (aanleveren door Eddy). Er is nog geen productieapp; alleen testimports tot de functies compleet zijn (PROJECT_STATUS.md).
 
-Notitie, beheerschermen (later, Workers-scherm): Worker Contacts (MS-012) + Contact readers in het Workers-scherm; contacten alleen tonen bij toegang, zonder toegang niets en geen fout (DECISIONS.md D7).
+Notitie, beheerschermen (later, Workers-scherm): Worker Contacts (MS-012) + groep Site Supervisors in het Workers-scherm; contacten alleen tonen bij toegang, zonder toegang niets en geen fout (DECISIONS.md D7).
 
 ---
 

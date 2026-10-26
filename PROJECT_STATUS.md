@@ -32,7 +32,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Volgende werk (volgorde: NEXT_COMMANDS.md): Studio-test TP-HOME-01 van de Home-build, daarna Assignment periods (besluit 26-10-2026, DECISIONS.md H9; ontwerp, niet gebouwd), Week Report, export, roadmap-merge.
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
-- Dataminimalisatie (DECISIONS.md D7): MS-012 open (niet urgent); Monitor-controle of Workers-rijen incl. Phone/Email naar de client gaan; besluit Hours.Title = EntryKey (bij volgende Save-taak) en of bestaande rijen blijven staan.
+- Dataminimalisatie (DECISIONS.md D7): MS-012 open (niet urgent; groep Site Supervisors, lijst Worker Contacts met WorkerID + Phone, e-mail niet opgeslagen; open: Workers.Email controleren/verwijderen); Monitor-controle of Workers-rijen incl. kolommen Phone/Email naar de client gaan; besluit Hours.Title = EntryKey (bij volgende Save-taak) en of bestaande rijen blijven staan.
 
 ## GEA-logo
 - Goedgekeurd in Studio (TP-LOGO-01, Eddy 26-10-2026); regel en maten: AGENTS.md; bron Assets/GEA_logo_white.svg (1130 bytes, SHA-256 5D460376D030AF075E004E50191C8BE0C8DB05C5E0A9E593F53612DA52606087, bytegelijk aan het officiële logobankbestand). Technisch gecontroleerd met artifacts/Test-Logo.ps1. Geen MS-item.
