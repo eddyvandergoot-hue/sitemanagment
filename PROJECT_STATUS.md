@@ -39,7 +39,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 
 ## Open MS-items (MANUAL_STEPS.md)
 - MS-010 (lijst Assignment Periods): lijst gedaan 26-10-2026 (Eddy); open: besluit Eddy over weergavenaam "Untill" → "Until"; migratie vervangen door een expliciete migratieactie per project in de app (in bouw).
-- MS-005 uitbreiding (3 extra testmedewerkers Test Fitter 2 / Test Welder 2 / Test Unknown 2): open tot Eddy bevestigt dat ze bestaan.
+- MS-005 uitbreiding (3 extra testmedewerkers Test Fitter 2 / Test Welder 2 / Test Unknown 2): gedaan 26-10-2026 (Eddy: bestaan in Workers; nog niet aan TEST-000 gekoppeld, dat gebeurt in TP-PERIOD-01).
 - TEST-000 beschikbaar (MS-005) — open testgevallen met opslaan nu uitvoerbaar: TP-DISCARD-01 stap 8 (Failed), TP-REUSE-01 cross-user.
 - Gecontroleerd door Eddy (26-10-2026): Workers.Title (Worker Name) = First Name + Surname voor alle medewerkers (datacontrole, geen SharePoint-constraint).
 - SharePoint dwingt nu een verplichte, unieke Employer Code af (MS-009, Eddy 26-10-2026).

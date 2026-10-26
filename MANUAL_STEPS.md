@@ -49,7 +49,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **In the app:** Project / team: link all 3 workers to TEST-000, team 1, Save team.
 - **Done when:** Eddy confirms; report back date + who.
 - **Status:** Done 26-10-2026 (Eddy): TEST Employer (Employer Code TEST-EMP), project "TEST-000 Testproject" (Project Number TEST-000), workers Test Fitter / Test Welder / Test Unknown linked to TEST-000 team 1 via Save team ("Done when" satisfied).
-- **Extension (added 26-10-2026) — Status: Open until Eddy confirms:** three extra test workers for the Assignment periods test: "Test Fitter 2" (Trade Fitter), "Test Welder 2" (Trade Welder), "Test Unknown 2" (Trade Unknown); Employer = TEST Employer; First Name "Test", Surname "Fitter 2" / "Welder 2" / "Unknown 2" (same naming rule as above). NOT linked to TEST-000: the period test links them. Eddy has not yet confirmed that they exist.
+- **Extension (added 26-10-2026) — Status: Done 26-10-2026 (Eddy confirmed the three workers exist in Workers; not yet linked to TEST-000):** three extra test workers for the Assignment periods test: "Test Fitter 2" (Trade Fitter), "Test Welder 2" (Trade Welder), "Test Unknown 2" (Trade Unknown); Employer = TEST Employer; First Name "Test", Surname "Fitter 2" / "Welder 2" / "Unknown 2" (same naming rule as above). NOT linked to TEST-000: the period test links them. Eddy has not yet confirmed that they exist.
 
 ## MS-009 — Employer Code required and unique
 
