@@ -12,6 +12,7 @@ Power Apps canvas app on SharePoint Lists for GEA site management: project/team 
 | Plan, phases, open decisions | **ROADMAP.md** | Only when the task says so |
 | Manual SharePoint / Power Automate steps (MS-xxx) | **MANUAL_STEPS.md** | Only when the task says so |
 | Decision log: what was decided and why | **DECISIONS.md** | Only when the task says so |
+| Manual Studio/browser test cases (TP-xxx) | **TESTPLAN.md** | Only when the task says so |
 | Commands still to run | **NEXT_COMMANDS.md** | No (queue for Eddy) |
 | Subagents (who does which kind of task) | **.claude/agents/*.md** | Descriptions always; full text only when the agent runs |
 | History (do not read unless asked) | **PROJECT_STATUS_ARCHIVE.md**, **AGENTS_ARCHIVE.md**, **NEXT_COMMANDS_ARCHIVE.md** | No, niet lezen tenzij gevraagd |
@@ -27,8 +28,7 @@ One topic, one file. Other files link here instead of repeating content.
 
 Old OneDrive folder `OneDrive - GEA\Projects\Development\Sitemanagment\SiteManagement_20261019_232919` = read-only backup. Never write there.
 
-SharePoint site: `https://geacloud.sharepoint.com/sites/GEASiteManagment`
-Lists: Projects, Employers, Workers, Project Workers, Hours.
+SharePoint site: `https://geacloud.sharepoint.com/sites/GEASiteManagment`  Lists: Projects, Employers, Workers, Project Workers, Hours.
 
 ## Folder layout
 
@@ -40,9 +40,9 @@ Sitemanagment/
 │  ├─ *.ps1                  Test scripts
 │  └─ <build-name>/          Packed test builds (*.msapp) — git-ignored
 ├─ .claude/agents/          Subagents: powerfx-logic, powerfx-ui, verifier, reviewer, docs-keeper
-├─ README.md  AGENTS.md  PROJECT_STATUS.md  ROADMAP.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md
+├─ README.md  AGENTS.md  PROJECT_STATUS.md  ROADMAP.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md
 ├─ PROJECT_STATUS_ARCHIVE.md  AGENTS_ARCHIVE.md  NEXT_COMMANDS_ARCHIVE.md
-└─ .gitignore
+└─ Assets/ (GEA logo, only GEA_logo_white.svg tracked)  .gitignore
 ```
 
 ## Screens

@@ -438,9 +438,9 @@ Screens:
                     Control: Classic/DropDown@2.3.1
                     Properties:
                       ChevronHoverFill: =ColorValue("#0303B8")
-                      ChevronHoverBackground: =ColorValue("#F0F0F0")
-                      PressedColor: =Color.White
-                      PressedFill: =ColorValue("#0303B8")
+                      ChevronHoverBackground: =ColorValue("#D5EDFF")
+                      PressedColor: =ColorValue("#000F41")
+                      PressedFill: =ColorValue("#D5EDFF")
                       PressedBorderColor: =ColorValue("#0303B8")
                       FocusedBorderColor: =ColorValue("#0303B8")
                       HoverBorderColor: =ColorValue("#0303B8")
@@ -454,7 +454,8 @@ Screens:
                       Fill: =ColorValue("#F0F0F0")
                       Font: ="Inter, Arial, sans-serif"
                       FontWeight: =FontWeight.Normal
-                      HoverFill: =ColorValue("#F0F0F0")
+                      HoverFill: =ColorValue("#D5EDFF")
+                      HoverColor: =ColorValue("#000F41")
                       Items: =colReportProjects
                       Items.Value: =Title
                       OnChange: =If(!varReportBusy && Coalesce(Self.Selected.ID,0)<>Coalesce(varReportProjectID,0),Set(varReportValid,false); Set(varReportReady,false); Select(btnLoadReport))
@@ -482,9 +483,9 @@ Screens:
                     Control: Classic/DropDown@2.3.1
                     Properties:
                       ChevronHoverFill: =ColorValue("#0303B8")
-                      ChevronHoverBackground: =ColorValue("#F0F0F0")
-                      PressedColor: =Color.White
-                      PressedFill: =ColorValue("#0303B8")
+                      ChevronHoverBackground: =ColorValue("#D5EDFF")
+                      PressedColor: =ColorValue("#000F41")
+                      PressedFill: =ColorValue("#D5EDFF")
                       PressedBorderColor: =ColorValue("#0303B8")
                       FocusedBorderColor: =ColorValue("#0303B8")
                       HoverBorderColor: =ColorValue("#0303B8")
@@ -498,7 +499,8 @@ Screens:
                       Fill: =ColorValue("#F0F0F0")
                       Font: ="Inter, Arial, sans-serif"
                       FontWeight: =FontWeight.Normal
-                      HoverFill: =ColorValue("#F0F0F0")
+                      HoverFill: =ColorValue("#D5EDFF")
+                      HoverColor: =ColorValue("#000F41")
                       Items: =Sort(colReportContractors,Value,SortOrder.Ascending)
                       Items.Value: =Value
                       OnChange: =If(!varReportBusy,Set(varReportValid,false); Select(btnBuildReport))

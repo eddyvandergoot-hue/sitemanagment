@@ -38,3 +38,9 @@ pac/
 
 # Secrets never belong in the repo
 github-recovery-codes*.txt
+
+# Logo bank: only Assets/GEA_logo_white.svg is tracked (official file, unmodified). Print/claim/CMYK files and the bank archive stay local.
+Assets/all.zip
+Assets/*.ai
+Assets/*.eps
+Assets/GEA_Logo_w_Claim_*

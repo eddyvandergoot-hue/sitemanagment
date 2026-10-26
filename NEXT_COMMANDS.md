@@ -15,6 +15,10 @@ Inhoud/MS-005 nog vast te leggen (aanleveren door Eddy). Nog niet in de repo vas
 
 Inhoud nog vast te leggen (aanleveren door Eddy). Nog niet in de repo beschreven. Relevante regels: onopgeslagen invoer blokkeert Refresh/navigatie (AGENTS.md, Laden en opslagveiligheid).
 
+## 2b. GEA-logo (eerst Studio-stap Eddy)
+
+Regel: AGENTS.md (GEA-logo); stand en de Studio-stap: PROJECT_STATUS.md (GEA-logo). Na Eddy's Studio-opslag: app opnieuw uitpakken, media-entry en Image-controlversie lezen, logo in de titelbalk van alle schermen plaatsen (titellabels verbreden), Check-WeeklySource.ps1 allow-list uitbreiden. Bij punt 3 ook op scrHome en scrWeekReport.
+
 ## 3. Landing screen + Week Report
 
 ```bash

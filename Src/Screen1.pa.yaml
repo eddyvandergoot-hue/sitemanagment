@@ -217,7 +217,7 @@ Screens:
             ChevronDisabledBackground: =Color.Transparent
             ChevronDisabledFill: =ColorValue("#787878")
             ChevronFill: =ColorValue("#0303B8")
-            ChevronHoverBackground: =ColorValue("#F0F0F0")
+            ChevronHoverBackground: =ColorValue("#D5EDFF")
             ChevronHoverFill: =ColorValue("#0303B8")
             Color: =ColorValue("#000000")
             Default: =LookUp(colSelectionProjects,Id=varSelectionProjectID,Value)
@@ -228,8 +228,8 @@ Screens:
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
             HoverBorderColor: =ColorValue("#0303B8")
-            HoverColor: =ColorValue("#000000")
-            HoverFill: =ColorValue("#F0F0F0")
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
             Items: =colSelectionProjects
             Items.Value: =Value
             OnChange: =If(!varSelectionBusy && !varSaving,Select(btnReadTeam))
@@ -238,8 +238,8 @@ Screens:
             PaddingRight: =5
             PaddingTop: =5
             PressedBorderColor: =ColorValue("#0303B8")
-            PressedColor: =Color.White
-            PressedFill: =ColorValue("#0303B8")
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
             SelectionColor: =Color.White
             SelectionFill: =ColorValue("#0303B8")
             Size: =12
@@ -259,7 +259,7 @@ Screens:
             ChevronDisabledBackground: =Color.Transparent
             ChevronDisabledFill: =ColorValue("#787878")
             ChevronFill: =ColorValue("#0303B8")
-            ChevronHoverBackground: =ColorValue("#F0F0F0")
+            ChevronHoverBackground: =ColorValue("#D5EDFF")
             ChevronHoverFill: =ColorValue("#0303B8")
             Color: =ColorValue("#000000")
             Default: =Blank()
@@ -270,8 +270,8 @@ Screens:
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
             HoverBorderColor: =ColorValue("#0303B8")
-            HoverColor: =ColorValue("#000000")
-            HoverFill: =ColorValue("#F0F0F0")
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
             Items: =colTeamChoices
             Items.Value: =Value
             OnChange: =If(!varSelectionBusy && !varSaving,Select(btnReadTeam))
@@ -280,8 +280,8 @@ Screens:
             PaddingRight: =5
             PaddingTop: =5
             PressedBorderColor: =ColorValue("#0303B8")
-            PressedColor: =Color.White
-            PressedFill: =ColorValue("#0303B8")
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
             SelectionColor: =Color.White
             SelectionFill: =ColorValue("#0303B8")
             Size: =12

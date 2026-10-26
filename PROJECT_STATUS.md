@@ -1,4 +1,4 @@
-# Projectstatus (huidige stand, 25-10-2026)
+# Projectstatus (huidige stand, 26-10-2026)
 
 Geschiedenis en eerdere builds: PROJECT_STATUS_ARCHIVE.md (niet lezen tenzij gevraagd). Volgorde van open punten: NEXT_COMMANDS.md. Open beslissingen: ROADMAP.md. Handmatige stappen: MANUAL_STEPS.md. "Gebouwd" = aantoonbaar in Src; dat zegt niets over Studio-import of functionele test.
 
@@ -10,11 +10,15 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Latere builds (o.a. gecombineerde build met weekkiezer, tabelrestyle en GEA-kleuren, 22-10) zijn niet afzonderlijk goedgekeurd; hun inhoud zit in de huidige Src en dus in de testbuild hieronder.
 
 ## Huidige testbuild (niet goedgekeurd, wacht op Eddy's Studio-test)
-- Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\savefix-trade-20261025_163517\SiteManagement_SaveFixTrade_20261025_163517.msapp
-- 101640 bytes, SHA-256 1891281F7F62DF1F739BA282D11B8218DEDBECF74066027731394BF8CF4033C7 (pac 2.11.2; Src 5/5 bytegelijk aan de bron).
-- Inhoud: Save week-fix (lokale pre-save validatie, echte foutmelding bij nul writes, lblWeekLoadStatus) + Trade Unknown (Fitter/Welder/Unknown, Trade-chip en waarschuwingen op Screen1/scrHours).
-- Status: **geïmplementeerd en technisch gecontroleerd** (reviewer tweemaal zonder blokkerende bevindingen; verifier volledige set 0 FAIL, Check-WeeklySource OK). **Niet in Studio geïmporteerd, niet functioneel getest, niet goedgekeurd.**
+- Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\dropdown-states-20261026_051056\SiteManagement_DropdownStates_20261026_051056.msapp
+- 101644 bytes, SHA-256 75819FA0832453672AE8D3D8A9D4479394D0695CBA28956524F62D092B5470A8 (pac 2.11.2; Src 5/5 bytegelijk aan de bron; 19 entries, geen Assets-entries).
+- Inhoud: de savefix-inhoud (hieronder) plus dropdownstatuskleuren op alle 4 Classic/DropDown@2.3.1 (ddProject, ddTeam, ddReportProject, ddReportContractor; waarden: AGENTS.md). Oorzaak: HoverFill was gelijk aan Fill (#F0F0F0), dus geen zichtbaar verschil.
+- Status: **geïmplementeerd en technisch gecontroleerd** (verifier snelle tier geslaagd, 0 FAIL; reviewer: geen blokkerende bevindingen; Test-GeaColors controleert nu ook dat er precies deze 4 dropdowns zijn). **Niet in Studio geïmporteerd, niet functioneel getest, niet goedgekeurd.**
+- Vorige build (savefix, niet getest): artifacts\savefix-trade-20261025_163517\SiteManagement_SaveFixTrade_20261025_163517.msapp, 101640 bytes, SHA-256 1891281F7F62DF1F739BA282D11B8218DEDBECF74066027731394BF8CF4033C7. De huidige build bevat de savefix; de savefix-test staat nog open, dus één import van de huidige build volstaat voor beide.
+- Savefix-inhoud: Save week-fix (lokale pre-save validatie, echte foutmelding bij nul writes, lblWeekLoadStatus) + Trade Unknown (Fitter/Welder/Unknown, Trade-chip en waarschuwingen op Screen1/scrHours).
+- Testcases: TESTPLAN.md (TP-DD-01, TP-SAVE-01).
 - Studio-testlijst (Eddy):
+  0. Dropdowns (Team, Project, Contractor): rij onder de muis lichtblauw zichtbaar, gekozen item blauw/wit, ingedrukt lichtblauw (TP-DD-01).
   1. Import + App checker op btnSaveWeek, btnReadWeek, lblWeekLoadStatus, lblItemWarning, lblWorkerWarning.
   2. Lege Trade + nieuwe cel: echte melding, week blijft Loaded, Trace `DIAG|SaveWeek|End` Writes=0.
   3. Trade Unknown + nieuwe cel en expliciete 0: opgeslagen met Trade Unknown (faalt als Hours.Trade geen Unknown heeft: MS-008).
@@ -32,6 +36,11 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Volgende werk (volgorde: NEXT_COMMANDS.md): TEST-000 setup, Discard changes-knop, startscherm + Week Report, export, roadmap-merge.
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 
+## GEA-logo (regel vastgelegd in AGENTS.md, app-implementatie niet gedaan)
+- Bestand Assets/GEA_logo_white.svg (1130 bytes, SHA-256 5D460376D030AF075E004E50191C8BE0C8DB05C5E0A9E593F53612DA52606087) is bytegelijk aan het officiële logobankbestand GEA_Logo_wo_Claim_sRGB_Solid_neg.svg (Screen/Solid/NEG, zonder claim, wit, viewBox 93,34 x 28,35); alleen dit bestand is getrackt.
+- Geblokkeerd op een Studio-stap: pac (SourceCode) bewaart media in de .msapr (msapp\Assets\Images + msapp\References\Resources.json), niet in de projectmap Assets\; het Resources.json-schema en de gedocumenteerde control-ID/versie van Image zijn niet geverifieerd. Daarom geen logo in Src/.msapr.
+- Open (Eddy, eenmalig): huidige testbuild importeren, Media > Upload Assets\GEA_logo_white.svg, één Image-control (Image = de upload) in de titelbalk van één scherm, app opslaan; daarna opnieuw uitpakken, echte media-entry en controlversie lezen en naar alle schermen repliceren. Rendert de SVG niet: fallback = officiële NEG-PNG uit dezelfde logobank (Screen/Solid/NEG/PNG, zonder claim), nooit hertekend of omgekleurd.
+
 ## Open MS-items (MANUAL_STEPS.md)
 - MS-008 Trade-keuzes: Workers.Trade klaar (Eddy, 25-10-2026); Hours.Trade-keuzes Fitter/Welder/Unknown: bevestiging Eddy open.
 - MS-001 (indexen) is gedaan op 25-10-2026; de aparte controle "geen lege ProjectKey in Project Workers" is niet gemeld en blijft relevant (Save team-risico).
@@ -45,6 +54,9 @@ Savefix-build:
 5. Rode tekst in galleryrijen voor blokkerende stamgegevenswaarschuwingen (toegestaan in AGENTS.md).
 6. Logica en presentatie zitten in één build (op verzoek).
 7. Historische Hours-regels kunnen F/W bevatten, nieuwe Fitter/Welder/Unknown: relevant voor groepering in rapport/export.
+
+Dropdownbuild:
+8. Het kleuren van de lijstrijen (hover/geselecteerd) gebeurt door de runtime-JS van het control (dropdownStyles); niet aantoonbaar uit template of pack. Toont hover in de browser niet, dan is het alternatief een modern Dropdown/ComboBox (ander controltype; eerst documentatie en importcontrole).
 
 Algemeen:
 - Smalle vensters: Hours Summary-tabel heeft onder ~666 px geen weekkolom, projectregel in titelbalk kan onder ~690 px afkappen, footer scrolt horizontaal; zes bekende tekstoverschrijdingen bij smalle vensters; geen telefoonlayout voor de rapporttabel.
