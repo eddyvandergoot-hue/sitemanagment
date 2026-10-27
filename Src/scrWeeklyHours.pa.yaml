@@ -61,7 +61,8 @@ Screens:
              Set(varReportValid,false); Clear(colReportBuildErrors); Set(varDiagBuildT0,Now());
              Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
              Set(varReportHasPeriod,!IsEmpty(colReportPeriods));
-             If(varReportHasPeriod,
+             If(IsBlank(varReportMinMonday) || IsBlank(varReportMaxSunday),
+              Set(varReportMessage,"Geen inzetperiodes of uren voor dit project"),
               If(IsBlank(varReportStartMonday) || IsBlank(varReportEndSunday),
                Collect(colReportBuildErrors,{Message:"Selecteer From en Till."}),
                Set(varReportFrom,varReportStartMonday);
@@ -84,8 +85,7 @@ Screens:
                   )
                  )))>=0,Collect(colReportBuildErrors,{Message:FirstError.Message});false)
                ))
-              )
-             );
+              );
              If(IsEmpty(colReportBuildErrors),
               IfError(CountRows(ClearCollect(colReportRows,
                AddColumns(GroupBy(colReportSelectedHours,WorkerID,ContractorID,WorkerEntries) As reportRow,
@@ -93,10 +93,7 @@ Screens:
                 ContractorName,First(reportRow.WorkerEntries).ContractorName,
                 PeriodTotal,Sum(reportRow.WorkerEntries,HourValue))))>=0,
                Collect(colReportBuildErrors,{Message:FirstError.Message});false);
-              If(varReportHasPeriod,
-               Set(varReportZeroFrom,varReportFrom); Set(varReportZeroUntil,varReportUntil),
-               Set(varReportZeroFrom,DateAdd(Today(),1-Weekday(Today(),StartOfWeek.Monday),TimeUnit.Days)); Set(varReportZeroUntil,DateAdd(varReportZeroFrom,7,TimeUnit.Days))
-              );
+              Set(varReportZeroFrom,varReportFrom); Set(varReportZeroUntil,varReportUntil);
               ForAll(Filter(colReportWorkers As candidate,candidate.HasPeriod && CountIf(colReportAssignmentPeriods,AssignmentKey=varReportProjectKey & "|" & Text(candidate.WorkerID) && From<varReportZeroUntil && (IsBlank(Until) || Until>=varReportZeroFrom))>0) As person,
                If((Coalesce(ddReportContractor.Selected.ID,0)=0 || person.ContractorID=ddReportContractor.Selected.ID) &&
                   IsBlank(LookUp(colReportRows,WorkerID=person.WorkerID && ContractorID=person.ContractorID)),
@@ -110,12 +107,13 @@ Screens:
              If(IsEmpty(colReportBuildErrors),
               Set(varReportColumnOffset,1); Set(varReportValid,true);
               Trace("DIAG|Build|End",TraceSeverity.Information,{Scenario:"Build",Step:"End",ElapsedMs:DateDiff(varDiagBuildT0,Now(),TimeUnit.Milliseconds),Rows:CountRows(colReportRows),Columns:CountRows(colReportColumns),SelectedHours:CountRows(colReportSelectedHours),PeriodTotal:Sum(colReportRows,PeriodTotal)});
-              Set(varReportMessage,If(!varReportHasPeriod,"Geen opgeslagen uren voor dit project; medewerkers met een periode in de huidige week staan op 0. ","") &
+              Set(varReportMessage,If(!varReportHasPeriod,"Geen opgeslagen uren voor dit project; medewerkers met een inzetperiode in de gekozen weken staan op 0. ","") &
                Text(CountRows(colReportRows)) & " medewerkers/contractors | " & Text(CountRows(colReportColumns)) & " weken | " &
                Text(Sum(colReportRows,PeriodTotal),If(Sum(colReportRows,PeriodTotal)=Round(Sum(colReportRows,PeriodTotal),0),"[$-en-US]0","[$-en-US]0.00"),"nl-NL") & " uur"),
               Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
               Set(varReportMessage,"Rapport gestopt: " & First(colReportBuildErrors).Message);
               Notify(varReportMessage,NotificationType.Error)
+             )
              )
             )
           Visible: =false
@@ -131,7 +129,7 @@ Screens:
     - lblReportStatus:
         Control: Label@2.5.1
         Properties:
-          Text: =If(varReportBusy,"Uren ophalen...",!varReportValid,varReportMessage,IsBlank(varReportProjectID) || varReportHasPeriod,"","Geen opgeslagen uren voor dit project; medewerkers met een periode in de huidige week staan op 0.")
+          Text: =If(varReportBusy,"Uren ophalen...",!varReportValid,varReportMessage,IsBlank(varReportProjectID) || varReportHasPeriod,"","Geen opgeslagen uren voor dit project; medewerkers met een inzetperiode in de gekozen weken staan op 0.")
           X: =40
           Y: =conSummarySelectors.Y+conSummarySelectors.Height+If(Len(Self.Text)>0,12,0)
           Width: =Parent.Width-80
@@ -561,8 +559,8 @@ Screens:
                       DefaultDate: =Coalesce(varReportFromPickedDay,varReportStartMonday)
                       Format: ="dd-mm-yyyy"
                       StartOfWeek: =StartOfWeek.Monday
-                      StartDate: =Coalesce(First(colReportPeriods).Monday,Date(1900,1,1))
-                      EndDate: =Coalesce(DateAdd(Last(colReportPeriods).Monday,6,TimeUnit.Days),Date(Year(Today())+100,12,31))
+                      StartDate: =Coalesce(varReportMinMonday,Date(1900,1,1))
+                      EndDate: =Coalesce(varReportMaxSunday,Date(2200,12,31))
                       OnChange: |-
                         =If(!varReportBusy,
                          If(IsBlank(Self.SelectedDate),Set(varReportFromPickedDay,Blank()); Reset(dpReportFrom),
@@ -574,7 +572,7 @@ Screens:
                           )
                          )
                         )
-                      DisplayMode: =If(varReportBusy || !varReportReady || IsEmpty(colReportPeriods),DisplayMode.Disabled,DisplayMode.Edit)
+                      DisplayMode: =If(varReportBusy || !varReportReady || IsBlank(varReportMinMonday) || IsBlank(varReportMaxSunday),DisplayMode.Disabled,DisplayMode.Edit)
                       X: =lblReportFrom.X
                       Y: =lblReportFrom.Y+lblReportFrom.Height+4
                       Width: =lblSummaryFieldWidth.Width
@@ -618,8 +616,8 @@ Screens:
                       DefaultDate: =Coalesce(varReportUntilPickedDay,varReportEndSunday)
                       Format: ="dd-mm-yyyy"
                       StartOfWeek: =StartOfWeek.Monday
-                      StartDate: =Coalesce(First(colReportPeriods).Monday,Date(1900,1,1))
-                      EndDate: =Coalesce(DateAdd(Last(colReportPeriods).Monday,6,TimeUnit.Days),Date(Year(Today())+100,12,31))
+                      StartDate: =Coalesce(varReportMinMonday,Date(1900,1,1))
+                      EndDate: =Coalesce(varReportMaxSunday,Date(2200,12,31))
                       OnChange: |-
                         =If(!varReportBusy,
                          If(IsBlank(Self.SelectedDate),Set(varReportUntilPickedDay,Blank()); Reset(dpReportUntil),
@@ -631,7 +629,7 @@ Screens:
                           )
                          )
                         )
-                      DisplayMode: =If(varReportBusy || !varReportReady || IsEmpty(colReportPeriods),DisplayMode.Disabled,DisplayMode.Edit)
+                      DisplayMode: =If(varReportBusy || !varReportReady || IsBlank(varReportMinMonday) || IsBlank(varReportMaxSunday),DisplayMode.Disabled,DisplayMode.Edit)
                       ValidationState: =If(!IsBlank(varReportStartMonday) && !IsBlank(varReportEndSunday) && varReportEndSunday<varReportStartMonday,ValidationState.Error,ValidationState.None)
                       X: =lblReportFrom.X
                       Y: =lblReportUntil.Y+lblReportUntil.Height+4
@@ -659,6 +657,7 @@ Screens:
              Clear(colReportColumns); Clear(colReportSelectedHours); Clear(colReportAssignments);
              Clear(colReportWorkers); Clear(colReportPeriods); Clear(colReportHourStaging); Clear(colReportAssignmentPeriods);
              Clear(colReportContractors); Clear(colReportContractorCandidates);
+             Set(varReportMinMonday,Blank()); Set(varReportMaxSunday,Blank()); Set(varReportCurrentMonday,Blank());
              If(Coalesce(varReportForceRefresh,false),
               IfError(Refresh(Projects),Collect(colReportLoadErrors,{Message:FirstError.Message});false);
               IfError(Refresh(Workers),Collect(colReportLoadErrors,{Message:FirstError.Message});false)
@@ -827,8 +826,26 @@ Screens:
                )
               );
               If(IsEmpty(colReportLoadErrors),
-               Set(varReportStartMonday,First(colReportPeriods).Monday);
-               Set(varReportEndSunday,DateAdd(Last(colReportPeriods).Monday,6,TimeUnit.Days));
+               Set(varReportCurrentMonday,DateAdd(Today(),1-Weekday(Today(),StartOfWeek.Monday),TimeUnit.Days));
+               With({periodFrom:First(Sort(Filter(colReportAssignmentPeriods,!IsBlank(From)),From,SortOrder.Ascending)).From,hoursMonday:First(colReportPeriods).Monday},
+                With({earliest:If(IsBlank(periodFrom),hoursMonday,IsBlank(hoursMonday),periodFrom,periodFrom<hoursMonday,periodFrom,hoursMonday)},
+                 Set(varReportMinMonday,If(IsBlank(earliest),Blank(),DateAdd(earliest,1-Weekday(earliest,StartOfWeek.Monday),TimeUnit.Days)))
+                )
+               );
+               With({currentSunday:DateAdd(varReportCurrentMonday,6,TimeUnit.Days),hoursSunday:If(IsEmpty(colReportPeriods),Blank(),DateAdd(Last(colReportPeriods).Monday,6,TimeUnit.Days))},
+                With({upper:If(!IsBlank(hoursSunday) && hoursSunday>currentSunday,hoursSunday,currentSunday)},
+                 Set(varReportMaxSunday,If(IsBlank(varReportMinMonday),Blank(),DateAdd(varReportMinMonday,6,TimeUnit.Days)>upper,DateAdd(varReportMinMonday,6,TimeUnit.Days),upper))
+                )
+               );
+               If(IsBlank(varReportMinMonday),
+                Set(varReportStartMonday,Blank()); Set(varReportEndSunday,Blank()),
+                IsEmpty(colReportPeriods),
+                With({defaultMonday:If(varReportMinMonday>varReportCurrentMonday,varReportMinMonday,varReportCurrentMonday)},
+                 Set(varReportStartMonday,defaultMonday); Set(varReportEndSunday,DateAdd(defaultMonday,6,TimeUnit.Days))
+                ),
+                Set(varReportStartMonday,First(colReportPeriods).Monday);
+                Set(varReportEndSunday,DateAdd(Last(colReportPeriods).Monday,6,TimeUnit.Days))
+               );
                Set(varReportFromPickedDay,Blank()); Set(varReportUntilPickedDay,Blank());
                Reset(ddReportContractor); Reset(dpReportFrom); Reset(dpReportUntil);
                Set(varReportReady,true); Set(varReportLoadState,"Loaded")
@@ -838,6 +855,7 @@ Screens:
               Set(varReportReady,false); Set(varReportValid,false);
               Clear(colReportFacts); Clear(colReportRows); Clear(colReportColumns); Clear(colReportSelectedHours);
               Clear(colReportPeriods); Clear(colReportContractors); Clear(colReportAssignmentPeriods);
+              Set(varReportMinMonday,Blank()); Set(varReportMaxSunday,Blank()); Set(varReportCurrentMonday,Blank());
               Set(varReportStartMonday,Blank()); Set(varReportEndSunday,Blank()); Set(varReportFromPickedDay,Blank()); Set(varReportUntilPickedDay,Blank()); Reset(dpReportFrom); Reset(dpReportUntil);
               Set(varReportLoadState,"Failed"); Set(varReportMessage,"Ophalen gestopt: " & First(colReportLoadErrors).Message);
               Notify(varReportMessage,NotificationType.Error),

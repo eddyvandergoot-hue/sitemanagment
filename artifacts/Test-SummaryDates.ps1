@@ -32,7 +32,11 @@ foreach($ref in @('lblddReportStartYear','ddReportStartYear','lblddReportStartWe
 foreach($name in @('dpReportFrom','dpReportUntil')){
  $p=$new[$name]['Properties']
  if($new[$name]['Control'] -ne 'ModernDatePicker@1.0.0' -or $p['Format'] -ne '="dd-mm-yyyy"' -or $p['StartOfWeek'] -ne '=StartOfWeek.Monday' -or $p['Font'] -ne '="Inter, Arial, sans-serif"' -or $p['FontWeight'] -ne '=FontWeight.Normal' -or $p['Color'] -ne '=ColorValue("#000000")'){throw "$name settings"}
- if($p['DisplayMode'] -ne '=If(varReportBusy || !varReportReady || IsEmpty(colReportPeriods),DisplayMode.Disabled,DisplayMode.Edit)'){throw "$name DisplayMode changed"}
+ # 27-10-2026 (TP-PERIOD-01 6.1): range = varReportMinMonday..varReportMaxSunday from the loader; no range -> disabled (same condition as btnBuildReport).
+ if($p['DisplayMode'] -ne '=If(varReportBusy || !varReportReady || IsBlank(varReportMinMonday) || IsBlank(varReportMaxSunday),DisplayMode.Disabled,DisplayMode.Edit)'){throw "$name DisplayMode changed"}
+ # Fixed fallbacks only apply while the picker is disabled (no range); no Today() in the picker bounds.
+ if($p['StartDate'] -ne '=Coalesce(varReportMinMonday,Date(1900,1,1))' -or $p['EndDate'] -ne '=Coalesce(varReportMaxSunday,Date(2200,12,31))'){throw "$name StartDate/EndDate must come from varReportMinMonday/varReportMaxSunday"}
+ foreach($k in @('StartDate','EndDate','DisplayMode')){if([string]$p[$k] -match 'Today\(|colReportPeriods'){throw "$name.$k uses Today() or the hours weeks"}}
 }
 if($new['dpReportFrom']['Properties']['DefaultDate'] -ne '=Coalesce(varReportFromPickedDay,varReportStartMonday)' -or $new['dpReportUntil']['Properties']['DefaultDate'] -ne '=Coalesce(varReportUntilPickedDay,varReportEndSunday)'){throw 'DefaultDate must show the picked day, else the normalized date'}
 if($new['dpReportUntil']['Properties']['ValidationState'] -ne '=If(!IsBlank(varReportStartMonday) && !IsBlank(varReportEndSunday) && varReportEndSunday<varReportStartMonday,ValidationState.Error,ValidationState.None)'){throw 'Till-before-From ValidationState changed'}
@@ -115,6 +119,85 @@ foreach($case in @(
 if($regressionEngine.Eval('With({varReportStartMonday:If(false,Date(2000,1,1))},'+$fromText+')',$null,$regressionOptions).Value -ne ''){throw 'Blank start must give empty label'}
 foreach($n in @('lblReportFromWeek','lblReportUntilWeek')){$p=$new[$n]['Properties'];if($p['Align'] -ne '=Align.Right' -or $p['Font'] -ne '="Inter, Arial, sans-serif"' -or $p['FontWeight'] -ne '=FontWeight.Normal' -or $p['Size'] -ne '=12' -or $p['Color'] -ne '=ColorValue("#000000")'){throw "$n style"}}
 Write-Output 'PASS week labels: YYYY KWxx with ISO year of Monday+3 (2020 KW53, 2026 KW53 across New Year, 2025 KW01 starting 30-12-2024); Till-before-From still shows both weeks; right-aligned Inter/Arial 12 black.'
+
+# 27-10-2026 (TP-PERIOD-01 6.1, Eddy's decisions): selectable range and default period, computed locally in btnLoadReport.
+# min = Monday of the earliest of (earliest From in Assignment Periods, first week with hours); none -> no range.
+# max = later of (Sunday of the current week, Sunday of the last week with hours), stretched to the Sunday of the min week (all periods in the future).
+# default = first..last week with hours; without hours the current week, or the min week when that is later.
+$rangeStart=$load.IndexOf('Set(varReportCurrentMonday,DateAdd(Today()')
+$rangeEnd=$load.IndexOf('Set(varReportFromPickedDay,Blank()); Set(varReportUntilPickedDay,Blank());',[Math]::Max(0,$rangeStart))
+if($rangeStart -lt 0 -or $rangeEnd -lt 0){throw 'Range block not found in btnLoadReport'}
+$rangeBlock=$load.Substring($rangeStart,$rangeEnd-$rangeStart).Trim().TrimEnd(';')
+if($load.IndexOf('Set(varReportMinMonday,') -lt 0 -or $load.IndexOf('Set(varReportMaxSunday,') -lt 0){throw 'Loader does not set the range'}
+if(([regex]::Matches($rangeBlock,'Today\(\)')).Count -ne 2 -or !$rangeBlock.StartsWith('Set(varReportCurrentMonday,DateAdd(Today(),1-Weekday(Today(),StartOfWeek.Monday),TimeUnit.Days));')){throw 'Today() must be used only once per load, for varReportCurrentMonday'}
+if($rangeBlock -match '\b(Patch|Remove|RemoveIf|Update|UpdateIf|Collect|ClearCollect|Refresh|Filter\(\s*(Hours|''Assignment Periods''|''Project Workers''))\b'){throw 'Range block reads or writes a data source (must be local only)'}
+if($load.IndexOf($rangeBlock) -lt $load.LastIndexOf('CountRows(colReportContractors)>500')){throw 'Range is computed before all load guards'}
+# Reset of the range at load start (before the first read) and in the error block (N1: needle above stays intact, N6: current Monday cleared too).
+$rangeReset='Set(varReportMinMonday,Blank()); Set(varReportMaxSunday,Blank()); Set(varReportCurrentMonday,Blank());'
+if(([regex]::Matches($load,[regex]::Escape($rangeReset))).Count -ne 2 -or $load.IndexOf($rangeReset) -gt $load.IndexOf('IfError(Refresh(') -or $load.LastIndexOf($rangeReset) -lt $load.IndexOf('If(!IsEmpty(colReportLoadErrors),')){throw 'Range not cleared at load start and in the error block'}
+if($source -match 'varReportHasRange'){throw 'varReportHasRange must not exist (reviewer N3)'}
+# Evaluate the real block (Set enabled) with injected Today and fixture tables.
+$rangeCfg=New-Object Microsoft.PowerFx.PowerFxConfig
+[Microsoft.PowerFx.PowerFxConfigExtensions]::EnableSetFunction($rangeCfg)
+$rangeEngine=New-Object Microsoft.PowerFx.RecalcEngine($rangeCfg)
+$rangeOptions=New-Object Microsoft.PowerFx.ParserOptions;$rangeOptions.AllowsSideEffects=$true;$rangeOptions.Culture=[Globalization.CultureInfo]::GetCultureInfo('en-US')
+$rangeVars=@('varReportCurrentMonday','varReportMinMonday','varReportMaxSunday','varReportStartMonday','varReportEndSunday')
+function Get-RangeTable($field,$dates){ if($dates.Count -eq 0){return "Filter(Table({${field}:Date(2000,1,3)}),false)"}; 'Table('+(($dates|ForEach-Object {if($_ -eq 'blank'){"{${field}:Blank()}"}else{"{${field}:Date($_)}"}}) -join ',')+')' }
+$dmFx=$new['dpReportFrom']['Properties']['DisplayMode'].TrimStart('=').Replace('DisplayMode.Disabled','"Disabled"').Replace('DisplayMode.Edit','"Edit"')
+function Get-DateText($name){ $rangeEngine.Eval('If(IsBlank('+$name+'),"-",Text('+$name+',"yyyy-mm-dd"))',$null,$rangeOptions).Value }
+# today | period From dates | hours week Mondays (ascending, as colReportPeriods) | expected min | max | default start | default end | label case
+$rangeCases=@(
+ @('2026,10,27',@('2026,9,28','2026,10,5'),@('2026,10,19'),'2026-09-28','2026-11-01','2026-10-19','2026-10-25','TEST-000: periods from KW40, hours KW43, today KW44'),
+ @('2026,10,27',@('2026,9,28'),@('2026,10,19','2026,11,16'),'2026-09-28','2026-11-22','2026-10-19','2026-11-22','hours in a future week extend max'),
+ @('2026,10,27',@('2026,10,7'),@(),'2026-10-05','2026-11-01','2026-10-26','2026-11-01','periods without hours: default current week'),
+ @('2026,10,27',@('2026,5,4'),@(),'2026-05-04','2026-11-01','2026-10-26','2026-11-01','only past periods without hours: default current week'),
+ @('2026,10,27',@('2026,12,2','2027,2,1'),@(),'2026-11-30','2026-12-06','2026-11-30','2026-12-06','all periods in the future: max = Sunday of the min week, default = min week'),
+ @('2026,10,27',@(),@(),'-','-','-','-','no periods and no hours: no range'),
+ @('2026,10,27',@('blank'),@(),'-','-','-','-','only a period with blank From and no hours: no range (data error, not repaired)'),
+ @('2026,10,27',@('blank','2026,10,25'),@(),'2026-10-19','2026-11-01','2026-10-26','2026-11-01','blank From ignored; From on a Sunday -> Monday of that week'),
+ @('2026,10,27',@('2026,6,10'),@('2026,3,2'),'2026-03-02','2026-11-01','2026-03-02','2026-03-08','hours before the first period: min from hours'),
+ @('2026,10,27',@(),@('2026,10,12'),'2026-10-12','2026-11-01','2026-10-12','2026-10-18','hours without periods'),
+ @('2027,1,1',@('2026,12,1'),@(),'2026-11-30','2027-01-03','2026-12-28','2027-01-03','today 01-01-2027 (2026 KW53): max = Sunday 03-01-2027'),
+ @('2026,10,27',@('2026,9,28'),@('2026,12,28','2027,1,4'),'2026-09-28','2027-01-10','2026-12-28','2027-01-10','hours across New Year (2026 KW53 .. 2027 KW01)'),
+ @('2027,1,3',@('2027,1,4'),@(),'2027-01-04','2027-01-10','2027-01-04','2027-01-10','today Sunday of 2026 KW53, period from 2027 KW01 (future)'))
+foreach($c in $rangeCases){
+ foreach($v in $rangeVars){$rangeEngine.UpdateVariable($v,[Microsoft.PowerFx.Types.FormulaValue]::NewDateOnly([datetime]'1999-01-01'))}
+ $fx='With({colReportAssignmentPeriods:'+(Get-RangeTable 'From' $c[1])+',colReportPeriods:'+(Get-RangeTable 'Monday' $c[2])+'},'+$rangeBlock.Replace('Today()','Date('+$c[0]+')')+')'
+ $res=$rangeEngine.Eval($fx,$null,$rangeOptions)
+ if($res -is [Microsoft.PowerFx.Types.ErrorValue]){throw "Range block error ($($c[7])): $($res.ToExpression())"}
+ $got=@((Get-DateText 'varReportMinMonday'),(Get-DateText 'varReportMaxSunday'),(Get-DateText 'varReportStartMonday'),(Get-DateText 'varReportEndSunday'))
+ $exp=@($c[3],$c[4],$c[5],$c[6])
+ if(($got -join '|') -ne ($exp -join '|')){throw "Range $($c[7]): got $($got -join '|'), expected $($exp -join '|')"}
+ $hasRange=$got[0] -ne '-'
+ # Invariants: Monday/Sunday, min <= default start <= default end <= max, max >= Sunday of the current week; both bounds blank together.
+ $inv=$rangeEngine.Eval('If(IsBlank(varReportMinMonday),IsBlank(varReportMaxSunday) && IsBlank(varReportStartMonday) && IsBlank(varReportEndSunday),Weekday(varReportMinMonday,StartOfWeek.Monday)=1 && Weekday(varReportMaxSunday,StartOfWeek.Monday)=7 && Weekday(varReportStartMonday,StartOfWeek.Monday)=1 && Weekday(varReportEndSunday,StartOfWeek.Monday)=7 && varReportMinMonday<=varReportStartMonday && varReportStartMonday<=varReportEndSunday && varReportEndSunday<=varReportMaxSunday && varReportMaxSunday>=DateAdd(varReportCurrentMonday,6,TimeUnit.Days) && varReportCurrentMonday=DateAdd(Date('+$c[0]+'),1-Weekday(Date('+$c[0]+'),StartOfWeek.Monday),TimeUnit.Days))',$null,$rangeOptions)
+ if(!$inv.Value){throw "Range invariant broken: $($c[7])"}
+ # Picker DisplayMode with a loaded, idle report: enabled exactly when a range exists.
+ $dm=$rangeEngine.Eval('With({varReportBusy:false,varReportReady:true},'+$dmFx+')',$null,$rangeOptions).Value
+ if($dm -ne $(if($hasRange){'Edit'}else{'Disabled'})){throw "Picker DisplayMode $dm for: $($c[7])"}
+ Write-Output ("PASS range {0}: min {1}, max {2}, default {3}..{4}, pickers {5}." -f $c[7],$got[0],$got[1],$got[2],$got[3],$dm)
+}
+foreach($c in @(@('true','true','Disabled','busy'),@('false','false','Disabled','not loaded'))){
+ $rangeEngine.UpdateVariable('varReportMinMonday',[Microsoft.PowerFx.Types.FormulaValue]::NewDateOnly([datetime]'2026-09-28'));$rangeEngine.UpdateVariable('varReportMaxSunday',[Microsoft.PowerFx.Types.FormulaValue]::NewDateOnly([datetime]'2026-11-01'))
+ if($rangeEngine.Eval('With({varReportBusy:'+$c[0]+',varReportReady:'+$c[1]+'},'+$dmFx+')',$null,$rangeOptions).Value -ne $c[2]){throw "Picker DisplayMode while $($c[3])"}
+}
+# KW53 labels of the default period computed for today 01-01-2027.
+if($regressionEngine.Eval('With({varReportStartMonday:Date(2026,12,28)},'+$fromText+')',$null,$regressionOptions).Value -ne '2026 KW53' -or $regressionEngine.Eval('With({varReportEndSunday:Date(2027,1,3)},'+$untilText+')',$null,$regressionOptions).Value -ne '2026 KW53'){throw 'Default week across New Year not labelled 2026 KW53'}
+# Build: same "range exists" condition as the pickers; no range -> exact status text, no columns/rows, report not valid; no Today() fallback any more.
+$build=$new['btnBuildReport']['Properties']['OnSelect']
+$noRange='If(IsBlank(varReportMinMonday) || IsBlank(varReportMaxSunday),'
+if(!$build.StartsWith('=If(varReportReady && !varReportBusy && varReportProjectID=ddReportProject.Selected.ID,') -or $build.IndexOf($noRange) -lt 0 -or !$dmFx.Contains('!varReportReady || IsBlank(varReportMinMonday) || IsBlank(varReportMaxSunday),')){throw 'Build and pickers do not share the range condition'}
+$afterNoRange=$build.Substring($build.IndexOf($noRange)+$noRange.Length).TrimStart()
+if(!$afterNoRange.StartsWith('Set(varReportMessage,"Geen inzetperiodes of uren voor dit project"),')){throw 'No-range branch must only set the exact status text'}
+if($build.IndexOf($noRange) -gt $build.IndexOf('ClearCollect(') -or $build.IndexOf($noRange) -gt $build.IndexOf('Set(varReportValid,true)')){throw 'No-range check must come before any column/row build'}
+# The then-branch is only the status Set (asserted above), so everything else in the balanced If is the else-branch.
+$noRangeIf=Get-Balanced $build $noRange
+foreach($m in @('ClearCollect(colReportColumns','Set(varReportZeroFrom,','Set(varReportValid,true)')){if($noRangeIf.IndexOf($m) -lt 0){throw "No-range else-branch must contain $m"}}
+if($build -match 'Today\(' -or ([regex]::Matches($build,'Set\(varReportZeroFrom,')).Count -ne 1 -or !$build.Contains('Set(varReportZeroFrom,varReportFrom); Set(varReportZeroUntil,varReportUntil);')){throw 'Zero rows must use only the chosen report range (Today() branch removed)'}
+$statusFx=$new['lblReportStatus']['Properties']['Text'].TrimStart('=')
+if($regressionEngine.Eval('With({varReportBusy:false,varReportValid:false,varReportMessage:"Geen inzetperiodes of uren voor dit project",varReportProjectID:7,varReportHasPeriod:false},'+$statusFx+')',$null,$regressionOptions).Value -ne 'Geen inzetperiodes of uren voor dit project'){throw 'Status text for no range'}
+foreach($n in @('dpHoursWeek','dpTeamWeek')){foreach($s in $indexes.Keys){if($indexes[$s].ContainsKey($n) -and ($indexes[$s][$n]['Properties'].ContainsKey('StartDate') -or $indexes[$s][$n]['Properties'].ContainsKey('EndDate'))){throw "$n must stay unbounded"}}}
+Write-Output 'PASS picker range: StartDate/EndDate = varReportMinMonday/varReportMaxSunday (fixed fallbacks only while disabled); min/max/default per Eddy 27-10 incl. future hours, all-future periods, no periods/no hours -> disabled + "Geen inzetperiodes of uren voor dit project", 2026 KW53; Today() once per load; build shares the range condition; dpHoursWeek/dpTeamWeek unbounded.'
 
 # Layout inside conSummaryFiltersContent for several content widths.
 $names=@('lblReportProject','ddReportProject','lblReportContractor','ddReportContractor','lblReportFrom','lblReportFromWeek','dpReportFrom','lblReportUntil','lblReportUntilWeek','dpReportUntil')

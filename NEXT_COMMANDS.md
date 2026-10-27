@@ -30,7 +30,7 @@ Also decided 27-10-2026 (Eddy), not built:
 - The summary popup (above) must include a reopen notice ("Terug in team vanaf KWxx").
 - Weekly Hours: remove the selected-row blue bar (scrHours gallery Rectangle2, Visible = ThisItem.IsSelected); remove the "Trade onbekend" chip lblItemWarning from scrHours (keep the blocking red warnings); keep "Trade onbekend" only on Screen1.
 - Screen1: employer line of one card shown bold. Cause: Subtitle4.FontWeight = If(ThisItem.IsSelected, Semibold, Normal) follows the gallery's selected item, not data. Make it Normal; requires changing the AGENTS.md Subtitle4 rule and artifacts/Test-Fonts.ps1 in the UX round.
-- Hours Summary pickers (TP-PERIOD-01 6.1 FAIL): fix proposal pending Eddy's OK, see PROJECT_STATUS.md open items; changes the AGENTS.md rule "Selecteerbare datums ... komen uit beschikbare uren".
+- Hours Summary pickers (TP-PERIOD-01 6.1): built in pickerfix build (PROJECT_STATUS.md); Studio test open.
 
 ## 5. Week Report
 

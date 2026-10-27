@@ -1303,6 +1303,7 @@ Screens:
                            );
                            If(IsEmpty(colMigrationErrors),
                             With({migrationRows:Filter(colMigrationPlan,HasPeriod)},
+                             Set(varReportReady,false); Set(varReportValid,false);
                              Set(varDiagMigrationWrites,varDiagMigrationWrites+1);
                              IfError(CountRows(ClearCollect(colMigrationCreated,Patch('Assignment Periods',
                               ForAll(migrationRows As row,Defaults('Assignment Periods')),

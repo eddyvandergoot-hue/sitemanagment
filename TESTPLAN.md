@@ -144,6 +144,10 @@ Uitkomst 27-10-2026 (Eddy, mondeling gemeld). Let op: Eddy gebruikt zijn eigen s
 - Eddy 0.1-0.2: geslaagd. Migratie: geslaagd (zie TP-MIGR-01). 3.1-3.4: geslaagd. 4.1-4.4: geslaagd. 5.1-5.3: geslaagd.
 - Eddy 6.1: MISLUKT. Hours Summary: de kiezers From en Till zijn beide beperkt tot 19-10 t/m 25-10-2026 (alleen KW43); vandaag 27-10 (KW44) is niet kiesbaar; de TEST-000-periodes starten 28-9-2026, dus KW40 t/m KW44 zijn niet kiesbaar. Oorzaak gevonden (onderzoek): StartDate/EndDate van dpReportFrom/dpReportUntil in Src/scrWeeklyHours.pa.yaml komen uit colReportPeriods = ISO-weken MET opgeslagen uren (huidige AGENTS.md-regel "Selecteerbare datums en standaardperiode komen uit beschikbare uren"). Bestaand gedrag, niet veroorzaakt door de periodes-build (760cc94). Fixvoorstel wacht op Eddy's akkoord; niet gebouwd.
 - Eddy 6.2: open.
+- Nieuwe build 27-10-2026: pickerfix (PROJECT_STATUS.md, Huidige build; niet in Studio getest). Eddy herhaalt 6.1 en 6.2.
+- Verwacht 6.1 (Hours Summary op TEST-000): kiezers From en Till laten KW40 t/m KW44 toe, inclusief 27-10-2026; standaardperiode = weken met uren (KW43); From na Till geeft een foutmelding.
+- Extra stap (a): een project zonder inzetperiodes en zonder uren: kiezers uitgeschakeld, status "Geen inzetperiodes of uren voor dit project", geen tabel. Bestaat zo'n project niet, dan alleen-lezen testen op een willekeurig project met geen van beide (geen opslag op echte projecten).
+- Extra stap (b): Confirm migratie op Screen1 (TEST-000, zie TP-MIGR-01) en daarna Hours Summary openen: het rapport laadt opnieuw (vernieuwde periodes en nulrijen).
 - Status TP-PERIOD-01 blijft OPEN; niets goedgekeurd.
 
 ## TP-MIGR-01 Migratieactie (OPEN)
