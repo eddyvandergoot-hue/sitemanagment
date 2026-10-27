@@ -34,6 +34,7 @@ Also decided 27-10-2026 (Eddy), not built:
 - Screen1: employer line of one card shown bold. Cause: Subtitle4.FontWeight = If(ThisItem.IsSelected, Semibold, Normal) follows the gallery's selected item, not data. Make it Normal; requires changing the AGENTS.md Subtitle4 rule and artifacts/Test-Fonts.ps1 in the UX round.
 - Hours Summary pickers (TP-PERIOD-01 6.1): built in pickerfix build (PROJECT_STATUS.md); Studio test open.
 - Screen1 team dropdown (ddTeam) gets an extra option "Alle teams" (Eddy 27-10-2026, not built): read-only overview of all project members with a period overlapping the picked week; each card shows its team label (e.g. "Team 2"); checkboxes and Save team disabled; hint text "Kies een team om te wijzigen". Delegable: same load as now (Project Workers and Assignment Periods filtered on ProjectKey only), no extra filter on team; team grouping is done locally.
+- Guard (decided 27-10-2026, not built): a worker whose Title starts with "Test " can only be linked to project TEST-000; Save team blocks with a message.
 - Te beslissen bij de bouw (not decided by Eddy): behaviour of the Weekly Hours button/Home tile and the migration buttons while "Alle teams" is selected (Weekly Hours needs one team); keeping the dropdown under the 500-choice limit.
 
 ## 5. Week Report

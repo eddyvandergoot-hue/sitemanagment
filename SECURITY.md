@@ -19,7 +19,7 @@ Gebruikte indeling: SE:01 t/m SE:12 zoals bekend uit Microsoft Learn; de titels 
 | SE:07 Encryptie | Uitsluitend native M365-encryptie; geen eigen versleuteling in de app. | open, te bevestigen | IT bevestigt. |
 | SE:08 Hardening | Least privilege op lijsten, geen verwijderrechten, vastgelegde app-eigenaren. | open, te bevestigen | Via MS-004 en eigenaarsoverzicht. |
 | SE:09 Geheimen | Geen geheimen in de app (gebruikersverbindingen); nooit tokens in de repo. | deels | Eddy bevestigt; controle op tokens in de repo bij review. |
-| SE:10 Monitoring | Health check (MS-007, gepland; moet ook melden: Workers.Title ongelijk aan First Name + Surname, lege Trade of Employer) en vraag aan IT over de audit log. | open | MS-007 plannen; IT vragen naar audit log. |
+| SE:10 Monitoring | Health check (MS-007, gepland; moet ook melden: Workers.Title ongelijk aan First Name + Surname, lege Trade of Employer, lege Hours.Assignment-lookup op echte rijen: invullen of kolom laten vervallen, te beslissen) en vraag aan IT over de audit log. | open | MS-007 plannen; IT vragen naar audit log. |
 | SE:11 Testen | TESTPLAN.md en een permissietest met een niet-eigenaar account (TP-SEC-01, open). | deels | TP-SEC-01 uitvoeren op TEST-000. |
 | SE:12 Incidentrespons | Plan hieronder. | deels | Contactpersonen invullen; plan oefenen. |
 

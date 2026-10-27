@@ -10,9 +10,13 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-009 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-010 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-012 | 26-10-2026 | Partly done 26-10-2026 (Eddy); open: group/permissions/version cleanup (unconfirmed) |
-| MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy) |
-| MS-018 | 27-10-2026 | Open |
-| MS-019 | 27-10-2026 | Gemeld door Eddy 27-10-2026; bestaan/test te bevestigen (Eddy) |
+| MS-013 | 27-10-2026 | Done 27-10-2026 (Eddy) |
+| MS-014 | 27-10-2026 | Done 27-10-2026 (Eddy) |
+| MS-015 | 27-10-2026 | Done 27-10-2026 (Eddy) |
+| MS-016 | 27-10-2026 | Done 27-10-2026 (Eddy) |
+| MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy); extended 27-10-2026 (Worker Code) |
+| MS-018 | 27-10-2026 | Done 27-10-2026 (Eddy, verified) |
+| MS-019 | 27-10-2026 | Done 27-10-2026 (Eddy) |
 
 ---
 
@@ -111,24 +115,42 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Reason:** Workers.Title ("Worker Name") is no longer required, is hidden in the SharePoint form and is never typed by hand; the flow keeps it equal to First Name + Surname (the app shows it).
 - **Flow:** "Workers - Worker Name sync". Trigger: SharePoint "When an item is created or modified" on Workers, with trigger condition `Title <> trim(field_2 + " " + field_3)`. Action: "Update item" with Id + Title only; Title = `trim(First Name + " " + Surname)`. Trade and Active are not touched.
 - **Internal names (Workers):** First Name = field_2, Surname = field_3, Trade = field_6.
+- **Extension, Done 27-10-2026 (Eddy):** the same flow also fills Worker Code (internal field_1) = `WKR-` + ID padded to 3 digits (e.g. WKR-007) when empty. Trigger condition is now: Title mismatch OR field_1 empty. Existing empty codes are filled on the next edit of the item. The app never writes Worker Code.
 - **Done when:** a new or edited worker gets the correct Title without a loop (satisfied).
 
 ## MS-018 — Assignment Periods: From required
 
-- **Added:** 27-10-2026. **Status:** Open.
+- **Added:** 27-10-2026. **Status:** Done 27-10-2026 (Eddy, verified: From is required).
 - **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment → list Assignment Periods → Settings → column From.
 - **Reason:** prevents a period without From (known limitation: a blank From is ignored for the Hours Summary minimum and is not blocked at load; PROJECT_STATUS.md).
 - **Setting:** "Require that this column contains information" = Yes.
 - **Note:** the Studio metadata merged 26-10-2026 (DataSources.json in Site Managment_VS.msapr) already lists From as required for Assignment Periods (required: Title, ProjectKey, From), and MS-010 says "From (date only, required)". Eddy: check the list settings; if it is already Yes, close MS-018 without change.
-- **Done when:** Eddy confirms the setting (date + who).
+- **Done when:** Eddy confirms the setting (satisfied 27-10-2026).
 
 ## MS-019 — Flow: fill Employer Code
 
-- **Added:** 27-10-2026. **Status:** Gemeld door Eddy 27-10-2026; bestaan/test te bevestigen (Eddy).
+- **Added:** 27-10-2026. **Status:** Done 27-10-2026 (Eddy).
 - **Where:** Power Automate, site https://geacloud.sharepoint.com/sites/GEASiteManagment, list Employers.
 - **Reason:** Employer Code (internal name EmployerCode1) is unique but no longer required (MS-009 correction); the flow gives every employer a code.
-- **Flow:** on create/modify of an Employers item, when Employer Code is empty, "Update item" with Id + Employer Code only = `EMP-<ID>` (SharePoint item ID). Suggested trigger condition (analogous to MS-017): `empty(EmployerCode1)`, so the update does not retrigger itself. Title (Employer Name) is not touched.
-- **Done when:** a new employer without a code gets `EMP-<ID>`, no loop; Eddy confirms (date + who).
+- **Flow:** on create/modify of an Employers item, when Employer Code is empty, "Update item" with Id + Employer Code only = `EMP-` + SharePoint item ID padded to 3 digits (e.g. EMP-007). Flow name "Employers - Employer Code"; trigger condition `empty(EmployerCode1)`, so the update does not retrigger itself. Employer Code: not required, unique; Title = Employer Name. Title (Employer Name) is not touched.
+- **Done when:** a new employer without a code gets `EMP-` + 3-digit ID, no loop (satisfied 27-10-2026, Eddy).
+
+## MS-013 — Projects cleanup and new columns
+
+- **Added/Done:** 27-10-2026 (Eddy). List Projects: columns Location, Site Supervisor and Client Name deleted; Status (choice: Active / On hold / Closed), Site Managers (Person, multiple) and Country added.
+- **App impact:** none; the app (Src) does not reference Projects.Location / Site Supervisor / Client Name (grep 27-10-2026). The Studio metadata in the .msapr (26-10-2026) still lists the old columns; refresh when the admin screens use the new columns.
+
+## MS-014 — Employers: Country
+
+- **Added/Done:** 27-10-2026 (Eddy). Column Country added to Employers. No app impact yet.
+
+## MS-015 — Workers: Language and Worker Code
+
+- **Added/Done:** 27-10-2026 (Eddy). Workers: column Language (choice, default Nederlands) added; Worker Code (internal field_1) is unique, not required, filled by flow MS-017 (extension). No app impact yet.
+
+## MS-016 — TEST-001 status
+
+- **Added/Done:** 27-10-2026 (Eddy). Projects: TEST-001 Status = Closed (see MS-005 addendum).
 
 ## MS-005 addendum — TEST-001
 
