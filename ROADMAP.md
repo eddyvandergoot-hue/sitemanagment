@@ -13,7 +13,7 @@ The full phased plan is still to be added (NEXT_COMMANDS.md, "Roadmap into repo"
 | Plant 3D / Navisworks export or STEP set for the first test skid | 3D viewer (phase 6) |
 | Source of STEP files (GEA Inventor library / supplier / Plant 3D catalog) | Component library |
 | GEA Sans allowed in generated PDFs | Workpackage documents (phase 3) |
-| Whether a single Employers column holds the business code (EMP-001) | Export CSV (EmployerCode) |
+| Employer Code = own column EmployerCode1 (unique, not required, filled by MS-019); confirm it is the CSV EmployerCode source once MS-019 is confirmed | Export CSV (EmployerCode) |
 
 ## Parked
 

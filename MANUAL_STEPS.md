@@ -12,6 +12,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-012 | 26-10-2026 | Partly done 26-10-2026 (Eddy); open: group/permissions/version cleanup (unconfirmed) |
 | MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy) |
 | MS-018 | 27-10-2026 | Open |
+| MS-019 | 27-10-2026 | Gemeld door Eddy 27-10-2026; bestaan/test te bevestigen (Eddy) |
 
 ---
 
@@ -62,6 +63,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Settings:** "Require that this column contains information" = Yes; "Enforce unique values" = Yes. SharePoint requires the column to be indexed for unique enforcement and asks for / creates the index.
 - **Check first:** no existing Employer row has an empty or duplicate Employer Code (SharePoint refuses the setting otherwise).
 - **Done when:** both settings are active; report back date + who.
+- **Correction 27-10-2026 (Eddy):** Required is now **No**; Enforce unique values stays Yes. Empty codes are filled by flow MS-019. Employers.Title (display name "Employer Name") is the employer name; Employer Code is a separate column (internal name EmployerCode1). The Studio metadata merged 26-10-2026 still shows Required and Title as "Title"; it predates this change and has no app impact (the app does not read or write Employer Code), so no metadata refresh is needed now.
 
 ## MS-010 — Assignment Periods list
 
@@ -119,6 +121,14 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Setting:** "Require that this column contains information" = Yes.
 - **Note:** the Studio metadata merged 26-10-2026 (DataSources.json in Site Managment_VS.msapr) already lists From as required for Assignment Periods (required: Title, ProjectKey, From), and MS-010 says "From (date only, required)". Eddy: check the list settings; if it is already Yes, close MS-018 without change.
 - **Done when:** Eddy confirms the setting (date + who).
+
+## MS-019 — Flow: fill Employer Code
+
+- **Added:** 27-10-2026. **Status:** Gemeld door Eddy 27-10-2026; bestaan/test te bevestigen (Eddy).
+- **Where:** Power Automate, site https://geacloud.sharepoint.com/sites/GEASiteManagment, list Employers.
+- **Reason:** Employer Code (internal name EmployerCode1) is unique but no longer required (MS-009 correction); the flow gives every employer a code.
+- **Flow:** on create/modify of an Employers item, when Employer Code is empty, "Update item" with Id + Employer Code only = `EMP-<ID>` (SharePoint item ID). Suggested trigger condition (analogous to MS-017): `empty(EmployerCode1)`, so the update does not retrigger itself. Title (Employer Name) is not touched.
+- **Done when:** a new employer without a code gets `EMP-<ID>`, no loop; Eddy confirms (date + who).
 
 ## MS-005 addendum — TEST-001
 

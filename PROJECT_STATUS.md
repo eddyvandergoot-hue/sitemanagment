@@ -51,7 +51,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - MS-005 uitbreiding (3 extra testmedewerkers Test Fitter 2 / Test Welder 2 / Test Unknown 2): gedaan 26-10-2026 (Eddy: bestaan in Workers; nog niet aan TEST-000 gekoppeld, dat gebeurt in TP-PERIOD-01).
 - TEST-000 beschikbaar (MS-005) — open testgevallen met opslaan nu uitvoerbaar: TP-DISCARD-01 stap 8 (Failed), TP-REUSE-01 cross-user.
 - MS-017 (flow "Workers - Worker Name sync"): gedaan 27-10-2026 (Eddy, getest, geen lus). Workers.Title is niet meer verplicht, verborgen in het formulier en wordt door de flow = First Name + Surname gehouden, nooit getypt. Interne namen Workers: First Name = field_2, Surname = field_3, Trade = field_6.
-- SharePoint dwingt nu een verplichte, unieke Employer Code af (MS-009, Eddy 26-10-2026).
+- Employer Code: uniek, niet verplicht (MS-009, gecorrigeerd 27-10); flow MS-019 vult "EMP-<ID>" (bestaan/test te bevestigen door Eddy).
 - MS-001 (25-10-2026), MS-005 en MS-009 (26-10-2026) en MS-008 (Workers.Trade 25-10, Hours.Trade 26-10-2026) zijn gedaan.
 - De aparte controle "geen lege ProjectKey in Project Workers" is niet gemeld en blijft relevant (Save team-risico).
 
