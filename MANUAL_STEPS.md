@@ -17,7 +17,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy); extended 27-10-2026 (Worker Code) |
 | MS-018 | 27-10-2026 | Done 27-10-2026 (Eddy, verified) |
 | MS-019 | 27-10-2026 | Done 27-10-2026 (Eddy) |
-| MS-020 | 27-10-2026 | Open (Eddy) |
+| MS-020 | 27-10-2026 | Metadata merged 27-10-2026; regression build waits for Eddy's Studio check |
 | MS-021 | 27-10-2026 | Postponed to go-live |
 | MS-022 | 27-10-2026 | Done 27-10-2026 (reported by Eddy) |
 
@@ -161,10 +161,13 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-020 — Refresh data sources for the admin screens
 
-- **Added:** 27-10-2026. **Status:** Open (Eddy).
+- **Added:** 27-10-2026. **Status:** Metadata merged 27-10-2026; regression build waiting for Eddy's Studio check (then OK for the Contractors build). Four metadata points to confirm: ADMIN_PLAN.md par. 1.
 - **Where:** Power Apps Studio, the app test file. Data sources Employers, Projects, Workers.
 - **Reason:** the metadata in the .msapr (26-10-2026) lacks the new columns (Employers Contact Name/Email/Phone; Projects Street, House Number, Postal Code, City, Project Leader, Country) and still has Employer Code required. Admin build plan: ADMIN_PLAN.md (phase 0).
 - **Steps:** refresh the three data sources in Studio, then File > Save as > This computer, save the .msapp into `Incoming\` in the project folder.
+- **Progress 27-10-2026:** Eddy saved `Incoming\20261027-Site Managment.msapp` (21:39, SHA-256 5964541D62D3848E6FFC688AE8B105993463654954F0381B53D6EC74A4E441EE). That save has a different App Id (31305539-d231-4b69-8196-8a58575e5308, a copy): not taken over; repo App Id stays 88e53928-0a0b-49fe-ac52-05833b5ca1e0. Merged into the .msapr: only `msapp\References\DataSources.json` (all 6 SharePoint sources; table/dataset IDs identical; no signed URLs). Not taken: Resources.json (SAS sig), Properties.json (other App Id), Templates.json, Header/PublishInfo/Controls/AppChecker (Studio state).
+- **Src comparison:** Studio Src vs repo Src per control/property: no formula changes, no Title/column renames. Only Studio re-serialisation (property order, omitted defaults) and ModernDatePicker 1.0.0 -> 1.0.2 on dpTeamWeek/dpHoursWeek/dpReportFrom/dpReportUntil; not taken over (standing rule).
+- **Regression build (no screen changes):** `artifacts\ms020-20261027_214611\SiteManagement_MS020_20261027_214611.msapp`, 121194 bytes, SHA-256 49E0B5B93DBC84C3BA16EA8DFB19FE080ADEB174F5CDCCC409CE8592D73CF1FF. 10 active checks pass; Src byte-identical; vs the approved pickerfix build only DataSources.json and packed.json differ; App Id and connections unchanged. Not imported in Studio yet: Eddy imports and checks Project / team load, Weekly Hours, Hours Summary.
 - **Then (Claude):** merge the metadata, regression build with no screen changes, check Title display-name renames in formulas, report path + SHA-256, wait for Eddy's OK before the Contractors build.
 
 ## MS-021 — Site Supervisors permissions on Employers, Projects, Workers

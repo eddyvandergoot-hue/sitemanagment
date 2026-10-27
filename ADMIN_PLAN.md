@@ -14,12 +14,16 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 - Besluit 11 (Screen1 verbergt Closed projecten en inactieve medewerkers; On hold blijft zichtbaar; Hours Summary toont alles; admin "Show inactive" standaard uit) wijzigt goedgekeurde schermen. Voorstel, bevestigen: Closed in de Projects-build, inactieve medewerkers in de Workers-build (par. 4.5, 5.5).
 
 ## 1. Fase 0 (voor de Contractors-build)
-1. MS-020 (Eddy): gegevensbronnen Employers, Projects, Workers in Studio vernieuwen, File > Save as > This computer naar `Incoming\`. Zonder bestand geen bouw. Reden: lokale metadata (26-10) mist de nieuwe kolommen en heeft Employer Code nog verplicht (een Patch van een nieuwe contractor faalt dan client-side).
-2. Daarna (Claude): metadata in de .msapr samenvoegen (app-ID, lijst-ID's, verbindingen ongewijzigd); definitieve interne namen en typen uit DataSources.json in dit plan en in de formules vastleggen.
-3. Regressiebuild zonder schermwijzigingen: volledige testset + pack; Studio kan Title-weergavenamen hernoemen ("Project Name", "Employer Name", "Worker Name") en bestaande formules herschrijven (`project.Title`, `Sort(Projects,Title,...)`, `Employer.Value`). Vergelijk de door Studio geschreven Src met de repo-Src en leg één conventie vast.
+1. MS-020 (Eddy) - gedaan 27-10-2026: Incoming\20261027-Site Managment.msapp. Reden: lokale metadata (26-10) mist de nieuwe kolommen en heeft Employer Code nog verplicht (een Patch van een nieuwe contractor faalt dan client-side).
+2. Gedaan 27-10-2026: alleen DataSources.json in de .msapr samengevoegd (app-ID, lijst-ID's, verbindingen ongewijzigd); interne namen hieronder.
+3. Regressiebuild gebouwd (pad/SHA-256: PROJECT_STATUS.md). Studio-Src vergeleken: geen formulewijzigingen, geen hernoemde Title/kolommen; alleen herserialisatie en ModernDatePicker 1.0.2 (niet overgenomen). Conventie: de app gebruikt interne namen; Title-weergavenamen van Employers en Projects blijven "Title" (Workers: "Worker Name").
 4. Identifiercontrole: 'Project Number' heeft interne naam ProjectName (valkuil). Statische test: kale identifier `ProjectName` komt nergens voor; 'Project Name' alleen voor Title.
-5. Rapporteer pad en SHA-256 van de regressiebuild; wacht op Eddy's OK; dan pas de Contractors-build.
-- Bekende namen (metadata 26-10): Title, EmployerCode1 (Employers), ProjectName (= Project Number), Workers field_1 (Worker Code), field_2 (First Name), field_3 (Surname), field_6 (Trade). Overige interne namen en typen NIET aannemen: ze komen uit de vernieuwde metadata.
+5. Wacht op Eddy's Studio-regressiecheck (Project / team, Weekly Hours, Hours Summary); dan pas de Contractors-build.
+- Interne namen (DataSources.json 27-10-2026; weergavenaam tussen aanhalingstekens):
+  - Employers: Title; EmployerCode1 "Employer Code" (niet meer verplicht); Address; Postalcode; City; ContactPerson "Contact Name"; Phone "Contact Phone"; Email "Contact Email" (type string, format uri); Country (tekst); Active (boolean). Geen verplichte kolommen.
+  - Projects: Title; ProjectName "Project Number" (verplicht); ProjectReference; CustomerName; Status (keuze, verplicht, standaard Active); Street; House_x0020_Number "House Number"; Postal_x0020_Code "Postal Code"; City; Country (KEUZE, standaard "Netherlands"); ProjectLeader (Person, MEERVOUD/array); SiteManagers (Person, ENKEL/object); ProjectHomeSiteURL "ProjectHomeSite URL" (format uri). Location en SiteSupervisor bestaan niet meer.
+  - Workers: Title "Worker Name"; field_1 "Worker Code"; field_2 First Name; field_3 Surname; field_6 Trade (verplicht); Language (keuze, geen standaard zichtbaar in metadata); Active (boolean).
+- Te bevestigen door Eddy (metadata wijkt af van de beschrijving): (a) Employers.Email is formaat uri (lijkt Hyperlink-kolom), Eddy zei tekst; (b) Projects.Country is een keuzekolom met standaard Netherlands, Eddy zei tekst (voorvulling komt dan uit de SharePoint-standaard); (c) ProjectLeader is Person meervoudig en SiteManagers Person enkel, het omgekeerde van Eddy's beschrijving; (d) Workers.Language: geen standaard Nederlands zichtbaar in de metadata, controleren.
 
 ## 2. Gedeeld ontwerp
 ### 2.1 Layout (powerfx-ui)
@@ -67,7 +71,7 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 - "Language" op Workers is een attribuut van de medewerker (voor documenten), geen app-taal.
 
 ## 3. Contractors (scrEmployers) - bouw 1
-- Velden (zoals Eddy ze gaf): Contractor Name (Title), Contractor Code (EmployerCode1, alleen-lezen; flow MS-019 vult EMP-<ID>; nieuw: tekst "assigned automatically"; de app schrijft hem nooit), Address, Postalcode, City, Country (tekst, niet verplicht, geen voorvulling), Contact Name, Contact Email, Contact Phone (tekst), Active. Exacte interne namen en typen uit MS-020.
+- Velden (zoals Eddy ze gaf): Contractor Name (Title), Contractor Code (EmployerCode1, alleen-lezen; flow MS-019 vult EMP-<ID>; nieuw: tekst "assigned automatically"; de app schrijft hem nooit), Address, Postalcode, City, Country (tekst, niet verplicht, geen voorvulling), Contact Name, Contact Email, Contact Phone (tekst), Active. Interne namen: par. 1; punt (a) bevestigen.
 - Patch: alleen deze velden (Trim op tekst); nooit Contractor Code. Lijstsubtekst: Code | City | Inactive.
 - Validatie: naam verplicht, Trim, max 255; e-mail leeg of `IsMatch(..., Match.Email)`; telefoon leeg of tekens `[0-9 +()-]`, 6-20; tekstvelden max 255.
 - Duplicaat: BLOKKEREN op gelijke naam (Trim, hoofdletterongevoelig, eigen ID uitgezonderd): lokaal op colAdminEmployers (live) en autoritatief server `Filter(Employers, Title = varEmpSaveName)` incl. inactieve; of SharePoint `=` hoofdletterongevoelig is, in Studio testen (anders lokale Lower-vergelijking beslissend).
@@ -76,8 +80,8 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 - Build levert ook: AGENTS-regel groen Save voor beheerschermen + Test-GeaColors; Home-tegel Contractors actief; Test-AdminScreens.ps1 (par. 6).
 
 ## 4. Projects (scrProjects) - bouw 2
-- Velden: Project Name (Title), Project Number (intern ProjectName), Project Reference, Customer Name, ProjectHomeSite URL (tekstveld), Status (dropdown, SharePoint-waarden Active / On hold / Closed uit Choices, niet vertaald), Street, House Number, Postal Code, City, Country (tekst, niet verplicht; voorvullen met "Netherlands" alleen bij NIEUW project), Project Leader en Site Managers (Person, alleen-lezen weergave van DisplayName). Interne namen en typen uit MS-020.
-- Patch laat Project Leader en Site Managers weg (nooit wissen). Later people picker: `Choices(Projects.'Project Leader')` via SharePoint, ComboBox-template eenmalig door Eddy in Studio toevoegen; Patch dan met claims-record; niet in v1.
+- Velden: Project Name (Title; weergavenaam in SharePoint "Title"), Project Number (intern ProjectName), Project Reference, Customer Name, ProjectHomeSite URL (tekstveld), Status (dropdown, SharePoint-waarden Active / On hold / Closed uit Choices, niet vertaald), Street, House Number, Postal Code, City, Country (nu keuzekolom met standaard Netherlands; punt (b) bevestigen; tekst of keuze volgt de uitkomst), Project Leader en Site Managers (Person, alleen-lezen weergave van DisplayName). Interne namen: par. 1; punt (c) bevestigen.
+- Patch laat Project Leader en Site Managers weg (nooit wissen). Later people picker: `Choices(Projects.ProjectLeader)` via SharePoint, ComboBox-template eenmalig door Eddy in Studio toevoegen; Patch dan met claims-record; niet in v1.
 - Validatie: Project Name en Project Number verplicht (Trim, max 255); Status verplicht en in de geladen keuzes; URL leeg of begint met `https://`.
 - Duplicaat: BLOKKEREN op Project Number (server `Filter(Projects, 'Project Number' = varPrjSaveNumber)` (interne kolom ProjectName) + lokaal live). Geen duplicaatcontrole op Title. SharePoint dwingt uniek af (MS-022 Done) als vangnet; een afwijzing wordt als duplicaat gemeld.
 - Status naar Closed: waarschuwing als het project open periodes heeft (een delegeerbare read `Filter('Assignment Periods', ProjectKey = varPrjSaveKey)` met 500-guard); periodes worden niet automatisch gesloten.
@@ -108,7 +112,7 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 7. Rechten: zolang MS-021 uitgesteld is, kan iedere appgebruiker met lijstrechten wijzigen; pas in productie sluiten.
 
 ## 8. Open punten
-1. Exacte interne namen/typen (Contact*, Country, Street/House Number/Postal Code/City, Project Leader, Status- en Language-waarden, Title-weergavenamen): uit MS-020.
+1. Interne namen/typen staan in par. 1; open: de vier punten (a)-(d) (Contact Email-type, Projects.Country keuze, ProjectLeader/SiteManagers enkel/meervoud, Language-standaard) en de Status-/Language-waarden uit Choices.
 2. Detectie open periode per medewerker (voor de deactiveringsblokkade): Assignment Periods is alleen op ProjectKey filterbaar. Voorstel, bevestigen: eenmalige read `Filter('Project Workers', Active = true)` (Active = open periode), lokaal op Worker.Id; dit wijkt af van de AGENTS-regel "Project Workers uitsluitend op ProjectKey" en vergt een Studio-delegatietest; bij >= 500 rijen of leesfout wordt deactiveren geblokkeerd.
 3. Besluit 11 timing (Closed in Projects-build, inactief in Workers-build) en het Status/Active-veld in de cacheprojecties: bevestigen.
 4. Contractor deactiveren met actieve medewerkers: waarschuwing (voorstel) of blokkeren.
