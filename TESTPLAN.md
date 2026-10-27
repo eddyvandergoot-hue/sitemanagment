@@ -140,6 +140,12 @@ Let op: stap 3 en 4 testen de huidige (gebouwde) uitvink-regel en veranderen met
 
 Uitkomst per stap noteren met datum. Een mislukte stap: meld de melding en het resultaat in SharePoint (Assignment Periods en Project Workers).
 
+Uitkomst 27-10-2026 (Eddy, mondeling gemeld). Let op: Eddy gebruikt zijn eigen stapnummering; die kan afwijken van de tabelnummering hierboven.
+- Eddy 0.1-0.2: geslaagd. Migratie: geslaagd (zie TP-MIGR-01). 3.1-3.4: geslaagd. 4.1-4.4: geslaagd. 5.1-5.3: geslaagd.
+- Eddy 6.1: MISLUKT. Hours Summary: de kiezers From en Till zijn beide beperkt tot 19-10 t/m 25-10-2026 (alleen KW43); vandaag 27-10 (KW44) is niet kiesbaar; de TEST-000-periodes starten 28-9-2026, dus KW40 t/m KW44 zijn niet kiesbaar. Oorzaak gevonden (onderzoek): StartDate/EndDate van dpReportFrom/dpReportUntil in Src/scrWeeklyHours.pa.yaml komen uit colReportPeriods = ISO-weken MET opgeslagen uren (huidige AGENTS.md-regel "Selecteerbare datums en standaardperiode komen uit beschikbare uren"). Bestaand gedrag, niet veroorzaakt door de periodes-build (760cc94). Fixvoorstel wacht op Eddy's akkoord; niet gebouwd.
+- Eddy 6.2: open.
+- Status TP-PERIOD-01 blijft OPEN; niets goedgekeurd.
+
 ## TP-MIGR-01 Migratieactie (OPEN)
 
 Uitsluitend op TEST-000: maak eerst een toestand met een actieve Project Workers-koppeling zonder periode (anders is de knop niet zichtbaar).
@@ -152,6 +158,8 @@ Uitsluitend op TEST-000: maak eerst een toestand met een actieve Project Workers
 | 4 | Preview opnieuw na een gedeeltelijke migratie (alleen de overgebleven koppelingen) | alleen koppelingen zonder periode in de telling |
 | 5 | Na Preview: uren wijzigen (andere sessie/SharePoint), dan Confirm | geblokkeerd; opnieuw Preview nodig |
 | 6 | Confirm voor een ander project dan de Preview | geblokkeerd |
+
+Uitkomst 27-10-2026: migratie geslaagd volgens Eddy (als onderdeel van de TP-PERIOD-01-run; geen resultaten per stap gemeld). Status blijft OPEN tot per-stapuitkomsten (o.a. stap 4-6) bekend zijn.
 
 ## TP-SEC-01 Permissietest met niet-eigenaar account (OPEN)
 

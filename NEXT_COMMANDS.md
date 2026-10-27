@@ -23,6 +23,15 @@ Still to do:
 
 Decided, not built: Screen1 cards show Workers.Title (DECISIONS.md H10); inline orange card status; summary popup before Save team; migration preview popup and rename the buttons to "Eenmalige omzetting: bekijken" / "Eenmalige omzetting: uitvoeren"; uncheck meaning option B (DECISIONS.md H11) in Src, AGENTS.md rules and TESTPLAN.md.
 
+Also decided 27-10-2026 (Eddy), not built:
+- Screen1 live validation on check: an invalid card gets a red border + red reason text (e.g. "Kan niet: heeft al periode vanaf KWxx"); Save team disabled while any card is red.
+- Pickers locked while unsaved changes: show a visible text (not an OnChange Notify) telling how to unlock: Screen1 "haal vinkje weg om te ontgrendelen"; Weekly Hours: Save or Discard changes. Reason: dpTeamWeek/dpHoursWeek are DisplayMode.Disabled when dirty, so the existing OnChange Notify "Week niet gewisseld..." is practically never seen.
+- One message only: no Notify banner for validation; status line lblSelectionLoadStatus red for error, black for info; vertically centered between the bottom of the header box (conSelection) and the separator line above the worker list.
+- The summary popup (above) must include a reopen notice ("Terug in team vanaf KWxx").
+- Weekly Hours: remove the selected-row blue bar (scrHours gallery Rectangle2, Visible = ThisItem.IsSelected); remove the "Trade onbekend" chip lblItemWarning from scrHours (keep the blocking red warnings); keep "Trade onbekend" only on Screen1.
+- Screen1: employer line of one card shown bold. Cause: Subtitle4.FontWeight = If(ThisItem.IsSelected, Semibold, Normal) follows the gallery's selected item, not data. Make it Normal; requires changing the AGENTS.md Subtitle4 rule and artifacts/Test-Fonts.ps1 in the UX round.
+- Hours Summary pickers (TP-PERIOD-01 6.1 FAIL): fix proposal pending Eddy's OK, see PROJECT_STATUS.md open items; changes the AGENTS.md rule "Selecteerbare datums ... komen uit beschikbare uren".
+
 ## 5. Week Report
 
 ```bash

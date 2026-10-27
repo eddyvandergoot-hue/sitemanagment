@@ -1382,3 +1382,9 @@ Dropdownbuild:
 ## Vervangen op 27-10-2026
 
 - Gecontroleerd door Eddy (26-10-2026): Workers.Title (Worker Name) = First Name + Surname voor alle medewerkers (datacontrole, geen SharePoint-constraint).
+
+
+## Studio-bewijs (26-10-2026, opgeslagen app artifacts\Logo_download\20261026-Sitemanagment_logo.msapp)
+- Eddy importeerde de dropdown-build, uploadde het logo en sloeg op: Studio-import geslaagd, alle wijzigingen staan in de opgeslagen Src. Functioneel daarna bevestigd door Eddy (zie Huidige build).
+- App checker (Studio, 141 meldingen): 0 delegatiewaarschuwingen, 0 formulefouten. Toegankelijkheid: acc-TabIndexShouldBeDefinedForInteractiveControl 53, acc-FocusBorderShouldBeVisible 38, acc-AccessibleLabelNeeded 16, acc-ReadableScreenNameNeeded 1. Hygiëne: app-CollectingReadOnlyTable 11, app-CrossScreenEventDependencies 9, app-ForAllWithMutation 6, app-UnusedVariables 5 (varSelectionHasWorkers, varPendingLoadedWeekMonday, varHoursProjectID, varHoursProjectKey, varHoursTeam), app-WarnLiteralPredicate 1 (scrWeeklyHours.btnBuildReport.OnSelect), app-UnusedMediaResources 1 (logo vóór gebruik).
+- Studio schreef ModernDatePicker@1.0.0 om naar @1.0.2 (dpHoursWeek, dpReportFrom, dpReportUntil); onze Src zegt nog 1.0.0. De .msapr-Templates.json bevat nu modernDatePicker@1.0.2 en image@2.2.3 (40 gewone templates identiek).
