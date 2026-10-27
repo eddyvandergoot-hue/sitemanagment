@@ -11,6 +11,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-010 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-012 | 26-10-2026 | Partly done 26-10-2026 (Eddy); open: group/permissions/version cleanup (unconfirmed) |
 | MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy) |
+| MS-018 | 27-10-2026 | Open |
 
 ---
 
@@ -77,7 +78,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   | Until (internal name Till) | Date only (no time) | the app writes a Sunday; blank = open |
 
 - **Indexes:** AssignmentKey and ProjectKey. Check online first whether they exist; local metadata does not show this.
-- **Migration:** NOT a manual SharePoint step; it is an explicit per-project migration action in the app (built, Studio test open: TESTPLAN.md TP-MIGR-01). Original idea (superseded): each existing active assignment gets one period: From = Monday of its earliest Hours record, Until blank.
+- **Migration:** NOT a manual SharePoint step; it is an explicit per-project migration action in the app (built, Studio-tested on TEST-000 27-10-2026: TESTPLAN.md TP-MIGR-01). Original idea (superseded): each existing active assignment gets one period: From = Monday of its earliest Hours record, Until blank.
 - **Created as (26-10-2026, verified from the Studio metadata):** Title has display name "AssignmentKey" (internal name Title; required; indexed; NOT unique, since several periods per assignment); ProjectKey (text, required, indexed); From (date only, required); Until (internal name Till, date only, optional). The app uses the internal names. Data source "Assignment Periods" was added in Studio by Eddy and merged into the .msapr.
 - **Done when:** list, columns and indexes are in place and Eddy confirms (satisfied). Functional test on TEST-000 (MS-005): TESTPLAN.md TP-PERIOD-01.
 
@@ -109,3 +110,16 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Flow:** "Workers - Worker Name sync". Trigger: SharePoint "When an item is created or modified" on Workers, with trigger condition `Title <> trim(field_2 + " " + field_3)`. Action: "Update item" with Id + Title only; Title = `trim(First Name + " " + Surname)`. Trade and Active are not touched.
 - **Internal names (Workers):** First Name = field_2, Surname = field_3, Trade = field_6.
 - **Done when:** a new or edited worker gets the correct Title without a loop (satisfied).
+
+## MS-018 — Assignment Periods: From required
+
+- **Added:** 27-10-2026. **Status:** Open.
+- **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment → list Assignment Periods → Settings → column From.
+- **Reason:** prevents a period without From (known limitation: a blank From is ignored for the Hours Summary minimum and is not blocked at load; PROJECT_STATUS.md).
+- **Setting:** "Require that this column contains information" = Yes.
+- **Note:** the Studio metadata merged 26-10-2026 (DataSources.json in Site Managment_VS.msapr) already lists From as required for Assignment Periods (required: Title, ProjectKey, From), and MS-010 says "From (date only, required)". Eddy: check the list settings; if it is already Yes, close MS-018 without change.
+- **Done when:** Eddy confirms the setting (date + who).
+
+## MS-005 addendum — TEST-001
+
+- TEST-001 exists (Active = No), test project only (added 27-10-2026, noted by Eddy). Used read-only for the "no periods and no hours" test (TESTPLAN.md TP-PERIOD-01, 6.3). The TEST- prefix rule applies: excluded from Week Report and exports once built (AGENTS.md).

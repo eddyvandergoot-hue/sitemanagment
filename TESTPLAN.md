@@ -17,8 +17,8 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-SUM-01 | Hours Summary restyle | geslaagd | 26-10-2026 | Eddy |
 | TP-REUSE-01 | Hergebruik geladen selecties | geslaagd | 26-10-2026 | Eddy |
 | TP-SEC-01 | Permissietest met niet-eigenaar account | OPEN | - | Eddy |
-| TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | OPEN | - | Eddy |
-| TP-MIGR-01 | Migratieactie per project (Screen1) | OPEN | - | Eddy |
+| TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | PASS (6.4 uitgesteld) | 27-10-2026 | Eddy |
+| TP-MIGR-01 | Migratieactie per project (Screen1) | PASS op TEST-000; echt project open | 27-10-2026 | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -115,7 +115,7 @@ Build: home-20261026_165630 (PROJECT_STATUS.md). Geslaagd in Studio 26-10-2026 (
 | 10 | Venster >= 728 px en smal | 3 kolommen naast elkaar; smal 1 kolom met scrollen; geen overlap of afsnijden |
 | 11 | Logo op alle vier schermen | zichtbaar in de titelbalk |
 
-## TP-PERIOD-01 Inzetperiodes (OPEN)
+## TP-PERIOD-01 Inzetperiodes (PASS 27-10-2026, Eddy; 6.4 uitgesteld)
 
 Build: PROJECT_STATUS.md (Assignment periods). Uitsluitend op TEST-000 met 6 medewerkers: Test Fitter / Welder / Unknown en de "2"-varianten (MS-005). Regels: AGENTS.md, Functionele afspraken punt 3. Gebruik KW40 t/m KW46 van 2026 (of een andere reeks; noteer de weken). Eerst TP-MIGR-01 als TEST-000 nog actieve koppelingen zonder periode heeft.
 
@@ -148,9 +148,9 @@ Uitkomst 27-10-2026 (Eddy, mondeling gemeld). Let op: Eddy gebruikt zijn eigen s
 - Verwacht 6.1 (Hours Summary op TEST-000): kiezers From en Till laten KW40 t/m KW44 toe, inclusief 27-10-2026; standaardperiode = weken met uren (KW43); From na Till geeft een foutmelding.
 - Extra stap (a): een project zonder inzetperiodes en zonder uren: kiezers uitgeschakeld, status "Geen inzetperiodes of uren voor dit project", geen tabel. Bestaat zo'n project niet, dan alleen-lezen testen op een willekeurig project met geen van beide (geen opslag op echte projecten).
 - Extra stap (b): Confirm migratie op Screen1 (TEST-000, zie TP-MIGR-01) en daarna Hours Summary openen: het rapport laadt opnieuw (vernieuwde periodes en nulrijen).
-- Status TP-PERIOD-01 blijft OPEN; niets goedgekeurd.
+- Resultaat build pickerfix-20261027_132738 (Eddy, 27-10-2026, Studio): TP-PERIOD-01 volledig PASS: 6.1 a-e (kiezers From/Till laten alle weken van de periodes toe), 6.2 op ~900 px venster, 6.3 TEST-001 (project zonder periodes en uren: kiezers uitgeschakeld). Bug 6.1 gesloten. 6.4 (Confirm migratie, daarna Hours Summary ververst) uitgesteld tot de migratie van een echt project (TP-MIGR-01). Tag approved-20261027-pickerfix.
 
-## TP-MIGR-01 Migratieactie (OPEN)
+## TP-MIGR-01 Migratieactie (PASS op TEST-000 27-10-2026, Eddy; echt project open)
 
 Uitsluitend op TEST-000: maak eerst een toestand met een actieve Project Workers-koppeling zonder periode (anders is de knop niet zichtbaar).
 
@@ -163,7 +163,7 @@ Uitsluitend op TEST-000: maak eerst een toestand met een actieve Project Workers
 | 5 | Na Preview: uren wijzigen (andere sessie/SharePoint), dan Confirm | geblokkeerd; opnieuw Preview nodig |
 | 6 | Confirm voor een ander project dan de Preview | geblokkeerd |
 
-Uitkomst 27-10-2026: migratie geslaagd volgens Eddy (als onderdeel van de TP-PERIOD-01-run; geen resultaten per stap gemeld). Status blijft OPEN tot per-stapuitkomsten (o.a. stap 4-6) bekend zijn.
+Uitkomst 27-10-2026: migratie geslaagd volgens Eddy (als onderdeel van de TP-PERIOD-01-run; geen resultaten per stap gemeld). Eddy bevestigde 27-10-2026 PASS op TEST-000 (build pickerfix). Open: dezelfde migratie op een echt project, inclusief de Hours Summary-verversing na Confirm (6.4 van TP-PERIOD-01).
 
 ## TP-SEC-01 Permissietest met niet-eigenaar account (OPEN)
 
