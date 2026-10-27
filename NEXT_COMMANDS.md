@@ -7,6 +7,10 @@ Agents: subagents in .claude/agents/ are picked automatically by task; commands 
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
 
+## 1. Admin screens (plan decided 27-10-2026: ADMIN_PLAN.md, nothing built)
+
+Next: MS-020 (Eddy refreshes Employers/Projects/Workers in Studio, saves the .msapp into `Incoming\`). When the file is there: merge metadata, regression build without screen changes, check Title renames in formulas, report SHA, wait for Eddy's OK. Then the Contractors build (powerfx-logic, reviewer, powerfx-ui, verifier), Eddy's Studio test + approval, then Projects, then Workers (incl. Weekly Hours stale-cache fix). Open points: ADMIN_PLAN.md par. 8.
+
 ## 2b. ModernDatePicker 1.0.2
 
 Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 5 ook het logo op scrWeekReport.
@@ -35,6 +39,7 @@ Also decided 27-10-2026 (Eddy), not built:
 - Hours Summary pickers (TP-PERIOD-01 6.1): built in pickerfix build (PROJECT_STATUS.md); Studio test open.
 - Screen1 team dropdown (ddTeam) gets an extra option "Alle teams" (Eddy 27-10-2026, not built): read-only overview of all project members with a period overlapping the picked week; each card shows its team label (e.g. "Team 2"); checkboxes and Save team disabled; hint text "Kies een team om te wijzigen". Delegable: same load as now (Project Workers and Assignment Periods filtered on ProjectKey only), no extra filter on team; team grouping is done locally.
 - Guard (decided 27-10-2026, not built): a worker whose Title starts with "Test " can only be linked to project TEST-000; Save team blocks with a message.
+- Language and naming (decided 27-10-2026, ADMIN_PLAN.md): Dutch messages (Notify, status lines) become English; "Employer" in existing UI text becomes "Contractor"; existing screens convert their texts to translation table T (App.Formulas, varLang default "en"). Adjust AGENTS.md and the label/font tests accordingly.
 - Te beslissen bij de bouw (not decided by Eddy): behaviour of the Weekly Hours button/Home tile and the migration buttons while "Alle teams" is selected (Weekly Hours needs one team); keeping the dropdown under the 500-choice limit.
 
 ## 5. Week Report

@@ -32,9 +32,9 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - SECURITY.md aangemaakt (WAF SE-checklist); open: GitHub 2FA bevestigen, IT-vragen, MS-004/007/011 (gepland; MS-007 moet ook melden: Workers.Title ongelijk aan First Name + Surname, lege Trade of Employer, lege Hours.Assignment-lookup op echte rijen: invullen of kolom laten vervallen, te beslissen), TP-SEC-01.
 - Volgende werk (volgorde: NEXT_COMMANDS.md): UX-ronde Project / team, daarna Week Report, export, roadmap-merge.
 - TP-PERIOD-01: volledig PASS 27-10-2026 (Eddy; 6.1 a-e, 6.2 ~900 px, 6.3 TEST-001, 6.4 Friesland Campina, 15 periodes); TP-MIGR-01: PASS op TEST-000 en Friesland Campina; details: TESTPLAN.md. Bug 6.1 (Hours Summary-kiezers) gesloten; besluit: DECISIONS.md H12.
-- Verwachte regelwijziging in de UX-ronde: Subtitle4-voorwaardelijk gewicht (+ Test-Fonts.ps1).
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
 - Volgende UX-ronde Project / team (TP-PERIOD-01 goedgekeurd; besloten, niet gebouwd): Screen1-kaarten tonen Title (H10); inline oranje kaartstatus; samenvattingspopup vóór Save team; migratie-previewpopup en knoppen hernoemen naar "Eenmalige omzetting: bekijken" / "Eenmalige omzetting: uitvoeren"; optie B uitvinken (H11) in regels/tests/TESTPLAN. Aanvullend besloten 27-10 (details NEXT_COMMANDS.md 4b): live validatie met rode kaart en Save team uit; zichtbare ontgrendeltekst bij vergrendelde kiezers; één melding (statusregel rood/zwart, gecentreerd, geen Notify); heropen-melding in de popup; migratiepreview alleen in popup; statusregel vaste hoogte max 2 regels met "…"; Weekly Hours zonder blauwe selectiebalk en zonder "Trade onbekend"-chip; Subtitle4 niet meer vet bij selectie; ddTeam-optie "Alle teams" (alleen-lezen overzicht; knop-/dropdowngedrag te beslissen bij de bouw); guard: medewerker met Title die met "Test " begint alleen aan TEST-000 (Save team blokkeert).
+- Beheerschermen (Contractors, Projects, Workers): plan besloten 27-10-2026 (ADMIN_PLAN.md, DECISIONS.md H13); MS-020 open (Eddy levert vernieuwde metadata in Incoming\); niets gebouwd.
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 - Dataminimalisatie (DECISIONS.md D7): MS-012 deels gedaan (Worker Contacts bestaat, telefoons gemigreerd, Workers.Phone en Workers.Email verwijderd); open: groep Site Supervisors, unieke rechten, opschonen versiegeschiedenis (status onbekend, Eddy vragen); besluit Hours.Title = EntryKey (bij volgende Save-taak) en of bestaande rijen blijven staan.
 
@@ -42,6 +42,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Goedgekeurd in Studio (TP-LOGO-01, Eddy 26-10-2026); regel en maten: AGENTS.md; bron Assets/GEA_logo_white.svg (1130 bytes, SHA-256 5D460376D030AF075E004E50191C8BE0C8DB05C5E0A9E593F53612DA52606087, bytegelijk aan het officiële logobankbestand). Technisch gecontroleerd met artifacts/Test-Logo.ps1. Geen MS-item.
 
 ## Open MS-items (MANUAL_STEPS.md)
+- MS-020 (metadata vernieuwen): open; MS-021 (rechten Site Supervisors): uitgesteld tot go-live; MS-022 (Project Number uniek): gedaan 27-10-2026 (Eddy).
 - MS-010 (lijst Assignment Periods): gedaan 26-10-2026 (Eddy; From/Until alleen datum, weergavenaam "Until"). Migratie bestaande koppelingen = app-actie (TP-MIGR-01).
 - MS-012 (Worker Contacts): deels gedaan; open: groep Site Supervisors + unieke rechten + opschonen versiegeschiedenis Workers (Eddy bevestigen).
 - MS-013 t/m MS-016 (kolommen Projects/Employers/Workers, TEST-001 Closed) en MS-018 (From verplicht): gedaan 27-10-2026 (Eddy).

@@ -11,6 +11,8 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
 - Overschrijf of publiceer de bestaande productieapp niet automatisch.
 
 ## Platform
+- App-UI (labels, knoppen, meldingen, tegels) is Engels; documenten later Nederlands. Nieuwe schermen halen teksten uit vertaaltabel `T` (App.Formulas) via varLang (standaard "en"); bestaande schermen volgen in UX-ronde 4b. UI-term voor werkgever = "Contractor" (Employer Code = "Contractor Code"); SharePoint-lijst en interne namen blijven Employers.
+- Projects: 'Project Number' heeft interne naam ProjectName (uniek afgedwongen, MS-022).
 - Power Apps canvas (browser), SharePoint voor gegevens, Power Automate voor serververwerking/export, VS Code. Blijf bij canvas + SharePoint-lijsten; stel geen Dataverse/SQL voor. Een flow alleen voor aantoonbaar noodzakelijke verwerking.
 - Power Platform CLI 2.11.2, layout SourceCode (niet Experimental). Vaste kopie: C:\Users\vandergoot.ed\Dev\Sitemanagment\pac\tools (in gebruikers-PATH; hele map nodig). Niet de extensiekopie gebruiken.
 - Pack: `pac canvas pack --sources "." --layout SourceCode --msapp "<apart testbestand>.msapp"`. Import: make.powerapps.com, Apps, Import app, From file. Rapporteer bij iedere build exact pad en SHA-256 (Eddy controleert die vóór import).
@@ -22,7 +24,7 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
 - scrWeeklyHours ("Hours Summary"): administratieve samenvatting per week en medewerker/werkgever, met periodetotaal. Interne schermnamen en verwijzingen blijven.
 - Bronnen: Projects, Employers, Workers, 'Project Workers', Hours; SharePoint-site https://geacloud.sharepoint.com/sites/GEASiteManagment. Testbuilds gebruiken dezelfde site en lijst-ID's; wijzig of vervang verbindingen niet. Een testapp schrijft bij expliciet opslaan naar dezelfde gegevens.
 - Behoud Screen1, scrHours, bestaande verbindingen en werkende ureninvoer; wijzig ander onderdeel alleen indien noodzakelijk en licht dit toe.
-- Latere onderdelen (nog niet gebouwd): beheerschermen, WorkPackages/planning/jobcards, foto's en bijlagen, documentgeneratie en consent agreements.
+- Latere onderdelen (nog niet gebouwd): beheerschermen (plan: ADMIN_PLAN.md), WorkPackages/planning/jobcards, foto's en bijlagen, documentgeneratie en consent agreements.
 
 ## Functionele afspraken
 1. Workers, Employers en Projects zijn centrale lijsten. Project Workers koppelt een bestaande medewerker aan project en team; medewerkers worden niet opnieuw ingevoerd.
@@ -135,7 +137,7 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
 - Een geslaagde pack, syntaxiscontrole of lokale test bewijst geen Studio-import, binding, volledigheid of functioneel resultaat; zet zulke acceptatiecriteria nooit op geslaagd en claim geen tests die je niet uitvoerde.
 - Benodigde SharePoint-/Power Automate-wijzigingen voer je niet zelf uit: leg ze vast in MANUAL_STEPS.md als MS-xxx (ID, datum, reden, exacte namen/typen, status) en noem open MS-items in je antwoord.
 - Sessie wordt tussen opdrachten gewist: leg alles voor de volgende opdracht vast in de projectdocumenten. Eigendom: AGENTS = geldende regels; PROJECT_STATUS = actuele status en buildpad (einde van iedere opdracht bijwerken; onderscheid geïmplementeerd / technisch gecontroleerd / functioneel getest).
-- Communiceer in het Nederlands; houd handmatige stappen kort en concreet.
+- Communiceer in chat en projectdocumenten met Eddy in het Nederlands (staat los van de Engelse app-taal); houd handmatige stappen kort en concreet.
 
 ## Agents (.claude/agents/, overzicht in README.md)
 - Datalogica (laden, Save, guards, filters, delegatie, sleutels, berekeningen, exportinhoud) → powerfx-logic. Presentatie (kleuren, fonts, posities, labels, tabellen, footer) → powerfx-ui. Tests en pack → verifier. Logicawijzigingen: eerst reviewer, dan pas pack. Documentatie, status, MS-items → docs-keeper.

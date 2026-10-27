@@ -17,6 +17,9 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy); extended 27-10-2026 (Worker Code) |
 | MS-018 | 27-10-2026 | Done 27-10-2026 (Eddy, verified) |
 | MS-019 | 27-10-2026 | Done 27-10-2026 (Eddy) |
+| MS-020 | 27-10-2026 | Open (Eddy) |
+| MS-021 | 27-10-2026 | Postponed to go-live |
+| MS-022 | 27-10-2026 | Done 27-10-2026 (reported by Eddy) |
 
 ---
 
@@ -155,3 +158,22 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 ## MS-005 addendum — TEST-001
 
 - TEST-001 exists (Active = No), test project only (added 27-10-2026, noted by Eddy). Used read-only for the "no periods and no hours" test (TESTPLAN.md TP-PERIOD-01, 6.3). The TEST- prefix rule applies: excluded from Week Report and exports once built (AGENTS.md).
+
+## MS-020 — Refresh data sources for the admin screens
+
+- **Added:** 27-10-2026. **Status:** Open (Eddy).
+- **Where:** Power Apps Studio, the app test file. Data sources Employers, Projects, Workers.
+- **Reason:** the metadata in the .msapr (26-10-2026) lacks the new columns (Employers Contact Name/Email/Phone; Projects Street, House Number, Postal Code, City, Project Leader, Country) and still has Employer Code required. Admin build plan: ADMIN_PLAN.md (phase 0).
+- **Steps:** refresh the three data sources in Studio, then File > Save as > This computer, save the .msapp into `Incoming\` in the project folder.
+- **Then (Claude):** merge the metadata, regression build with no screen changes, check Title display-name renames in formulas, report path + SHA-256, wait for Eddy's OK before the Contractors build.
+
+## MS-021 — Site Supervisors permissions on Employers, Projects, Workers
+
+- **Added:** 27-10-2026. **Status:** Postponed to go-live (test phase: Eddy is the only user).
+- **Where:** https://geacloud.sharepoint.com/sites/GEASiteManagment, lists Employers, Projects, Workers.
+- **Reason:** the admin screens write to these lists. Group "Site Supervisors" (MS-012) gets Edit on the three lists.
+- **Note:** when adding members, uncheck "Send an email invitation".
+
+## MS-022 — Projects: Project Number unique
+
+- **Added/Done:** 27-10-2026 (reported by Eddy). Projects.'Project Number' (internal name ProjectName): Enforce unique values = Yes. Backstop for the duplicate block on the Projects screen (ADMIN_PLAN.md).
