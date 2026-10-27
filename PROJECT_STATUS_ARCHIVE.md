@@ -1378,3 +1378,7 @@ Dropdownbuild:
 - Was Huidige build: "Geen openstaande testbuild; de goedgekeurde baseline is de Home-build. De Assignment Periods-taak is in uitvoering (nog geen build); in Studio is de gegevensbron 'Assignment Periods' toegevoegd (Studio-bestand in Incoming/, niet gecommit)."
 - Was MS-010: "lijst gedaan 26-10-2026 (Eddy); open: besluit Eddy over weergavenaam 'Untill' naar 'Until'; migratie vervangen door een expliciete migratieactie per project in de app (in bouw)."
 - Was MS-012/D7: "MS-012 open (niet urgent; open: Workers.Email controleren/verwijderen); Monitor-controle of Workers-rijen incl. kolommen Phone/Email naar de client gaan."
+
+## Vervangen op 27-10-2026
+
+- Gecontroleerd door Eddy (26-10-2026): Workers.Title (Worker Name) = First Name + Surname voor alle medewerkers (datacontrole, geen SharePoint-constraint).

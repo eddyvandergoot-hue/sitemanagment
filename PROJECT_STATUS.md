@@ -1,4 +1,4 @@
-# Projectstatus (huidige stand, 26-10-2026)
+# Projectstatus (huidige stand, 27-10-2026)
 
 Geschiedenis en eerdere builds: PROJECT_STATUS_ARCHIVE.md (niet lezen tenzij gevraagd). Volgorde van open punten: NEXT_COMMANDS.md. Open beslissingen: ROADMAP.md. Handmatige stappen: MANUAL_STEPS.md. "Gebouwd" = aantoonbaar in Src; dat zegt niets over Studio-import of functionele test.
 
@@ -31,9 +31,10 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Opslagsnelheid Save week / Save team niet expliciet bevestigd (laden is door Eddy getest: snel, geen fouten).
 - Jaargrens/week 53 in Hours Summary (periode/rapport over de jaarwisseling) alleen lokaal getest; het Weekly Hours-weeklabel is wel bevestigd in Studio (zie Huidige build); natuurlijk testmoment ISO-week 53 van 2026 (28-12-2026 t/m 03-01-2027). Geen testuren in gedeelde lijsten zetten.
 - Open punt: komen medewerkers met periodetotaal 0 in de CSV-export voor?
-- SECURITY.md aangemaakt (WAF SE-checklist); open: GitHub 2FA bevestigen, IT-vragen, MS-004/007/011 (gepland), TP-SEC-01.
+- SECURITY.md aangemaakt (WAF SE-checklist); open: GitHub 2FA bevestigen, IT-vragen, MS-004/007/011 (gepland; MS-007 moet ook melden: Workers.Title ongelijk aan First Name + Surname, lege Trade of Employer), TP-SEC-01.
 - Volgende werk (volgorde: NEXT_COMMANDS.md): Assignment periods (gebouwd, wacht op Studio-test TP-PERIOD-01 en TP-MIGR-01, open), daarna Week Report, export, roadmap-merge.
 - Uitsluiting van TEST-projecten/TEST Employer in Week Report, Hours Summary-export en health check: gepland bij de Week Report-taak, niet geïmplementeerd (regel in AGENTS.md).
+- Volgende UX-ronde Project / team (na goedkeuring TP-PERIOD-01; besloten, niet gebouwd): Screen1-kaarten tonen Title (H10); inline oranje kaartstatus; samenvattingspopup vóór Save team; migratie-previewpopup en knoppen hernoemen naar "Eenmalige omzetting: bekijken" / "Eenmalige omzetting: uitvoeren"; optie B uitvinken (H11) in regels/tests/TESTPLAN.
 - Export (PDF + CSV, generieke flow): niet gebouwd; spec in AGENTS.md.
 - Dataminimalisatie (DECISIONS.md D7): MS-012 deels gedaan (Worker Contacts bestaat, telefoons gemigreerd, Workers.Phone en Workers.Email verwijderd); open: groep Site Supervisors, unieke rechten, opschonen versiegeschiedenis (status onbekend, Eddy vragen); besluit Hours.Title = EntryKey (bij volgende Save-taak) en of bestaande rijen blijven staan.
 
@@ -46,7 +47,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Open testgevallen: TP-PERIOD-01, TP-MIGR-01 (TESTPLAN.md).
 - MS-005 uitbreiding (3 extra testmedewerkers Test Fitter 2 / Test Welder 2 / Test Unknown 2): gedaan 26-10-2026 (Eddy: bestaan in Workers; nog niet aan TEST-000 gekoppeld, dat gebeurt in TP-PERIOD-01).
 - TEST-000 beschikbaar (MS-005) — open testgevallen met opslaan nu uitvoerbaar: TP-DISCARD-01 stap 8 (Failed), TP-REUSE-01 cross-user.
-- Gecontroleerd door Eddy (26-10-2026): Workers.Title (Worker Name) = First Name + Surname voor alle medewerkers (datacontrole, geen SharePoint-constraint).
+- MS-017 (flow "Workers - Worker Name sync"): gedaan 27-10-2026 (Eddy, getest, geen lus). Workers.Title is niet meer verplicht, verborgen in het formulier en wordt door de flow = First Name + Surname gehouden, nooit getypt. Interne namen Workers: First Name = field_2, Surname = field_3, Trade = field_6.
 - SharePoint dwingt nu een verplichte, unieke Employer Code af (MS-009, Eddy 26-10-2026).
 - MS-001 (25-10-2026), MS-005 en MS-009 (26-10-2026) en MS-008 (Workers.Trade 25-10, Hours.Trade 26-10-2026) zijn gedaan.
 - De aparte controle "geen lege ProjectKey in Project Workers" is niet gemeld en blijft relevant (Save team-risico).

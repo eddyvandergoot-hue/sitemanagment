@@ -119,6 +119,8 @@ Build: home-20261026_165630 (PROJECT_STATUS.md). Geslaagd in Studio 26-10-2026 (
 
 Build: PROJECT_STATUS.md (Assignment periods). Uitsluitend op TEST-000 met 6 medewerkers: Test Fitter / Welder / Unknown en de "2"-varianten (MS-005). Regels: AGENTS.md, Functionele afspraken punt 3. Gebruik KW40 t/m KW46 van 2026 (of een andere reeks; noteer de weken). Eerst TP-MIGR-01 als TEST-000 nog actieve koppelingen zonder periode heeft.
 
+Let op: stap 3 en 4 testen de huidige (gebouwde) uitvink-regel en veranderen met optie B (DECISIONS.md H11).
+
 | # | Stap | Verwacht |
 |---|---|---|
 | 1 | Screen1, TEST-000, team 1, week KW40; vink alle 6 aan; Save team | opgeslagen; per medewerker één open periode, From = maandag KW40 |

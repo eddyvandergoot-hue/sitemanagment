@@ -19,6 +19,10 @@ Still to do:
 - Check online the indexes on the new list's AssignmentKey/ProjectKey (MS-010).
 - Save week: Hours.Title = EntryKey (nieuwe/bijgewerkte rijen; DECISIONS.md D7), beide table-Patches en de Save-regressietests die Title vastleggen (not part of this build).
 
+## 4b. Project / team UX round (after TP-PERIOD-01 is approved)
+
+Decided, not built: Screen1 cards show Workers.Title (DECISIONS.md H10); inline orange card status; summary popup before Save team; migration preview popup and rename the buttons to "Eenmalige omzetting: bekijken" / "Eenmalige omzetting: uitvoeren"; uncheck meaning option B (DECISIONS.md H11) in Src, AGENTS.md rules and TESTPLAN.md.
+
 ## 5. Week Report
 
 ```bash

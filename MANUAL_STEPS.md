@@ -10,6 +10,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-009 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-010 | 26-10-2026 | Done 26-10-2026 (Eddy) |
 | MS-012 | 26-10-2026 | Partly done 26-10-2026 (Eddy); open: group/permissions/version cleanup (unconfirmed) |
+| MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy) |
 
 ---
 
@@ -99,3 +100,12 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Workers.Email:** removed by Eddy (26-10-2026); not moved to Worker Contacts.
 - **Version history:** Workers version history still contains the phone numbers. Decide (Eddy) whether to clean old versions.
 - **Done when:** list, columns, unique permissions and group "Site Supervisors" are in place, numbers are migrated and Workers.Phone is removed (and the Workers.Email decision is made); Eddy confirms; report back date + who. Also check in Studio Monitor whether Workers rows (incl. Phone/Email columns) are transferred to the client (SECURITY.md open points).
+
+## MS-017 — Flow "Workers - Worker Name sync"
+
+- **Added:** 27-10-2026. **Status:** Done 27-10-2026 (Eddy). Tested OK, no loop.
+- **Where:** Power Automate, site https://geacloud.sharepoint.com/sites/GEASiteManagment, list Workers.
+- **Reason:** Workers.Title ("Worker Name") is no longer required, is hidden in the SharePoint form and is never typed by hand; the flow keeps it equal to First Name + Surname (the app shows it).
+- **Flow:** "Workers - Worker Name sync". Trigger: SharePoint "When an item is created or modified" on Workers, with trigger condition `Title <> trim(field_2 + " " + field_3)`. Action: "Update item" with Id + Title only; Title = `trim(First Name + " " + Surname)`. Trade and Active are not touched.
+- **Internal names (Workers):** First Name = field_2, Surname = field_3, Trade = field_6.
+- **Done when:** a new or edited worker gets the correct Title without a loop (satisfied).
