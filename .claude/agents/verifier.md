@@ -15,6 +15,8 @@ Active test suite (artifacts/, run from the repo root):
 - Test-FooterRow -GeometryOnly — footer row and total row geometry, all screens
 - Test-Fonts — Inter/Arial and weight roles
 - Test-GeaColors — GEA palette, button roles, no old literals
+- Test-AdminScreens — admin screens (scrContractors): guards, loaders, no Remove, 500 guards
+- Test-Logo — logo geometry, order, official SVG hash
 - Measure-FontFit -InterDir <dir> [-ArialDir <dir>] — text fit; font files are outside the repo, so report SKIPPED if no font folder is given
 Other artifacts/*.ps1 (Test-Performance, Test-PerformanceFix, Test-ReadExisting, Test-SummaryFields, Test-NavigationLayout, Verify-PerformancePackage, Apply-*/Repair-*/Optimize-* helpers) are historical or modify files: never run them unless the task names them.
 

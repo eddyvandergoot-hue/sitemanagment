@@ -7,9 +7,9 @@ Agents: subagents in .claude/agents/ are picked automatically by task; commands 
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
 
-## 1. Admin screens (plan decided 27-10-2026: ADMIN_PLAN.md, nothing built)
+## 1. Admin screens (plan decided 27-10-2026: ADMIN_PLAN.md; Contractors built, Studio test open)
 
-Next: MS-020 (Eddy refreshes Employers/Projects/Workers in Studio, saves the .msapp into `Incoming\`). When the file is there: merge metadata, regression build without screen changes, check Title renames in formulas, report SHA, wait for Eddy's OK. Then the Contractors build (powerfx-logic, reviewer, powerfx-ui, verifier), Eddy's Studio test + approval, then Projects, then Workers (incl. Weekly Hours stale-cache fix). Open points: ADMIN_PLAN.md par. 8.
+Next: Eddy's Studio test of the Contractors build (TESTPLAN.md TP-CONTRACTORS-01 and TP-WH-CLEAN-01; build: PROJECT_STATUS.md). MS-020 is done (28-10-2026). After approval: Projects build (powerfx-logic, reviewer, powerfx-ui, verifier), then Workers (incl. Weekly Hours stale-cache fix). Open points: ADMIN_PLAN.md par. 8 and 9.
 
 ## 2b. ModernDatePicker 1.0.2
 
@@ -34,7 +34,6 @@ Also decided 27-10-2026 (Eddy), not built:
 - Migration preview result is shown ONLY in the framed popup on Screen1: no Notify banner and no text in lblSelectionLoadStatus.
 - lblSelectionLoadStatus: fixed height, at most 2 lines, overflow truncated with "…"; never overlaps the header box (conSelection) or the worker list (Gallery1). Applies together with the one-message rule above.
 - The summary popup (above) must include a reopen notice ("Terug in team vanaf KWxx").
-- Weekly Hours: remove the selected-row blue bar (scrHours gallery Rectangle2, Visible = ThisItem.IsSelected); remove the "Trade onbekend" chip lblItemWarning from scrHours (keep the blocking red warnings); keep "Trade onbekend" only on Screen1.
 - Screen1: employer line of one card shown bold. Cause: Subtitle4.FontWeight = If(ThisItem.IsSelected, Semibold, Normal) follows the gallery's selected item, not data. Make it Normal; requires changing the AGENTS.md Subtitle4 rule and artifacts/Test-Fonts.ps1 in the UX round.
 - Hours Summary pickers (TP-PERIOD-01 6.1): built in pickerfix build (PROJECT_STATUS.md); Studio test open.
 - Screen1 team dropdown (ddTeam) gets an extra option "Alle teams" (Eddy 27-10-2026, not built): read-only overview of all project members with a period overlapping the picked week; each card shows its team label (e.g. "Team 2"); checkboxes and Save team disabled; hint text "Kies een team om te wijzigen". Delegable: same load as now (Project Workers and Assignment Periods filtered on ProjectKey only), no extra filter on team; team grouping is done locally.

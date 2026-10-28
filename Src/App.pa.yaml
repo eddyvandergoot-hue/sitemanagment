@@ -8,6 +8,60 @@
 # ************************************************************************************************
 App:
   Properties:
-    OnStart: =Set(varSaving, false); Set(varWeekSaving, false)
+    OnStart: =Set(varSaving, false); Set(varWeekSaving, false); Set(varLang, "en")
     StartScreen: =scrHome
+    Formulas: |-
+      =LangNl = Coalesce(varLang,"en")="nl";
+      T = {
+        empTitle: {en: "Contractors", nl: ""},
+        empHome: {en: "Home", nl: ""},
+        empNew: {en: "New", nl: ""},
+        empRefresh: {en: "Refresh", nl: ""},
+        empDiscard: {en: "Discard changes", nl: ""},
+        empSave: {en: "Save", nl: ""},
+        empSearchHint: {en: "Search contractors", nl: ""},
+        empShowInactive: {en: "Show inactive", nl: ""},
+        empInactive: {en: "Inactive", nl: ""},
+        empFieldName: {en: "Contractor Name", nl: ""},
+        empFieldCode: {en: "Contractor Code (automatic)", nl: ""},
+        empCodeAuto: {en: "assigned automatically", nl: ""},
+        empFieldAddress: {en: "Address", nl: ""},
+        empFieldPostalcode: {en: "Postalcode", nl: ""},
+        empFieldCity: {en: "City", nl: ""},
+        empFieldCountry: {en: "Country", nl: ""},
+        empFieldContactName: {en: "Contact Name", nl: ""},
+        empFieldContactEmail: {en: "Contact Email", nl: ""},
+        empFieldContactPhone: {en: "Contact Phone", nl: ""},
+        empFieldActive: {en: "Active", nl: ""},
+        empMsgLoading: {en: "Loading contractors…", nl: ""},
+        empMsgLoaded: {en: "{0} contractors loaded. Select a contractor in the list or click New.", nl: ""},
+        empMsgLoadFailed: {en: "Loading failed: the list is read-only and saving is blocked. Check the connection and click Refresh.", nl: ""},
+        empErrLoadEmployers: {en: "Contractors could not be read from SharePoint:", nl: ""},
+        empErrLoadWorkers: {en: "Workers could not be read from SharePoint:", nl: ""},
+        empErrLimitEmployers: {en: "500 or more contractors loaded; the list may be incomplete. Saving is blocked; check the list in SharePoint.", nl: ""},
+        empErrLimitWorkers: {en: "500 or more workers loaded; the active-worker check may be incomplete. Saving is blocked; check the list in SharePoint.", nl: ""},
+        empMsgReloadBlocked: {en: "Not reloaded: there are unsaved changes. Save or discard them first.", nl: ""},
+        empMsgActionBlocked: {en: "Not possible now: loading or saving is in progress, or there are unsaved changes (save or discard them first).", nl: ""},
+        empMsgNew: {en: "New contractor: fill in the form and click Save. The Contractor Code is assigned automatically.", nl: ""},
+        empMsgDiscarded: {en: "Changes discarded.", nl: ""},
+        empMsgSaved: {en: "Saved and verified in SharePoint.", nl: ""},
+        empMsgSavedRename: {en: "Saved and verified in SharePoint. The new name is shown wherever this contractor is used, including past hours.", nl: ""},
+        empMsgNotSaved: {en: "Not saved; nothing was written to SharePoint. Fix the points listed in the form.", nl: ""},
+        empMsgSaveFailed: {en: "Save not confirmed. Check this contractor in SharePoint (Modified / version history), then click Discard changes to reload. Saving is blocked.", nl: ""},
+        empMsgSaveFailedNew: {en: "Not certain whether the new contractor was created. Click Discard changes to reload, then search by name before trying again. Saving is blocked.", nl: ""},
+        empErrNameRequired: {en: "Contractor Name is required.", nl: ""},
+        empErrTooLong: {en: "{0} is longer than 255 characters.", nl: ""},
+        empErrEmail: {en: "Contact Email is not a valid email address.", nl: ""},
+        empErrPhone: {en: "Contact Phone may only contain digits, spaces and + ( ) - (6 to 20 characters).", nl: ""},
+        empErrDuplicate: {en: "A contractor with this name already exists (active or inactive). Use another name or edit the existing contractor.", nl: ""},
+        empErrDupRead: {en: "The duplicate-name check could not be completed. Nothing was saved; try again or click Refresh.", nl: ""},
+        empErrDupLimit: {en: "The duplicate-name check returned 500 or more rows. Nothing was saved; check the list in SharePoint.", nl: ""},
+        empErrPreRead: {en: "This contractor could not be read from SharePoint. Nothing was saved; try again or click Refresh.", nl: ""},
+        empErrNotFound: {en: "This contractor was not found in SharePoint. Nothing was saved; discard your changes and click Refresh.", nl: ""},
+        empErrConflict: {en: "This contractor was changed in SharePoint after loading. Nothing was saved; discard your changes and click Refresh.", nl: ""},
+        empErrPatch: {en: "SharePoint did not accept the save.", nl: ""},
+        empErrVerify: {en: "The saved values could not be confirmed by reading them back from SharePoint.", nl: ""},
+        empWarnActiveWorkers: {en: "Warning: {0} active worker(s) still have this contractor. Deactivating does not change those workers or their hours.", nl: ""},
+        empWarnWorkersRefresh: {en: "Workers could not be refreshed; open Project / team and click Refresh to see the new name.", nl: ""}
+      };
     Theme: =PowerAppsTheme

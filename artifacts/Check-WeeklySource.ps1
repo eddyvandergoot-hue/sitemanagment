@@ -107,6 +107,8 @@ function Check-Control($entry,[bool]$autoLayoutChild=$false) {
 foreach($entry in $yaml['Screens']['scrWeeklyHours']['Children']) { Check-Control $entry }
 $homeYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrHome.pa.yaml')))
 foreach($entry in $homeYaml['Screens']['scrHome']['Children']) { Check-Control $entry }
+$contractorsYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrContractors.pa.yaml')))
+foreach($entry in $contractorsYaml['Screens']['scrContractors']['Children']) { Check-Control $entry }
 Write-Output "Structuur en bestaande templates: $script:controlCount controls gecontroleerd; rijlimiet 500 en errorhandling bevestigd."
 # 26-10-2026: every Icon.<Name> in Src must exist in the Classic/Icon 2.5.0 template enum of the .msapr (read-only).
 $iconTemplate = $templates | Where-Object { $_.Name -eq 'icon' -and $_.Version -eq '2.5.0' }

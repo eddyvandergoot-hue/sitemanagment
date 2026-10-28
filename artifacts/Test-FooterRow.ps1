@@ -36,7 +36,8 @@ if($metric.Y -ne 16 -or $metric.Height -ne 40 -or $metric.Width -ne 12){throw 'S
 $configs=@(
  @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnHomeScreen1','btnGotoHours','btnGotoHoursSummary');Actions=@('btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam')},
  @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
- @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnHomeSummary','btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')}
+ @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnHomeSummary','btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')},
+ @{Screen='scrContractors';Bar='navEmp';Row='conEmpButtonRow';Nav=@('btnEmpHome');Actions=@('btnEmpNew','btnEmpRefresh','btnEmpDiscard','btnEmpSave')}
 )
 foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){
  foreach($cfg in $configs){
@@ -58,7 +59,7 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   # 26-10-2026 (powerfx-logic): Home has its own guard, identical in DisplayMode and OnSelect (If(<guard>,Navigate(scrHome))); the guard values are checked in Test-SaveRegression.ps1.
   $homeBtn=$cfg.Nav[0];$homeDm=[string]$index[$homeBtn]['Properties']['DisplayMode'];$homeOs=[string]$index[$homeBtn]['Properties']['OnSelect']
   $homeGuardOk=$homeDm.StartsWith('=If(') -and $homeDm.EndsWith(',DisplayMode.Edit,DisplayMode.Disabled)') -and $homeOs -ceq ('=If('+$homeDm.Substring(4,$homeDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)+',Navigate(scrHome))')
-  if($children[0] -ne $homeBtn -or !$homeGuardOk -or $index[$homeBtn]['Properties']['Text'] -ne '="Home"' -or $rects[$homeBtn].X -ne 40 -or $rects[$cfg.Nav[1]].X-($rects[$homeBtn].X+$rects[$homeBtn].Width) -ne 12){throw "Home button must be first (X=40, 12 px before next nav button) and navigate to scrHome behind the same guard in DisplayMode and OnSelect: $($cfg.Screen)"}
+  $homeText=if($cfg.Screen -eq 'scrContractors'){'=If(LangNl && !IsBlank(T.empHome.nl),T.empHome.nl,T.empHome.en)'}else{'="Home"'}; $homeGap=if($cfg.Nav.Count -gt 1){$rects[$cfg.Nav[1]].X-($rects[$homeBtn].X+$rects[$homeBtn].Width) -ne 12}else{$false}; if($children[0] -ne $homeBtn -or !$homeGuardOk -or $index[$homeBtn]['Properties']['Text'] -ne $homeText -or $rects[$homeBtn].X -ne 40 -or $homeGap){throw "Home button must be first (X=40, 12 px before next nav button) and navigate to scrHome behind the same guard in DisplayMode and OnSelect: $($cfg.Screen)"}
   if($cfg.Screen -eq 'Screen1'){
    foreach($name in @('ddTeam','ddProject','lblTeamWeek','dpTeamWeek','lblProject','lblTeam')){Publish-Rect $name @{X=0;Y=0;Width=0;Height=0}}
    foreach($name in @('conSelection','lblProject','lblTeam','ddProject','ddTeam','lblTeamWeek','dpTeamWeek','lblTeamWeekKW','lblSelectionLoadStatus','Label2','Gallery1')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
@@ -76,7 +77,13 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   }elseif($cfg.Screen -eq 'scrHours'){
    foreach($name in @('dpHoursWeek','lblWeekLoadStatus','galHours','lblHeaderMon')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    if($rects.galHours.Y+$rects.galHours.Height -gt $bar.Y-12 -or $rects.lblHeaderMon.Y+$rects.lblHeaderMon.Height -gt $rects.galHours.Y){throw 'Hours content behind footer'}
-  }else{
+  }elseif($cfg.Screen -eq 'scrContractors'){
+   foreach($name in @('lblEmpTitle','lblEmpStatus')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
+   Publish-Rect 'navEmp' $bar
+   $body=Measure-Rect 'conEmpBody' $index['conEmpBody']['Properties'] $screen
+   if($body.Y -lt $rects.lblEmpStatus.Y+$rects.lblEmpStatus.Height -or $body.Y+$body.Height -gt $bar.Y-12){throw 'Contractors body behind footer or status'}
+   if($rects.lblEmpStatus.Height -ne 34){throw 'Status line must be 34 px'}
+  }elseif($cfg.Screen -eq 'scrWeeklyHours'){
    # Worst-case viewport height: larger selector content reaches the existing viewport cap.
    Publish-Rect 'conSummaryFiltersContent' @{X=0;Y=0;Width=512;Height=1000}
    # 22-10-2026: floating grand total replaced by a Total row directly under the rows (outside the gallery, above the footer).

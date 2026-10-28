@@ -5,7 +5,7 @@ function Flat-Children($entries){foreach($e in $entries){$e;Flat-Children $e[@($
 $svgText=[IO.File]::ReadAllText((Join-Path $projectRoot 'Assets\GEA_logo_white.svg'))
 if($svgText -notmatch 'viewBox="0 0 ([0-9.]+) ([0-9.]+)"'){throw 'SVG viewBox not found'}
 $svgAspect=[double]::Parse($Matches[1],[Globalization.CultureInfo]::InvariantCulture)/[double]::Parse($Matches[2],[Globalization.CultureInfo]::InvariantCulture)
-$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'))
+$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'),@('scrContractors','lblEmpTitle','imgLogoContractors'))
 foreach($c in $cfg){
  $screen,$title,$logo=$c
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))

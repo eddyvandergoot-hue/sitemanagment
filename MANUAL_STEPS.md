@@ -17,7 +17,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-017 | 27-10-2026 | Done 27-10-2026 (Eddy); extended 27-10-2026 (Worker Code) |
 | MS-018 | 27-10-2026 | Done 27-10-2026 (Eddy, verified) |
 | MS-019 | 27-10-2026 | Done 27-10-2026 (Eddy) |
-| MS-020 | 27-10-2026 | Metadata merged 27-10-2026; regression build waits for Eddy's Studio check |
+| MS-020 | 27-10-2026 | Done 28-10-2026 (Eddy, Studio regression PASS) |
 | MS-021 | 27-10-2026 | Postponed to go-live |
 | MS-022 | 27-10-2026 | Done 27-10-2026 (reported by Eddy) |
 
@@ -161,7 +161,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-020 — Refresh data sources for the admin screens
 
-- **Added:** 27-10-2026. **Status:** Metadata merged twice (27-10-2026); regression build ms020b waiting for Eddy's Studio check (then OK for the Contractors build). Open: Workers.Language default mismatch and Contact Email values check (see Second merge).
+- **Added:** 27-10-2026. **Status:** Done 28-10-2026 (Eddy): regression build ms020b imported in Studio, Home / Project / team / Weekly Hours / Hours Summary load as before; tag approved-20261028-ms020b. Workers.Language default "Nederlands" is now set in SharePoint (the merged metadata still shows "English"; the app prefills explicitly anyway); old duplicate columns (old Email / old ProjectLeader) checked by Eddy.
 - **Where:** Power Apps Studio, the app test file. Data sources Employers, Projects, Workers.
 - **Reason:** the metadata in the .msapr (26-10-2026) lacks the new columns (Employers Contact Name/Email/Phone; Projects Street, House Number, Postal Code, City, Project Leader, Country) and still has Employer Code required. Admin build plan: ADMIN_PLAN.md (phase 0).
 - **Steps:** refresh the three data sources in Studio, then File > Save as > This computer, save the .msapp into `Incoming\` in the project folder.

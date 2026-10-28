@@ -1,6 +1,6 @@
 # Admin screens: bouwplan (Contractors -> Projects -> Workers)
 
-Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECISIONS.md H13. Regels die bij de bouw gaan gelden komen pas dan in AGENTS.md. Bronnen: logica-, UI- en reviewplan van 27-10-2026 (samengevoegd; bij conflict wint Eddy's besluit).
+Status 28-10-2026: Contractors gebouwd (build: PROJECT_STATUS.md; technisch gecontroleerd, Studio-test open: TESTPLAN.md TP-CONTRACTORS-01); Projects en Workers niet gebouwd. MS-020 gedaan (regressie PASS 28-10-2026). Gebouwde namen: scrContractors / imgLogoContractors / btnTileContractors, Trace DIAG|Contractors. Besluiten: DECISIONS.md H13. Regels die bij de bouw gaan gelden komen pas dan in AGENTS.md. Bronnen: logica-, UI- en reviewplan van 27-10-2026 (samengevoegd; bij conflict wint Eddy's besluit).
 
 ## 0. Status en besluiten (samenvatting)
 - Bouwvolgorde: Contractors, daarna Projects, daarna Workers. Een scherm per build; per build: powerfx-logic, reviewer, powerfx-ui, verifier (volledige set + pack), dan Eddy's Studio-test en akkoord vóór het volgende scherm.
@@ -18,7 +18,7 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 2. Gedaan 27-10-2026: alleen DataSources.json in de .msapr samengevoegd (app-ID, lijst-ID's, verbindingen ongewijzigd); interne namen hieronder.
 3. Regressiebuild gebouwd (pad/SHA-256: PROJECT_STATUS.md). Studio-Src vergeleken: geen formulewijzigingen, geen hernoemde Title/kolommen; alleen herserialisatie en ModernDatePicker 1.0.2 (niet overgenomen). Conventie: de app gebruikt interne namen; Title-weergavenamen van Employers en Projects blijven "Title" (Workers: "Worker Name").
 4. Identifiercontrole: 'Project Number' heeft interne naam ProjectName (valkuil). Statische test: kale identifier `ProjectName` komt nergens voor; 'Project Name' alleen voor Title.
-5. Wacht op Eddy's Studio-regressiecheck (Project / team, Weekly Hours, Hours Summary); dan pas de Contractors-build.
+5. Eddy's Studio-regressiecheck: PASS 28-10-2026 (ms020b); Workers.Language-standaard nu "Nederlands" in SharePoint (metadata toont nog "English"; de app vult expliciet voor); oude Email/ProjectLeader gecontroleerd.
 - Interne namen (DataSources.json 27-10-2026; weergavenaam tussen aanhalingstekens):
   - Employers: Title; EmployerCode1 "Employer Code" (niet meer verplicht); Address; Postalcode; City; ContactPerson "Contact Name"; Phone "Contact Phone"; ContactEmail1 "Contact Email" (string, gewone tekst; NIEUWE kolom, de oude Email (uri) bestaat niet meer); Country (tekst); Active (boolean). Geen verplichte kolommen.
   - Projects: Title; ProjectName "Project Number" (verplicht); ProjectReference; CustomerName; Status (keuze, verplicht, standaard Active); Street; House_x0020_Number "House Number"; Postal_x0020_Code "Postal Code"; City; Country (KEUZE, standaard "Netherlands"); ProjectLeader1 "Project Leader" (Person, ENKEL; NIEUWE kolom, oude meervoudige ProjectLeader weg); SiteManagers "Site Managers" (Person, ENKEL); ProjectHomeSiteURL "ProjectHomeSite URL" (format uri). Location en SiteSupervisor bestaan niet meer.
@@ -27,16 +27,16 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 
 ## 2. Gedeeld ontwerp
 ### 2.1 Layout (powerfx-ui)
-- Scherm #F0F0F0; blauwe titelbalk 56 px met logo (imgLogoEmployers/Projects/Workers, regels uit AGENTS.md) en titel. Body tussen titelbalk en footer in een scrollbare container; footer erbuiten.
+- Scherm #F0F0F0; blauwe titelbalk 56 px met logo (imgLogoContractors (gebouwd) / imgLogoProjects / imgLogoWorkers, regels uit AGENTS.md) en titel. Body tussen titelbalk en footer in een scrollbare container; footer erbuiten.
 - Breed (schermbreedte >= 1000): links lijstpaneel 400 px (zoekvak 40 + Gallery@2.15.0, rij 56 px; regel 1 naam, regel 2 code/plaats/status; geselecteerd #D5EDFF), rechts wit formulierpaneel (X = 40+400+24, radius 10, rand #DCDCDC). Smal (< 1000): lijst bovenaan (max 280 px, eigen scroll), formulier eronder. Breakpoint via verborgen layoutlabel (zoals lblHomeLayout). Velden rekken niet mee: kort 256, lang 512; twee 256-velden naast elkaar vanaf paneelbinnenbreedte 536.
 - Controls alleen uit Templates.json: Label 2.5.1, Classic/TextInput 2.3.2, Classic/DropDown 2.3.1 (volledige AGENTS-dropdownset), Classic/CheckBox 2.1.0, Gallery 2.15.0, Button 2.2.0 (geen AccessibleLabel), GroupContainer 1.5.0, Rectangle 2.3.0, Image 2.2.3. Geen Form/EditForm, ComboBox, Toggle of people picker (geen template).
 - Invoer: Fill #F0F0F0, rand #DCDCDC, hover/focus #0303B8, Inter Normal 12, hoogte 40. Alleen-lezen velden (Contractor Code, Worker Name, Worker Code, Person-velden): Label@2.5.1 met zwarte tekst en suffix "(automatic)"; geen uitgeschakelde invoer met grijze tekst.
 - Inactief wordt als tekst "Inactive" in de subregel getoond (kleur is nooit het enige signaal). Geen Delete-knop.
 - Footer (volgens AGENTS): Home 90 links (eerste); rechts New, Refresh, Discard changes, Save (Save groen #1AFF80, hover #18DD6E, tekst #000F41). Y/Height/X/gap uit lblFooterButtonMetrics van Screen1 (niet dupliceren). Minimale rijbreedte ~808 px; breedtes bij de bouw met Measure-FontFit.
-- Home: tegels btnTileEmployers/btnTileProjects/btnTileWorkers worden pas actief als hun scherm gebouwd is (actieve stijl uit AGENTS; iconen alleen uit bewezen enumwaarden, bv. Icon.People, Icon.DetailList; Icon.Building/Icon.Cog niet geverifieerd); lblTileSub* ("Coming soon") dan weg. Tegeltitels Contractors / Projects / Workers.
+- Home: tegels btnTileContractors (gebouwd)/btnTileProjects/btnTileWorkers worden pas actief als hun scherm gebouwd is (actieve stijl uit AGENTS; iconen alleen uit bewezen enumwaarden, bv. Icon.People, Icon.DetailList; Icon.Building/Icon.Cog niet geverifieerd); lblTileSub* ("Coming soon") dan weg. Tegeltitels Contractors / Projects / Workers.
 
 ### 2.2 Namen
-- Interne schermnamen blijven bij de lijsten: scrEmployers (UI "Contractors"), scrProjects, scrWorkers. Unieke controlnamen app-wide met schermprefix: conEmpBody, navEmp, conEmpButtonRow, btnEmpSave, ... (Prj, Wrk analoog). Variabelen en collections met prefix Emp/Prj/Wrk (varEmpDirty, colAdminEmployers, colEmpSaveErrors); geen gedeelde varAdminDirty.
+- Interne schermnamen blijven bij de lijsten: scrContractors (gebouwd; UI "Contractors", plan zei scrEmployers), scrProjects, scrWorkers. Unieke controlnamen app-wide met schermprefix: conEmpBody, navEmp, conEmpButtonRow, btnEmpSave, ... (Prj, Wrk analoog). Variabelen en collections met prefix Emp/Prj/Wrk (varEmpDirty, colAdminEmployers, colEmpSaveErrors); geen gedeelde varAdminDirty.
 - Per scherm: varXxxLoadState (NotLoaded/Loading/Failed/Loaded), varXxxBusy, varXxxSaving, varXxxSaveFailed, varXxxMode ("", "New", "Edit"), varXxxEdit (snapshot), varXxxSelectedID, colAdminXxx (geladen lijst), colPendingAdminXxx (staging), colXxxLoadErrors, colXxxSaveErrors, colXxxPre (pre-read).
 
 ### 2.3 Status, fouten, dirty
@@ -54,7 +54,7 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 - Volgorde: guard; Saving aan, globale vars voor predicaten (varXxxSaveID, varXxxSaveName/Number...); alle lokale validatie (fouten verzamelen; een fout = nul reads/writes, staat blijft Loaded); pre-read op ID (exact 1 rij) + duplicaatquery (delegeerbaar, `=` op kolom met globale var); conflictcheck (2.6); een Patch (nieuw: `Patch(Source, Defaults(Source), rec)`, bewerken: `Patch(Source, preReadRecord, rec)`); verify-read op ID en vergelijk alle geschreven velden (Coalesce naar ""); alleen uit de verify-read colAdminXxx en varXxxEdit bijwerken, dirty uit, Mode "Edit", cache-invalidatie (2.7), Trace.
 - Patch niet geslaagd of verify mislukt na write: SaveFailed, invoer behouden, Save geblokkeerd, melding "check the item in SharePoint (Modified / version history)"; geen automatische herhaling of correctie. Nieuw item met Patch-fout: onzeker of het bestaat; advies Refresh en zoeken op naam. Geen Remove/RemoveIf; deactiveren = Active uit (Projects: Status).
 - Totaal 2 pre-reads + 1 Patch + 1 verify; geen Choices()/remote LookUp in lussen.
-- Trace (alleen ID's en aantallen, nooit namen of FirstError.Message): `DIAG|Admin|LoadEnd`, `|SaveEnd` (Screen, Mode, ItemID, ElapsedMs, Reads, Writes, Verified, DupFound, Errors), `|Discard`, `|Conflict`.
+- Trace (alleen ID's en aantallen, nooit namen of FirstError.Message): `DIAG|Contractors|LoadEnd` (gebouwd; Projects/Workers analoog met eigen prefix; plan zei DIAG|Admin), `|SaveEnd` (Screen, Mode, ItemID, ElapsedMs, Reads, Writes, Verified, DupFound, Errors), `|Discard`, `|Conflict`.
 
 ### 2.6 Gelijktijdigheidscheck
 - Vergelijk pre-read met varXxxEdit via één projectiefunctie voor laden en pre-read, alleen over velden die de app schrijft en bij lookups alleen `Employer.Id` (niet `.Value`). Niet vergelijken: Modified, Person-velden, door flows gezette velden (Workers.Title en Worker Code via MS-017, Contractor Code via MS-019). Afwijking = fout "item changed in SharePoint, Refresh", nul writes, Trace Conflict. Flows lussen niet: Workers-Title = `Trim(fn) & " " & Trim(sn)` gelijk aan de flowuitkomst.
@@ -70,7 +70,7 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 - Benoemde formule `T` in App.Formulas: een record met per sleutel de tekst `Switch(varLang, "nl", "<nl>", "<en>")`; nu alleen "en" gevuld, "nl" volgt. varLang standaard "en" (later Language() en globe-icoon, keuze onthouden). Alle labels, knoppen, tegelteksten en meldingen van de nieuwe schermen gebruiken `T.<sleutel>` (sleutelschema `<scherm><Element>`); parameters via Substitute. SharePoint-keuzewaarden en interne namen worden niet vertaald. Tests (Test-Fonts, Test-GeaColors, Measure-FontFit) lezen de Engelse tekst; knopbreedtes meten op de langste taal zodra "nl" bestaat.
 - "Language" op Workers is een attribuut van de medewerker (voor documenten), geen app-taal.
 
-## 3. Contractors (scrEmployers) - bouw 1
+## 3. Contractors (scrContractors) - bouw 1 (GEBOUWD 28-10-2026, Studio-test open)
 - Velden (zoals Eddy ze gaf): Contractor Name (Title), Contractor Code (EmployerCode1, alleen-lezen; flow MS-019 vult EMP-<ID>; nieuw: tekst "assigned automatically"; de app schrijft hem nooit), Address, Postalcode, City, Country (tekst, niet verplicht, geen voorvulling), Contact Name, Contact Email (ContactEmail1, tekst), Contact Phone (tekst), Active. Interne namen: par. 1.
 - Patch: alleen deze velden (Trim op tekst); nooit Contractor Code. Lijstsubtekst: Code | City | Inactive.
 - Validatie: naam verplicht, Trim, max 255; e-mail leeg of `IsMatch(..., Match.Email)`; telefoon leeg of tekens `[0-9 +()-]`, 6-20; tekstvelden max 255.
@@ -119,3 +119,13 @@ Status 27-10-2026: PLAN, niets gebouwd, niets in Studio getest. Besluiten: DECIS
 5. Of SharePoint-`=` hoofdletterongevoelig vergelijkt (duplicaatnaam): Studio-test.
 6. Worker Contacts (telefoon) buiten v1; volgorde-keuze New/Refresh in de footer is vastgelegd als New, Refresh, Discard changes, Save.
 7. MS-021 (rechten) bij go-live; bij leden toevoegen "Send an email invitation" uitvinken.
+
+## 9. Contractors-build: afwijkingen en open punten (review 28-10-2026)
+- (a) Geen rode veldrand per veld en statusregel niet gecentreerd (plan 2.3): UI-vervolg.
+- (b) Refresh(Workers) alleen bij hernoemen (plan 2.7: altijd): functioneel voldoende, geaccepteerd.
+- (c) Een SharePoint-afwijzing (bv. uniciteit) toont de reden niet: vervolg = alleen FirstError.Message aan de schermfoutlijst (niet in Trace).
+- (d) Serverduplicaatcontrole `Title = var` is exact: of SharePoint `=` hoofdletterongevoelig is, vergt Studio-test (lokale Lower-vergelijking is beslissend).
+- (e) Alleen in Studio te zien: App.Formulas-benoemde formule met varLang (terugval LangNl = false), typeconsistentie van varEmpEdit, Reset na Set, scrollen van de uitgeschakelde gallery, DisplayMode.View-uiterlijk, delegatiewaarschuwingen op volledige lijstreads (begrensd door 500, zoals bestaande loaders), telefoonregex.
+- (f) Weekly Hours stale-cachefix (par. 5.6) volgt in de Workers-build.
+- (g) >= 500 Workers blokkeert het Contractors-scherm (fail-closed).
+- Uit par. 1/8 vervallen: punt d (Language-standaard: gezet) en de Email-controle (gedaan door Eddy 28-10-2026); punt 4 (waarschuwing bij deactiveren met actieve medewerkers) is zo gebouwd.

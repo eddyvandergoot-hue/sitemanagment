@@ -6,7 +6,7 @@ $regressionOptions=New-Object Microsoft.PowerFx.ParserOptions
 $regressionOptions.Culture=[Globalization.CultureInfo]::GetCultureInfo('en-US')
 function Index-RegressionControls($entries,$index){foreach($entry in $entries){$name=@($entry.Keys)[0];$index[$name]=$entry[$name];Index-RegressionControls $entry[$name]['Children'] $index}}
 $indexes=@{};$count=0
-foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours')){
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors')){
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  if($screen -ne 'scrWeeklyHours'){Check-Node $doc $screen}
  $index=@{};Index-RegressionControls $doc['Screens'][$screen]['Children'] $index;$indexes[$screen]=$index
@@ -360,8 +360,8 @@ foreach($name in $homeIdx.Keys){foreach($prop in @($homeIdx[$name]['Properties']
  Assert-True ($fx -notmatch "(?<![\w])(?:Hours|Workers|Projects|Employers)\b\s*[,)]" -and $fx -notmatch "'Project Workers'" -and $fx -notmatch '\bChoices\(') "scrHome.$name.$prop reads no SharePoint source"
  $homeSets=@([regex]::Matches($fx,'\bSet\(\s*(\w+)\s*,') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
  Assert-True (@($homeSets | Where-Object { $_ -notin @('varProject','varTeam') }).Count -eq 0) "scrHome.$name.$prop sets no state other than varProject/varTeam"
- foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($sel.Groups[1].Value -in @('btnTileProjectTeam','btnTileWeeklyHours','btnTileHoursSummary')) "scrHome.$name.$prop selects only a navigation tile ($($sel.Groups[1].Value))" }
- foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
+ foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($sel.Groups[1].Value -in @('btnTileProjectTeam','btnTileWeeklyHours','btnTileHoursSummary','btnTileContractors')) "scrHome.$name.$prop selects only a navigation tile ($($sel.Groups[1].Value))" }
+ foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
 }}
 Assert-True ($homeOn -gt 0) "scrHome event formulas checked: $homeOn"
 # Non-event properties (Text, Visible, DisplayMode, layout...) on scrHome must not read SharePoint either.
@@ -692,7 +692,8 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $msaprZip=[IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Managment_VS.msapr'))
 try { $dsReader=New-Object IO.StreamReader(($msaprZip.Entries | Where-Object FullName -eq 'msapp\References\DataSources.json').Open()); $dsJson=$dsReader.ReadToEnd() | ConvertFrom-Json; $dsReader.Dispose() } finally { $msaprZip.Dispose() }
 $usedColumns=@{
- 'Workers'=@('ID','First Name','Surname','Employer','Trade')
+ 'Workers'=@('ID','First Name','Surname','Employer','Trade','Active')
+ 'Employers'=@('ID','Title','Employer Code','Address','Postalcode','City','Country','Contact Name','Contact Email','Contact Phone','Active')
  'Projects'=@('ID','Title','Project Number','Project Reference')
  'Hours'=@('ID','Title','EntryKey','Work Date','Assignment','Employer','Team','Trade','Hours','Modified')
  'Project Workers'=@('ID','Title','ProjectKey','AssignmentKey','Project','Worker','Team','Active')
@@ -708,7 +709,11 @@ foreach($ds in $usedColumns.Keys){
 $apMeta=($dsJson.DataSources | Where-Object Name -eq 'Assignment Periods').DataEntityMetadataJson
 $apText=($apMeta.PSObject.Properties | ForEach-Object { [string]$_.Value }) -join ''
 foreach($col in @('From','Till')){ Assert-True ($apText -match ('"'+$col+'":\{[^{}]*"format":"date"[,}]')) "Metadata: Assignment Periods.$col has format date (date only)" }
-Assert-True ($srcAll -notmatch "\bEmployers\b\s*[,)]" -and $srcAll -notmatch "'Employer Code'|EmployerCode1") 'Src does not read the Employers list or Employer Code (renamed internally to EmployerCode1)'
+# Contractors build (28-10-2026): only scrContractors reads/writes Employers; Employer Code (internal EmployerCode1) is only read in its projection, never written (flow MS-019).
+$srcNonAdmin=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | Where-Object Name -ne 'scrContractors.pa.yaml' | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
+Assert-True ($srcNonAdmin -notmatch "\bEmployers\b\s*[,)]" -and $srcAll -notmatch "EmployerCode1") 'Only scrContractors reads the Employers list; internal name EmployerCode1 not used'
+Assert-True (([regex]::Matches($srcAll,"'Employer Code'")).Count -eq ([regex]::Matches($srcAll,"emp\.'Employer Code'")).Count) "Employer Code only read as emp.'Employer Code' in the Contractors projection (never a Patch field)"
+Assert-True ($srcAll -notmatch "\b(?:Remove|RemoveIf|Clear)\(\s*(?:Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\b") 'No Remove/RemoveIf/Clear on SharePoint lists anywhere in Src'
 Write-Output 'PASS Assignment periods: delegable period reads with global ProjectKey, 500 guards, staging, decision fixtures, checkbox/row/summary rules, migration guards/categories, Screen1 week picker. Studio binding, delegation in Monitor and functional tests NOT verified.'
 Write-Output 'PASS batch save structure. Studio binding (table Patch on collection base records, lookup/choice records), delegation and online behaviour NOT verified.'
 Write-Output 'LIVE STILL OPEN: actual incident edits, connector auth, Studio binding/delegation, failure injection and online loading.'

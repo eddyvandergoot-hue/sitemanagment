@@ -55,6 +55,7 @@ Sitemanagment/
 | `scrHours` | Weekly Hours | Enter hours Mon–Sun per team |
 | `scrWeekReport` *(planned)* | Week Report | Daily hours per worker for one week; export PDF + CSV |
 | `scrWeeklyHours` | Hours Summary | Period overview; CSV export |
+| `scrContractors` | Contractors | Beheer van contractors (Employers); gebouwd 28-10-2026, Studio-test open (ADMIN_PLAN.md) |
 
 Internal names stay unchanged so references do not break.
 

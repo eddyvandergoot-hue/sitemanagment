@@ -19,6 +19,8 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-SEC-01 | Permissietest met niet-eigenaar account | OPEN | - | Eddy |
 | TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | PASS | 27-10-2026 | Eddy |
 | TP-MIGR-01 | Migratieactie per project (Screen1) | PASS op TEST-000 en Friesland Campina | 27-10-2026 | Eddy |
+| TP-CONTRACTORS-01 | Contractors-scherm (beheer) | OPEN | - | Eddy |
+| TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -180,3 +182,36 @@ Doel: aantonen dat een gebruiker zonder eigenaarsrechten alleen kan wat de bedoe
 | 7 | Opslaan (Save week) als TEST-000 met dit account | alleen toegestaan als de rol dat omvat |
 
 Uitkomst per stap noteren met datum en account/rol. Stap 4 is pas bindend na MS-004.
+
+## TP-CONTRACTORS-01 Contractors-scherm (OPEN; build contractors-20261028_203334, PROJECT_STATUS.md)
+
+Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractors alleen lezen, nooit wijzigen. Nooit verwijderen, alleen deactiveren.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Home openen, tegel Contractors kiezen | scrContractors opent; logo en titelbalk correct; lijst laadt |
+| 2 | Show inactive uit | inactieve contractors verborgen |
+| 3 | Zoeken op naam, code en plaats | lijst filtert lokaal op alle drie |
+| 4 | Een contractor selecteren | formulier gevuld; Contractor Code alleen-lezen (label) |
+| 5 | New | leeg formulier; Active aangevinkt |
+| 6 | Save met lege naam | foutmelding; nul writes |
+| 7 | Save met ongeldig e-mailadres | foutmelding; nul writes |
+| 8 | Dubbele naam in andere hoofdletters of met extra spaties (bv. "test employer") | geblokkeerd |
+| 9 | "TEST Contractor 2" aanmaken en Save | opgeslagen, verify-melding, staat in de lijst |
+| 10 | Refresh | code EMP-xxx (flow MS-019) verschijnt |
+| 11 | Plaats van TEST Contractor 2 wijzigen en Save | opgeslagen |
+| 12 | Wijziging maken (niet opslaan), dan Home, New of een gallery-klik | geblokkeerd |
+| 13 | Discard changes | waarden hersteld |
+| 14 | TEST Contractor 2 deactiveren en Save | verborgen bij Show inactive uit, zichtbaar bij aan |
+| 15 | TEST Employer deactiveren (heeft actieve testmedewerkers) | waarschuwing getoond (opslaan toegestaan); sla over als Eddy dit niet wil deactiveren |
+| 16 | Conflict: dezelfde contractor na het laden in SharePoint wijzigen, daarna Save | geblokkeerd met "changed by someone else" |
+| 17 | Smal venster | statusregel kapt af met "…"; footer past |
+| 18 | Monitor | queries op Employers (ID=, Title=) gedelegeerd |
+
+## TP-WH-CLEAN-01 Weekly Hours opgeschoond (OPEN)
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Weekly Hours, een rij selecteren | geen blauwe balk op de geselecteerde rij |
+| 2 | Medewerker met Trade Unknown | geen chip "Trade onbekend" op Weekly Hours; wel de badge op Screen1 |
+| 3 | Blokkerende waarschuwing (bv. ontbrekende Employer) | blijft rood op Weekly Hours |
