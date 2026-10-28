@@ -73,13 +73,15 @@ foreach ($ctl in @('btnEmpSave', 'btnEmpHome', 'btnEmpNew', 'btnEmpRefresh', 'bt
 $dirtyStart = $guards.btnEmpSave.IndexOf('(Coalesce(varEmpMode,"") in ["New","Edit"]')
 Assert-True ($dirtyStart -ge 0) 'Save guard contains the dirty expression'
 $dirty = Get-Balanced $guards.btnEmpSave $dirtyStart
-foreach ($c in @('txtEmpName.Text', 'txtEmpAddress.Text', 'txtEmpPostalcode.Text', 'txtEmpCity.Text', 'txtEmpCountry.Text', 'txtEmpContactName.Text', 'txtEmpContactEmail.Text', 'txtEmpContactPhone.Text', 'chkEmpActive.Value')) {
-    Assert-True ($dirty.Contains($c + '<>varEmpEdit.') -or $dirty.Contains($c + '<>Coalesce(varEmpEdit.')) "Dirty compares $c directly with varEmpEdit (no OnChange dependency)"
+foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
+    Assert-True ($dirty.Contains("Trim(txtEmp$f.Text & """")<>Trim(varEmpEdit.$f & """")")) "Dirty compares txtEmp$f.Text directly with varEmpEdit, both sides Trim(x & """") (no OnChange dependency, blank = empty)"
 }
+Assert-True ($dirty.Contains('Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true)')) 'Dirty compares chkEmpActive.Value with varEmpEdit.Active, both sides Coalesce(x,true) (blank Active = active)'
 Assert-True ($guards.btnEmpSave.EndsWith('&& ' + $dirty)) 'Save requires dirty'
-foreach ($ctl in @('btnEmpHome', 'btnEmpNew', 'btnEmpRefresh', 'galEmpList')) { Assert-True ($guards[$ctl].EndsWith('!' + $dirty)) "$ctl blocked while dirty (same dirty text)" }
+foreach ($ctl in @('btnEmpHome', 'btnEmpNew', 'galEmpList')) { Assert-True ($guards[$ctl].EndsWith('!' + $dirty)) "$ctl blocked while dirty (same dirty text)" }
+Assert-True ($guards.btnEmpRefresh -ceq ('!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || !' + $dirty + ')')) 'Refresh: blocked while loading/saving; allowed when clean or after a failed save (same dirty text)'
 Assert-True ($guards.btnEmpDiscard.Contains('|| ' + $dirty + ')')) 'Discard requires dirty or SaveFailed (same dirty text)'
-Assert-True ($guards.btnEmpHome -ceq $guards.btnEmpRefresh -and $guards.btnEmpNew -ceq $guards.galEmpList) 'Home = Refresh guard; New = gallery-selection guard'
+Assert-True ($guards.btnEmpHome -ceq ('!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !' + $dirty) -and $guards.btnEmpNew -ceq $guards.galEmpList) 'Home guard = not busy/saving/dirty (unchanged rule); New = gallery-selection guard'
 foreach ($k in @('varEmpLoadState="Loaded"', 'IsEmpty(colEmpLoadErrors)', '!Coalesce(varEmpBusy,false)', '!Coalesce(varEmpSaving,false)', '!Coalesce(varEmpSaveFailed,false)')) {
     Assert-True ($guards.btnEmpSave.Contains($k) -and $guards.btnEmpNew.Contains($k)) "Save and New guards contain $k"
 }
@@ -109,7 +111,19 @@ Assert-Eval (Get-GuardFx 'btnEmpSave' $newFix.Replace('txtEmpName:{Text:"B"}', '
 Assert-Eval (Get-GuardFx 'btnEmpHome' $clean) $true 'Home allowed: clean'
 Assert-Eval (Get-GuardFx 'btnEmpHome' $fix) $false 'Home blocked: dirty'
 Assert-Eval (Get-GuardFx 'btnEmpHome' $clean.Replace('varEmpSaving:false', 'varEmpSaving:true')) $false 'Home blocked: saving'
-Assert-Eval (Get-GuardFx 'btnEmpHome' $clean.Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"')) $true 'Home/Refresh allowed after a failed load (not dirty)'
+Assert-Eval (Get-GuardFx 'btnEmpHome' $clean.Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"')) $true 'Home allowed after a failed load (not dirty)'
+Assert-Eval (Get-GuardFx 'btnEmpRefresh' $clean.Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"')) $true 'Refresh allowed after a failed load (not dirty)'
+Assert-Eval (Get-GuardFx 'btnEmpRefresh' $clean) $true 'Refresh allowed: clean'
+Assert-Eval (Get-GuardFx 'btnEmpRefresh' $fix) $false 'Refresh blocked: dirty (no failed save)'
+$failedFix = $fix.Replace('varEmpSaveFailed:false', 'varEmpSaveFailed:true').Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"')
+Assert-Eval (Get-GuardFx 'btnEmpRefresh' $failedFix) $true 'Refresh allowed after a failed save, even with the kept (dirty) input'
+Assert-Eval (Get-GuardFx 'btnEmpRefresh' $failedFix.Replace('varEmpSaving:false', 'varEmpSaving:true')) $false 'Refresh blocked: saving (also after a failed save)'
+Assert-Eval (Get-GuardFx 'btnEmpRefresh' $failedFix.Replace('varEmpBusy:false', 'varEmpBusy:true')) $false 'Refresh blocked: loading (also after a failed save)'
+Assert-Eval (Get-GuardFx 'btnEmpDiscard' $failedFix) $true 'Discard allowed after a failed save with kept input'
+Assert-Eval (Get-GuardFx 'btnEmpHome' $failedFix) $false 'Home blocked after a failed save while the kept input is present (allowed again after the reload resets the form)'
+Assert-Eval (Get-GuardFx 'btnEmpSave' $failedFix) $false 'Save blocked after a failed save'
+Assert-Eval (Get-GuardFx 'btnEmpNew' $failedFix) $false 'New blocked after a failed save'
+Assert-Eval (Get-GuardFx 'galEmpList' $failedFix) $false 'Gallery selection blocked after a failed save'
 Assert-Eval (Get-GuardFx 'btnEmpNew' $fix) $false 'New blocked: dirty'
 Assert-Eval (Get-GuardFx 'btnEmpNew' $clean.Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"')) $false 'New/gallery blocked: load Failed'
 Assert-Eval (Get-GuardFx 'galEmpList' $clean) $true 'Gallery selection allowed: Loaded and clean'
@@ -136,7 +150,14 @@ foreach ($k in @('btnEmpLoad.OnSelect', "$screenName.OnVisible")) {
 Assert-True ($load.Contains('If(' + $dirty + ' && !Coalesce(varEmpSaveFailed,false),')) 'Loader refuses to reload over unsaved input (except the explicit Discard after a failed save)'
 Assert-True ($load.Contains('If(!Coalesce(varEmpForceRefresh,false) && varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpSaveFailed,false),')) 'Loader reuses a valid Loaded list unless forced'
 Assert-True ($loadN.Contains((Norm 'If(Coalesce(varEmpForceRefresh,false),IfError(Refresh(Employers),'))) 'Forced load refreshes the Employers connector cache'
-Assert-True ((Get-Prop 'btnEmpRefresh' 'OnSelect').Contains('Set(varEmpForceRefresh,true); Select(btnEmpLoad)')) 'Refresh forces the staged loader'
+$refreshOs = Get-Prop 'btnEmpRefresh' 'OnSelect'
+Assert-True ($refreshOs.Contains('Set(varEmpForceRefresh,true); Select(btnEmpLoad)')) 'Refresh forces the staged loader'
+Assert-True ($refreshOs.Contains('If(Coalesce(varEmpSaveFailed,false),Clear(colEmpSaveErrors));') -and $refreshOs -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Reset)\(') 'Refresh after a failed save behaves like Discard (clears the local save errors, forced reload through btnEmpLoad, no mutation)'
+Assert-True ($load.Contains('If(Coalesce(varEmpForceRefresh,false),') -and $load.Contains('varEmpMode="New" && !Coalesce(varEmpSaveFailed,false),') -and $load.Contains('Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");')) 'Forced reload after a failed save discards local input (New -> no item; SaveFailed cleared only after a successful load)'
+# The SaveFailed reset must sit inside the success branch: after the last If(IsEmpty(colEmpLoadErrors), and with no Failed state set in between.
+$clearAt = $load.IndexOf('Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");')
+$branchAt = $load.LastIndexOf('If(IsEmpty(colEmpLoadErrors),', $clearAt)
+Assert-True ($branchAt -ge 0 -and $load.Substring($branchAt, $clearAt - $branchAt).IndexOf('Set(varEmpLoadState,"Failed")') -lt 0) 'SaveFailed is cleared only inside the successful-load branch of the loader'
 Assert-True ($vis.Contains('If(varEmpLoadState<>"Loaded" && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !' + $dirty + ',Select(btnEmpLoad))')) 'OnVisible loads only when not Loaded, idle and not dirty'
 $conc = Get-Balanced $load $load.IndexOf('Concurrent(')
 $branches = Split-Args $conc.Substring('Concurrent('.Length, $conc.Length - 'Concurrent('.Length - 1)
@@ -203,7 +224,7 @@ $allowedKeys = @('Title', 'Address', 'Postalcode', 'City', 'Country', "'Contact 
 Assert-True (@($keys | Where-Object { $_ -cnotin $allowedKeys }).Count -eq 0 -and $keys.Count -eq $allowedKeys.Count) "Patch writes exactly the app fields: $($keys -join ', ')"
 Assert-True ($patch -notmatch "Employer Code|EmployerCode1|'Employer Code'") 'Patch never writes Contractor Code (Employer Code / EmployerCode1)'
 foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
-    Assert-True ($save -match "$f\s*:\s*Trim\(txtEmp$f\.Text\)") "Save record trims $f"
+    Assert-True ($save -match "$f\s*:\s*Trim\(txtEmp$f\.Text & """"\)") "Save record trims $f (Trim(x & """"): blank input = empty text)"
     Assert-True ($saveN.Contains("If(Len(varEmpSaveRec.$f)>255,Collect(colEmpSaveErrors,")) "Length check <= 255 for $f"
 }
 Assert-True ($saveN.Contains('If(IsBlank(varEmpSaveRec.Name),Collect(colEmpSaveErrors,{Field:"Name"')) 'Name required (after Trim)'
@@ -213,10 +234,13 @@ Assert-True ($saveN.Contains('CountIf(colAdminEmployers,Lower(Trim(Name))=varEmp
 Assert-True ($saveN.Contains('Set(varEmpDupName,varEmpSaveRec.Name);Set(varEmpDupKey,Lower(varEmpSaveRec.Name));')) 'Duplicate predicate variables set before the reads'
 $proj = [regex]::Match($load, 'As emp,(\{ID:emp\.ID,[^}]*\})').Groups[1].Value
 Assert-True ($proj.Length -gt 0 -and ([regex]::Matches($screenText, [regex]::Escape($proj))).Count -eq 4) 'One projection text for load, pre-read, duplicate read and verify read'
-foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone', 'Active')) {
-    Assert-True ($saveN.Contains("p.$f<>varEmpEdit.$f")) "Conflict check compares $f (pre-read vs loaded snapshot)"
-    Assert-True ($saveN.Contains("v.$f=varEmpSaveRec.$f")) "Verify read compares $f with the written value"
+foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
+    Assert-True ($saveN.Contains("Trim(p.$f&`"`")<>Trim(varEmpEdit.$f&`"`")")) "Conflict check compares $f (pre-read vs loaded snapshot, both Trim(x & `"`"))"
+    Assert-True ($saveN.Contains("D:Trim(v.$f&`"`")<>Trim(varEmpSaveRec.$f&`"`")")) "Verify read compares $f with the written value (both Trim(x & `"`"))"
 }
+Assert-True ($saveN.Contains('Coalesce(p.Active,true)<>Coalesce(varEmpEdit.Active,true)')) 'Conflict check compares Active (both Coalesce(x,true))'
+Assert-True ($saveN.Contains('D:Coalesce(v.Active,true)<>Coalesce(varEmpSaveRec.Active,true)')) 'Verify read compares Active (both Coalesce(x,true))'
+Assert-True ($save.Contains('Active:Coalesce(chkEmpActive.Value,true)});')) 'Save record: Active = Coalesce(chkEmpActive.Value,true)'
 Assert-True ($saveN -notmatch 'p\.Code|v\.Code|Modified') 'Conflict/verify ignore Contractor Code (flow MS-019) and Modified'
 $iVal = $saveN.IndexOf('If(IsBlank(varEmpSaveRec.Name)')
 $iDupLocal = $saveN.IndexOf('CountIf(colAdminEmployers,')
@@ -302,4 +326,120 @@ Assert-True ($literalCaptions.Count -eq 0) "Visible captions use T, no literal t
 # (12) Identifier trap: bare ProjectName (internal name of 'Project Number') ----------------------------------
 Assert-True ($srcAll -notmatch "(?<!['\w])ProjectName\b") 'No bare ProjectName identifier in Src'
 
+# (13) Blank versus empty text (bug TP-CONTRACTORS-01 steps 8/9: every Save ended in "Save not confirmed") ---------------
+# Root cause, reproduced in the Power Fx interpreter: Coalesce(x,"") returns Blank when x is blank, and Blank() = "" is false,
+# so a SharePoint field that is empty after the save never equalled the written "" in the verify read.
+Assert-Eval 'IsBlank(Coalesce(If(false,"x"),""))' $true 'Root cause: Coalesce(<blank text>,"") is still Blank (not "")'
+Assert-Eval 'Coalesce(If(false,"x"),"")=""' $false 'Root cause: Coalesce(<blank text>,"") = "" is false'
+Assert-Eval 'Trim(If(false,"x") & "")=""' $true 'Fix: Trim(<blank text> & "") = "" is true'
+Assert-Eval 'Coalesce(If(false,true),true)=true' $true 'Fix: Coalesce(<blank boolean>,true) = true (blank Active = active)'
+Assert-Eval '"Test"="test"' $false 'Text comparison is case-sensitive (Name verify is exact after Trim)'
+# Static: no Coalesce(<Employers field / input / snapshot>,"") left in projections or compare expressions
+$badCoalesce = @([regex]::Matches($screenText, 'Coalesce\(\s*(?:emp|p|v|varEmpEdit|varEmpSaveRec|txtEmp\w+)\.[^,()]+,\s*""\s*\)') | ForEach-Object { $_.Value })
+Assert-True ($badCoalesce.Count -eq 0) "No Coalesce(<field>,`"`") on Employers projections, inputs or compare expressions $($badCoalesce -join '; ')"
+Assert-True ($proj -notmatch 'Coalesce\([^)]*,""\)' -and $proj.Contains('Name:Trim(emp.Title & "")') -and $proj.Contains('Active:Coalesce(emp.Active,true)')) 'Projection: text = Trim(x & ""), Active = Coalesce(x,true)'
+foreach ($c in @("'Employer Code'", 'Address', 'Postalcode', 'City', 'Country', "'Contact Name'", "'Contact Email'", "'Contact Phone'")) { Assert-True ($proj.Contains("Trim(emp.$c & `"`")")) "Projection normalizes $c with Trim(x & `"`")" }
+# Expressions taken from the source
+$tRec = [regex]::Match($formulas, '(?s)\bT\s*=\s*(\{.*\})\s*;\s*$').Groups[1].Value
+Assert-True ($tRec.Length -gt 0) 'Translation table T extracted from App.Formulas'
+$iSr = $save.IndexOf('Set(varEmpSaveRec,')
+$saveRecFx = (Get-Balanced $save ($iSr + 3)); $saveRecFx = $saveRecFx.Substring('(varEmpSaveRec,'.Length, $saveRecFx.Length - '(varEmpSaveRec,'.Length - 1)
+$iTab = $save.IndexOf('With({d:Filter(Table(')
+Assert-True ($iTab -gt 0) 'Verify builds a per-field difference table'
+$tableFx = 'Table' + (Get-Balanced $save ($iTab + 'With({d:Filter(Table'.Length))
+$mCf = [regex]::Match($save, 'With\(\{p:First\(colEmpPre\)\},\s*If\(')
+Assert-True $mCf.Success 'Conflict check located (With({p:First(colEmpPre)},If(...)'
+$cfCall = Get-Balanced $save ($mCf.Index + $mCf.Length - 1)
+$conflictFx = (Split-Args $cfCall.Substring(1, $cfCall.Length - 2))[0]
+$fNames = @([regex]::Matches($tableFx, '\{F:"(\w+)"') | ForEach-Object { $_.Groups[1].Value })
+Assert-True (($fNames -join ',') -ceq 'Name,Address,Postalcode,City,Country,ContactName,ContactEmail,ContactPhone,Active') "Verify compares exactly the app-written fields: $($fNames -join ',')"
+Assert-True ($tableFx -cnotmatch '\.Code\b|"Code"|Employer Code|EmployerCode1|Modified' -and $conflictFx -cnotmatch '\.Code\b|Employer Code|EmployerCode1|Modified') 'Verify and conflict ignore Contractor Code (EmployerCode1, flow MS-019) and Modified'
+# Fixtures: a SharePoint row as returned after the save (typed blanks for empty fields), and the form inputs
+$blankT = 'If(false,"x")'; $blankB = 'If(false,true)'
+function Raw([string]$name, [string]$city, [string]$code, [string]$active, [string]$empty) {
+    return "{ID:7,Title:$name,'Employer Code':$code,Address:$empty,Postalcode:$empty,City:$city,Country:$empty,'Contact Name':$empty,'Contact Email':$empty,'Contact Phone':$empty,Active:$active,Modified:DateTime(2026,10,28,9,0,0)}"
+}
+function Inputs([string]$name, [string]$city, [string]$empty, [string]$active) {
+    return "txtEmpName:{Text:$name},txtEmpAddress:{Text:$empty},txtEmpPostalcode:{Text:$empty},txtEmpCity:{Text:$city},txtEmpCountry:{Text:$empty},txtEmpContactName:{Text:$empty},txtEmpContactEmail:{Text:$empty},txtEmpContactPhone:{Text:$empty},chkEmpActive:{Value:$active}"
+}
+function Proj([string]$raw) { return "With({emp:$raw},$proj)" }
+function SaveRec([string]$inputs) { return "With({$inputs},$saveRecFx)" }
+function VerifyDiff([string]$raw, [string]$inputs, [string]$col) { return "With({LangNl:false,T:$tRec},With({v:$(Proj $raw),varEmpSaveRec:$(SaveRec $inputs)},Concat(Filter($tableFx,D),$col,`",`")))" }
+$rawBlank = Raw '"TEST Contractor 2"' '"Test Stad2"' $blankT $blankB $blankT
+$rawEmpty = Raw '"TEST Contractor 2"' '"Test Stad2"' '""' 'true' '""'
+$inEmpty = Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'true'
+$inBlank = Inputs '"TEST Contractor 2"' '"Test Stad2"' $blankT 'true'
+Assert-Eval (VerifyDiff $rawBlank $inEmpty 'F') '' 'Verify passes: SharePoint returns Blank for empty fields, inputs are "" (step 8/9 scenario)'
+Assert-Eval (VerifyDiff $rawEmpty $inBlank 'F') '' 'Verify passes: SharePoint returns "" , inputs are Blank'
+Assert-Eval (VerifyDiff $rawBlank $inBlank 'F') '' 'Verify passes: both Blank'
+Assert-Eval (VerifyDiff $rawBlank (Inputs '"  TEST Contractor 2 "' '" Test Stad2"' '"  "' 'true') 'F') '' 'Verify passes: inputs with surrounding spaces are trimmed before writing'
+Assert-Eval (VerifyDiff $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' $blankB) 'F') '' 'Verify passes: Active blank in SharePoint and blank checkbox value (both = active)'
+Assert-Eval (VerifyDiff (Raw '"TEST Contractor 2"' '"Test Stad2"' '"EMP-005"' 'true' $blankT) $inEmpty 'F') '' 'Verify passes: flow MS-019 filled EmployerCode1 and changed Modified after the create'
+Assert-Eval (VerifyDiff $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'false') 'F') 'Active' 'Verify fails on Active: blank (= active) in SharePoint, written false'
+Assert-Eval (VerifyDiff (Raw '"TEST Contractor 2"' '"Other"' $blankT 'true' $blankT) $inEmpty 'F') 'City' 'Verify fails and names only the differing field (City)'
+Assert-Eval (VerifyDiff (Raw '"TEST Contractor 2"' '"Other"' $blankT 'true' $blankT) $inEmpty 'L') 'City' 'On-screen difference list uses the field label (no values)'
+Assert-Eval (VerifyDiff (Raw '"test contractor 2"' '"Test Stad2"' $blankT 'true' $blankT) $inEmpty 'F') 'Name' 'Verify on Name is exact after Trim (case is part of the written value)'
+# Conflict check: loaded snapshot vs pre-read, both through the same projection
+function Conflict([string]$preRaw, [string]$snapRaw) { return "With({p:$(Proj $preRaw),varEmpEdit:$(Proj $snapRaw),varEmpSaveID:7},$conflictFx)" }
+Assert-Eval (Conflict $rawBlank $rawBlank) $false 'Conflict does not fire: unchanged row with blank fields'
+Assert-Eval (Conflict (Raw '"TEST Contractor 2"' '"Test Stad2"' '"EMP-005"' 'true' $blankT) $rawBlank) $false 'Conflict does not fire on a flow MS-019 change (EmployerCode1 filled, Modified changed, Active blank vs true)'
+Assert-Eval (Conflict $rawEmpty $rawBlank) $false 'Conflict does not fire: "" versus Blank in SharePoint'
+Assert-Eval (Conflict (Raw '"TEST Contractor 2"' '"Other"' $blankT 'true' $blankT) $rawBlank) $true 'Conflict fires: another user changed City'
+Assert-Eval (Conflict (Raw '"TEST Contractor 2"' '"Test Stad2"' $blankT 'false' $blankT) $rawBlank) $true 'Conflict fires: another user deactivated the contractor'
+# Dirty: form inputs vs loaded snapshot (no false dirty for Blank versus "")
+function Dirty([string]$snapRaw, [string]$inputs) { return "With({varEmpMode:`"Edit`",varEmpEdit:$(Proj $snapRaw),$inputs},$dirty)" }
+Assert-Eval (Dirty $rawBlank $inEmpty) $false 'Not dirty: snapshot from Blank fields, inputs ""'
+Assert-Eval (Dirty $rawBlank $inBlank) $false 'Not dirty: snapshot from Blank fields, inputs Blank'
+Assert-Eval (Dirty $rawEmpty $inBlank) $false 'Not dirty: snapshot from "" fields, inputs Blank'
+Assert-Eval (Dirty $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '"  "' 'true')) $false 'Not dirty: only spaces typed in empty fields (Save would write the same)'
+Assert-Eval (Dirty $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad3"' '""' 'true')) $true 'Dirty: City changed'
+Assert-Eval (Dirty $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'false')) $true 'Dirty: Active unchecked (snapshot Active blank = active)'
+$newSnap = '{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
+Assert-Eval ('With({varEmpMode:"New",varEmpEdit:' + $newSnap + ',' + (Inputs '""' '""' $blankT 'true') + '},' + $dirty + ')') $false 'Not dirty: New form untouched (inputs Blank)'
+Assert-Eval ('With({varEmpMode:"New",varEmpEdit:' + $newSnap + ',' + (Inputs '"TEST Contractor 3"' '""' $blankT 'true') + '},' + $dirty + ')') $true 'Dirty: New form with a typed name'
+# Diagnosability: verify mismatch on screen (labels only) and in Trace (field names only); Patch reason on screen only
+Assert-True ($saveN.Contains((Norm 'Trace("DIAG|Contractors|VerifyMismatch",TraceSeverity.Warning,{Screen:"Contractors",ItemID:Coalesce(varEmpPatchedID,0),Rows:CountRows(colEmpVerifyRaw),Fields:varEmpVerifyDiff})'))) 'Trace DIAG|Contractors|VerifyMismatch with field names only'
+Assert-True ($saveN.Contains((Norm 'Set(varEmpVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));')) -and $saveN.Contains((Norm 'Substitute(If(LangNl && !IsBlank(T.empErrVerifyFields.nl),T.empErrVerifyFields.nl,T.empErrVerifyFields.en),"{0}",Concat(d,L,", "))'))) 'Verify mismatch: technical names to Trace, labels on screen (never values)'
+Assert-True ($saveN.Contains((Norm 'Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrPatch.nl),T.empErrPatch.nl,T.empErrPatch.en) & " " & FirstError.Message});false);'))) 'Patch error: SharePoint reason (FirstError.Message) appended to the on-screen error only'
+$feAll = @([regex]::Matches($screenText, 'FirstError\.Message'))
+$feOk = @($feAll | Where-Object { $screenText.Substring([Math]::Max(0, $_.Index - 220), [Math]::Min(220, $_.Index)) -match 'Collect\(col\w*Errors,\{[^{}]*$' })
+Assert-True ($feAll.Count -ge 5 -and $feOk.Count -eq $feAll.Count) "FirstError.Message only inside on-screen error collections ($($feAll.Count) uses: load errors + Patch error)"
+
+
+# Geometry (TP-CONTRACTORS-01): search border not under the header, wide form top = list top, narrow no overlap.
+# The carriers' formulas are pinned by exact text, then mirrored here for each width.
+$expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,464,40)'; Width='=If(Self.X=1,Min(584,Parent.Width-504),Min(584,Parent.Width-80))'; Height='=If(Self.X=1,12,404)' }
+foreach ($k in $expLay.Keys) { Assert-True ((Get-Prop 'lblEmpLayout' $k) -eq $expLay[$k]) "Layout carrier lblEmpLayout.$k formula as mirrored" }
+Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+If(lblEmpErrors.Visible,52+lblEmpErrors.Height,40)+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
+$sY = [int](Get-Prop 'txtEmpSearch' 'Y').TrimStart('='); $sH = [int](Get-Prop 'txtEmpSearch' 'Height').TrimStart('=')
+$cY = [int](Get-Prop 'chkEmpShowInactive' 'Y').TrimStart('='); $cH = [int](Get-Prop 'chkEmpShowInactive' 'Height').TrimStart('=')
+$gY = [int](Get-Prop 'galEmpList' 'Y').TrimStart('=')
+Assert-True ($sY -ge 12) "Search box Y=$sY >= 12 (full border visible below the container top / status area)"
+Assert-True ($cY -ge $sY + $sH + 8 -and $gY -ge $cY + $cH + 8) "Search < checkbox < list stack without overlap (Y $sY, $cY, $gY)"
+Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=lblEmpStatus.Y+lblEmpStatus.Height+8') 'Body starts 8 px under the status line (never under the title bar)'
+foreach ($W in 768, 900, 1000, 1280, 1366, 1920) {
+    foreach ($errH in 0, 60) {
+        $wide = $W -ge 1000
+        $layX = [int]$wide; $layY = if ($wide) { 464 } else { 40 }
+        $layW = if ($wide) { [Math]::Min(584, $W - 504) } else { [Math]::Min(584, $W - 80) }
+        $layH = if ($wide) { 12 } else { 404 }
+        $metX = [int](($layW - 48) -ge 536)
+        $metY = 24 + 76 * (8 + (1 - $metX)) + $(if ($errH -gt 0) { 52 + $errH } else { 40 }) + 24
+        $bodyH = 500
+        $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($metY + 24, 288)) } else { $layH + $metY + 24 }
+        $galH = if ($wide) { [Math]::Max(200, $metH - 124) } else { 280 }
+        $galW = [Math]::Min(400, $W - 80)
+        $lbl = "W=$W errBlock=$errH"
+        Assert-True ($sY -ge 12 -and $gY + $galH -le $metH) "$lbl : search top $sY, list bottom $($gY + $galH) within canvas $metH"
+        Assert-True ((($W -ge 1000) -and ($layY + $layW + 40 -le $W)) -or (($W -lt 1000) -and ($layY + $layW -le $W))) "$lbl : form (X=$layY, w=$layW) inside screen"
+        if ($wide) {
+            Assert-True ($layH -eq $sY) "$lbl : wide form top ($layH) = list/search top ($sY)"
+            Assert-True (40 + $galW + 24 -le $layY) "$lbl : wide list (right edge $(40 + $galW)) clear of form X=$layY"
+            Assert-True ($layH + $metY -le $metH) "$lbl : form bottom $($layH + $metY) within canvas $metH"
+        } else {
+            Assert-True ($layH -ge $gY + $galH + 24) "$lbl : narrow form top $layH >= list bottom $($gY + $galH) + 24 (no overlap)"
+            Assert-True ($layH + $metY -le $metH) "$lbl : narrow form bottom within canvas $metH"
+        }
+    }
+}
 Write-Output 'PASS Test-AdminScreens (Contractors): static structure only. Studio import, binding, delegation (Monitor), SharePoint case-sensitivity of Title = and functional tests NOT verified.'

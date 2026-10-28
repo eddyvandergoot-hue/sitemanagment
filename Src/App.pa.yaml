@@ -47,8 +47,8 @@ App:
         empMsgSaved: {en: "Saved and verified in SharePoint.", nl: ""},
         empMsgSavedRename: {en: "Saved and verified in SharePoint. The new name is shown wherever this contractor is used, including past hours.", nl: ""},
         empMsgNotSaved: {en: "Not saved; nothing was written to SharePoint. Fix the points listed in the form.", nl: ""},
-        empMsgSaveFailed: {en: "Save not confirmed. Check this contractor in SharePoint (Modified / version history), then click Discard changes to reload. Saving is blocked.", nl: ""},
-        empMsgSaveFailedNew: {en: "Not certain whether the new contractor was created. Click Discard changes to reload, then search by name before trying again. Saving is blocked.", nl: ""},
+        empMsgSaveFailed: {en: "Save not confirmed. Check this contractor in SharePoint (Modified / version history), then click Discard changes or Refresh to reload. Saving is blocked.", nl: ""},
+        empMsgSaveFailedNew: {en: "Not certain whether the new contractor was created. Click Discard changes or Refresh to reload, then search by name before trying again. Saving is blocked.", nl: ""},
         empErrNameRequired: {en: "Contractor Name is required.", nl: ""},
         empErrTooLong: {en: "{0} is longer than 255 characters.", nl: ""},
         empErrEmail: {en: "Contact Email is not a valid email address.", nl: ""},
@@ -61,6 +61,7 @@ App:
         empErrConflict: {en: "This contractor was changed in SharePoint after loading. Nothing was saved; discard your changes and click Refresh.", nl: ""},
         empErrPatch: {en: "SharePoint did not accept the save.", nl: ""},
         empErrVerify: {en: "The saved values could not be confirmed by reading them back from SharePoint.", nl: ""},
+        empErrVerifyFields: {en: "Different in SharePoint after saving: {0}.", nl: ""},
         empWarnActiveWorkers: {en: "Warning: {0} active worker(s) still have this contractor. Deactivating does not change those workers or their hours.", nl: ""},
         empWarnWorkersRefresh: {en: "Workers could not be refreshed; open Project / team and click Refresh to see the new name.", nl: ""}
       };

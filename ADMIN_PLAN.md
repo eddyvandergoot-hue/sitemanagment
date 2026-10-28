@@ -123,9 +123,10 @@ Status 28-10-2026: Contractors gebouwd (build: PROJECT_STATUS.md; technisch geco
 ## 9. Contractors-build: afwijkingen en open punten (review 28-10-2026)
 - (a) Geen rode veldrand per veld en statusregel niet gecentreerd (plan 2.3): UI-vervolg.
 - (b) Refresh(Workers) alleen bij hernoemen (plan 2.7: altijd): functioneel voldoende, geaccepteerd.
-- (c) Een SharePoint-afwijzing (bv. uniciteit) toont de reden niet: vervolg = alleen FirstError.Message aan de schermfoutlijst (niet in Trace).
+- (c) Een SharePoint-afwijzing toont de reden nu op het scherm (v2, alleen scherm, niet in Trace); Studio-test open.
 - (d) Serverduplicaatcontrole `Title = var` is exact: of SharePoint `=` hoofdletterongevoelig is, vergt Studio-test (lokale Lower-vergelijking is beslissend).
 - (e) Alleen in Studio te zien: App.Formulas-benoemde formule met varLang (terugval LangNl = false), typeconsistentie van varEmpEdit, Reset na Set, scrollen van de uitgeschakelde gallery, DisplayMode.View-uiterlijk, delegatiewaarschuwingen op volledige lijstreads (begrensd door 500, zoals bestaande loaders), telefoonregex.
 - (f) Weekly Hours stale-cachefix (par. 5.6) volgt in de Workers-build.
 - (g) >= 500 Workers blokkeert het Contractors-scherm (fail-closed).
 - Uit par. 1/8 vervallen: punt d (Language-standaard: gezet) en de Email-controle (gedaan door Eddy 28-10-2026); punt 4 (waarschuwing bij deactiveren met actieve medewerkers) is zo gebouwd.
+- Build v2 (28-10-2026, na FAIL TP-CONTRACTORS-01 stap 8+9): Blank-versus-""-fix (Trim(x & "") aan beide kanten; Active Coalesce(x,true)); verify/conflict alleen op de 9 door de app geschreven velden; Refresh na SaveFailed = Discard (DECISIONS.md H15). Beperkingen: whitespace-only wijzigingen door anderen worden niet als conflict herkend (Trim vouwt ook dubbele spaties; waarden worden getrimd opgeslagen); verify accepteert een Blank Active-read-back als true; mislukt de herlaad na SaveFailed, dan is de veldverschillenlijst weg (alleen de laadfout blijft); Studio-gedrag van Blank/"" en TextInput.Text bij Blank Default niet geverifieerd.

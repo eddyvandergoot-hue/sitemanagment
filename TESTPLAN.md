@@ -19,7 +19,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-SEC-01 | Permissietest met niet-eigenaar account | OPEN | - | Eddy |
 | TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | PASS | 27-10-2026 | Eddy |
 | TP-MIGR-01 | Migratieactie per project (Screen1) | PASS op TEST-000 en Friesland Campina | 27-10-2026 | Eddy |
-| TP-CONTRACTORS-01 | Contractors-scherm (beheer) | OPEN | - | Eddy |
+| TP-CONTRACTORS-01 | Contractors-scherm (beheer) | OPEN (FAIL 8+9 op eerste build; hertest) | - | Eddy |
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
@@ -183,7 +183,9 @@ Doel: aantonen dat een gebruiker zonder eigenaarsrechten alleen kan wat de bedoe
 
 Uitkomst per stap noteren met datum en account/rol. Stap 4 is pas bindend na MS-004.
 
-## TP-CONTRACTORS-01 Contractors-scherm (OPEN; build contractors-20261028_203334, PROJECT_STATUS.md)
+## TP-CONTRACTORS-01 Contractors-scherm (OPEN; eerste build contractors-20261028_203334: FAIL stap 8+9; hertest op build contractors-20261028_222247, PROJECT_STATUS.md)
+
+Resultaat 28-10-2026 (Eddy, build 203334): stap 8 en 9 FAIL (elke Save toonde "Save not confirmed ... Saving is blocked" terwijl de data wel was geschreven; daarna alles behalve Discard uit; zoekvak-rand verborgen, paneel niet uitgelijnd); de overige stappen niet gemeld. Oorzaak en fix: PROJECT_STATUS.md. Hertest op build 222247 door Eddy vanaf stap 8, plus de extra controles onder de tabel.
 
 Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractors alleen lezen, nooit wijzigen. Nooit verwijderen, alleen deactiveren.
 
@@ -207,6 +209,13 @@ Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractor
 | 16 | Conflict: dezelfde contractor na het laden in SharePoint wijzigen, daarna Save | geblokkeerd met "changed by someone else" |
 | 17 | Smal venster | statusregel kapt af met "…"; footer past |
 | 18 | Monitor | queries op Employers (ID=, Title=) gedelegeerd |
+
+Extra controles hertest (build 222247):
+- A. Stap 8-9 opnieuw: New met lege optionele velden, en Edit van City: Save slaagt met verify-melding, geen "Save not confirmed".
+- B. Een contractor met lege velden selecteren maakt het formulier niet dirty (Home, New en gallery blijven actief).
+- C. Layout op ~900, 1000 en 1280 px: zoekvak-bovenrand zichtbaar; lijst en formulier bovenaan uitgelijnd in de brede layout (>=1000 px); smal: formulier onder de lijst zonder overlap.
+- D. Faalt een Save weer: noteer de getoonde veldlijst of SharePoint-reden, en de Monitor-events DIAG|Contractors|VerifyMismatch en DIAG|Contractors|Refresh.
+- E. Na een mislukte Save laadt Refresh opnieuw (invoer verworpen).
 
 ## TP-WH-CLEAN-01 Weekly Hours opgeschoond (OPEN)
 
