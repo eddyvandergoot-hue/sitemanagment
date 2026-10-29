@@ -19,7 +19,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-SEC-01 | Permissietest met niet-eigenaar account | OPEN | - | Eddy |
 | TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | PASS | 27-10-2026 | Eddy |
 | TP-MIGR-01 | Migratieactie per project (Screen1) | PASS op TEST-000 en Friesland Campina | 27-10-2026 | Eddy |
-| TP-CONTRACTORS-01 | Contractors-scherm (beheer) | OPEN (build 174723: 8-11, 12a, 12b, uitlijning PASS; hertest build 221757 controles I-O open) | 29-10-2026 | Eddy |
+| TP-CONTRACTORS-01 | Contractors-scherm (beheer) | OPEN (build 174723: 8-11, 12a, 12b, uitlijning PASS; hertest build 232612 controles I-S open; 221757 overgeslagen) | 29-10-2026 | Eddy |
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
@@ -183,10 +183,10 @@ Doel: aantonen dat een gebruiker zonder eigenaarsrechten alleen kan wat de bedoe
 
 Uitkomst per stap noteren met datum en account/rol. Stap 4 is pas bindend na MS-004.
 
-## TP-CONTRACTORS-01 Contractors-scherm (OPEN; build 203334: FAIL stap 8+9; build 174723: PASS zie onder; hertest op build contractors-20261029_221757, PROJECT_STATUS.md)
+## TP-CONTRACTORS-01 Contractors-scherm (OPEN; build 203334: FAIL stap 8+9; build 174723: PASS zie onder; hertest op build contractors-20261029_232612 (221757 is overgeslagen), PROJECT_STATUS.md)
 
-Resultaat 28-10-2026 (Eddy, build 203334): stap 8 en 9 FAIL (elke Save toonde "Save not confirmed ... Saving is blocked" terwijl de data wel was geschreven; daarna alles behalve Discard uit; zoekvak-rand verborgen, paneel niet uitgelijnd); de overige stappen niet gemeld. Oorzaak en fix: PROJECT_STATUS.md. Hertest door Eddy op build 221757 (vervangt 174723), plus de extra controles onder de tabel.
-Resultaat 29-10-2026 (Eddy, build 174723): PASS: stap 8, 9, 9b, 10, 11, 12a (verse gegevens na Refresh), 12b (conflict geblokkeerd, SharePoint-waarde "Stad B" intact, Discard + Refresh toont Stad B) en uitlijning brede layout. Het doel van build 174723 (connectorcache toont nooit waarden van vóór een directe SharePoint-wijziging) is daarmee bevestigd. Let op: de labels 9b, 12a en 12b staan niet in de tabel hieronder (Eddy's nummering); koppeling aan tabelstappen niet vastgelegd. Stappen 1-7, 13-18 en controles A-H: niet gemeld. Hertest op build 221757 (meldingenbesluit H17): controles I-O, en de tabelverwachtingen van stap 6, 7, 16, 17 zijn bijgewerkt naar de meldingsbalk.
+Resultaat 28-10-2026 (Eddy, build 203334): stap 8 en 9 FAIL (elke Save toonde "Save not confirmed ... Saving is blocked" terwijl de data wel was geschreven; daarna alles behalve Discard uit; zoekvak-rand verborgen, paneel niet uitgelijnd); de overige stappen niet gemeld. Oorzaak en fix: PROJECT_STATUS.md. Hertest door Eddy op build 232612 (vervangt 174723; 221757 overgeslagen), plus de extra controles onder de tabel.
+Resultaat 29-10-2026 (Eddy, build 174723): PASS: stap 8, 9, 9b, 10, 11, 12a (verse gegevens na Refresh), 12b (conflict geblokkeerd, SharePoint-waarde "Stad B" intact, Discard + Refresh toont Stad B) en uitlijning brede layout. Het doel van build 174723 (connectorcache toont nooit waarden van vóór een directe SharePoint-wijziging) is daarmee bevestigd. Let op: de labels 9b, 12a en 12b staan niet in de tabel hieronder (Eddy's nummering); koppeling aan tabelstappen niet vastgelegd. Stappen 1-7, 13-18 en controles A-H: niet gemeld. Hertest op build 232612 (meldingenbesluit H17, rood/oranje/groen en spinner): controles I-S, en de tabelverwachtingen van stap 6, 7, 16, 17 zijn bijgewerkt naar de meldingsbalk.
 
 Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractors alleen lezen, nooit wijzigen. Nooit verwijderen, alleen deactiveren.
 
@@ -196,7 +196,7 @@ Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractor
 | 2 | Show inactive uit | inactieve contractors verborgen |
 | 3 | Zoeken op naam, code en plaats | lijst filtert lokaal op alle drie |
 | 4 | Een contractor selecteren | formulier gevuld; Contractor Code in grijs alleen-lezen vak txtEmpCode |
-| 5 | New | leeg formulier; Active aangevinkt |
+| 5 | New | leeg formulier; Active aangevinkt; geen melding (zie Q) |
 | 6 | Save met lege naam | rode balk "Fix: Contractor Name empty", rode rand op het veld; nul writes |
 | 7 | Save met ongeldig e-mailadres | rode balk met reden, rode rand op het veld; nul writes |
 | 8 | Dubbele naam in andere hoofdletters of met extra spaties (bv. "test employer") | geblokkeerd |
@@ -206,7 +206,7 @@ Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractor
 | 12 | Wijziging maken (niet opslaan), dan Home, New of een gallery-klik | geblokkeerd |
 | 13 | Discard changes | waarden hersteld |
 | 14 | TEST Contractor 2 deactiveren en Save | verborgen bij Show inactive uit, zichtbaar bij aan |
-| 15 | TEST Employer deactiveren (heeft actieve testmedewerkers) | waarschuwing in de groene save-melding, dus na Save (H17; opslaan toegestaan); sla over als Eddy dit niet wil deactiveren |
+| 15 | TEST Employer deactiveren (heeft actieve testmedewerkers) | oranje balk direct bij uitvinken, vóór Save; opslaan toegestaan; na Save oranje "Saved. n active worker(s)..." (zie P); sla over als Eddy dit niet wil deactiveren |
 | 16 | Conflict: dezelfde contractor na het laden in SharePoint wijzigen, daarna Save | rode balk "Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh." (zie K); SharePoint-waarde intact |
 | 17 | Smal venster | geen statusregel; footer past; "Last changed in SharePoint" onder Active zonder overlap (zie M) |
 | 18 | Monitor | queries op Employers (ID=, Title=) gedelegeerd |
@@ -221,14 +221,18 @@ Extra controles hertest (A-E sinds build 222247, F-H nieuw op build 174723):
 - G. Na Save toont het formulier de opgeslagen waarden en is het niet dirty (Home, New en gallery blijven actief; btnEmpFormReset).
 - H. Brede layout (>=1000 px): formulier bovenkant gelijk met de lijst; label "Last changed" niet afgekapt (onder ~430 px kan het op twee regels afknippen: bekend, niet blokkerend).
 - Bekende Studio-controles: geneste Select (Refresh/OnVisible -> btnEmpLoad -> btnEmpFormReset), Reset pikt de nieuwe Default op, Modified komt mee in de kolomselectie (anders is het label leeg, veilig), extra roundtrip per load; Notify-timeout 0 bij Failed/SaveFailed.
-- Nieuw op build 221757 (H17):
-- I. Geen statusregel en geen foutlijst in het scherm; laden toont een groene balk met aantal en tijd ("<n> contractors loaded at hh:mm:ss").
+- Nieuw op build 232612 (H17, I-O herzien, P-S nieuw; 221757 is niet getest):
+- I. Geen statusregel en geen foutlijst in het scherm; laden toont de spinner rechts in de titelbalk en daarna een groene balk met aantal en tijd ("<n> contractors loaded at hh:mm:ss"); geen laadmelding.
 - J. Save met lege naam en ongeldig e-mailadres: rode randen op beide velden, rode balk "Fix: Contractor Name empty (+1 more)".
 - K. Conflict (zoals 12b): rode balk met exact "Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh."
 - L. Contractor Code is een grijs alleen-lezen vak (txtEmpCode); niet te bewerken.
 - M. "Last changed in SharePoint" klein en grijs onderaan onder Active, smal en breed zonder overlap met de footer.
 - N. (indien te forceren) mislukte load of save: rode melding blijft staan tot sluiten.
-- O. Geslaagde Save: groene balk.
+- O. Geslaagde Save (zonder waarschuwingen): groene balk.
+- P. Active uitvinken bij een contractor met actieve (test)medewerkers (alleen TEST-records): direct een oranje balk vóór Save; Save blijft mogelijk; na Save oranje "Saved. n active worker(s)...".
+- Q. New: geen melding (geen groene of andere balk).
+- R. Selectie van een inactieve contractor, Discard en de reset na Save: geen oranje melding.
+- S. De spinner draait rechts in de titelbalk tijdens laden en opslaan en verdwijnt daarna; geen overlap met de titel bij normale breedte (onder ~400 px bekend mogelijk). Noteer of de animatie draait of de boog statisch blijft.
 
 ## TP-WH-CLEAN-01 Weekly Hours opgeschoond (OPEN)
 

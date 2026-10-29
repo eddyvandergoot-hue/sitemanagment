@@ -10,7 +10,7 @@ foreach($c in $cfg){
  $screen,$title,$logo=$c
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  $order=@(Flat-Children $doc['Screens'][$screen]['Children'] | ForEach-Object {@($_.Keys)[0]})
- $imgs=@($indexes[$screen].Keys | Where-Object {$indexes[$screen][$_]['Control'] -like 'Image@*'})
+ $imgs=@($indexes[$screen].Keys | Where-Object {$indexes[$screen][$_]['Control'] -like 'Image@*' -and !($screen -eq 'scrContractors' -and $_ -eq 'imgEmpSpinner')})  # imgEmpSpinner on scrContractors only: explicit exception (title-bar spinner, checked in Test-AdminScreens)
  if($imgs.Count -ne 1 -or $imgs[0] -ne $logo){throw "$screen : expected exactly one Image ($logo), found $($imgs -join ',')"}
  $i=$indexes[$screen][$logo];$p=$i['Properties'];$t=$indexes[$screen][$title]['Properties']
  if($i['Control'] -ne 'Image@2.2.3'){throw "$screen logo control $($i['Control'])"}

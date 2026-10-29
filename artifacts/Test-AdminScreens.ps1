@@ -304,7 +304,7 @@ Assert-True (@([regex]::Matches($srcAll, '\bT\.(\w+)\.en\b') | Where-Object { $s
 $hardCoded = @()
 foreach ($k in $all.Keys) {
     $fx = $all[$k]
-    if ($k -like '*.Font') { continue }
+    if ($k -like '*.Font' -or $k -eq 'imgEmpSpinner.Image') { continue }
     if ($k -like '*.OnVisible' -or $k -like '*.OnSelect') { $fx = [regex]::Replace($fx, 'Trace\("[^"]*"', 'Trace(') }
     foreach ($lit in [regex]::Matches($fx, '"([^"]*)"')) {
         if ($lit.Groups[1].Value -match '[A-Za-z]{2,}\s+[A-Za-z]') { $hardCoded += "$k : `"$($lit.Groups[1].Value)`"" }
@@ -462,12 +462,18 @@ Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:9},' + $m
 
 # (15) Messages only via the Power Apps notification bar (Eddy 29-10-2026) ------------------------------------------
 # No message text on the screen: errors NotificationType.Error (15000 ms; Failed/SaveFailed 0 = until closed), success NotificationType.Success (default
-# timeout), one Notify per outcome, no Warning/Information; an invalid field is shown only by a red #DB1E28 border.
+# timeout), one Notify per outcome; an invalid field is shown only by a red #DB1E28 border.
+# Eddy 29-10-2026 (third type, orange): NotificationType.Warning (15000 ms) only for the warning texts empWarnActiveWorkers/empWarnWorkersRefresh,
+# in exactly two places: chkEmpActive.OnUncheck (live, before Save) and the verified save with a warning. Information stays forbidden.
+# Success never carries a warning text; New (btnEmpNew) gives no instruction message.
 foreach ($gone in @('lblEmpStatus', 'lblEmpErrors')) { Assert-True (!$idx.ContainsKey($gone)) "$gone removed (no message text on the screen)" }
 Assert-True ($srcAll -notmatch '\bvarEmpMsg(Error)?\b') 'varEmpMsg/varEmpMsgError no longer exist in Src'
 $msgProps = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_] -match '\.Message\b|\bT\.emp(Msg|Err|Warn)\w*\.' } | Sort-Object)
 Assert-True ($msgProps.Count -eq 0) "No non-behaviour property shows a message or error text ($($msgProps -join ', '))"
-Assert-True ($screenText -notmatch 'NotificationType\.(Warning|Information)') 'No NotificationType.Warning/Information on scrContractors'
+Assert-True ($screenText -notmatch 'NotificationType\.Information') 'No NotificationType.Information on scrContractors'
+$warnKeys = @('empWarnActiveWorkers', 'empWarnWorkersRefresh')
+$warnUses = @($all.Keys | Where-Object { $all[$_] -match 'NotificationType\.Warning' } | Sort-Object)
+Assert-True (($warnUses -join ',') -ceq 'btnEmpSave.OnSelect,chkEmpActive.OnUncheck') "NotificationType.Warning only in btnEmpSave.OnSelect and chkEmpActive.OnUncheck ($($warnUses -join ', '))"
 $notifies = @()
 foreach ($k in ($all.Keys | Sort-Object)) {
     $fx = $all[$k]
@@ -476,20 +482,27 @@ foreach ($k in ($all.Keys | Sort-Object)) {
         $notifies += [pscustomobject]@{ Key = $k; Pos = $m.Index; Args = (Split-Args $call.Substring(1, $call.Length - 2)) }
     }
 }
-$successKeys = @('empMsgLoaded', 'empMsgSaved', 'empMsgSavedRename', 'empMsgDiscarded', 'empMsgNew')
+$successKeys = @('empMsgLoaded', 'empMsgSaved', 'empMsgSavedRename', 'empMsgDiscarded')
+$types = @{}
 foreach ($n in $notifies) {
     $type = $n.Args[1].Trim(); $keysIn = @([regex]::Matches($n.Args[0], '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    $types[$type] = 1 + [int]$types[$type]
     Assert-True ($n.Key -match '\.On\w+$') "$($n.Key) : Notify only in a behaviour formula"
+    Assert-True (@($keysIn | Where-Object { $_ -in $warnKeys }).Count -eq 0 -or $type -eq 'NotificationType.Warning') "$($n.Key) : a warning text (empWarn*) is only notified as NotificationType.Warning (T: $($keysIn -join ','); type $type)"
     if ($type -eq 'NotificationType.Error') {
         # Failed states (load failed, SaveFailed) leave a read-only screen: that message stays until closed (timeout 0).
         $sticky = @($keysIn | Where-Object { $_ -in @('empMsgLoadFailed', 'empMsgSaveFailed', 'empMsgSaveFailedNew') }).Count -gt 0
         $expTimeout = if ($sticky) { '0' } else { '15000' }
         Assert-True ($n.Args.Count -eq 3 -and $n.Args[2].Trim() -eq $expTimeout -and @($keysIn | Where-Object { $_ -in $successKeys }).Count -eq 0) "$($n.Key) : error Notify (T: $($keysIn -join ',')) uses NotificationType.Error, $expTimeout ms, no success text"
+    } elseif ($type -eq 'NotificationType.Warning') {
+        $allowedW = if ($n.Key -eq 'chkEmpActive.OnUncheck') { @('empWarnActiveWorkers') } else { @('empMsgSaved', 'empMsgSavedRename') + $warnKeys }
+        Assert-True ($n.Key -in @('btnEmpSave.OnSelect', 'chkEmpActive.OnUncheck') -and $n.Args.Count -eq 3 -and $n.Args[2].Trim() -eq '15000' -and @($keysIn | Where-Object { $_ -in $warnKeys }).Count -ge 1 -and @($keysIn | Where-Object { $_ -notin $allowedW }).Count -eq 0) "$($n.Key) : warning Notify (T: $($keysIn -join ',')) uses NotificationType.Warning, 15000 ms, only warning texts (+ saved text on Save)"
     } else {
-        Assert-True ($type -eq 'NotificationType.Success' -and $n.Args.Count -eq 2 -and @($keysIn | Where-Object { $_ -notin $successKeys -and $_ -notin @('empWarnActiveWorkers', 'empWarnWorkersRefresh') }).Count -eq 0 -and @($keysIn | Where-Object { $_ -in $successKeys }).Count -ge 1) "$($n.Key) : success Notify (T: $($keysIn -join ',')) uses NotificationType.Success with the default timeout"
+        Assert-True ($type -eq 'NotificationType.Success' -and $n.Args.Count -eq 2 -and @($keysIn | Where-Object { $_ -notin $successKeys }).Count -eq 0 -and @($keysIn | Where-Object { $_ -in $successKeys }).Count -ge 1) "$($n.Key) : success Notify (T: $($keysIn -join ',')) uses NotificationType.Success with the default timeout, no warning text"
     }
 }
-$expNotify = [ordered]@{ 'btnEmpLoad.OnSelect' = 3; 'btnEmpSave.OnSelect' = 4; 'btnEmpNew.OnSelect' = 2; 'btnEmpDiscard.OnSelect' = 2; 'btnEmpRefresh.OnSelect' = 1; 'galEmpList.OnSelect' = 1 }
+Assert-True ($types['NotificationType.Warning'] -eq 2 -and ($types['NotificationType.Success'] -eq 3) -and @($types.Keys | Where-Object { $_ -notin @('NotificationType.Error', 'NotificationType.Warning', 'NotificationType.Success') }).Count -eq 0) "Notification types: Error/Warning/Success only; 2 x Warning (live + save), 3 x Success (loaded, saved, discarded)"
+$expNotify = [ordered]@{ 'btnEmpLoad.OnSelect' = 3; 'btnEmpSave.OnSelect' = 5; 'btnEmpNew.OnSelect' = 1; 'btnEmpDiscard.OnSelect' = 2; 'btnEmpRefresh.OnSelect' = 1; 'chkEmpActive.OnUncheck' = 1; 'galEmpList.OnSelect' = 1 }
 $gotNotify = (($notifies | Group-Object Key | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ';')
 Assert-True ($gotNotify -ceq (($expNotify.Keys | Sort-Object | ForEach-Object { "$_=$($expNotify[$_])" }) -join ';')) "Notify per formula as expected: $gotNotify"
 $blockedN = Norm ',Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000))'
@@ -506,14 +519,62 @@ Assert-True ($unusedT.Count -eq 0) "No unused T keys ($($unusedT -join ', '))"
 $saveNot = @($notifies | Where-Object Key -eq 'btnEmpSave.OnSelect' | Sort-Object Pos)
 $loadNot = @($notifies | Where-Object Key -eq 'btnEmpLoad.OnSelect' | Sort-Object Pos)
 function Msg([string]$fixture, [string]$fx) { return "With({LangNl:false,T:$tRec},With({$fixture},$fx))" }
-Assert-True ($saveN.IndexOf((Norm $saveNot[1].Args[0])) -gt $saveN.IndexOf('varEmpSaveWrites=0,') -and $saveN.IndexOf((Norm $saveNot[2].Args[0]), $saveN.IndexOf('Set(varEmpSaveFailed,true)')) -gt 0) 'Save outcome: zero-write Notify after varEmpSaveWrites=0, failed-save Notify after SaveFailed'
-Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"",Message:T.empErrConflict.en})' $saveNot[1].Args[0]) $conflictMsg 'Conflict notification is exactly the conflict text'
-Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"Name",Message:T.empErrNameRequired.en},{Field:"ContactEmail",Message:T.empErrEmail.en},{Field:"ContactPhone",Message:T.empErrPhone.en})' $saveNot[1].Args[0]) 'Fix: Contractor Name empty (+2 more)' 'Several validation errors: one notification, first error + (+n more)'
-Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"City",Message:Substitute(T.empErrTooLong.en,"{0}",T.empFieldCity.en)})' $saveNot[1].Args[0]) 'Fix: City too long' 'Too long: field label in the notification'
-Assert-Eval (Msg 'varEmpSaveMode:"Edit",colEmpSaveErrors:Table({Field:"",Message:T.empErrPatch.en & " " & "List is read-only."})' $saveNot[2].Args[0]) 'Save not confirmed by SharePoint. List is read-only. Check SharePoint, then click Discard.' 'Failed save (Edit): SharePoint reason behind the short text'
-Assert-Eval (Msg 'varEmpSaveMode:"New",colEmpSaveErrors:Table({Field:"",Message:Substitute(T.empErrVerifyFields.en,"{0}","City, Active")})' $saveNot[2].Args[0]) 'Save not confirmed: different in SharePoint: City, Active. Maybe created: click Discard, then search the name before retrying.' 'Failed save (New, verify mismatch): field labels, New advice'
-Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false' $saveNot[0].Args[0]) 'Saved. 2 active worker(s) still have this contractor.' 'Saved + active-worker warning in one success notification'
-Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveNot[0].Args[0]) 'Saved. The new name also shows on past hours. Workers not refreshed: open Project / team and click Refresh.' 'Saved + rename + Workers-refresh warning in one success notification'
+Assert-True ($saveNot.Count -eq 5 -and $saveNot[0].Args[1].Trim() -eq 'NotificationType.Warning' -and $saveNot[1].Args[1].Trim() -eq 'NotificationType.Success') 'Save notifications in order: warning, success, zero-write error, failed-save error, blocked'
+Assert-True ($saveN.IndexOf((Norm $saveNot[2].Args[0]), $saveN.IndexOf('varEmpSaveWrites=0,')) -gt 0 -and $saveN.IndexOf((Norm $saveNot[3].Args[0]), $saveN.IndexOf('Set(varEmpSaveFailed,true)')) -gt 0) 'Save outcome: zero-write Notify after varEmpSaveWrites=0, failed-save Notify after SaveFailed'
+# Verified save: one notification, orange (Warning) when there is a warning, else green (Success)
+$outHead = 'If(varEmpSaveWarnWorkers>0 || varEmpSaveWorkersRefreshFailed,'
+$iOutcome = $save.IndexOf($outHead)
+Assert-True ($iOutcome -gt 0 -and ([regex]::Matches($save, [regex]::Escape($outHead))).Count -eq 1) 'Verified save: outcome If(<warning>, Warning, Success) exists once'
+$outCall = Get-Balanced $save ($iOutcome + 2)
+$outArgs = Split-Args $outCall.Substring(1, $outCall.Length - 2)
+Assert-True ($outArgs.Count -eq 3 -and $outArgs[1].Trim().StartsWith('Notify(') -and $outArgs[1].Trim().EndsWith(',NotificationType.Warning,15000)') -and $outArgs[2].Trim().StartsWith('Notify(') -and $outArgs[2].Trim().EndsWith(',NotificationType.Success)')) 'Verified save: exactly one Notify per outcome (warning branch Warning 15000 ms, else Success default timeout)'
+$iOutN = $saveN.IndexOf((Norm $outHead))
+Assert-True ($iOutN -gt $iLocal -and $iOutN -gt $saveN.IndexOf('If(varEmpSaveRenamed,IfError(Refresh(Workers),') -and $iOutN -lt $saveN.IndexOf('Select(btnEmpFormReset)') -and $iOutN -lt $saveN.IndexOf('varEmpSaveWrites=0,')) 'Verified save: outcome notification after the Workers refresh (its result is known), before the form reset, success branch only'
+$condFx = $outArgs[0].Trim()
+Assert-Eval "With({varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:false},$condFx)" $false 'No warning: green Success'
+Assert-Eval "With({varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false},$condFx)" $true 'Active workers on deactivation: orange Warning'
+Assert-Eval "With({varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true},$condFx)" $true 'Workers refresh failed after rename: orange Warning'
+Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false' $saveNot[0].Args[0]) 'Saved. 2 active worker(s) still have this contractor.' 'Saved + active-worker warning in one warning notification'
+Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveNot[0].Args[0]) 'Saved. The new name also shows on past hours. Workers not refreshed: open Project / team and click Refresh.' 'Saved + rename + Workers-refresh warning in one warning notification'
+Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:3,varEmpSaveWorkersRefreshFailed:true' $saveNot[0].Args[0]) 'Saved. The new name also shows on past hours. 3 active worker(s) still have this contractor. Workers not refreshed: open Project / team and click Refresh.' 'Both warnings in one warning notification'
+Assert-Eval (Msg 'varEmpSaveRenamed:false' $saveNot[1].Args[0]) 'Saved.' 'Success notification without warning: Saved.'
+Assert-Eval (Msg 'varEmpSaveRenamed:true' $saveNot[1].Args[0]) 'Saved. The new name also shows on past hours.' 'Success notification without warning: Saved + rename'
+# New: no instruction message (Eddy 29-10-2026); the only Notify in btnEmpNew is the blocked else branch
+$newNot = @($notifies | Where-Object Key -eq 'btnEmpNew.OnSelect')
+Assert-True ($newNot.Count -eq 1 -and $newNot[0].Args[0] -match 'T\.empMsgActionBlocked\.en' -and $newNot[0].Args[1].Trim() -eq 'NotificationType.Error') 'btnEmpNew: no Notify in the success path (only the blocked error)'
+Assert-True ($srcAll -notmatch '\bempMsgNew\b') 'T.empMsgNew removed (no instruction message)'
+# Live warning when Active is unchecked (chkEmpActive.OnUncheck): local only, same count as the save warning
+Assert-True ((Get-Prop 'chkEmpActive' 'OnCheck') -eq '=false' -and (Get-Prop 'chkEmpShowInactive' 'OnCheck') -eq '=false' -and (Get-Prop 'chkEmpShowInactive' 'OnUncheck') -eq '=false') 'chkEmpActive.OnCheck and chkEmpShowInactive OnCheck/OnUncheck stay no-op'
+$liveCount = 'CountIf(colEmpWorkers,EmployerID=varEmpSelectedID && Coalesce(WorkerActive,true))'
+$liveGuard = 'Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpSelectedID) && varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpEdit.Active,true) && ' + $liveCount + '>0'
+$unc = Get-Prop 'chkEmpActive' 'OnUncheck'
+Assert-True ($unc.StartsWith('=If(' + $liveGuard + ',')) 'chkEmpActive.OnUncheck guard: Edit with ID, Loaded without load errors, not busy/saving/SaveFailed, loaded record active, active workers > 0'
+Assert-True ($save.Contains('CountIf(colEmpWorkers,EmployerID=varEmpSaveID && Coalesce(WorkerActive,true))') -and $unc.Replace($liveCount, '#').Contains('Text(#)')) 'Live and save warning use the same count (EmployerID = selected/saved ID && Coalesce(WorkerActive,true))'
+Assert-True ($unc -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate|Reset)\(' -and $unc -notmatch '\.Run\(' -and $unc -notmatch '\b(Employers|Workers)\b') 'chkEmpActive.OnUncheck is local only (no mutation, no Reset, no SharePoint call)'
+$uncFx = $unc.TrimStart('=')
+$mU = [regex]::Match($uncFx, '\bNotify\(')
+$uCall = Get-Balanced $uncFx ($mU.Index + 6)
+$uArgs = Split-Args $uCall.Substring(1, $uCall.Length - 2)
+Assert-True ($uArgs.Count -eq 3 -and $uArgs[1].Trim() -eq 'NotificationType.Warning' -and $uArgs[2].Trim() -eq '15000') 'Live warning: NotificationType.Warning, 15000 ms'
+$uncEval = $uncFx.Substring(0, $mU.Index) + '("N:" & (' + $uArgs[0] + '))' + $uncFx.Substring($mU.Index + 6 + $uCall.Length)
+$wrk = 'colEmpWorkers:Table({ID:1,EmployerID:5,WorkerActive:true},{ID:2,EmployerID:5,WorkerActive:If(false,true)},{ID:3,EmployerID:5,WorkerActive:false},{ID:4,EmployerID:6,WorkerActive:true},{ID:5,EmployerID:If(false,1),WorkerActive:true})'
+$liveFix = 'varEmpMode:"Edit",varEmpSelectedID:5,varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpEdit:{Active:true},' + $wrk
+function Live([string]$fixture) { return "With({LangNl:false,T:$tRec},With({$fixture},Coalesce($uncEval,`"none`")))" }
+Assert-Eval (Live $liveFix) 'N:2 active worker(s) still have this contractor.' 'Live warning: 2 active workers (Active blank = active; inactive and other contractors not counted)'
+Assert-Eval (Live $liveFix.Replace('varEmpEdit:{Active:true}', 'varEmpEdit:{Active:If(false,true)}')) 'N:2 active worker(s) still have this contractor.' 'Live warning: loaded record with blank Active counts as active'
+$liveNo = @(
+    @('varEmpMode:"Edit"', 'varEmpMode:"New"', 'New contractor'),
+    @('varEmpSelectedID:5', 'varEmpSelectedID:Blank()', 'no selected ID (would match workers without contractor)'),
+    @('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"', 'load Failed'),
+    @('Filter(Table({Message:""}),false)', 'Table({Message:"x"})', 'load errors present'),
+    @('varEmpBusy:false', 'varEmpBusy:true', 'loading'),
+    @('varEmpSaving:false', 'varEmpSaving:true', 'saving (Reset after save)'),
+    @('varEmpSaveFailed:false', 'varEmpSaveFailed:true', 'after a failed save'),
+    @('varEmpEdit:{Active:true}', 'varEmpEdit:{Active:false}', 'loaded record already inactive (Reset/selection of an inactive contractor)'),
+    @('varEmpSelectedID:5', 'varEmpSelectedID:7', 'no workers for this contractor'))
+foreach ($c in $liveNo) { Assert-Eval (Live $liveFix.Replace($c[0], $c[1])) 'none' "Live warning: nothing when $($c[2])" }
+$saveCountFx = (Get-Balanced $save ($save.IndexOf('Set(varEmpSaveWarnWorkers,') + 3)); $saveCountFx = $saveCountFx.Substring('(varEmpSaveWarnWorkers,'.Length, $saveCountFx.Length - '(varEmpSaveWarnWorkers,'.Length - 1)
+Assert-Eval ("With({varEmpSaveMode:`"Edit`",varEmpSaveID:5,varEmpEdit:{Active:true},varEmpSaveRec:{Active:false},$wrk},$saveCountFx)") 2 'Save warning counts the same 2 active workers as the live warning'
 Assert-Eval (Msg 'colAdminEmployers:Table({ID:1},{ID:2},{ID:3}),varEmpLoadedAt:DateTime(2026,10,29,21,5,7)' $loadNot[1].Args[0]) '3 contractors loaded at 21:05:07' 'Load success notification: count and time'
 Assert-Eval (Msg 'colEmpLoadErrors:Table({Message:T.empErrLoadEmployers.en & " " & "Network error"},{Message:T.empErrLimitWorkers.en})' $loadNot[2].Args[0]) 'Loading failed. Click Refresh. Contractors not read: Network error (+1 more)' 'Load failure notification: first error + (+n more)'
 # Red border per field, bound to colEmpSaveErrors.Field
@@ -586,4 +647,22 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1920) {
 }
 Assert-True ((Get-Prop 'lblEmpModified' 'Y') -eq '=24+76*(8+(1-lblEmpMetrics.X))+40+12' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'lblEmpModified Y = checkbox bottom + 12; lblEmpMetrics.Y includes the label + 24 bottom padding'
 Assert-True ((Get-Prop 'lblEmpModified' 'X') -eq '=24' -and (Get-Prop 'lblEmpModified' 'Width') -eq '=Min(512,lblEmpLayout.Width-48)' -and (Get-Prop 'lblEmpModified' 'Size') -eq '=11' -and (Get-Prop 'lblEmpModified' 'FontWeight') -eq '=FontWeight.Normal' -and (Get-Prop 'lblEmpModified' 'Color') -eq '=ColorValue("#787878")' -and (Get-Prop 'lblEmpModified' 'Height') -eq '=20') 'lblEmpModified: Inter 11 Normal, #787878, Height 20, width Min(512,...)'
+# (16) Load/save spinner in the title bar (imgEmpSpinner) ---------------------------------------------------------------
+Assert-True ($idx.ContainsKey('imgEmpSpinner') -and $idx['imgEmpSpinner']['Control'] -eq 'Image@2.2.3') 'imgEmpSpinner exists as Image@2.2.3'
+$spImg = Get-Prop 'imgEmpSpinner' 'Image'
+Assert-True ($spImg.StartsWith('="data:image/svg+xml;utf8," & EncodeUrl("<svg') -and $spImg.EndsWith('</svg>")') -and $spImg -notmatch "`n") 'Spinner Image: single-line data-URI SVG via EncodeUrl'
+Assert-True ($spImg -match "<animateTransform[^>]*attributeName='transform'[^>]*type='rotate'[^>]*from='0 12 12'[^>]*to='360 12 12'[^>]*repeatCount='indefinite'" -and $spImg -match "viewBox='0 0 24 24'") 'Spinner SVG: 24x24 viewBox with animateTransform rotate 0..360 around 12 12, indefinite'
+$spCols = @([regex]::Matches($spImg, '#[0-9A-Fa-f]{3,8}\b') | ForEach-Object { $_.Value.ToUpper() } | Sort-Object -Unique)
+Assert-True ($spCols.Count -eq 1 -and $spCols[0] -eq '#FFFFFF') "Spinner SVG uses only #FFFFFF ($($spCols -join ','))"
+Assert-True ($spImg -notmatch 'opacity|rgba?\(|hsla?\(' -and $spImg -notmatch "(?:stroke|fill)='(?!none'|#)") 'Spinner SVG: no opacity, rgb()/hsl() or named colours (only solid white on #0303B8)'
+Assert-True ((Get-Prop 'imgEmpSpinner' 'Visible') -eq '=Coalesce(varEmpBusy,false) || Coalesce(varEmpSaving,false) || varEmpLoadState="Loading"') 'Spinner Visible = busy || saving || LoadState="Loading"'
+Assert-True ((Get-Prop 'imgEmpSpinner' 'Width') -eq '=24' -and (Get-Prop 'imgEmpSpinner' 'Height') -eq '=24' -and (Get-Prop 'imgEmpSpinner' 'ImagePosition') -eq '=ImagePosition.Fit' -and (Get-Prop 'imgEmpSpinner' 'AccessibleLabel') -eq '=If(LangNl && !IsBlank(T.empBusy.nl),T.empBusy.nl,T.empBusy.en)') 'Spinner: 24x24, ImagePosition Fit, AccessibleLabel from T (empBusy)'
+Assert-True (!$idx['imgEmpSpinner']['Properties'].ContainsKey('Fill') -and !$idx['imgEmpSpinner']['Properties'].ContainsKey('OnSelect')) 'Spinner has no Fill/OnSelect'
+Assert-True ((Get-Prop 'imgEmpSpinner' 'X') -eq '=lblEmpTitle.X+lblEmpTitle.Width-24-24' -and (Get-Prop 'imgEmpSpinner' 'Y') -eq '=lblEmpTitle.Y+16') 'Spinner at the right of the title bar (24 px margin), Y = title Y + 16 (centred in 56 px)'
+foreach ($W in 320, 480, 768, 1280) {
+    $tX = 40; $tW = $W - 80; $sX = $tX + $tW - 48; $lX = $tX + 15
+    Assert-True ($sX -ge $lX + 99 -and $sX + 24 -le $tX + $tW) "W=$W : spinner (X $sX..$($sX + 24)) inside the title bar and clear of the logo (ends $($lX + 99))"
+}
+$kids = @($doc['Screens'][$screenName]['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True ($kids[0] -eq 'lblEmpTitle' -and $kids[1] -eq 'imgLogoContractors' -and $kids[2] -eq 'imgEmpSpinner') 'Children order: title, logo directly after, spinner after the logo'
 Write-Output 'PASS Test-AdminScreens (Contractors): static structure only. Studio import, binding, delegation (Monitor), SharePoint case-sensitivity of Title = and functional tests NOT verified.'

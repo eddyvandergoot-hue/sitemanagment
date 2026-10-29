@@ -40,7 +40,7 @@ Status 29-10-2026: Contractors gebouwd (build: PROJECT_STATUS.md; technisch geco
 - Per scherm: varXxxLoadState (NotLoaded/Loading/Failed/Loaded), varXxxBusy, varXxxSaving, varXxxSaveFailed, varXxxMode ("", "New", "Edit"), varXxxEdit (snapshot), varXxxSelectedID, colAdminXxx (geladen lijst), colPendingAdminXxx (staging), colXxxLoadErrors, colXxxSaveErrors, colXxxPre (pre-read).
 
 ### 2.3 Status, fouten, dirty
-- Meldingen (DECISIONS.md H17, vervangt de eerdere statusregel + foutlijst): alleen de meldingsbalk bovenaan (Notify), rood bij fout, groen bij succes, één kort bericht, geen tekst in het formulier. Ongeldig veld = alleen rode rand #DB1E28 via colXxxSaveErrors.Field; de balk noemt de fout ("Fix: <veld> empty", bij meer "(+n more)"). Meldingen zeggen wat te doen ("Fix" / "Refresh" / "check in SharePoint"). Contractors gebouwd; Projects en Workers volgen dit.
+- Meldingen (DECISIONS.md H17, vervangt de eerdere statusregel + foutlijst): alleen de meldingsbalk bovenaan (Notify), rood bij fout, oranje bij waarschuwing, groen bij succes (geen Information), één kort bericht, geen tekst in het formulier. Ongeldig veld = alleen rode rand #DB1E28 via colXxxSaveErrors.Field; de balk noemt de fout ("Fix: <veld> empty", bij meer "(+n more)"). Meldingen zeggen wat te doen ("Fix" / "Refresh" / "check in SharePoint"). Laden/opslaan: spinner rechts in de titelbalk (geen laadmelding). Contractors gebouwd; Projects en Workers volgen dit.
 - Dirty: de guard vergelijkt de `.Text`/`.Value` van de inputs rechtstreeks met varXxxEdit (dezelfde expressie in DisplayMode en OnSelect), niet via OnChange (blur-beperking). Het formulier bindt nooit aan `gal.Selected` maar aan varXxxEdit + varXxxSelectedID. Gallery-selectie, New, Refresh en Home zijn geblokkeerd bij dirty/busy/saving (DisplayMode + eerste OnSelect-voorwaarde, tekstueel gelijk).
 - Discard changes: lokaal Reset naar varXxxEdit; in varXxxSaveFailed geforceerd herladen via de loader; nooit bronmutatie.
 
@@ -75,7 +75,7 @@ Status 29-10-2026: Contractors gebouwd (build: PROJECT_STATUS.md; technisch geco
 - Patch: alleen deze velden (Trim op tekst); nooit Contractor Code. Lijstsubtekst: Code | City | Inactive.
 - Validatie: naam verplicht, Trim, max 255; e-mail leeg of `IsMatch(..., Match.Email)`; telefoon leeg of tekens `[0-9 +()-]`, 6-20; tekstvelden max 255.
 - Duplicaat: BLOKKEREN op gelijke naam (Trim, hoofdletterongevoelig, eigen ID uitgezonderd): lokaal op colAdminEmployers (live) en autoritatief server `Filter(Employers, Title = varEmpSaveName)` incl. inactieve; of SharePoint `=` hoofdletterongevoelig is, in Studio testen (anders lokale Lower-vergelijking beslissend).
-- Deactiveren met actieve medewerkers: waarschuwing in de save-melding (niet blokkeren; moment en type open, H17); telling uit een aparte Workers-load (colWorkersCache heeft geen Active).
+- Deactiveren met actieve medewerkers: live oranje waarschuwing bij uitvinken van Active (chkEmpActive.OnUncheck, vóór Save) en oranje save-melding na Save (niet blokkeren; H17, besloten 29-10-2026); telling uit een aparte Workers-load (colWorkersCache heeft geen Active).
 - Naamwijziging werkt door in alle lookupweergaven, ook historie (identiteit via ID); in de UI-help vermelden.
 - Build levert ook: AGENTS-regel groen Save voor beheerschermen + Test-GeaColors; Home-tegel Contractors actief; Test-AdminScreens.ps1 (par. 6).
 
@@ -121,12 +121,12 @@ Status 29-10-2026: Contractors gebouwd (build: PROJECT_STATUS.md; technisch geco
 7. MS-021 (rechten) bij go-live; bij leden toevoegen "Send an email invitation" uitvinken.
 
 ## 9. Contractors-build: afwijkingen en open punten (review 28-10-2026)
-- (a) Opgelost in build 221757: rode veldrand per veld en meldingen via de meldingsbalk (DECISIONS.md H17); de statusregel bestaat niet meer. Open (Eddy): zie H17.
+- (a) Opgelost in build 221757, uitgebreid in 232612 (oranje, spinner): rode veldrand per veld en meldingen via de meldingsbalk (DECISIONS.md H17); de statusregel bestaat niet meer. De eerdere open punten zijn beslist (H17).
 - (b) Refresh(Workers) alleen bij hernoemen (plan 2.7: altijd): functioneel voldoende, geaccepteerd.
 - (c) Een SharePoint-afwijzing toont de reden nu op het scherm (v2, alleen scherm, niet in Trace); Studio-test open.
 - (d) Serverduplicaatcontrole `Title = var` is exact: of SharePoint `=` hoofdletterongevoelig is, vergt Studio-test (lokale Lower-vergelijking is beslissend).
 - (e) Alleen in Studio te zien: App.Formulas-benoemde formule met varLang (terugval LangNl = false), typeconsistentie van varEmpEdit, Reset na Set, scrollen van de uitgeschakelde gallery, DisplayMode.View-uiterlijk, delegatiewaarschuwingen op volledige lijstreads (begrensd door 500, zoals bestaande loaders), telefoonregex.
 - (f) Weekly Hours stale-cachefix (par. 5.6) volgt in de Workers-build.
 - (g) >= 500 Workers blokkeert het Contractors-scherm (fail-closed).
-- Uit par. 1/8 vervallen: punt d (Language-standaard: gezet) en de Email-controle (gedaan door Eddy 28-10-2026); punt 4 (waarschuwing bij deactiveren met actieve medewerkers) is gebouwd als onderdeel van de groene save-melding, dus pas ná Save (de live waarschuwing bij uitvinken is vervallen; type en moment te beslissen door Eddy, DECISIONS.md H17).
+- Uit par. 1/8 vervallen: punt d (Language-standaard: gezet) en de Email-controle (gedaan door Eddy 28-10-2026); punt 4 (waarschuwing bij deactiveren met actieve medewerkers) is gebouwd in build 232612: live oranje waarschuwing bij uitvinken plus oranje save-melding (H17).
 - Build v2 (28-10-2026, na FAIL TP-CONTRACTORS-01 stap 8+9): Blank-versus-""-fix (Trim(x & "") aan beide kanten; Active Coalesce(x,true)); verify/conflict alleen op de 9 door de app geschreven velden; Refresh na SaveFailed = Discard (DECISIONS.md H15). Beperkingen: whitespace-only wijzigingen door anderen worden niet als conflict herkend (Trim vouwt ook dubbele spaties; waarden worden getrimd opgeslagen); verify accepteert een Blank Active-read-back als true; mislukt de herlaad na SaveFailed, dan is de veldverschillenlijst weg (alleen de laadfout blijft); Studio-gedrag van Blank/"" en TextInput.Text bij Blank Default niet geverifieerd.

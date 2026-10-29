@@ -42,6 +42,19 @@ Screens:
             Width: =99
             X: =lblEmpTitle.X+15
             Y: =lblEmpTitle.Y+(lblEmpTitle.Height-Self.Height)/2
+      - imgEmpSpinner:
+          Control: Image@2.2.3
+          Properties:
+            AccessibleLabel: =If(LangNl && !IsBlank(T.empBusy.nl),T.empBusy.nl,T.empBusy.en)
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Height: =24
+            Image: ="data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'><path d='M12 3 A9 9 0 1 1 3 12' fill='none' stroke='#FFFFFF' stroke-width='3' stroke-linecap='round'><animateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='0.9s' repeatCount='indefinite'/></path></svg>")
+            ImagePosition: =ImagePosition.Fit
+            Visible: =Coalesce(varEmpBusy,false) || Coalesce(varEmpSaving,false) || varEmpLoadState="Loading"
+            Width: =24
+            X: =lblEmpTitle.X+lblEmpTitle.Width-24-24
+            Y: =lblEmpTitle.Y+16
       - lblEmpLayout:
           Control: Label@2.5.1
           Properties:
@@ -833,7 +846,10 @@ Screens:
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =Color.Transparent
                               OnCheck: =false
-                              OnUncheck: =false
+                              OnUncheck: |-
+                                =If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpSelectedID) && varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpEdit.Active,true) && CountIf(colEmpWorkers,EmployerID=varEmpSelectedID && Coalesce(WorkerActive,true))>0,
+                                 Notify(Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(CountIf(colEmpWorkers,EmployerID=varEmpSelectedID && Coalesce(WorkerActive,true)))),NotificationType.Warning,15000)
+                                )
                               PressedBorderColor: =Color.Transparent
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =Color.Transparent
@@ -950,7 +966,6 @@ Screens:
                           =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true))),
                            Set(varEmpMode,"New"); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true});
                            Clear(colEmpSaveErrors); Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
-                           Notify(If(LangNl && !IsBlank(T.empMsgNew.nl),T.empMsgNew.nl,T.empMsgNew.en),NotificationType.Success);
                            Trace("DIAG|Contractors|New",TraceSeverity.Information,{Screen:"Contractors"}),
                            Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000)
                           )
@@ -1162,7 +1177,10 @@ Screens:
                             Set(varWorkersCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
                             If(varEmpSaveRenamed,IfError(Refresh(Workers),Set(varEmpSaveWorkersRefreshFailed,true);false));
                             Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
-                            Notify(If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),If(LangNl && !IsBlank(T.empMsgSaved.nl),T.empMsgSaved.nl,T.empMsgSaved.en)) & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""),NotificationType.Success);
+                            If(varEmpSaveWarnWorkers>0 || varEmpSaveWorkersRefreshFailed,
+                             Notify(If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),If(LangNl && !IsBlank(T.empMsgSaved.nl),T.empMsgSaved.nl,T.empMsgSaved.en)) & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""),NotificationType.Warning,15000),
+                             Notify(If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),If(LangNl && !IsBlank(T.empMsgSaved.nl),T.empMsgSaved.nl,T.empMsgSaved.en)),NotificationType.Success)
+                            );
                             Select(btnEmpFormReset),
                             varEmpSaveWrites=0,
                             Notify(With({n:CountRows(colEmpSaveErrors)-1},First(colEmpSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.empMsgMore.nl),T.empMsgMore.nl,T.empMsgMore.en),"{0}",Text(n)),"")),NotificationType.Error,15000),
