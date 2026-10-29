@@ -2,7 +2,7 @@
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Test-SaveRegression.ps1')
 $font='="Inter, Arial, sans-serif"'
-$technical=@('btnApplyTeamWeek','lblHomeLayout','lblHomeRows','lblHomeColumns','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','lblEmpLayout','lblEmpMetrics')
+$technical=@('btnApplyTeamWeek','lblHomeLayout','lblHomeRows','lblHomeColumns','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics')
 $textTypes='^(Label@|Classic/Button@|Classic/DropDown@|Classic/TextInput@|Classic/CheckBox@|ModernDatePicker@)'
 $homeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','WeekReport','Workers','Contractors','Projects','Viewer3D','PIDTracker','ComponentLibrary','SkidConfigurator','StockOverview','Locations','Usage','Requests')
 $semibold=@{

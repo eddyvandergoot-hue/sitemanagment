@@ -693,7 +693,7 @@ $msaprZip=[IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Manag
 try { $dsReader=New-Object IO.StreamReader(($msaprZip.Entries | Where-Object FullName -eq 'msapp\References\DataSources.json').Open()); $dsJson=$dsReader.ReadToEnd() | ConvertFrom-Json; $dsReader.Dispose() } finally { $msaprZip.Dispose() }
 $usedColumns=@{
  'Workers'=@('ID','First Name','Surname','Employer','Trade','Active')
- 'Employers'=@('ID','Title','Employer Code','Address','Postalcode','City','Country','Contact Name','Contact Email','Contact Phone','Active')
+ 'Employers'=@('ID','Title','Employer Code','Address','Postalcode','City','Country','Contact Name','Contact Email','Contact Phone','Active','Modified')
  'Projects'=@('ID','Title','Project Number','Project Reference')
  'Hours'=@('ID','Title','EntryKey','Work Date','Assignment','Employer','Team','Trade','Hours','Modified')
  'Project Workers'=@('ID','Title','ProjectKey','AssignmentKey','Project','Worker','Team','Active')
@@ -714,6 +714,47 @@ $srcNonAdmin=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | W
 Assert-True ($srcNonAdmin -notmatch "\bEmployers\b\s*[,)]" -and $srcAll -notmatch "EmployerCode1") 'Only scrContractors reads the Employers list; internal name EmployerCode1 not used'
 Assert-True (([regex]::Matches($srcAll,"'Employer Code'")).Count -eq ([regex]::Matches($srcAll,"emp\.'Employer Code'")).Count) "Employer Code only read as emp.'Employer Code' in the Contractors projection (never a Patch field)"
 Assert-True ($srcAll -notmatch "\b(?:Remove|RemoveIf|Clear)\(\s*(?:Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\b") 'No Remove/RemoveIf/Clear on SharePoint lists anywhere in Src'
+# Connector cache (TP-CONTRACTORS-01 step 12, 29-10-2026): every SharePoint read in a behaviour formula of the approved
+# screens (pre-read, verify read, reload) is preceded by Refresh(<that list>) in the same branch (helper RefreshOrder.ps1).
+# Status Forced = Refresh only when the force flag is set; the same read also runs without Refresh on a first load or after
+# a cache invalidation (masters Projects/Workers): by design, listed explicitly below. Cache-hit reuse is not a read.
+. (Join-Path $PSScriptRoot 'RefreshOrder.ps1')
+$behAll=@{}
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours')){
+ $sdoc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
+ $sprops=$sdoc['Screens'][$screen]['Properties']
+ if($sprops){ foreach($p in $sprops.Keys){ if($p -like 'On*'){ $behAll["$screen.$p"]=[string]$sprops[$p] } } }
+ Get-BehaviourFormulas $sdoc['Screens'][$screen]['Children'] $screen $behAll
+}
+$behAll['App.OnStart']=[string]$app['App']['Properties']['OnStart']
+$cacheReads=@()
+foreach($k in ($behAll.Keys | Sort-Object)){ foreach($r in (Test-RefreshBeforeReads $behAll[$k])){ $cacheReads+=[pscustomobject]@{Key=$k;Source=$r.Source;Line=$r.Line;Status=$r.Status} } }
+foreach($r in $cacheReads){ Assert-True ($r.Status -ne 'Missing') "$($r.Key) : read of $($r.Source) (formula line $($r.Line)) preceded by Refresh($($r.Source)) [$($r.Status)]" }
+$forcedSeen=@($cacheReads | Where-Object Status -eq 'Forced' | ForEach-Object { "$($_.Key)|$($_.Source)" } | Sort-Object)
+$forcedExpected=@('Screen1.btnReadTeam.OnSelect|Projects','Screen1.btnReadTeam.OnSelect|Workers','scrWeeklyHours.btnLoadReport.OnSelect|Projects','scrWeeklyHours.btnLoadReport.OnSelect|Workers')
+Assert-True (($forcedSeen -join ',') -ceq ($forcedExpected -join ',')) "Only the master loads (Projects/Workers in btnReadTeam and btnLoadReport) refresh only when forced; first/invalidated master load without Refresh is by design ($($forcedSeen -join ', '))"
+function Count-CacheReads([string]$key,[string]$source){ return @($cacheReads | Where-Object { $_.Key -eq $key -and $_.Source -eq $source -and $_.Status -eq 'Refreshed' }).Count }
+foreach($exp in @(
+ @('Screen1.btnAddtoTeam.OnSelect',"'Project Workers'",2,'Save team pre-read + verify read of Project Workers'),
+ @('Screen1.btnAddtoTeam.OnSelect',"'Assignment Periods'",2,'Save team pre-read + verify read of Assignment Periods'),
+ @('Screen1.btnReadTeam.OnSelect',"'Project Workers'",1,'Team load (forced and non-forced) of Project Workers'),
+ @('Screen1.btnReadTeam.OnSelect',"'Assignment Periods'",1,'Team load (forced and non-forced) of Assignment Periods'),
+ @('Screen1.btnMigratePreview.OnSelect',"'Project Workers'",1,'Migration preview read of Project Workers'),
+ @('Screen1.btnMigratePreview.OnSelect',"'Assignment Periods'",1,'Migration preview read of Assignment Periods'),
+ @('Screen1.btnMigratePreview.OnSelect','Hours',5,'Migration preview Hours reads (incl. month/day paging)'),
+ @('Screen1.btnMigrateConfirm.OnSelect',"'Project Workers'",1,'Migration confirm pre-read of Project Workers'),
+ @('Screen1.btnMigrateConfirm.OnSelect',"'Assignment Periods'",2,'Migration confirm pre-read + verify read of Assignment Periods'),
+ @('Screen1.btnMigrateConfirm.OnSelect','Hours',3,'Migration confirm Hours check reads'),
+ @('scrHours.btnReadWeek.OnSelect','Hours',8,'Week load Hours (week batch + 7 day batches)'),
+ @('scrHours.btnReadWeek.OnSelect',"'Project Workers'",1,'Week load Project Workers'),
+ @('scrHours.btnReadWeek.OnSelect',"'Assignment Periods'",1,'Week load Assignment Periods'),
+ @('scrHours.btnSaveWeek.OnSelect','Hours',16,'Save week pre-read + verify read (week batch + 7 day batches each)'),
+ @('scrWeeklyHours.btnLoadReport.OnSelect','Hours',5,'Hours Summary Hours reads (batch, first/last, month/day paging)'),
+ @('scrWeeklyHours.btnLoadReport.OnSelect',"'Project Workers'",1,'Hours Summary Project Workers read'),
+ @('scrWeeklyHours.btnLoadReport.OnSelect',"'Assignment Periods'",1,'Hours Summary Assignment Periods read'))){
+ Assert-True ((Count-CacheReads $exp[0] $exp[1]) -eq $exp[2]) "$($exp[3]): $($exp[2]) read(s), each after Refresh($($exp[1])) in the same branch"
+}
+Assert-True ($cacheReads.Count -ge 50) "Connector-cache order checked for $($cacheReads.Count) SharePoint reads on the approved screens"
 Write-Output 'PASS Assignment periods: delegable period reads with global ProjectKey, 500 guards, staging, decision fixtures, checkbox/row/summary rules, migration guards/categories, Screen1 week picker. Studio binding, delegation in Monitor and functional tests NOT verified.'
 Write-Output 'PASS batch save structure. Studio binding (table Patch on collection base records, lookup/choice records), delegation and online behaviour NOT verified.'
 Write-Output 'LIVE STILL OPEN: actual incident edits, connector auth, Studio binding/delegation, failure injection and online loading.'

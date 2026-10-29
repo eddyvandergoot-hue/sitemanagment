@@ -72,7 +72,7 @@ Screens:
             X: =If(Parent.Width>=1000,1,0)
             Y: =If(Self.X=1,464,40)
             Width: =If(Self.X=1,Min(584,Parent.Width-504),Min(584,Parent.Width-80))
-            Height: =If(Self.X=1,12,404)
+            Height: =If(Self.X=1,100,404)
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
       - lblEmpMetrics:
@@ -83,7 +83,7 @@ Screens:
             X: =If(lblEmpLayout.Width-48>=536,1,0)
             Y: =24+76*(8+(1-Self.X))+If(lblEmpErrors.Visible,52+lblEmpErrors.Height,40)+24
             Width: =If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)
-            Height: =If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)
+            Height: =If(lblEmpLayout.X=1,Max(conEmpBody.Height,lblEmpLayout.Height+Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
       - btnEmpLoad:
@@ -106,22 +106,22 @@ Screens:
                  Trace("DIAG|Contractors|CacheHit",TraceSeverity.Information,{Screen:"Contractors",Rows:CountRows(colAdminEmployers)}),
                  Set(varEmpBusy,true); Set(varEmpLoadState,"Loading"); Set(varEmpDiagT0,Now());
                  Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgLoading.nl),T.empMsgLoading.nl,T.empMsgLoading.en)); Set(varEmpMsgError,false);
-                 Clear(colEmpLoadErrors); Clear(colEmpEmployersLoadErrors); Clear(colEmpWorkersLoadErrors); Clear(colPendingAdminEmployers); Clear(colPendingEmpWorkers);
-                 If(Coalesce(varEmpForceRefresh,false),
-                  IfError(Refresh(Employers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadEmployers.nl),T.empErrLoadEmployers.nl,T.empErrLoadEmployers.en) & " " & FirstError.Message});false);
-                  IfError(Refresh(Workers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadWorkers.nl),T.empErrLoadWorkers.nl,T.empErrLoadWorkers.en) & " " & FirstError.Message});false)
-                 );
+                 Clear(colEmpLoadErrors); Clear(colEmpEmployersLoadErrors); Clear(colEmpWorkersLoadErrors); Clear(colPendingEmpRaw); Clear(colPendingAdminEmployers); Clear(colPendingEmpModified); Clear(colPendingEmpWorkers);
+                 IfError(Refresh(Employers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadEmployers.nl),T.empErrLoadEmployers.nl,T.empErrLoadEmployers.en) & " " & FirstError.Message});false);
+                 IfError(Refresh(Workers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadWorkers.nl),T.empErrLoadWorkers.nl,T.empErrLoadWorkers.en) & " " & FirstError.Message});false);
                  Concurrent(
-                  IfError(CountRows(ClearCollect(colPendingAdminEmployers,ForAll(Sort(Employers,Title,SortOrder.Ascending) As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Address:Trim(emp.Address & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)})))>=0,
+                  IfError(CountRows(ClearCollect(colPendingEmpRaw,Sort(Employers,Title,SortOrder.Ascending)))>=0,
                    Collect(colEmpEmployersLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadEmployers.nl),T.empErrLoadEmployers.nl,T.empErrLoadEmployers.en) & " " & FirstError.Message});false),
                   IfError(CountRows(ClearCollect(colPendingEmpWorkers,ForAll(Workers As wrk,{ID:wrk.ID,EmployerID:wrk.Employer.Id,WorkerActive:wrk.Active})))>=0,
                    Collect(colEmpWorkersLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadWorkers.nl),T.empErrLoadWorkers.nl,T.empErrLoadWorkers.en) & " " & FirstError.Message});false)
                  );
+                 ClearCollect(colPendingAdminEmployers,ForAll(colPendingEmpRaw As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Address:Trim(emp.Address & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)}));
+                 ClearCollect(colPendingEmpModified,ForAll(colPendingEmpRaw As emp,{ID:emp.ID,Modified:emp.Modified}));
                  Collect(colEmpLoadErrors,colEmpEmployersLoadErrors,colEmpWorkersLoadErrors);
-                 If(CountRows(colPendingAdminEmployers)>=500,Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLimitEmployers.nl),T.empErrLimitEmployers.nl,T.empErrLimitEmployers.en)}));
+                 If(CountRows(colPendingEmpRaw)>=500,Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLimitEmployers.nl),T.empErrLimitEmployers.nl,T.empErrLimitEmployers.en)}));
                  If(CountRows(colPendingEmpWorkers)>=500,Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLimitWorkers.nl),T.empErrLimitWorkers.nl,T.empErrLimitWorkers.en)}));
                  If(IsEmpty(colEmpLoadErrors),
-                  ClearCollect(colAdminEmployers,colPendingAdminEmployers); ClearCollect(colEmpWorkers,colPendingEmpWorkers);
+                  ClearCollect(colAdminEmployers,colPendingAdminEmployers); ClearCollect(colEmpWorkers,colPendingEmpWorkers); ClearCollect(colEmpModified,colPendingEmpModified);
                   If(varEmpMode="Edit" && !IsBlank(LookUp(colAdminEmployers,ID=varEmpSelectedID).ID),
                    Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)),
                    varEmpMode="New" && !Coalesce(varEmpSaveFailed,false),
@@ -130,14 +130,33 @@ Screens:
                   );
                   Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");
                   Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
-                  Set(varEmpMsg,Substitute(If(LangNl && !IsBlank(T.empMsgLoaded.nl),T.empMsgLoaded.nl,T.empMsgLoaded.en),"{0}",Text(CountRows(colAdminEmployers)))); Set(varEmpMsgError,false),
+                  Set(varEmpLoadedAt,Now());
+                  Set(varEmpMsg,Substitute(Substitute(If(LangNl && !IsBlank(T.empMsgLoaded.nl),T.empMsgLoaded.nl,T.empMsgLoaded.en),"{0}",Text(CountRows(colAdminEmployers))),"{1}",Text(varEmpLoadedAt,"hh:mm:ss"))); Set(varEmpMsgError,false),
                   Set(varEmpLoadState,"Failed");
                   Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgLoadFailed.nl),T.empMsgLoadFailed.nl,T.empMsgLoadFailed.en)); Set(varEmpMsgError,true)
                  );
                  Set(varEmpForceRefresh,false); Set(varEmpBusy,false);
-                 Trace("DIAG|Contractors|LoadEnd",TraceSeverity.Information,{Screen:"Contractors",ElapsedMs:DateDiff(varEmpDiagT0,Now(),TimeUnit.Milliseconds),Rows:CountRows(colPendingAdminEmployers),Workers:CountRows(colPendingEmpWorkers),Errors:CountRows(colEmpLoadErrors),State:varEmpLoadState})
+                 Trace("DIAG|Contractors|LoadEnd",TraceSeverity.Information,{Screen:"Contractors",ElapsedMs:DateDiff(varEmpDiagT0,Now(),TimeUnit.Milliseconds),Rows:CountRows(colPendingAdminEmployers),Workers:CountRows(colPendingEmpWorkers),Errors:CountRows(colEmpLoadErrors),State:varEmpLoadState});
+                 If(varEmpLoadState="Loaded",Select(btnEmpFormReset))
                 )
                )
+              )
+      - btnEmpFormReset:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Reset"
+            Visible: =false
+            DisplayMode: =DisplayMode.Edit
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            Font: ="Inter, Arial, sans-serif"
+            OnSelect: |-
+              =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false),
+               Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
+               Trace("DIAG|Contractors|FormReset",TraceSeverity.Information,{Screen:"Contractors",Mode:Coalesce(varEmpMode,"")}),
+               Trace("DIAG|Contractors|FormResetSkipped",TraceSeverity.Information,{Screen:"Contractors",State:Coalesce(varEmpLoadState,"")})
               )
       - conEmpBody:
           Control: GroupContainer@1.5.0
@@ -406,7 +425,7 @@ Screens:
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
-                              Height: =40
+                              Height: =20
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
@@ -418,6 +437,25 @@ Screens:
                               Width: =Min(256,lblEmpLayout.Width-48)
                               X: =24
                               Y: =24+76*1+24
+                        - lblEmpModified:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =32
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =12
+                              Text: |-
+                                =With({m:LookUp(colEmpModified,ID=varEmpSelectedID).Modified},If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpSelectedID) && !IsBlank(m),Substitute(If(LangNl && !IsBlank(T.empLastChanged.nl),T.empLastChanged.nl,T.empLastChanged.en),"{0}",Text(m,"dd-mm-yyyy") & " " & Text(m,"hh:mm")),""))
+                              VerticalAlign: =VerticalAlign.Top
+                              Width: =Min(512,lblEmpLayout.Width-48)
+                              X: =24
+                              Y: =24+76*1+24+20
                         - lblEmpAddressLabel:
                             Control: Label@2.5.1
                             Properties:
@@ -1148,12 +1186,14 @@ Screens:
                            );
                            If(varEmpSaveVerified && IsEmpty(colEmpSaveErrors),
                             RemoveIf(colAdminEmployers,ID=varEmpPatchedID); Collect(colAdminEmployers,First(colEmpVerify));
+                            RemoveIf(colEmpModified,ID=varEmpPatchedID); Collect(colEmpModified,{ID:varEmpPatchedID,Modified:First(colEmpVerifyRaw).Modified});
                             Set(varEmpEdit,First(colEmpVerify)); Set(varEmpSelectedID,varEmpPatchedID); Set(varEmpMode,"Edit");
                             Set(varWorkersCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
                             If(varEmpSaveRenamed,IfError(Refresh(Workers),Set(varEmpSaveWorkersRefreshFailed,true);false));
                             Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
                             Set(varEmpMsg,If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),If(LangNl && !IsBlank(T.empMsgSaved.nl),T.empMsgSaved.nl,T.empMsgSaved.en)) & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""));
-                            Set(varEmpMsgError,false),
+                            Set(varEmpMsgError,false);
+                            Select(btnEmpFormReset),
                             varEmpSaveWrites=0,
                             Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgNotSaved.nl),T.empMsgNotSaved.nl,T.empMsgNotSaved.en)); Set(varEmpMsgError,true),
                             Set(varEmpSaveFailed,true); Set(varEmpLoadState,"Failed");

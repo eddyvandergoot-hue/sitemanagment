@@ -2,6 +2,7 @@
 # Proves source structure only: no Studio import, Canvas binding, delegation (Monitor) or functional result.
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Check-WeeklySource.ps1')
+. (Join-Path $PSScriptRoot 'RefreshOrder.ps1')
 [Reflection.Assembly]::LoadFrom((Join-Path $pacDir 'Microsoft.PowerFx.Interpreter.dll')) | Out-Null
 $adminEngine = New-Object Microsoft.PowerFx.RecalcEngine
 $adminOptions = New-Object Microsoft.PowerFx.ParserOptions
@@ -149,11 +150,11 @@ foreach ($k in @('btnEmpLoad.OnSelect', "$screenName.OnVisible")) {
 }
 Assert-True ($load.Contains('If(' + $dirty + ' && !Coalesce(varEmpSaveFailed,false),')) 'Loader refuses to reload over unsaved input (except the explicit Discard after a failed save)'
 Assert-True ($load.Contains('If(!Coalesce(varEmpForceRefresh,false) && varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpSaveFailed,false),')) 'Loader reuses a valid Loaded list unless forced'
-Assert-True ($loadN.Contains((Norm 'If(Coalesce(varEmpForceRefresh,false),IfError(Refresh(Employers),'))) 'Forced load refreshes the Employers connector cache'
+Assert-True ($loadN.Contains((Norm 'Clear(colPendingEmpWorkers);IfError(Refresh(Employers),')) -and $loadN.Contains((Norm 'IfError(Refresh(Workers),')) -and $load -notmatch 'If\(Coalesce\(varEmpForceRefresh,false\),') 'Every load (first load, Refresh, Discard after a failed save) refreshes the Employers and Workers connector cache, not only a forced one'
 $refreshOs = Get-Prop 'btnEmpRefresh' 'OnSelect'
 Assert-True ($refreshOs.Contains('Set(varEmpForceRefresh,true); Select(btnEmpLoad)')) 'Refresh forces the staged loader'
 Assert-True ($refreshOs.Contains('If(Coalesce(varEmpSaveFailed,false),Clear(colEmpSaveErrors));') -and $refreshOs -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Reset)\(') 'Refresh after a failed save behaves like Discard (clears the local save errors, forced reload through btnEmpLoad, no mutation)'
-Assert-True ($load.Contains('If(Coalesce(varEmpForceRefresh,false),') -and $load.Contains('varEmpMode="New" && !Coalesce(varEmpSaveFailed,false),') -and $load.Contains('Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");')) 'Forced reload after a failed save discards local input (New -> no item; SaveFailed cleared only after a successful load)'
+Assert-True ($load.Contains('varEmpMode="New" && !Coalesce(varEmpSaveFailed,false),') -and $load.Contains('Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");')) 'Forced reload after a failed save discards local input (New -> no item; SaveFailed cleared only after a successful load)'
 # The SaveFailed reset must sit inside the success branch: after the last If(IsEmpty(colEmpLoadErrors), and with no Failed state set in between.
 $clearAt = $load.IndexOf('Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");')
 $branchAt = $load.LastIndexOf('If(IsEmpty(colEmpLoadErrors),', $clearAt)
@@ -162,10 +163,10 @@ Assert-True ($vis.Contains('If(varEmpLoadState<>"Loaded" && !Coalesce(varEmpBusy
 $conc = Get-Balanced $load $load.IndexOf('Concurrent(')
 $branches = Split-Args $conc.Substring('Concurrent('.Length, $conc.Length - 'Concurrent('.Length - 1)
 Assert-True ($branches.Count -eq 2) 'Loader runs two independent reads in Concurrent'
-Assert-True ($branches[0].Contains('ClearCollect(colPendingAdminEmployers,') -and $branches[0] -notmatch 'colEmpWorkersLoadErrors|colEmpLoadErrors\b' -and $branches[0].Contains('Collect(colEmpEmployersLoadErrors,')) 'Concurrent branch 1 writes only its own error collection'
+Assert-True ($branches[0].Contains('ClearCollect(colPendingEmpRaw,Sort(Employers,Title,SortOrder.Ascending))') -and $branches[0] -notmatch 'colEmpWorkersLoadErrors|colEmpLoadErrors\b' -and $branches[0].Contains('Collect(colEmpEmployersLoadErrors,')) 'Concurrent branch 1 writes only its own error collection'
 Assert-True ($branches[1].Contains('ClearCollect(colPendingEmpWorkers,') -and $branches[1] -notmatch 'colEmpEmployersLoadErrors|colEmpLoadErrors\b' -and $branches[1].Contains('Collect(colEmpWorkersLoadErrors,')) 'Concurrent branch 2 writes only its own error collection'
 $iMerge = $loadN.IndexOf('Collect(colEmpLoadErrors,colEmpEmployersLoadErrors,colEmpWorkersLoadErrors)')
-$iLimitE = $loadN.IndexOf('If(CountRows(colPendingAdminEmployers)>=500,Collect(colEmpLoadErrors,')
+$iLimitE = $loadN.IndexOf('If(CountRows(colPendingEmpRaw)>=500,Collect(colEmpLoadErrors,')
 $iLimitW = $loadN.IndexOf('If(CountRows(colPendingEmpWorkers)>=500,Collect(colEmpLoadErrors,')
 $iGate = $loadN.IndexOf('If(IsEmpty(colEmpLoadErrors),ClearCollect(colAdminEmployers,colPendingAdminEmployers);ClearCollect(colEmpWorkers,colPendingEmpWorkers);')
 Assert-True ($iMerge -gt 0 -and $iLimitE -gt $iMerge -and $iLimitW -gt $iMerge -and $iGate -gt $iLimitE -and $iGate -gt $iLimitW) 'Errors merged and 500 guards applied before the staged list replaces colAdminEmployers'
@@ -241,7 +242,9 @@ foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactNam
 Assert-True ($saveN.Contains('Coalesce(p.Active,true)<>Coalesce(varEmpEdit.Active,true)')) 'Conflict check compares Active (both Coalesce(x,true))'
 Assert-True ($saveN.Contains('D:Coalesce(v.Active,true)<>Coalesce(varEmpSaveRec.Active,true)')) 'Verify read compares Active (both Coalesce(x,true))'
 Assert-True ($save.Contains('Active:Coalesce(chkEmpActive.Value,true)});')) 'Save record: Active = Coalesce(chkEmpActive.Value,true)'
-Assert-True ($saveN -notmatch 'p\.Code|v\.Code|Modified') 'Conflict/verify ignore Contractor Code (flow MS-019) and Modified'
+$modDisplayN = Norm 'RemoveIf(colEmpModified,ID=varEmpPatchedID); Collect(colEmpModified,{ID:varEmpPatchedID,Modified:First(colEmpVerifyRaw).Modified});'
+Assert-True (([regex]::Matches($saveN, [regex]::Escape($modDisplayN))).Count -eq 1) 'Save updates the display-only Modified copy (colEmpModified) from the verify read, once'
+Assert-True ($saveN.Replace($modDisplayN, '') -notmatch 'p\.Code|v\.Code|Modified') 'Conflict/verify ignore Contractor Code (flow MS-019) and Modified (Modified only in the display copy update)'
 $iVal = $saveN.IndexOf('If(IsBlank(varEmpSaveRec.Name)')
 $iDupLocal = $saveN.IndexOf('CountIf(colAdminEmployers,')
 $iGateRead = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),IfError(Refresh(Employers),')
@@ -405,35 +408,87 @@ $feAll = @([regex]::Matches($screenText, 'FirstError\.Message'))
 $feOk = @($feAll | Where-Object { $screenText.Substring([Math]::Max(0, $_.Index - 220), [Math]::Min(220, $_.Index)) -match 'Collect\(col\w*Errors,\{[^{}]*$' })
 Assert-True ($feAll.Count -ge 5 -and $feOk.Count -eq $feAll.Count) "FirstError.Message only inside on-screen error collections ($($feAll.Count) uses: load errors + Patch error)"
 
+# (14) Stale values after Refresh (TP-CONTRACTORS-01 step 12, 29-10-2026) --------------------------------------------
+# (a) Every SharePoint read in a behaviour formula of scrContractors (load, pre-read, duplicate read, verify read) is
+#     preceded by Refresh(<that list>) in the same branch (shared helper RefreshOrder.ps1; no forced-only Refresh left).
+$beh = @{}
+foreach ($p in $screenProps.Keys) { if ($p -like 'On*') { $beh["$screenName.$p"] = [string]$screenProps[$p] } }
+Get-BehaviourFormulas $doc['Screens'][$screenName]['Children'] $screenName $beh
+$spReads = @()
+foreach ($k in ($beh.Keys | Sort-Object)) { foreach ($r in (Test-RefreshBeforeReads $beh[$k])) { $spReads += $r; Assert-True ($r.Status -eq 'Refreshed') "$k : read of $($r.Source) (formula line $($r.Line)) preceded by Refresh($($r.Source)) in the same branch [$($r.Status)]" } }
+Assert-True (@($spReads | Where-Object Source -eq 'Employers').Count -eq 4 -and @($spReads | Where-Object Source -eq 'Workers').Count -eq 1) "SharePoint reads on scrContractors: 4 x Employers (load, pre-read, duplicate, verify), 1 x Workers (load)"
+# Self-test of the helper on synthetic formulas (forced-only Refresh, other branch, error gate, Concurrent sibling)
+Assert-True ((Test-RefreshBeforeReads '=IfError(Refresh(Employers),false);ClearCollect(c,Sort(Employers,Title))')[0].Status -eq 'Refreshed') 'Helper: Refresh then read = Refreshed'
+Assert-True ((Test-RefreshBeforeReads '=If(Coalesce(f,false),IfError(Refresh(Employers),false));If(x,a,ClearCollect(c,Sort(Employers,Title)))')[0].Status -eq 'Missing') 'Helper: forced-only Refresh does not cover an unconditional (first) load'
+Assert-True ((Test-RefreshBeforeReads '=If(x,IfError(Refresh(Employers),false),ClearCollect(c,Filter(Employers,ID=v)))')[0].Status -eq 'Missing') 'Helper: Refresh in the other If branch does not count'
+Assert-True ((Test-RefreshBeforeReads '=If(IsEmpty(e),IfError(Refresh(Employers),Collect(e,{M:1});false));If(IsEmpty(e),ClearCollect(c,Filter(Employers,ID=v)))')[0].Status -eq 'Refreshed') 'Helper: error-gated Refresh covers a read gated by the same empty error collection'
+Assert-True ((Test-RefreshBeforeReads '=If(IsEmpty(e),IfError(Refresh(Employers),false));If(!IsEmpty(e),ClearCollect(c,Filter(Employers,ID=v)))')[0].Status -eq 'Missing') 'Helper: a negated error gate does not count'
+Assert-True ((Test-RefreshBeforeReads '=Concurrent(IfError(Refresh(Workers),false),ClearCollect(c,ForAll(Workers As w,{ID:w.ID})))')[0].Status -eq 'Missing') 'Helper: Refresh in a sibling Concurrent branch does not count'
+Assert-True ((Test-RefreshBeforeReads '=ClearCollect(c,Sort(Employers,Title))')[0].Status -eq 'Missing') 'Helper: read without any Refresh = Missing'
+# (c) Form shows the reloaded values: inputs keep Default = varEmpEdit (classic TextInput, template text 2.3.2 has Default
+#     and a Reset property; the Reset property is not used). After a load or a verified save the inputs are reset again in a
+#     separate behaviour formula (Select of the hidden btnEmpFormReset, queued after the current formula), so the reset never
+#     depends on a Default that is recalculated inside the same formula as Set(varEmpEdit).
+Assert-True ($idx.ContainsKey('btnEmpFormReset') -and $idx['btnEmpFormReset']['Control'] -eq 'Classic/Button@2.2.0' -and (Get-Prop 'btnEmpFormReset' 'Visible') -eq '=false') 'btnEmpFormReset exists (hidden Classic/Button@2.2.0, like btnEmpLoad)'
+$fr = Get-Prop 'btnEmpFormReset' 'OnSelect'
+Assert-True ($fr.StartsWith('=If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false),')) 'Form reset only when Loaded, no load errors, not busy/saving, no failed save (kept input after a failed save stays)'
+Assert-True ($fr.Contains($reset)) 'Form reset resets all 8 inputs and the Active checkbox'
+Assert-True ($fr -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate)\(' -and $fr -notmatch '\.Run\(') 'Form reset is local only (no mutation, no variable change, no further Select: no cycle)'
+Assert-True (([regex]::Matches($screenText, 'Select\(btnEmpFormReset\)')).Count -eq 2) 'btnEmpFormReset selected exactly twice (end of loader, verified save)'
+$iBusyOff = $load.LastIndexOf('Set(varEmpForceRefresh,false); Set(varEmpBusy,false);')
+Assert-True ($iBusyOff -gt 0 -and $load.IndexOf('If(varEmpLoadState="Loaded",Select(btnEmpFormReset))') -gt $iBusyOff) 'Loader selects the form reset at its end, after busy is cleared, only when Loaded'
+$iSaveReset = $saveN.IndexOf('Select(btnEmpFormReset)')
+Assert-True ($iSaveReset -gt $iLocal -and $iSaveReset -lt $saveN.IndexOf('varEmpSaveWrites=0,') -and $iSaveReset -gt $saveN.IndexOf((Norm $reset), $iLocal)) 'Verified save selects the form reset after the snapshot update and in-formula resets (success branch only)'
+foreach ($k in $inputMap.Keys) { Assert-True (!$idx[$k]['Properties'].ContainsKey('Reset')) "$k has no Reset property (single approach: Reset() calls)" }
+# (d) Diagnostics: load time in the status message, SharePoint Modified of the selected item (display only)
+Assert-True ($load.Contains('Set(varEmpLoadedAt,Now());') -and $load.Contains('Substitute(Substitute(If(LangNl && !IsBlank(T.empMsgLoaded.nl),T.empMsgLoaded.nl,T.empMsgLoaded.en),"{0}",Text(CountRows(colAdminEmployers))),"{1}",Text(varEmpLoadedAt,"hh:mm:ss"))')) 'Loaded message shows the number of contractors and the load time (hh:mm:ss)'
+Assert-True ($load.IndexOf('Set(varEmpLoadedAt,Now());') -gt $iGate) 'Load time set only in the successful-load branch'
+Assert-True (([regex]::Matches($screenText, 'Set\(varEmpLoadedAt,')).Count -eq 1) 'varEmpLoadedAt set only by the loader'
+Assert-Eval 'Text(DateTime(2026,10,29,21,5,7),"hh:mm:ss")' '21:05:07' 'Time format hh:mm:ss is 24-hour (interpreter)'
+Assert-True ($formulas -match 'empMsgLoaded:\s*\{en:\s*"[^"]*\{0\}[^"]*\{1\}' -and $formulas -match 'empLastChanged:\s*\{en:\s*"Last changed in SharePoint: \{0\}"') 'T: empMsgLoaded has {0} (count) and {1} (time); empLastChanged = "Last changed in SharePoint: {0}"'
+Assert-True ($load.Contains('ClearCollect(colPendingEmpModified,ForAll(colPendingEmpRaw As emp,{ID:emp.ID,Modified:emp.Modified}));') -and $loadN.Contains((Norm 'ClearCollect(colEmpModified,colPendingEmpModified);')) -and $loadN.IndexOf((Norm 'ClearCollect(colEmpModified,colPendingEmpModified);')) -gt $iGate) 'Modified staged from the same load read and published only after a successful load'
+Assert-True ($proj -notmatch 'Modified') 'The shared projection (snapshot varEmpEdit, pre-read, duplicate, verify) has no Modified field'
+$modUses = @($all.Keys | Where-Object { $all[$_] -match 'Modified' } | Sort-Object)
+Assert-True (($modUses -join ',') -ceq 'btnEmpLoad.OnSelect,btnEmpSave.OnSelect,lblEmpModified.Text') "Modified used only in the loader, the save display update and lblEmpModified.Text ($($modUses -join ', '))"
+foreach ($k in @('btnEmpSave.DisplayMode', 'btnEmpRefresh.DisplayMode', 'btnEmpDiscard.DisplayMode', 'btnEmpHome.DisplayMode', 'btnEmpNew.DisplayMode', 'galEmpList.DisplayMode')) { Assert-True ($all[$k] -notmatch 'Modified|colEmpModified') "$k guard does not use Modified" }
+Assert-True ($tableFx -notmatch 'Modified|colEmpModified' -and $conflictFx -notmatch 'Modified|colEmpModified' -and $dirty -notmatch 'Modified') 'Modified never in verify, conflict or dirty comparison'
+$modFx = (Get-Prop 'lblEmpModified' 'Text').TrimStart('=')
+Assert-True ($idx['lblEmpModified']['Control'] -eq 'Label@2.5.1' -and $modFx.Contains('LookUp(colEmpModified,ID=varEmpSelectedID).Modified') -and $modFx -notmatch "\b(Employers|Filter)\b") 'lblEmpModified: read-only label from the local copy (no SharePoint call)'
+$modFix = 'LangNl:false,T:' + $tRec + ',colEmpModified:Table({ID:7,Modified:DateTime(2026,10,29,21,5,0)},{ID:8,Modified:DateTime(2026,1,2,9,4,0)})'
+Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:7},' + $modFx + ')') 'Last changed in SharePoint: 29-10-2026 21:05' 'Modified line (Edit, item 7): dd-mm-yyyy hh:mm'
+Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:8},' + $modFx + ')') 'Last changed in SharePoint: 02-01-2026 09:04' 'Modified line (Edit, item 8): leading zeros, 24-hour'
+Assert-Eval ('With({' + $modFix + ',varEmpMode:"New",varEmpSelectedID:Blank()},' + $modFx + ')') '' 'Modified line empty for New'
+Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:9},' + $modFx + ')') '' 'Modified line empty when the item has no loaded Modified'
+
 
 # Geometry (TP-CONTRACTORS-01): search border not under the header, wide form top = list top, narrow no overlap.
 # The carriers' formulas are pinned by exact text, then mirrored here for each width.
-$expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,464,40)'; Width='=If(Self.X=1,Min(584,Parent.Width-504),Min(584,Parent.Width-80))'; Height='=If(Self.X=1,12,404)' }
+$expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,464,40)'; Width='=If(Self.X=1,Min(584,Parent.Width-504),Min(584,Parent.Width-80))'; Height='=If(Self.X=1,100,404)' }
 foreach ($k in $expLay.Keys) { Assert-True ((Get-Prop 'lblEmpLayout' $k) -eq $expLay[$k]) "Layout carrier lblEmpLayout.$k formula as mirrored" }
-Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+If(lblEmpErrors.Visible,52+lblEmpErrors.Height,40)+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
+Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,lblEmpLayout.Height+Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+If(lblEmpErrors.Visible,52+lblEmpErrors.Height,40)+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
 $sY = [int](Get-Prop 'txtEmpSearch' 'Y').TrimStart('='); $sH = [int](Get-Prop 'txtEmpSearch' 'Height').TrimStart('=')
 $cY = [int](Get-Prop 'chkEmpShowInactive' 'Y').TrimStart('='); $cH = [int](Get-Prop 'chkEmpShowInactive' 'Height').TrimStart('=')
 $gY = [int](Get-Prop 'galEmpList' 'Y').TrimStart('=')
 Assert-True ($sY -ge 12) "Search box Y=$sY >= 12 (full border visible below the container top / status area)"
 Assert-True ($cY -ge $sY + $sH + 8 -and $gY -ge $cY + $cH + 8) "Search < checkbox < list stack without overlap (Y $sY, $cY, $gY)"
 Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=lblEmpStatus.Y+lblEmpStatus.Height+8') 'Body starts 8 px under the status line (never under the title bar)'
-foreach ($W in 768, 900, 1000, 1280, 1366, 1920) {
+foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
     foreach ($errH in 0, 60) {
         $wide = $W -ge 1000
         $layX = [int]$wide; $layY = if ($wide) { 464 } else { 40 }
         $layW = if ($wide) { [Math]::Min(584, $W - 504) } else { [Math]::Min(584, $W - 80) }
-        $layH = if ($wide) { 12 } else { 404 }
+        $layH = if ($wide) { 100 } else { 404 }
         $metX = [int](($layW - 48) -ge 536)
         $metY = 24 + 76 * (8 + (1 - $metX)) + $(if ($errH -gt 0) { 52 + $errH } else { 40 }) + 24
         $bodyH = 500
-        $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($metY + 24, 288)) } else { $layH + $metY + 24 }
+        $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($layH + $metY + 24, 288)) } else { $layH + $metY + 24 }
         $galH = if ($wide) { [Math]::Max(200, $metH - 124) } else { 280 }
         $galW = [Math]::Min(400, $W - 80)
         $lbl = "W=$W errBlock=$errH"
         Assert-True ($sY -ge 12 -and $gY + $galH -le $metH) "$lbl : search top $sY, list bottom $($gY + $galH) within canvas $metH"
         Assert-True ((($W -ge 1000) -and ($layY + $layW + 40 -le $W)) -or (($W -lt 1000) -and ($layY + $layW -le $W))) "$lbl : form (X=$layY, w=$layW) inside screen"
         if ($wide) {
-            Assert-True ($layH -eq $sY) "$lbl : wide form top ($layH) = list/search top ($sY)"
+            Assert-True ($layH -eq $gY) "$lbl : wide form top ($layH) = galEmpList top ($gY), below search ($sY) and checkbox ($cY)"
             Assert-True (40 + $galW + 24 -le $layY) "$lbl : wide list (right edge $(40 + $galW)) clear of form X=$layY"
             Assert-True ($layH + $metY -le $metH) "$lbl : form bottom $($layH + $metY) within canvas $metH"
         } else {
@@ -442,4 +497,11 @@ foreach ($W in 768, 900, 1000, 1280, 1366, 1920) {
         }
     }
 }
+# lblEmpModified: own row under the code value, never beside it (no overlap at any width)
+function Num($c,$pr){ $t=(Get-Prop $c $pr).TrimStart('='); $t=$t.Replace('24+76*1+24','124').Replace('24+76*2','176'); return [int](Invoke-Expression $t) }
+$cvY = Num 'lblEmpCodeValue' 'Y'; $cvH = Num 'lblEmpCodeValue' 'Height'; $mY = Num 'lblEmpModified' 'Y'; $mH = Num 'lblEmpModified' 'Height'; $adY = Num 'lblEmpAddressLabel' 'Y'
+foreach ($W in 320, 768, 900, 1000, 1280, 1920) {
+    Assert-True ($mY -ge $cvY + $cvH -and $mY + $mH -le $adY) "W=$W : lblEmpModified (Y $mY..$($mY + $mH)) below the code value (ends $($cvY + $cvH)) and above the address label ($adY)"
+}
+Assert-True ((Get-Prop 'lblEmpModified' 'X') -eq (Get-Prop 'lblEmpCodeValue' 'X') -and (Get-Prop 'lblEmpModified' 'Size') -eq '=12' -and (Get-Prop 'lblEmpModified' 'FontWeight') -eq '=FontWeight.Normal') 'lblEmpModified: own row, Inter 12 Normal'
 Write-Output 'PASS Test-AdminScreens (Contractors): static structure only. Studio import, binding, delegation (Monitor), SharePoint case-sensitivity of Title = and functional tests NOT verified.'

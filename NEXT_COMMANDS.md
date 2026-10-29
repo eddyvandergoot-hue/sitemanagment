@@ -9,7 +9,7 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 ## 1. Admin screens (plan decided 27-10-2026: ADMIN_PLAN.md; Contractors built, Studio test open)
 
-Next: Eddy's Studio retest (from step 8) of the Contractors v2 build after the FAIL on build 203334 (TESTPLAN.md TP-CONTRACTORS-01 and TP-WH-CLEAN-01; build: PROJECT_STATUS.md). MS-020 is done (28-10-2026). After approval: Projects build (powerfx-logic, reviewer, powerfx-ui, verifier), then Workers (incl. Weekly Hours stale-cache fix). Open points: ADMIN_PLAN.md par. 8 and 9.
+Next: Eddy's Studio retest (from step 8, plus extra checks F-H) of the current Contractors build 20261029_174723 (v3: always Refresh before load, Last changed label) after the FAIL on build 203334 (TESTPLAN.md TP-CONTRACTORS-01 and TP-WH-CLEAN-01; build: PROJECT_STATUS.md). MS-020 is done (28-10-2026). After approval: Projects build (powerfx-logic, reviewer, powerfx-ui, verifier), then Workers (incl. Weekly Hours stale-cache fix). Open points: ADMIN_PLAN.md par. 8 and 9.
 
 ## 2b. ModernDatePicker 1.0.2
 

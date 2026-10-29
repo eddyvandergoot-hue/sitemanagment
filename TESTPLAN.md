@@ -183,9 +183,10 @@ Doel: aantonen dat een gebruiker zonder eigenaarsrechten alleen kan wat de bedoe
 
 Uitkomst per stap noteren met datum en account/rol. Stap 4 is pas bindend na MS-004.
 
-## TP-CONTRACTORS-01 Contractors-scherm (OPEN; eerste build contractors-20261028_203334: FAIL stap 8+9; hertest op build contractors-20261028_222247, PROJECT_STATUS.md)
+## TP-CONTRACTORS-01 Contractors-scherm (OPEN; eerste build contractors-20261028_203334: FAIL stap 8+9; hertest op build contractors-20261029_174723, PROJECT_STATUS.md)
 
-Resultaat 28-10-2026 (Eddy, build 203334): stap 8 en 9 FAIL (elke Save toonde "Save not confirmed ... Saving is blocked" terwijl de data wel was geschreven; daarna alles behalve Discard uit; zoekvak-rand verborgen, paneel niet uitgelijnd); de overige stappen niet gemeld. Oorzaak en fix: PROJECT_STATUS.md. Hertest op build 222247 door Eddy vanaf stap 8, plus de extra controles onder de tabel.
+Resultaat 28-10-2026 (Eddy, build 203334): stap 8 en 9 FAIL (elke Save toonde "Save not confirmed ... Saving is blocked" terwijl de data wel was geschreven; daarna alles behalve Discard uit; zoekvak-rand verborgen, paneel niet uitgelijnd); de overige stappen niet gemeld. Oorzaak en fix: PROJECT_STATUS.md. Hertest door Eddy vanaf stap 8 (nu op build 174723, die 222247 vervangt), plus de extra controles onder de tabel.
+Let op: de oorspronkelijke melding van Eddy bij stap 12 (hertest 222247) stond niet in de repo vastgelegd; het doel van build 174723 (connectorcache toont nooit waarden van vóór een directe SharePoint-wijziging) is afgeleid uit de code. Eddy bevestigt bij de hertest of dit klopt.
 
 Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractors alleen lezen, nooit wijzigen. Nooit verwijderen, alleen deactiveren.
 
@@ -210,12 +211,16 @@ Testdata uitsluitend met prefix TEST (bv. "TEST Contractor 2"); echte contractor
 | 17 | Smal venster | statusregel kapt af met "…"; footer past |
 | 18 | Monitor | queries op Employers (ID=, Title=) gedelegeerd |
 
-Extra controles hertest (build 222247):
+Extra controles hertest (A-E sinds build 222247, F-H nieuw op build 174723):
 - A. Stap 8-9 opnieuw: New met lege optionele velden, en Edit van City: Save slaagt met verify-melding, geen "Save not confirmed".
 - B. Een contractor met lege velden selecteren maakt het formulier niet dirty (Home, New en gallery blijven actief).
 - C. Layout op ~900, 1000 en 1280 px: zoekvak-bovenrand zichtbaar; lijst en formulier bovenaan uitgelijnd in de brede layout (>=1000 px); smal: formulier onder de lijst zonder overlap.
 - D. Faalt een Save weer: noteer de getoonde veldlijst of SharePoint-reden, en de Monitor-events DIAG|Contractors|VerifyMismatch en DIAG|Contractors|Refresh.
 - E. Na een mislukte Save laadt Refresh opnieuw (invoer verworpen).
+- F. Een TEST-contractor direct in SharePoint wijzigen, dan Refresh (of het scherm opnieuw openen): de nieuwe waarden zijn zichtbaar, "Last changed in SharePoint" klopt met SharePoint (let op browsertijdzone versus versiegeschiedenis), de statusregel toont "{n} contractors loaded at hh:mm:ss".
+- G. Na Save toont het formulier de opgeslagen waarden en is het niet dirty (Home, New en gallery blijven actief; btnEmpFormReset).
+- H. Brede layout (>=1000 px): formulier bovenkant gelijk met de lijst; label "Last changed" niet afgekapt (onder ~430 px kan het op twee regels afknippen: bekend, niet blokkerend).
+- Bekende Studio-controles: geneste Select (Refresh/OnVisible -> btnEmpLoad -> btnEmpFormReset), Reset pikt de nieuwe Default op, Modified komt mee in de kolomselectie (anders is het label leeg, veilig), extra roundtrip per load; de statusregel met laadtijd verdwijnt bij lijstkeuze/Save (bewust).
 
 ## TP-WH-CLEAN-01 Weekly Hours opgeschoond (OPEN)
 
