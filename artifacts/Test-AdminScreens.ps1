@@ -259,7 +259,7 @@ $iLocal = $saveN.IndexOf('If(varEmpSaveVerified&&IsEmpty(colEmpSaveErrors),Remov
 Assert-True ($iVal -gt 0 -and $iDupLocal -gt $iVal -and $iGateRead -gt $iDupLocal -and $iPre -gt $iGateRead -and $iDup -gt $iPre -and $iConf -gt $iDup -and $iWriteGate -gt $iConf -and $iPatch -gt $iWriteGate -and $iVerify -gt $iPatch -and $iOk -gt $iVerify -and $iLocal -gt $iOk) 'Order: validation -> (no errors) pre-read -> duplicate read -> conflict -> (no errors) one Patch -> verify read -> local update'
 Assert-True (([regex]::Matches($screenText, '(?<!Clear)Collect\(colAdminEmployers,')).Count -eq 1 -and ([regex]::Matches($screenText, 'RemoveIf\(colAdminEmployers,')).Count -eq 1) 'colAdminEmployers changed only by the loader and after a verified save'
 Assert-True ($saveN.Contains('Set(varEmpEdit,First(colEmpVerify))')) 'Snapshot updated only from the verify read'
-Assert-True ($saveN.Contains('varEmpSaveWrites=0,Set(varEmpMsg,') -and $saveN.Contains('Set(varEmpSaveFailed,true);Set(varEmpLoadState,"Failed");')) 'Zero writes + error stays Loaded; write + error -> Failed and SaveFailed (input kept, save blocked)'
+Assert-True ($saveN.Contains('varEmpSaveWrites=0,Notify(') -and $saveN.Contains('Set(varEmpSaveFailed,true);Set(varEmpLoadState,"Failed");')) 'Zero writes + error stays Loaded; write + error -> Failed and SaveFailed (input kept, save blocked)'
 Assert-True (([regex]::Matches($saveN, 'Set\(varEmpSaveFailed,true\)')).Count -eq 1) 'SaveFailed set in exactly one place'
 Assert-True ($saveN.Contains('Set(varEmpSaveWarnWorkers,If(varEmpSaveMode="Edit"&&Coalesce(varEmpEdit.Active,true)&&!varEmpSaveRec.Active,CountIf(colEmpWorkers,EmployerID=varEmpSaveID')) 'Deactivation with active workers is counted (warning)'
 Assert-True ($screenText -notmatch 'Collect\(colEmpSaveErrors,\{[^}]*empWarnActiveWorkers') 'Active-worker warning never blocks the save'
@@ -380,7 +380,7 @@ Assert-Eval (VerifyDiff $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '
 Assert-Eval (VerifyDiff (Raw '"TEST Contractor 2"' '"Test Stad2"' '"EMP-005"' 'true' $blankT) $inEmpty 'F') '' 'Verify passes: flow MS-019 filled EmployerCode1 and changed Modified after the create'
 Assert-Eval (VerifyDiff $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'false') 'F') 'Active' 'Verify fails on Active: blank (= active) in SharePoint, written false'
 Assert-Eval (VerifyDiff (Raw '"TEST Contractor 2"' '"Other"' $blankT 'true' $blankT) $inEmpty 'F') 'City' 'Verify fails and names only the differing field (City)'
-Assert-Eval (VerifyDiff (Raw '"TEST Contractor 2"' '"Other"' $blankT 'true' $blankT) $inEmpty 'L') 'City' 'On-screen difference list uses the field label (no values)'
+Assert-Eval (VerifyDiff (Raw '"TEST Contractor 2"' '"Other"' $blankT 'true' $blankT) $inEmpty 'L') 'City' 'Notification difference list uses the field label (no values)'
 Assert-Eval (VerifyDiff (Raw '"test contractor 2"' '"Test Stad2"' $blankT 'true' $blankT) $inEmpty 'F') 'Name' 'Verify on Name is exact after Trim (case is part of the written value)'
 # Conflict check: loaded snapshot vs pre-read, both through the same projection
 function Conflict([string]$preRaw, [string]$snapRaw) { return "With({p:$(Proj $preRaw),varEmpEdit:$(Proj $snapRaw),varEmpSaveID:7},$conflictFx)" }
@@ -400,13 +400,13 @@ Assert-Eval (Dirty $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' '
 $newSnap = '{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
 Assert-Eval ('With({varEmpMode:"New",varEmpEdit:' + $newSnap + ',' + (Inputs '""' '""' $blankT 'true') + '},' + $dirty + ')') $false 'Not dirty: New form untouched (inputs Blank)'
 Assert-Eval ('With({varEmpMode:"New",varEmpEdit:' + $newSnap + ',' + (Inputs '"TEST Contractor 3"' '""' $blankT 'true') + '},' + $dirty + ')') $true 'Dirty: New form with a typed name'
-# Diagnosability: verify mismatch on screen (labels only) and in Trace (field names only); Patch reason on screen only
+# Diagnosability: verify mismatch in the notification (labels only) and in Trace (field names only); Patch reason in the notification only
 Assert-True ($saveN.Contains((Norm 'Trace("DIAG|Contractors|VerifyMismatch",TraceSeverity.Warning,{Screen:"Contractors",ItemID:Coalesce(varEmpPatchedID,0),Rows:CountRows(colEmpVerifyRaw),Fields:varEmpVerifyDiff})'))) 'Trace DIAG|Contractors|VerifyMismatch with field names only'
-Assert-True ($saveN.Contains((Norm 'Set(varEmpVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));')) -and $saveN.Contains((Norm 'Substitute(If(LangNl && !IsBlank(T.empErrVerifyFields.nl),T.empErrVerifyFields.nl,T.empErrVerifyFields.en),"{0}",Concat(d,L,", "))'))) 'Verify mismatch: technical names to Trace, labels on screen (never values)'
-Assert-True ($saveN.Contains((Norm 'Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrPatch.nl),T.empErrPatch.nl,T.empErrPatch.en) & " " & FirstError.Message});false);'))) 'Patch error: SharePoint reason (FirstError.Message) appended to the on-screen error only'
+Assert-True ($saveN.Contains((Norm 'Set(varEmpVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));')) -and $saveN.Contains((Norm 'Substitute(If(LangNl && !IsBlank(T.empErrVerifyFields.nl),T.empErrVerifyFields.nl,T.empErrVerifyFields.en),"{0}",Concat(d,L,", "))'))) 'Verify mismatch: technical names to Trace, labels in the notification (never values)'
+Assert-True ($saveN.Contains((Norm 'Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrPatch.nl),T.empErrPatch.nl,T.empErrPatch.en) & " " & FirstError.Message});false);'))) 'Patch error: SharePoint reason (FirstError.Message) appended to the notified error only (never Trace)'
 $feAll = @([regex]::Matches($screenText, 'FirstError\.Message'))
 $feOk = @($feAll | Where-Object { $screenText.Substring([Math]::Max(0, $_.Index - 220), [Math]::Min(220, $_.Index)) -match 'Collect\(col\w*Errors,\{[^{}]*$' })
-Assert-True ($feAll.Count -ge 5 -and $feOk.Count -eq $feAll.Count) "FirstError.Message only inside on-screen error collections ($($feAll.Count) uses: load errors + Patch error)"
+Assert-True ($feAll.Count -ge 5 -and $feOk.Count -eq $feAll.Count) "FirstError.Message only inside notified error collections ($($feAll.Count) uses: load errors + Patch error)"
 
 # (14) Stale values after Refresh (TP-CONTRACTORS-01 step 12, 29-10-2026) --------------------------------------------
 # (a) Every SharePoint read in a behaviour formula of scrContractors (load, pre-read, duplicate read, verify read) is
@@ -460,26 +460,97 @@ Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:8},' + $m
 Assert-Eval ('With({' + $modFix + ',varEmpMode:"New",varEmpSelectedID:Blank()},' + $modFx + ')') '' 'Modified line empty for New'
 Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:9},' + $modFx + ')') '' 'Modified line empty when the item has no loaded Modified'
 
+# (15) Messages only via the Power Apps notification bar (Eddy 29-10-2026) ------------------------------------------
+# No message text on the screen: errors NotificationType.Error (15000 ms; Failed/SaveFailed 0 = until closed), success NotificationType.Success (default
+# timeout), one Notify per outcome, no Warning/Information; an invalid field is shown only by a red #DB1E28 border.
+foreach ($gone in @('lblEmpStatus', 'lblEmpErrors')) { Assert-True (!$idx.ContainsKey($gone)) "$gone removed (no message text on the screen)" }
+Assert-True ($srcAll -notmatch '\bvarEmpMsg(Error)?\b') 'varEmpMsg/varEmpMsgError no longer exist in Src'
+$msgProps = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_] -match '\.Message\b|\bT\.emp(Msg|Err|Warn)\w*\.' } | Sort-Object)
+Assert-True ($msgProps.Count -eq 0) "No non-behaviour property shows a message or error text ($($msgProps -join ', '))"
+Assert-True ($screenText -notmatch 'NotificationType\.(Warning|Information)') 'No NotificationType.Warning/Information on scrContractors'
+$notifies = @()
+foreach ($k in ($all.Keys | Sort-Object)) {
+    $fx = $all[$k]
+    foreach ($m in [regex]::Matches($fx, '\bNotify\(')) {
+        $call = Get-Balanced $fx ($m.Index + 6)
+        $notifies += [pscustomobject]@{ Key = $k; Pos = $m.Index; Args = (Split-Args $call.Substring(1, $call.Length - 2)) }
+    }
+}
+$successKeys = @('empMsgLoaded', 'empMsgSaved', 'empMsgSavedRename', 'empMsgDiscarded', 'empMsgNew')
+foreach ($n in $notifies) {
+    $type = $n.Args[1].Trim(); $keysIn = @([regex]::Matches($n.Args[0], '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    Assert-True ($n.Key -match '\.On\w+$') "$($n.Key) : Notify only in a behaviour formula"
+    if ($type -eq 'NotificationType.Error') {
+        # Failed states (load failed, SaveFailed) leave a read-only screen: that message stays until closed (timeout 0).
+        $sticky = @($keysIn | Where-Object { $_ -in @('empMsgLoadFailed', 'empMsgSaveFailed', 'empMsgSaveFailedNew') }).Count -gt 0
+        $expTimeout = if ($sticky) { '0' } else { '15000' }
+        Assert-True ($n.Args.Count -eq 3 -and $n.Args[2].Trim() -eq $expTimeout -and @($keysIn | Where-Object { $_ -in $successKeys }).Count -eq 0) "$($n.Key) : error Notify (T: $($keysIn -join ',')) uses NotificationType.Error, $expTimeout ms, no success text"
+    } else {
+        Assert-True ($type -eq 'NotificationType.Success' -and $n.Args.Count -eq 2 -and @($keysIn | Where-Object { $_ -notin $successKeys -and $_ -notin @('empWarnActiveWorkers', 'empWarnWorkersRefresh') }).Count -eq 0 -and @($keysIn | Where-Object { $_ -in $successKeys }).Count -ge 1) "$($n.Key) : success Notify (T: $($keysIn -join ',')) uses NotificationType.Success with the default timeout"
+    }
+}
+$expNotify = [ordered]@{ 'btnEmpLoad.OnSelect' = 3; 'btnEmpSave.OnSelect' = 4; 'btnEmpNew.OnSelect' = 2; 'btnEmpDiscard.OnSelect' = 2; 'btnEmpRefresh.OnSelect' = 1; 'galEmpList.OnSelect' = 1 }
+$gotNotify = (($notifies | Group-Object Key | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ';')
+Assert-True ($gotNotify -ceq (($expNotify.Keys | Sort-Object | ForEach-Object { "$_=$($expNotify[$_])" }) -join ';')) "Notify per formula as expected: $gotNotify"
+$blockedN = Norm ',Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000))'
+foreach ($ctl in @('btnEmpSave', 'btnEmpNew', 'btnEmpRefresh', 'btnEmpDiscard', 'galEmpList')) { Assert-True ((Norm (Get-Prop $ctl 'OnSelect')).EndsWith($blockedN)) "$ctl : the guard's else branch notifies 'action blocked' as an error (no mutation)" }
+Assert-True ($load.Contains('Notify(If(LangNl && !IsBlank(T.empMsgReloadBlocked.nl),T.empMsgReloadBlocked.nl,T.empMsgReloadBlocked.en),NotificationType.Error,15000),')) 'Loader: reload over unsaved input notifies an error and does nothing else'
+foreach ($k in @('btnEmpLoad.OnSelect', 'btnEmpSave.OnSelect')) { foreach ($m in [regex]::Matches($all[$k], '\bTrace\(')) { Assert-True ((Get-Balanced $all[$k] ($m.Index + 5)) -notmatch 'Notify') "$k : no Notify inside a Trace" } }
+# Texts (T) and the composed notification texts, evaluated with the interpreter
+$fixTexts = [ordered]@{ empErrNameRequired = 'Fix: Contractor Name empty'; empErrEmail = 'Fix: Contact Email invalid'; empErrPhone = 'Fix: Contact Phone invalid'; empErrTooLong = 'Fix: {0} too long'; empErrDuplicate = 'Fix: Contractor Name already exists' }
+foreach ($k in $fixTexts.Keys) { Assert-True ($formulas.Contains("$($k): {en: ""$($fixTexts[$k])"", nl: """"}")) "T.$k = '$($fixTexts[$k])'" }
+$conflictMsg = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'
+Assert-True ($formulas.Contains("empErrConflict: {en: ""$conflictMsg"", nl: """"}")) 'T.empErrConflict exact text'
+$unusedT = @($tKeys | Where-Object { $_ -cnotin $used })
+Assert-True ($unusedT.Count -eq 0) "No unused T keys ($($unusedT -join ', '))"
+$saveNot = @($notifies | Where-Object Key -eq 'btnEmpSave.OnSelect' | Sort-Object Pos)
+$loadNot = @($notifies | Where-Object Key -eq 'btnEmpLoad.OnSelect' | Sort-Object Pos)
+function Msg([string]$fixture, [string]$fx) { return "With({LangNl:false,T:$tRec},With({$fixture},$fx))" }
+Assert-True ($saveN.IndexOf((Norm $saveNot[1].Args[0])) -gt $saveN.IndexOf('varEmpSaveWrites=0,') -and $saveN.IndexOf((Norm $saveNot[2].Args[0]), $saveN.IndexOf('Set(varEmpSaveFailed,true)')) -gt 0) 'Save outcome: zero-write Notify after varEmpSaveWrites=0, failed-save Notify after SaveFailed'
+Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"",Message:T.empErrConflict.en})' $saveNot[1].Args[0]) $conflictMsg 'Conflict notification is exactly the conflict text'
+Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"Name",Message:T.empErrNameRequired.en},{Field:"ContactEmail",Message:T.empErrEmail.en},{Field:"ContactPhone",Message:T.empErrPhone.en})' $saveNot[1].Args[0]) 'Fix: Contractor Name empty (+2 more)' 'Several validation errors: one notification, first error + (+n more)'
+Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"City",Message:Substitute(T.empErrTooLong.en,"{0}",T.empFieldCity.en)})' $saveNot[1].Args[0]) 'Fix: City too long' 'Too long: field label in the notification'
+Assert-Eval (Msg 'varEmpSaveMode:"Edit",colEmpSaveErrors:Table({Field:"",Message:T.empErrPatch.en & " " & "List is read-only."})' $saveNot[2].Args[0]) 'Save not confirmed by SharePoint. List is read-only. Check SharePoint, then click Discard.' 'Failed save (Edit): SharePoint reason behind the short text'
+Assert-Eval (Msg 'varEmpSaveMode:"New",colEmpSaveErrors:Table({Field:"",Message:Substitute(T.empErrVerifyFields.en,"{0}","City, Active")})' $saveNot[2].Args[0]) 'Save not confirmed: different in SharePoint: City, Active. Maybe created: click Discard, then search the name before retrying.' 'Failed save (New, verify mismatch): field labels, New advice'
+Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false' $saveNot[0].Args[0]) 'Saved. 2 active worker(s) still have this contractor.' 'Saved + active-worker warning in one success notification'
+Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveNot[0].Args[0]) 'Saved. The new name also shows on past hours. Workers not refreshed: open Project / team and click Refresh.' 'Saved + rename + Workers-refresh warning in one success notification'
+Assert-Eval (Msg 'colAdminEmployers:Table({ID:1},{ID:2},{ID:3}),varEmpLoadedAt:DateTime(2026,10,29,21,5,7)' $loadNot[1].Args[0]) '3 contractors loaded at 21:05:07' 'Load success notification: count and time'
+Assert-Eval (Msg 'colEmpLoadErrors:Table({Message:T.empErrLoadEmployers.en & " " & "Network error"},{Message:T.empErrLimitWorkers.en})' $loadNot[2].Args[0]) 'Loading failed. Click Refresh. Contractors not read: Network error (+1 more)' 'Load failure notification: first error + (+n more)'
+# Red border per field, bound to colEmpSaveErrors.Field
+$fieldsCollected = @([regex]::Matches($save, 'Collect\(colEmpSaveErrors,\{Field:"(\w*)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+Assert-True (@($fieldsCollected | Where-Object { $_ -ne '' -and $_ -cnotin @($inputMap.Values) }).Count -eq 0) "Every collected error Field is one of the 8 inputs or '' ($($fieldsCollected -join ','))"
+foreach ($k in $inputMap.Keys) {
+    $f = $inputMap[$k]
+    foreach ($pv in @(@('BorderColor', '#DCDCDC'), @('HoverBorderColor', '#0303B8'), @('FocusedBorderColor', '#0303B8'))) {
+        $exp = '=If(CountIf(colEmpSaveErrors,Field="' + $f + '")>0,ColorValue("#DB1E28"),ColorValue("' + $pv[1] + '"))'
+        Assert-True ((Get-Prop $k $pv[0]) -ceq $exp) "$k.$($pv[0]) red #DB1E28 when colEmpSaveErrors has Field=$f, else $($pv[1])"
+    }
+    $bc = (Get-Prop $k 'BorderColor').TrimStart('=').Replace('ColorValue("#DB1E28")', '"red"').Replace('ColorValue("#DCDCDC")', '"grey"')
+    Assert-Eval "With({colEmpSaveErrors:Table({Field:`"City`",Message:`"x`"},{Field:`"`",Message:`"y`"})},$bc)" $(if ($f -eq 'City') { 'red' } else { 'grey' }) "$k border with a City error"
+    Assert-Eval "With({colEmpSaveErrors:Filter(Table({Field:`"$f`",Message:`"x`"}),false)},$bc)" 'grey' "$k border without errors"
+}
+Assert-True ((Get-Prop 'txtEmpSearch' 'BorderColor') -ceq '=ColorValue("#DCDCDC")') 'Search box keeps the standard border (no error binding)'
+
 
 # Geometry (TP-CONTRACTORS-01): search border not under the header, wide form top = list top, narrow no overlap.
 # The carriers' formulas are pinned by exact text, then mirrored here for each width.
 $expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,464,40)'; Width='=If(Self.X=1,Min(584,Parent.Width-504),Min(584,Parent.Width-80))'; Height='=If(Self.X=1,100,404)' }
 foreach ($k in $expLay.Keys) { Assert-True ((Get-Prop 'lblEmpLayout' $k) -eq $expLay[$k]) "Layout carrier lblEmpLayout.$k formula as mirrored" }
-Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,lblEmpLayout.Height+Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+If(lblEmpErrors.Visible,52+lblEmpErrors.Height,40)+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
+Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,lblEmpLayout.Height+Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
 $sY = [int](Get-Prop 'txtEmpSearch' 'Y').TrimStart('='); $sH = [int](Get-Prop 'txtEmpSearch' 'Height').TrimStart('=')
 $cY = [int](Get-Prop 'chkEmpShowInactive' 'Y').TrimStart('='); $cH = [int](Get-Prop 'chkEmpShowInactive' 'Height').TrimStart('=')
 $gY = [int](Get-Prop 'galEmpList' 'Y').TrimStart('=')
 Assert-True ($sY -ge 12) "Search box Y=$sY >= 12 (full border visible below the container top / status area)"
 Assert-True ($cY -ge $sY + $sH + 8 -and $gY -ge $cY + $cH + 8) "Search < checkbox < list stack without overlap (Y $sY, $cY, $gY)"
-Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=lblEmpStatus.Y+lblEmpStatus.Height+8') 'Body starts 8 px under the status line (never under the title bar)'
+Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=lblEmpTitle.Y+lblEmpTitle.Height+12') 'Body starts 12 px under the title bar (no status line; messages only via Notify)'
 foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
-    foreach ($errH in 0, 60) {
+    foreach ($errH in @(0)) {
         $wide = $W -ge 1000
         $layX = [int]$wide; $layY = if ($wide) { 464 } else { 40 }
         $layW = if ($wide) { [Math]::Min(584, $W - 504) } else { [Math]::Min(584, $W - 80) }
         $layH = if ($wide) { 100 } else { 404 }
         $metX = [int](($layW - 48) -ge 536)
-        $metY = 24 + 76 * (8 + (1 - $metX)) + $(if ($errH -gt 0) { 52 + $errH } else { 40 }) + 24
+        $metY = 24 + 76 * (8 + (1 - $metX)) + 40 + 12 + 20 + 24
         $bodyH = 500
         $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($layH + $metY + 24, 288)) } else { $layH + $metY + 24 }
         $galH = if ($wide) { [Math]::Max(200, $metH - 124) } else { 280 }
@@ -497,11 +568,22 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
         }
     }
 }
-# lblEmpModified: own row under the code value, never beside it (no overlap at any width)
-function Num($c,$pr){ $t=(Get-Prop $c $pr).TrimStart('='); $t=$t.Replace('24+76*1+24','124').Replace('24+76*2','176'); return [int](Invoke-Expression $t) }
-$cvY = Num 'lblEmpCodeValue' 'Y'; $cvH = Num 'lblEmpCodeValue' 'Height'; $mY = Num 'lblEmpModified' 'Y'; $mH = Num 'lblEmpModified' 'Height'; $adY = Num 'lblEmpAddressLabel' 'Y'
+# 29-10-2026: Contractor Code = read-only TextInput (txtEmpCode, always Disabled, field style); lblEmpModified = small grey line under chkEmpActive.
+function Num($c,$pr){ $t=(Get-Prop $c $pr).TrimStart('='); $t=$t.Replace('lblEmpMetrics.X','1').Replace('24+76*1+24','124').Replace('24+76*2','176'); return [int](Invoke-Expression $t) }
+Assert-True ($null -eq $idx['lblEmpCodeValue'] -and $idx['txtEmpCode']['Control'] -eq 'Classic/TextInput@2.3.2') 'Contractor Code value is a Classic/TextInput@2.3.2 (txtEmpCode); lblEmpCodeValue is gone'
+Assert-True ((Get-Prop 'txtEmpCode' 'DisplayMode') -eq '=DisplayMode.Disabled') 'txtEmpCode is always DisplayMode.Disabled (never editable)'
+$codeDefault = 'If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpEdit.Code),varEmpEdit.Code,Coalesce(varEmpMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.empCodeAuto.nl),T.empCodeAuto.nl,T.empCodeAuto.en),"")'
+Assert-True ((Norm (Get-Prop 'txtEmpCode' 'Default').TrimStart('=')) -eq (Norm $codeDefault)) 'txtEmpCode Default = the former lblEmpCodeValue Text formula'
+foreach ($kv in @(@('Fill','=ColorValue("#F0F0F0")'),@('DisabledFill','=ColorValue("#F0F0F0")'),@('BorderColor','=ColorValue("#DCDCDC")'),@('DisabledBorderColor','=ColorValue("#DCDCDC")'),@('Color','=ColorValue("#000000")'),@('DisabledColor','=ColorValue("#000000")'),@('BorderThickness','=1'),@('RadiusTopLeft','=6'),@('RadiusBottomRight','=6'),@('PaddingLeft','=8'),@('PaddingRight','=8'),@('Size','=12'),@('FontWeight','=FontWeight.Normal'),@('Height','=40'),@('Width','=Min(256,lblEmpLayout.Width-48)'),@('X','=24'),@('Y','=24+76*1+24'),@('AccessibleLabel','=If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)'))) { Assert-True ((Get-Prop 'txtEmpCode' $kv[0]) -eq $kv[1]) "txtEmpCode.$($kv[0])" }
+Assert-True ($dirty -notmatch 'txtEmpCode' -and $saveN -notmatch 'txtEmpCode') 'txtEmpCode is not part of dirty/Save (the app never writes Employer Code)'
+$cvY = Num 'txtEmpCode' 'Y'; $cvH = Num 'txtEmpCode' 'Height'; $adY = Num 'lblEmpAddressLabel' 'Y'
+Assert-True ($cvY + $cvH -le $adY) "txtEmpCode (ends $($cvY + $cvH)) above the address label ($adY)"
+$mY = Num 'lblEmpModified' 'Y'; $mH = Num 'lblEmpModified' 'Height'; $chY = Num 'chkEmpActive' 'Y'; $chH = Num 'chkEmpActive' 'Height'
 foreach ($W in 320, 768, 900, 1000, 1280, 1920) {
-    Assert-True ($mY -ge $cvY + $cvH -and $mY + $mH -le $adY) "W=$W : lblEmpModified (Y $mY..$($mY + $mH)) below the code value (ends $($cvY + $cvH)) and above the address label ($adY)"
+    $X = if ($W - 48 -ge 536) { 1 } else { 0 }
+    $mY2 = 24 + 76 * (8 + (1 - $X)) + 40 + 12; $chY2 = 24 + 76 * (8 + (1 - $X)); $metY = 24 + 76 * (8 + (1 - $X)) + 40 + 12 + 20 + 24
+    Assert-True ($mY2 -ge $chY2 + $chH + 12 -and $mY2 + $mH + 24 -le $metY) "W=$W : lblEmpModified (Y $mY2..$($mY2 + $mH)) 12 px under chkEmpActive (ends $($chY2 + $chH)), inside the form panel (ends $metY)"
 }
-Assert-True ((Get-Prop 'lblEmpModified' 'X') -eq (Get-Prop 'lblEmpCodeValue' 'X') -and (Get-Prop 'lblEmpModified' 'Size') -eq '=12' -and (Get-Prop 'lblEmpModified' 'FontWeight') -eq '=FontWeight.Normal') 'lblEmpModified: own row, Inter 12 Normal'
+Assert-True ((Get-Prop 'lblEmpModified' 'Y') -eq '=24+76*(8+(1-lblEmpMetrics.X))+40+12' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'lblEmpModified Y = checkbox bottom + 12; lblEmpMetrics.Y includes the label + 24 bottom padding'
+Assert-True ((Get-Prop 'lblEmpModified' 'X') -eq '=24' -and (Get-Prop 'lblEmpModified' 'Width') -eq '=Min(512,lblEmpLayout.Width-48)' -and (Get-Prop 'lblEmpModified' 'Size') -eq '=11' -and (Get-Prop 'lblEmpModified' 'FontWeight') -eq '=FontWeight.Normal' -and (Get-Prop 'lblEmpModified' 'Color') -eq '=ColorValue("#787878")' -and (Get-Prop 'lblEmpModified' 'Height') -eq '=20') 'lblEmpModified: Inter 11 Normal, #787878, Height 20, width Min(512,...)'
 Write-Output 'PASS Test-AdminScreens (Contractors): static structure only. Studio import, binding, delegation (Monitor), SharePoint case-sensitivity of Title = and functional tests NOT verified.'

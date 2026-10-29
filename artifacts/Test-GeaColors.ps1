@@ -36,10 +36,13 @@ foreach($t in @(@('scrHours',@('lblHeaderWorker','lblHeaderMon','lblHeaderTue','
 if($indexes.scrHours['recHoursHeaderBar']['Properties']['Fill'] -ne (CV '#0303B8') -or $indexes.scrWeeklyHours['galReportWeekHeaders']['Properties']['Fill'] -ne (CV '#0303B8')){throw 'Header bar background'}
 Write-Output 'PASS title bars and table headers (Weekly Hours and Hours Summary): #0303B8 with white text; continuous header bar behind the Weekly Hours columns.'
 
+$empErrField=@{txtEmpName='Name';txtEmpAddress='Address';txtEmpPostalcode='Postalcode';txtEmpCity='City';txtEmpCountry='Country';txtEmpContactName='ContactName';txtEmpContactEmail='ContactEmail';txtEmpContactPhone='ContactPhone'}
 foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){
  $c=$indexes[$screen][$name];$p=$c['Properties']
  if($c['Control'] -like 'Classic/DropDown@*' -or $c['Control'] -like 'Classic/TextInput@*'){
-  foreach($kv in @(@('Fill','#F0F0F0'),@('BorderColor','#DCDCDC'),@('HoverBorderColor','#0303B8'),@('FocusedBorderColor','#0303B8'))){ if($p[$kv[0]] -ne (CV $kv[1])){throw "Input $screen.$name.$($kv[0])"} }
+  # 29-10-2026 (Eddy): Contractors form inputs show an invalid field only by a red #DB1E28 border (Border/Hover/Focused) bound to colEmpSaveErrors.Field.
+  if($screen -eq 'scrContractors' -and $name -eq 'txtEmpCode'){ foreach($kv in @(@('Fill','#F0F0F0'),@('DisabledFill','#F0F0F0'),@('BorderColor','#DCDCDC'),@('DisabledBorderColor','#DCDCDC'),@('Color','#000000'),@('DisabledColor','#000000'))){ if($p[$kv[0]] -ne (CV $kv[1])){throw "Read-only code field $($kv[0])"} }; if($p['DisplayMode'] -ne '=DisplayMode.Disabled'){throw 'txtEmpCode must stay Disabled'}; if($p['BorderThickness'] -ne '=1'){throw 'txtEmpCode border'}; continue }
+  foreach($kv in @(@('Fill','#F0F0F0'),@('BorderColor','#DCDCDC'),@('HoverBorderColor','#0303B8'),@('FocusedBorderColor','#0303B8'))){ $exp=CV $kv[1]; if($screen -eq 'scrContractors' -and $empErrField.ContainsKey($name) -and $kv[0] -ne 'Fill'){ $exp='=If(CountIf(colEmpSaveErrors,Field="'+$empErrField[$name]+'")>0,ColorValue("#DB1E28"),'+$exp.TrimStart('=')+')' }; if($p[$kv[0]] -ne $exp){throw "Input $screen.$name.$($kv[0])"} }
   if($p['BorderThickness'] -ne '=1'){throw "Input $screen.$name border thickness"}
   if($c['Control'] -like 'Classic/DropDown@*'){ foreach($kv in @(@('HoverFill','#D5EDFF'),@('HoverColor','#000F41'),@('SelectionFill','#0303B8'),@('PressedFill','#D5EDFF'),@('PressedColor','#000F41'),@('Color','#000000'),@('ChevronBackground','#F0F0F0'),@('ChevronFill','#0303B8'),@('ChevronHoverBackground','#D5EDFF'))){ if($p[$kv[0]] -ne (CV $kv[1])){throw "Dropdown state $screen.$name.$($kv[0])"} }; if($p['SelectionColor'] -ne $W){throw "Dropdown selection colour $screen.$name"} }
  }
@@ -52,6 +55,9 @@ Write-Output 'PASS dropdown set: exactly ddProject, ddTeam, ddReportProject, ddR
 $p=$indexes.scrHours['lblWeekTotal']['Properties'];if($p['Fill'] -ne (CV '#D5EDFF') -or $p['Color'] -ne (CV '#000F41')){throw 'Week total cell'}
 if($indexes['Screen1']['lblSelectionLoadStatus']['Properties']['Color'] -ne '=If(!IsEmpty(colSelectionLoadErrors),ColorValue("#DB1E28"),ColorValue("#000000"))'){throw 'Error colour lblSelectionLoadStatus'}
 if($indexes['scrHours']['lblWeekLoadStatus']['Properties']['Color'] -ne '=If(!IsEmpty(colWeekLoadErrors) || (Coalesce(varWeekLoadState,"NotLoaded")<>"Loading" && !Coalesce(varWeekSaving,false) && !IsEmpty(colHoursErrors)),ColorValue("#DB1E28"),ColorValue("#000000"))'){throw 'Error colour lblWeekLoadStatus'}
+# 29-10-2026 (Eddy): grey text #787878 is allowed ONLY for scrContractors.lblEmpModified (small meta line); everywhere else text stays black/white.
+foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ $c=$indexes[$screen][$name]; if($c['Control'] -like 'Label@*' -and $c['Properties']['Color'] -eq (CV '#787878') -and -not ($screen -eq 'scrContractors' -and $name -eq 'lblEmpModified') -and $name -notlike 'lblTileSub*'){throw "Grey text #787878 not allowed: $screen.$name"} }}
+if($indexes.scrContractors['lblEmpModified']['Properties']['Color'] -ne (CV '#787878')){throw 'lblEmpModified colour'}
 Write-Output 'PASS inputs/dropdowns/date pickers #F0F0F0 with 1px #DCDCDC border, hover/focus border #0303B8, selection #0303B8/white; dropdown row hover/pressed #D5EDFF/#000F41, chevron states; week total cells #D5EDFF/#000F41; errors #DB1E28, body black.'
 
 # Home screen (26-10-2026): active tiles = navigation role, placeholder tiles = disabled look, headers Navy with a #0303B8 line.

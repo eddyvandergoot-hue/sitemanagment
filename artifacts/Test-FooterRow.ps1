@@ -78,11 +78,12 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
    foreach($name in @('dpHoursWeek','lblWeekLoadStatus','galHours','lblHeaderMon')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    if($rects.galHours.Y+$rects.galHours.Height -gt $bar.Y-12 -or $rects.lblHeaderMon.Y+$rects.lblHeaderMon.Height -gt $rects.galHours.Y){throw 'Hours content behind footer'}
   }elseif($cfg.Screen -eq 'scrContractors'){
-   foreach($name in @('lblEmpTitle','lblEmpStatus')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
+   # 29-10-2026 (Eddy): no on-screen status/error lines on Contractors (messages only via Notify); body 12 px under the title bar.
+   if($index.ContainsKey('lblEmpStatus') -or $index.ContainsKey('lblEmpErrors')){throw 'Contractors must not have lblEmpStatus/lblEmpErrors'}
+   foreach($name in @('lblEmpTitle')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    Publish-Rect 'navEmp' $bar
    $body=Measure-Rect 'conEmpBody' $index['conEmpBody']['Properties'] $screen
-   if($body.Y -lt $rects.lblEmpStatus.Y+$rects.lblEmpStatus.Height -or $body.Y+$body.Height -gt $bar.Y-12){throw 'Contractors body behind footer or status'}
-   if($rects.lblEmpStatus.Height -ne 34){throw 'Status line must be 34 px'}
+   if($body.Y -ne $rects.lblEmpTitle.Y+$rects.lblEmpTitle.Height+12 -or $body.Y+$body.Height -gt $bar.Y-12){throw 'Contractors body not 12 px under the title bar or behind footer'}
   }elseif($cfg.Screen -eq 'scrWeeklyHours'){
    # Worst-case viewport height: larger selector content reaches the existing viewport cap.
    Publish-Rect 'conSummaryFiltersContent' @{X=0;Y=0;Width=512;Height=1000}

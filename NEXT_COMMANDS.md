@@ -9,7 +9,9 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 ## 1. Admin screens (plan decided 27-10-2026: ADMIN_PLAN.md; Contractors built, Studio test open)
 
-Next: Eddy's Studio retest (from step 8, plus extra checks F-H) of the current Contractors build 20261029_174723 (v3: always Refresh before load, Last changed label) after the FAIL on build 203334 (TESTPLAN.md TP-CONTRACTORS-01 and TP-WH-CLEAN-01; build: PROJECT_STATUS.md). MS-020 is done (28-10-2026). After approval: Projects build (powerfx-logic, reviewer, powerfx-ui, verifier), then Workers (incl. Weekly Hours stale-cache fix). Open points: ADMIN_PLAN.md par. 8 and 9.
+Next: Eddy's Studio retest of the current Contractors build 20261029_221757 (v4: all messages via the notification bar, red field borders, read-only txtEmpCode; DECISIONS.md H17) with the new checks I-O (TESTPLAN.md TP-CONTRACTORS-01; build: PROJECT_STATUS.md). Build 174723 passed steps 8-11, 12a, 12b and the wide-layout alignment (29-10-2026). Eddy decides the open message points (PROJECT_STATUS.md, Contractors v4 open). MS-020 is done (28-10-2026). After approval: Projects build (powerfx-logic, reviewer, powerfx-ui, verifier; messages per H17), then Workers (incl. Weekly Hours stale-cache fix). Open points: ADMIN_PLAN.md par. 8 and 9.
+
+Proposal (Eddy to approve, analysis 29-10-2026, PROJECT_STATUS.md Open items): Save week must not give NEW Hours rows an outdated Employer/Trade/Team snapshot. In Save week, before the first write: Refresh(Workers) + re-read colWorkersCache (<=500, staging) and Refresh('Project Workers') + Filter on ProjectKey; compare Employer.Id/Trade/Team/Active of the involved workers with the loaded values; difference = zero writes + message "Worker or team changed in SharePoint; Refresh on Project / team". Alternative: btnReadTeam and btnLoadReport always Refresh Workers/Projects (H16 app-wide). Save team and Confirm migration need no fix.
 
 ## 2b. ModernDatePicker 1.0.2
 
@@ -25,14 +27,13 @@ Still to do:
 
 ## 4b. Project / team UX round (after TP-PERIOD-01 is approved)
 
-Decided, not built: Screen1 cards show Workers.Title (DECISIONS.md H10); inline orange card status; summary popup before Save team; migration preview popup and rename the buttons to "Eenmalige omzetting: bekijken" / "Eenmalige omzetting: uitvoeren"; uncheck meaning option B (DECISIONS.md H11) in Src, AGENTS.md rules and TESTPLAN.md.
+Decided, not built: Screen1 cards show Workers.Title (DECISIONS.md H10); inline orange card status (card level; conflicts with H17 if it carries message text: Eddy to confirm); summary popup before Save team; migration preview popup and rename the buttons to "Eenmalige omzetting: bekijken" / "Eenmalige omzetting: uitvoeren"; uncheck meaning option B (DECISIONS.md H11) in Src, AGENTS.md rules and TESTPLAN.md.
 
 Also decided 27-10-2026 (Eddy), not built:
-- Screen1 live validation on check: an invalid card gets a red border + red reason text (e.g. "Kan niet: heeft al periode vanaf KWxx"); Save team disabled while any card is red.
-- Pickers locked while unsaved changes: show a visible text (not an OnChange Notify) telling how to unlock: Screen1 "haal vinkje weg om te ontgrendelen"; Weekly Hours: Save or Discard changes. Reason: dpTeamWeek/dpHoursWeek are DisplayMode.Disabled when dirty, so the existing OnChange Notify "Week niet gewisseld..." is practically never seen.
-- One message only: no Notify banner for validation; status line lblSelectionLoadStatus red for error, black for info; vertically centered between the bottom of the header box (conSelection) and the separator line above the worker list.
-- Migration preview result is shown ONLY in the framed popup on Screen1: no Notify banner and no text in lblSelectionLoadStatus.
-- lblSelectionLoadStatus: fixed height, at most 2 lines, overflow truncated with "…"; never overlaps the header box (conSelection) or the worker list (Gallery1). Applies together with the one-message rule above.
+- Screen1 live validation on check: an invalid card gets a red border; the reason goes in the notification bar (H17: the earlier red reason text on the card conflicts with H17 and is dropped unless Eddy decides otherwise); Save team disabled while any card is red.
+- Pickers locked while unsaved changes: show a visible hint text on the picker (exception to H17: it is a control hint, not a message; Eddy to confirm) telling how to unlock: Screen1 "haal vinkje weg om te ontgrendelen"; Weekly Hours: Save or Discard changes. Reason: dpTeamWeek/dpHoursWeek are DisplayMode.Disabled when dirty, so the existing OnChange Notify "Week niet gewisseld..." is practically never seen.
+- Messages (Eddy 29-10-2026, DECISIONS.md H17, replaces the earlier status-line items): ALL messages only via the notification bar (Notify): errors red, success green, one at a time, short; no message text in the form or as a status line (remove lblSelectionLoadStatus as message carrier); invalid field = red border only, the bar says what is wrong ("Fix: ... (+n more)"). Built on Contractors first.
+- Migration preview result is shown ONLY in the framed popup on Screen1 (not in the notification bar, not as status text).
 - The summary popup (above) must include a reopen notice ("Terug in team vanaf KWxx").
 - Screen1: employer line of one card shown bold. Cause: Subtitle4.FontWeight = If(ThisItem.IsSelected, Semibold, Normal) follows the gallery's selected item, not data. Make it Normal; requires changing the AGENTS.md Subtitle4 rule and artifacts/Test-Fonts.ps1 in the UX round.
 - Hours Summary pickers (TP-PERIOD-01 6.1): built in pickerfix build (PROJECT_STATUS.md); Studio test open.

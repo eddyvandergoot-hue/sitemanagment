@@ -12,7 +12,7 @@ Screens:
       Fill: =ColorValue("#F0F0F0")
       LoadingSpinnerColor: =ColorValue("#0303B8")
       OnVisible: |-
-        =If(IsBlank(varEmpLoadState),Set(varEmpLoadState,"NotLoaded"); Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}); Set(varEmpSaveFailed,false); Set(varEmpMsg,""); Set(varEmpMsgError,false));
+        =If(IsBlank(varEmpLoadState),Set(varEmpLoadState,"NotLoaded"); Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}); Set(varEmpSaveFailed,false));
         Trace("DIAG|Contractors|OnVisible",TraceSeverity.Information,{Screen:"Contractors",LoadState:Coalesce(varEmpLoadState,""),Mode:Coalesce(varEmpMode,"")});
         If(varEmpLoadState<>"Loaded" && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !(Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true))),Select(btnEmpLoad))
     Children:
@@ -42,28 +42,6 @@ Screens:
             Width: =99
             X: =lblEmpTitle.X+15
             Y: =lblEmpTitle.Y+(lblEmpTitle.Height-Self.Height)/2
-      - lblEmpStatus:
-          Control: Label@2.5.1
-          Properties:
-            Text: |-
-              =With({m:If(Coalesce(varEmpBusy,false) || varEmpLoadState="Loading",If(LangNl && !IsBlank(T.empMsgLoading.nl),T.empMsgLoading.nl,T.empMsgLoading.en),
-                !Coalesce(varEmpMsgError,false) && Coalesce(varEmpMode,"")="Edit" && Coalesce(varEmpEdit.Active,true) && !chkEmpActive.Value && CountIf(colEmpWorkers,EmployerID=varEmpSelectedID && Coalesce(WorkerActive,true))>0,
-                Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(CountIf(colEmpWorkers,EmployerID=varEmpSelectedID && Coalesce(WorkerActive,true)))),
-                Coalesce(varEmpMsg,"")),n:Max(20,RoundDown(Self.Width/3.5,0))},
-               If(Len(m)>n,Left(m,n-1) & UniChar(8230),m))
-            X: =40
-            Y: =lblEmpTitle.Y+lblEmpTitle.Height+8
-            Width: =Parent.Width-80
-            Height: =34
-            Font: ="Inter, Arial, sans-serif"
-            FontWeight: =FontWeight.Normal
-            Size: =12
-            Color: =If(Coalesce(varEmpMsgError,false),ColorValue("#DB1E28"),ColorValue("#000000"))
-            VerticalAlign: =VerticalAlign.Middle
-            PaddingTop: =0
-            PaddingBottom: =0
-            PaddingLeft: =0
-            PaddingRight: =0
       - lblEmpLayout:
           Control: Label@2.5.1
           Properties:
@@ -81,7 +59,7 @@ Screens:
             Text: =""
             Visible: =false
             X: =If(lblEmpLayout.Width-48>=536,1,0)
-            Y: =24+76*(8+(1-Self.X))+If(lblEmpErrors.Visible,52+lblEmpErrors.Height,40)+24
+            Y: =24+76*(8+(1-Self.X))+40+12+20+24
             Width: =If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)
             Height: =If(lblEmpLayout.X=1,Max(conEmpBody.Height,lblEmpLayout.Height+Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)
             Font: ="Inter, Arial, sans-serif"
@@ -101,11 +79,10 @@ Screens:
               =If(Coalesce(varEmpBusy,false) || Coalesce(varEmpSaving,false),
                Trace("DIAG|Contractors|LoadSkipped",TraceSeverity.Information,{Screen:"Contractors",Reason:"Busy"}),
                If((Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true))) && !Coalesce(varEmpSaveFailed,false),
-                Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgReloadBlocked.nl),T.empMsgReloadBlocked.nl,T.empMsgReloadBlocked.en)); Set(varEmpMsgError,true),
+                Notify(If(LangNl && !IsBlank(T.empMsgReloadBlocked.nl),T.empMsgReloadBlocked.nl,T.empMsgReloadBlocked.en),NotificationType.Error,15000),
                 If(!Coalesce(varEmpForceRefresh,false) && varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpSaveFailed,false),
                  Trace("DIAG|Contractors|CacheHit",TraceSeverity.Information,{Screen:"Contractors",Rows:CountRows(colAdminEmployers)}),
                  Set(varEmpBusy,true); Set(varEmpLoadState,"Loading"); Set(varEmpDiagT0,Now());
-                 Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgLoading.nl),T.empMsgLoading.nl,T.empMsgLoading.en)); Set(varEmpMsgError,false);
                  Clear(colEmpLoadErrors); Clear(colEmpEmployersLoadErrors); Clear(colEmpWorkersLoadErrors); Clear(colPendingEmpRaw); Clear(colPendingAdminEmployers); Clear(colPendingEmpModified); Clear(colPendingEmpWorkers);
                  IfError(Refresh(Employers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadEmployers.nl),T.empErrLoadEmployers.nl,T.empErrLoadEmployers.en) & " " & FirstError.Message});false);
                  IfError(Refresh(Workers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadWorkers.nl),T.empErrLoadWorkers.nl,T.empErrLoadWorkers.en) & " " & FirstError.Message});false);
@@ -131,9 +108,9 @@ Screens:
                   Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");
                   Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
                   Set(varEmpLoadedAt,Now());
-                  Set(varEmpMsg,Substitute(Substitute(If(LangNl && !IsBlank(T.empMsgLoaded.nl),T.empMsgLoaded.nl,T.empMsgLoaded.en),"{0}",Text(CountRows(colAdminEmployers))),"{1}",Text(varEmpLoadedAt,"hh:mm:ss"))); Set(varEmpMsgError,false),
+                  Notify(Substitute(Substitute(If(LangNl && !IsBlank(T.empMsgLoaded.nl),T.empMsgLoaded.nl,T.empMsgLoaded.en),"{0}",Text(CountRows(colAdminEmployers))),"{1}",Text(varEmpLoadedAt,"hh:mm:ss")),NotificationType.Success),
                   Set(varEmpLoadState,"Failed");
-                  Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgLoadFailed.nl),T.empMsgLoadFailed.nl,T.empMsgLoadFailed.en)); Set(varEmpMsgError,true)
+                  Notify(Substitute(If(LangNl && !IsBlank(T.empMsgLoadFailed.nl),T.empMsgLoadFailed.nl,T.empMsgLoadFailed.en),"{0}",With({n:CountRows(colEmpLoadErrors)-1},First(colEmpLoadErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.empMsgMore.nl),T.empMsgMore.nl,T.empMsgMore.en),"{0}",Text(n)),""))),NotificationType.Error,0)
                  );
                  Set(varEmpForceRefresh,false); Set(varEmpBusy,false);
                  Trace("DIAG|Contractors|LoadEnd",TraceSeverity.Information,{Screen:"Contractors",ElapsedMs:DateDiff(varEmpDiagT0,Now(),TimeUnit.Milliseconds),Rows:CountRows(colPendingAdminEmployers),Workers:CountRows(colPendingEmpWorkers),Errors:CountRows(colEmpLoadErrors),State:varEmpLoadState});
@@ -163,7 +140,7 @@ Screens:
           Variant: AutoLayout
           Properties:
             X: =0
-            Y: =lblEmpStatus.Y+lblEmpStatus.Height+8
+            Y: =lblEmpTitle.Y+lblEmpTitle.Height+12
             Width: =Parent.Width
             Height: =Max(0,navEmp.Y-12-Self.Y)
             Fill: =Color.Transparent
@@ -271,9 +248,9 @@ Screens:
                           =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true))),
                            If(!IsBlank(galEmpList.Selected.ID) && !IsBlank(LookUp(colAdminEmployers,ID=galEmpList.Selected.ID).ID),
                             Set(varEmpSelectedID,galEmpList.Selected.ID); Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)); Set(varEmpMode,"Edit");
-                            Clear(colEmpSaveErrors); Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive); Set(varEmpMsg,""); Set(varEmpMsgError,false)
+                            Clear(colEmpSaveErrors); Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive)
                            ),
-                           Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en)); Set(varEmpMsgError,true)
+                           Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000)
                           )
                         TemplateFill: =Color.Transparent
                         TemplatePadding: =0
@@ -369,7 +346,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldName.nl),T.empFieldName.nl,T.empFieldName.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Name
@@ -379,18 +356,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -419,43 +396,36 @@ Screens:
                               Width: =Min(512,lblEmpLayout.Width-48)
                               X: =24
                               Y: =24+76*1
-                        - lblEmpCodeValue:
-                            Control: Label@2.5.1
+                        - txtEmpCode:
+                            Control: Classic/TextInput@2.3.2
                             Properties:
+                              AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)
+                              Align: =Align.Left
+                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderThickness: =1
                               Color: =ColorValue("#000000")
+                              Default: |-
+                                =If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpEdit.Code),varEmpEdit.Code,Coalesce(varEmpMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.empCodeAuto.nl),T.empCodeAuto.nl,T.empCodeAuto.en),"")
+                              DisabledBorderColor: =ColorValue("#DCDCDC")
+                              DisabledColor: =ColorValue("#000000")
+                              DisabledFill: =ColorValue("#F0F0F0")
+                              DisplayMode: =DisplayMode.Disabled
+                              Fill: =ColorValue("#F0F0F0")
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
-                              Height: =20
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
+                              HintText: =""
+                              OnChange: =false
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
                               Size: =12
-                              Text: |-
-                                =If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpEdit.Code),varEmpEdit.Code,Coalesce(varEmpMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.empCodeAuto.nl),T.empCodeAuto.nl,T.empCodeAuto.en),"")
-                              VerticalAlign: =VerticalAlign.Middle
                               Width: =Min(256,lblEmpLayout.Width-48)
                               X: =24
                               Y: =24+76*1+24
-                        - lblEmpModified:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =32
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =12
-                              Text: |-
-                                =With({m:LookUp(colEmpModified,ID=varEmpSelectedID).Modified},If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpSelectedID) && !IsBlank(m),Substitute(If(LangNl && !IsBlank(T.empLastChanged.nl),T.empLastChanged.nl,T.empLastChanged.en),"{0}",Text(m,"dd-mm-yyyy") & " " & Text(m,"hh:mm")),""))
-                              VerticalAlign: =VerticalAlign.Top
-                              Width: =Min(512,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*1+24+20
+                              Height: =40
                         - lblEmpAddressLabel:
                             Control: Label@2.5.1
                             Properties:
@@ -478,7 +448,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldAddress.nl),T.empFieldAddress.nl,T.empFieldAddress.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Address
@@ -488,18 +458,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -533,7 +503,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldPostalcode.nl),T.empFieldPostalcode.nl,T.empFieldPostalcode.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Postalcode
@@ -543,18 +513,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -588,7 +558,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldCity.nl),T.empFieldCity.nl,T.empFieldCity.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.City
@@ -598,18 +568,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -643,7 +613,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Country
@@ -653,18 +623,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -698,7 +668,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldContactName.nl),T.empFieldContactName.nl,T.empFieldContactName.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.ContactName
@@ -708,18 +678,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -753,7 +723,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldContactEmail.nl),T.empFieldContactEmail.nl,T.empFieldContactEmail.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.ContactEmail
@@ -763,18 +733,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -808,7 +778,7 @@ Screens:
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldContactPhone.nl),T.empFieldContactPhone.nl,T.empFieldContactPhone.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
                               BorderThickness: =1
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.ContactPhone
@@ -818,18 +788,18 @@ Screens:
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
                               Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =ColorValue("#0303B8")
+                              FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000000")
                               HoverFill: =ColorValue("#F0F0F0")
                               MaxLength: =255
                               OnChange: =false
                               PaddingLeft: =8
                               PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
                               PressedFill: =ColorValue("#F0F0F0")
                               RadiusBottomLeft: =6
@@ -872,11 +842,11 @@ Screens:
                               Width: =200
                               X: =24
                               Y: =24+76*(8+(1-lblEmpMetrics.X))
-                        - lblEmpErrors:
+                        - lblEmpModified:
                             Control: Label@2.5.1
                             Properties:
-                              AutoHeight: =true
-                              Color: =ColorValue("#DB1E28")
+                              Align: =Align.Left
+                              Color: =ColorValue("#787878")
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               Height: =20
@@ -884,12 +854,13 @@ Screens:
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =12
-                              Text: =If(varEmpLoadState="Failed" && !IsEmpty(colEmpLoadErrors),Concat(colEmpLoadErrors,"- " & Message,Char(10)),Concat(colEmpSaveErrors,"- " & Message,Char(10)))
-                              Visible: =!IsBlank(Self.Text)
-                              Width: =lblEmpLayout.Width-48
+                              Size: =11
+                              Text: |-
+                                =With({m:LookUp(colEmpModified,ID=varEmpSelectedID).Modified},If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpSelectedID) && !IsBlank(m),Substitute(If(LangNl && !IsBlank(T.empLastChanged.nl),T.empLastChanged.nl,T.empLastChanged.en),"{0}",Text(m,"dd-mm-yyyy") & " " & Text(m,"hh:mm")),""))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =Min(512,lblEmpLayout.Width-48)
                               X: =24
-                              Y: =24+76*(8+(1-lblEmpMetrics.X))+52
+                              Y: =24+76*(8+(1-lblEmpMetrics.X))+40+12
       - navEmp:
           Control: GroupContainer@1.5.0
           Variant: AutoLayout
@@ -979,9 +950,9 @@ Screens:
                           =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true))),
                            Set(varEmpMode,"New"); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true});
                            Clear(colEmpSaveErrors); Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
-                           Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgNew.nl),T.empMsgNew.nl,T.empMsgNew.en)); Set(varEmpMsgError,false);
+                           Notify(If(LangNl && !IsBlank(T.empMsgNew.nl),T.empMsgNew.nl,T.empMsgNew.en),NotificationType.Success);
                            Trace("DIAG|Contractors|New",TraceSeverity.Information,{Screen:"Contractors"}),
-                           Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en)); Set(varEmpMsgError,true)
+                           Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000)
                           )
                         DisplayMode: |-
                           =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true))),DisplayMode.Edit,DisplayMode.Disabled)
@@ -1025,7 +996,7 @@ Screens:
                            Trace("DIAG|Contractors|Refresh",TraceSeverity.Information,{Screen:"Contractors",SaveFailed:Coalesce(varEmpSaveFailed,false)});
                            If(Coalesce(varEmpSaveFailed,false),Clear(colEmpSaveErrors));
                            Set(varEmpForceRefresh,true); Select(btnEmpLoad),
-                           Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en)); Set(varEmpMsgError,true)
+                           Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000)
                           )
                         DisplayMode: |-
                           =If(!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || !(Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true)))),DisplayMode.Edit,DisplayMode.Disabled)
@@ -1072,9 +1043,9 @@ Screens:
                             Set(varEmpForceRefresh,true); Select(btnEmpLoad),
                             If(varEmpMode="New",Set(varEmpMode,""); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}));
                             Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
-                            Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgDiscarded.nl),T.empMsgDiscarded.nl,T.empMsgDiscarded.en)); Set(varEmpMsgError,false)
+                            Notify(If(LangNl && !IsBlank(T.empMsgDiscarded.nl),T.empMsgDiscarded.nl,T.empMsgDiscarded.en),NotificationType.Success)
                            ),
-                           Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en)); Set(varEmpMsgError,true)
+                           Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000)
                           )
                         DisplayMode: |-
                           =If(!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || (Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true)))),DisplayMode.Edit,DisplayMode.Disabled)
@@ -1176,7 +1147,7 @@ Screens:
                                 If(rowOk && IsEmpty(d),
                                  Set(varEmpSaveVerified,true),
                                  Set(varEmpVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));
-                                 Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrVerify.nl),T.empErrVerify.nl,T.empErrVerify.en) & If(rowOk," " & Substitute(If(LangNl && !IsBlank(T.empErrVerifyFields.nl),T.empErrVerifyFields.nl,T.empErrVerifyFields.en),"{0}",Concat(d,L,", ")),"")});
+                                 Collect(colEmpSaveErrors,{Field:"",Message:If(rowOk,Substitute(If(LangNl && !IsBlank(T.empErrVerifyFields.nl),T.empErrVerifyFields.nl,T.empErrVerifyFields.en),"{0}",Concat(d,L,", ")),If(LangNl && !IsBlank(T.empErrVerify.nl),T.empErrVerify.nl,T.empErrVerify.en))});
                                  Trace("DIAG|Contractors|VerifyMismatch",TraceSeverity.Warning,{Screen:"Contractors",ItemID:Coalesce(varEmpPatchedID,0),Rows:CountRows(colEmpVerifyRaw),Fields:varEmpVerifyDiff})
                                 )
                                )
@@ -1191,17 +1162,16 @@ Screens:
                             Set(varWorkersCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
                             If(varEmpSaveRenamed,IfError(Refresh(Workers),Set(varEmpSaveWorkersRefreshFailed,true);false));
                             Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive);
-                            Set(varEmpMsg,If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),If(LangNl && !IsBlank(T.empMsgSaved.nl),T.empMsgSaved.nl,T.empMsgSaved.en)) & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""));
-                            Set(varEmpMsgError,false);
+                            Notify(If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),If(LangNl && !IsBlank(T.empMsgSaved.nl),T.empMsgSaved.nl,T.empMsgSaved.en)) & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""),NotificationType.Success);
                             Select(btnEmpFormReset),
                             varEmpSaveWrites=0,
-                            Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgNotSaved.nl),T.empMsgNotSaved.nl,T.empMsgNotSaved.en)); Set(varEmpMsgError,true),
+                            Notify(With({n:CountRows(colEmpSaveErrors)-1},First(colEmpSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.empMsgMore.nl),T.empMsgMore.nl,T.empMsgMore.en),"{0}",Text(n)),"")),NotificationType.Error,15000),
                             Set(varEmpSaveFailed,true); Set(varEmpLoadState,"Failed");
-                            Set(varEmpMsg,If(varEmpSaveMode="New",If(LangNl && !IsBlank(T.empMsgSaveFailedNew.nl),T.empMsgSaveFailedNew.nl,T.empMsgSaveFailedNew.en),If(LangNl && !IsBlank(T.empMsgSaveFailed.nl),T.empMsgSaveFailed.nl,T.empMsgSaveFailed.en))); Set(varEmpMsgError,true)
+                            Notify(With({n:CountRows(colEmpSaveErrors)-1},First(colEmpSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.empMsgMore.nl),T.empMsgMore.nl,T.empMsgMore.en),"{0}",Text(n)),"")) & " " & If(varEmpSaveMode="New",If(LangNl && !IsBlank(T.empMsgSaveFailedNew.nl),T.empMsgSaveFailedNew.nl,T.empMsgSaveFailedNew.en),If(LangNl && !IsBlank(T.empMsgSaveFailed.nl),T.empMsgSaveFailed.nl,T.empMsgSaveFailed.en)),NotificationType.Error,0)
                            );
                            Set(varEmpSaving,false);
                            Trace("DIAG|Contractors|SaveEnd",TraceSeverity.Information,{Screen:"Contractors",Mode:varEmpSaveMode,ItemID:Coalesce(varEmpPatchedID,varEmpSaveID,0),ElapsedMs:DateDiff(varEmpDiagT0,Now(),TimeUnit.Milliseconds),Reads:varEmpSaveReads,Writes:varEmpSaveWrites,Verified:varEmpSaveVerified,DupFound:varEmpSaveDupFound,Conflict:varEmpSaveConflict,Errors:CountRows(colEmpSaveErrors)}),
-                           Set(varEmpMsg,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en)); Set(varEmpMsgError,true)
+                           Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000)
                           )
                         DisplayMode: |-
                           =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && (varEmpMode="New" || (varEmpMode="Edit" && !IsBlank(varEmpSelectedID))) && (Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true))),DisplayMode.Edit,DisplayMode.Disabled)
