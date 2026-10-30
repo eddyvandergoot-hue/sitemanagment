@@ -19,7 +19,9 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-SEC-01 | Permissietest met niet-eigenaar account | OPEN | - | Eddy |
 | TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | PASS | 27-10-2026 | Eddy |
 | TP-MIGR-01 | Migratieactie per project (Screen1) | PASS op TEST-000 en Friesland Campina | 27-10-2026 | Eddy |
-| TP-CONTRACTORS-01 | Contractors-scherm (beheer) | OPEN (build 174723: 8-11, 12a, 12b, uitlijning PASS; hertest build 232612 controles I-S open; 221757 overgeslagen) | 29-10-2026 | Eddy |
+| TP-CONTRACTORS-01 | Contractors-scherm (beheer) | PASS (build 232612, I-S allemaal ok; kort hertest op de Admin pattern-build in TP-STYLE-01) | 29-10-2026 | Eddy |
+| TP-STYLE-01 | Admin screen pattern: Contractors visueel + kort regressie | OPEN (build adminpattern-20261030_071949) | - | Eddy |
+| TP-PROJECTS-01 | Projects-scherm (beheer) + Home-tegels | OPEN (build adminpattern-20261030_071949) | - | Eddy |
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
@@ -183,7 +185,7 @@ Doel: aantonen dat een gebruiker zonder eigenaarsrechten alleen kan wat de bedoe
 
 Uitkomst per stap noteren met datum en account/rol. Stap 4 is pas bindend na MS-004.
 
-## TP-CONTRACTORS-01 Contractors-scherm (OPEN; build 203334: FAIL stap 8+9; build 174723: PASS zie onder; hertest op build contractors-20261029_232612 (221757 is overgeslagen), PROJECT_STATUS.md)
+## TP-CONTRACTORS-01 Contractors-scherm (PASS 29-10-2026, Eddy, build contractors-20261029_232612; tag approved-20261029-contractors; UI sindsdien herbouwd volgens het Admin screen pattern, kort hertest in TP-STYLE-01)
 
 Resultaat 28-10-2026 (Eddy, build 203334): stap 8 en 9 FAIL (elke Save toonde "Save not confirmed ... Saving is blocked" terwijl de data wel was geschreven; daarna alles behalve Discard uit; zoekvak-rand verborgen, paneel niet uitgelijnd); de overige stappen niet gemeld. Oorzaak en fix: PROJECT_STATUS.md. Hertest door Eddy op build 232612 (vervangt 174723; 221757 overgeslagen), plus de extra controles onder de tabel.
 Resultaat 29-10-2026 (Eddy, build 174723): PASS: stap 8, 9, 9b, 10, 11, 12a (verse gegevens na Refresh), 12b (conflict geblokkeerd, SharePoint-waarde "Stad B" intact, Discard + Refresh toont Stad B) en uitlijning brede layout. Het doel van build 174723 (connectorcache toont nooit waarden van vóór een directe SharePoint-wijziging) is daarmee bevestigd. Let op: de labels 9b, 12a en 12b staan niet in de tabel hieronder (Eddy's nummering); koppeling aan tabelstappen niet vastgelegd. Stappen 1-7, 13-18 en controles A-H: niet gemeld. Hertest op build 232612 (meldingenbesluit H17, rood/oranje/groen en spinner): controles I-S, en de tabelverwachtingen van stap 6, 7, 16, 17 zijn bijgewerkt naar de meldingsbalk.
@@ -220,7 +222,7 @@ Extra controles hertest (A-E sinds build 222247, F-H nieuw op build 174723):
 - F. Een TEST-contractor direct in SharePoint wijzigen, dan Refresh (of het scherm opnieuw openen): de nieuwe waarden zijn zichtbaar, "Last changed in SharePoint" klopt met SharePoint (let op browsertijdzone versus versiegeschiedenis), de groene balk toont "{n} contractors loaded at hh:mm:ss" (zie I).
 - G. Na Save toont het formulier de opgeslagen waarden en is het niet dirty (Home, New en gallery blijven actief; btnEmpFormReset).
 - H. Brede layout (>=1000 px): formulier bovenkant gelijk met de lijst; label "Last changed" niet afgekapt (onder ~430 px kan het op twee regels afknippen: bekend, niet blokkerend).
-- Bekende Studio-controles: geneste Select (Refresh/OnVisible -> btnEmpLoad -> btnEmpFormReset), Reset pikt de nieuwe Default op, Modified komt mee in de kolomselectie (anders is het label leeg, veilig), extra roundtrip per load; Notify-timeout 0 bij Failed/SaveFailed.
+- Bekende Studio-controles (historisch, build 232612 PASS): geneste Select (Refresh/OnVisible -> btnEmpLoad -> btnEmpFormReset), Reset pikt de nieuwe Default op, Modified komt mee in de kolomselectie, extra roundtrip per load. Sinds de Admin pattern-build staan de meldingen in de eigen meldingsbalk (geen Notify; stappen met "oranje/rode balk" gelden voor die balk, zie TP-STYLE-01).
 - Nieuw op build 232612 (H17, I-O herzien, P-S nieuw; 221757 is niet getest):
 - I. Geen statusregel en geen foutlijst in het scherm; laden toont de spinner rechts in de titelbalk en daarna een groene balk met aantal en tijd ("<n> contractors loaded at hh:mm:ss"); geen laadmelding.
 - J. Save met lege naam en ongeldig e-mailadres: rode randen op beide velden, rode balk "Fix: Contractor Name empty (+1 more)".
@@ -241,3 +243,43 @@ Extra controles hertest (A-E sinds build 222247, F-H nieuw op build 174723):
 | 1 | Weekly Hours, een rij selecteren | geen blauwe balk op de geselecteerde rij |
 | 2 | Medewerker met Trade Unknown | geen chip "Trade onbekend" op Weekly Hours; wel de badge op Screen1 |
 | 3 | Blokkerende waarschuwing (bv. ontbrekende Employer) | blijft rood op Weekly Hours |
+
+## TP-STYLE-01 Admin screen pattern, Contractors visueel + kort regressie (OPEN; build adminpattern-20261030_071949, PROJECT_STATUS.md)
+
+Voorwaarde: Studio-import van de build; alleen TEST-records (TEST Contractor 2, TEST Employer). Regels: AGENTS.md "Admin screen pattern", ADMIN_PLAN.md par. 10.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Home, tegel Contractors | titelbalk blauw h60 met logo en titel (22 Semibold); spinner rechts tijdens laden; pagina lichtgrijs #F5F6F8 |
+| 2 | Meldingsbalk (laden, fout, waarschuwing, succes forceren via de stappen hieronder) | direct onder de titelbalk, volle breedte; rood / amber / groen; vet kopwoord (Not saved. / Attention. / Saved. enz.); sluit-X sluit; één melding tegelijk; blijft tot sluiten of vervangen |
+| 3 | Kaarten | twee witte kaarten met schaduw (DropShadow zichtbaar?), gelijke bovenkant, geen overlap |
+| 4 | Lijstkaart | zoekveld met vergrootglas; telling links, Show inactive-switch rechts (tooltip noemt de stand); rijen: naam, subregel "CODE · City", hover grijs, geselecteerd lichtblauw + blauwe balk, inactief grijs + chip "Inactive" |
+| 5 | Formulierkaart | kop recordnaam + statuschip (Active groen / Inactive grijs); secties GENERAL/ADDRESS/CONTACT in blauwe hoofdletters; verplicht-veld met rode * |
+| 6 | Raster bij ~1366, ~1000 en ~700 px | 3 / 2 / 1 kolommen; bij >=1000 lijst links, formulier rechts; smaller gestapeld; geen overlap |
+| 7 | Veldstijlen | wit met grijze rand; hover donkerder grijs; focus 2 px blauw; ongeldig (lege naam, Save) 2 px rood; alleen-lezen grijs zonder rand |
+| 8 | Footer | wit, Home links met huisicoon (werkt), rechts New, Refresh, Discard changes (wit, blauwe rand), Save (groen); geen overlap, geen tweede rij |
+| 9 | Regressie TP-CONTRACTORS-01 kort | laden; TEST Contractor 2 bewerken + Save (groene balk, verify); conflict (in SharePoint wijzigen tijdens bewerken) rode balk; Active uitvinken bij TEST Employer: direct amber balk; Save met waarschuwing: amber "Attention. Saved. ..." |
+| 10 | Guards | onopgeslagen wijziging blokkeert Home/New/gallery; Discard herstelt |
+
+## TP-PROJECTS-01 Projects-scherm en Home (OPEN; build adminpattern-20261030_071949)
+
+Alleen TEST-projecten (TEST-000, TEST-001, nieuw TEST-002); echte projecten alleen lezen, nooit wijzigen. Nooit verwijderen, alleen Status.
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Home, tegel Projects | scrProjects opent; lijst laadt (Closed verborgen) |
+| 2 | Zoeken op nummer, naam en plaats | lijst filtert lokaal op alle drie |
+| 3 | Show inactive aan | Closed projecten zichtbaar (chip); On hold telt als actief (grijze chip) |
+| 4 | Project selecteren | formulier gevuld; People (Project Leader, Site Managers) alleen-lezen |
+| 5 | New | leeg formulier; Country standaard Netherlands; Status kiesbaar |
+| 6 | Save met lege naam / lege Project Number / ongeldige URL | rode randen op de velden + rode balk met reden; nul writes |
+| 7 | Dubbel Project Number | geblokkeerd (rode balk) |
+| 8 | TEST-002 aanmaken en Save | groene balk, verify, staat in de lijst |
+| 9 | Project Number van TEST-002 wijzigen en Save | opgeslagen met melding over Hours Summary/rapporten |
+| 10 | Status Closed op een TEST-project met open periodes (TEST-000) | amber waarschuwing; opslaan toegestaan; project daarna onder Show inactive |
+| 11 | Conflict: in SharePoint wijzigen tijdens bewerken, dan Save | rode balk, SharePoint-waarde intact; Discard + Refresh toont de SharePoint-waarde |
+| 12 | Onopgeslagen wijziging, dan Home / New / gallery | geblokkeerd; Discard herstelt; Refresh werkt |
+| 13 | Punten ADMIN_PLAN.md par. 8 punt 8: (a) Country/Status buiten Choices maakt het formulier dirty? (b) wist Patch met Blank() Country/ProjectHomeSite? (op TEST-000) | resultaat noteren |
+| 14 | Smal venster (~700 px) | gestapeld, geen overlap, footer past |
+| 15 | Cache na Save (Screen1, Hours Summary) | nieuwe naam/nummer zichtbaar na het openen |
+| 16 | Home: Projects-tegel actief; Knowledge-kolom met grijze placeholder "Knowledge Base" (Coming soon, geen actie); ~900 px = vier kolommen; smaller = één kolom | zoals beschreven; noteer het kleine verschil titel X 40 / content X 24 |

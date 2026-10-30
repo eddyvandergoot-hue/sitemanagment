@@ -507,7 +507,7 @@ foreach ($k in ($all.Keys | Sort-Object)) {
 foreach ($v in @('varAdmMsgKind', 'varAdmMsgHead', 'varAdmMsgBody')) { Assert-True (([regex]::Matches($screenText, "\bSet\($v,")).Count -eq $msgs.Count) "Set($v,...) only inside a kind/head/body triple ($($msgs.Count) triples)" }
 $warnKeys = @('empWarnActiveWorkers', 'empWarnWorkersRefresh')
 $successKeys = @('empMsgLoaded', 'empMsgSavedRename', 'empMsgDiscarded')
-$headsByKind = @{ '"Error"' = @('admHeadNotSaved', 'admHeadNotLoaded', 'admHeadBlocked'); '"Warning"' = @('admHeadAttention', 'admHeadSaved'); '"Success"' = @('admHeadLoaded', 'admHeadSaved', 'admHeadDiscarded') }
+$headsByKind = @{ '"Error"' = @('admHeadNotSaved', 'admHeadNotLoaded', 'admHeadBlocked'); '"Warning"' = @('admHeadAttention'); '"Success"' = @('admHeadLoaded', 'admHeadSaved', 'admHeadDiscarded') }
 $kinds = @{}
 foreach ($c in $msgs) {
     $kinds[$c.Kind] = 1 + [int]$kinds[$c.Kind]
@@ -523,7 +523,7 @@ foreach ($c in $msgs) {
     $lbl = "$($c.Key) : $($c.Kind)/$head body (T: $($bk -join ','))"
     switch ($c.Kind) {
         '"Error"' { Assert-True (@($bk | Where-Object { $_ -in $warnKeys -or $_ -in $successKeys }).Count -eq 0) "$lbl has no warning or success text" }
-        '"Warning"' { Assert-True (@($bk | Where-Object { $_ -in $warnKeys }).Count -ge 1 -and @($bk | Where-Object { $_ -notin ($warnKeys + 'empMsgSavedRename') }).Count -eq 0) "$lbl carries a warning text (empWarn*), nothing else except the rename note" }
+        '"Warning"' { Assert-True (@($bk | Where-Object { $_ -in $warnKeys }).Count -ge 1 -and @($bk | Where-Object { $_ -notin ($warnKeys + 'empMsgSavedRename' + 'admMsgSavedPrefix') }).Count -eq 0) "$lbl carries a warning text (empWarn*), nothing else except the Saved. prefix and the rename note" }
         '"Success"' { Assert-True (@($bk | Where-Object { $_ -notin $successKeys }).Count -eq 0 -and @($bk | Where-Object { $_ -in $warnKeys }).Count -eq 0) "$lbl has only success texts, no warning" }
     }
     switch ($head) {
@@ -531,7 +531,10 @@ foreach ($c in $msgs) {
         'admHeadNotLoaded' { Assert-True ($bk -contains 'empMsgLoadFailed' -and $c.Body.Contains('First(colEmpLoadErrors).Message')) "$lbl = load failed + first load error" }
         'admHeadLoaded' { Assert-True ($bk -contains 'empMsgLoaded') "$lbl = loaded count/time" }
         'admHeadDiscarded' { Assert-True ($c.Body -ceq (TT 'empMsgDiscarded')) "$lbl = changes discarded" }
-        'admHeadAttention' { Assert-True (($bk -join ',') -ceq 'empWarnActiveWorkers') "$lbl = active-worker warning only" }
+        'admHeadAttention' {
+            if ($c.Key -eq 'btnEmpSave.OnSelect') { Assert-True ($c.Body.StartsWith('Trim(' + (TT 'admMsgSavedPrefix') + ' & " " & ')) "$lbl = verified save with a warning: body starts with Saved." }
+            else { Assert-True (($bk -join ',') -ceq 'empWarnActiveWorkers') "$lbl = active-worker warning only" }
+        }
         'admHeadNotSaved' { Assert-True ($c.Body.Contains('First(colEmpSaveErrors).Message')) "$lbl = first save error (+n more)" }
         'admHeadSaved' { Assert-True ($c.Key -eq 'btnEmpSave.OnSelect') "$lbl only after a verified save" }
     }
@@ -565,18 +568,18 @@ $iOutcome = $save.IndexOf($outHead)
 Assert-True ($iOutcome -gt 0 -and ([regex]::Matches($save, [regex]::Escape($outHead))).Count -eq 1) 'Verified save: outcome If(<warning>, Warning, Success) exists once'
 $outCall = Get-Balanced $save ($iOutcome + 2)
 $outArgs = Split-Args $outCall.Substring(1, $outCall.Length - 2)
-Assert-True ($outArgs.Count -eq 3 -and $outArgs[1].Trim().StartsWith('Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,' + (TT 'admHeadSaved') + ');') -and $outArgs[2].Trim().StartsWith('Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,' + (TT 'admHeadSaved') + ');')) 'Verified save: exactly one message per outcome (warning branch Warning, else Success), head "Saved."'
+Assert-True ($outArgs.Count -eq 3 -and $outArgs[1].Trim().StartsWith('Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,' + (TT 'admHeadAttention') + '); Set(varAdmMsgBody,Trim(' + (TT 'admMsgSavedPrefix') + ' & " " & ') -and $outArgs[2].Trim().StartsWith('Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,' + (TT 'admHeadSaved') + ');')) 'Verified save: exactly one message per outcome (warning: amber, head "Attention.", body "Saved. ..."; else green, head "Saved.")'
 $iOutN = $saveN.IndexOf((Norm $outHead))
 Assert-True ($iOutN -gt $iLocal -and $iOutN -gt $saveN.IndexOf('If(varEmpSaveRenamed,IfError(Refresh(Workers),') -and $iOutN -lt $saveN.IndexOf('Select(btnEmpFormReset)') -and $iOutN -lt $saveN.IndexOf('varEmpSaveWrites=0,')) 'Verified save: outcome message after the Workers refresh (its result is known), before the form reset, success branch only'
 $condFx = $outArgs[0].Trim()
 Assert-Eval "With({varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:false},$condFx)" $false 'No warning: green Success'
 Assert-Eval "With({varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false},$condFx)" $true 'Active workers on deactivation: amber Warning'
 Assert-Eval "With({varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true},$condFx)" $true 'Workers refresh failed after rename: amber Warning'
-Assert-Eval (Msg 'x:0' $saveMsg[0].Head) 'Saved.' 'Save message head: Saved.'
-Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false' $saveMsg[0].Body) '2 active worker(s) still have this contractor.' 'Saved. + active-worker warning in one amber message (no leading space)'
-Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'Workers not refreshed: open Project / team and click Refresh.' 'Saved. + Workers-refresh warning'
-Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'The new name also shows on past hours. Workers not refreshed: open Project / team and click Refresh.' 'Saved. + rename + Workers-refresh warning in one amber message'
-Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:3,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'The new name also shows on past hours. 3 active worker(s) still have this contractor. Workers not refreshed: open Project / team and click Refresh.' 'Both warnings in one amber message'
+Assert-Eval (Msg 'x:0' $saveMsg[0].Head) 'Attention.' 'Save-with-warning message head: Attention.'
+Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false' $saveMsg[0].Body) 'Saved. 2 active worker(s) still have this contractor.' 'Saved. + active-worker warning in one amber message (no leading space)'
+Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'Saved. Workers not refreshed: open Project / team and click Refresh.' 'Saved. + Workers-refresh warning'
+Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'Saved. The new name also shows on past hours. Workers not refreshed: open Project / team and click Refresh.' 'Saved. + rename + Workers-refresh warning in one amber message'
+Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:3,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'Saved. The new name also shows on past hours. 3 active worker(s) still have this contractor. Workers not refreshed: open Project / team and click Refresh.' 'Both warnings in one amber message'
 Assert-Eval (Msg 'varEmpSaveRenamed:false' $saveMsg[1].Body) '' 'Green message without rename: only the head "Saved."'
 Assert-Eval (Msg 'varEmpSaveRenamed:true' $saveMsg[1].Body) 'The new name also shows on past hours.' 'Green message with rename: Saved. + rename note'
 Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"Name",Message:T.empErrNameRequired.en},{Field:"",Message:"y"})' $saveMsg[2].Body) 'Fix: Contractor Name empty (+1 more)' 'Zero-write error: Not saved. + first error (+n more)'
@@ -1227,7 +1230,7 @@ foreach ($c in $pMsgs) {
     $lbl = "Projects: $($c.Key) : $($c.Kind)/$head body (T: $($bk -join ','))"
     switch ($c.Kind) {
         '"Error"' { Assert-True (@($bk | Where-Object { $_ -in $pWarnKeys -or $_ -in $pSuccessKeys }).Count -eq 0) "$lbl has no warning or success text" }
-        '"Warning"' { Assert-True (@($bk | Where-Object { $_ -in $pWarnKeys }).Count -eq 2 -and @($bk | Where-Object { $_ -notin ($pWarnKeys + 'prjMsgSavedRenumber') }).Count -eq 0) "$lbl carries the period warnings, nothing else except the renumber note" }
+        '"Warning"' { Assert-True (@($bk | Where-Object { $_ -in $pWarnKeys }).Count -eq 2 -and @($bk | Where-Object { $_ -notin ($pWarnKeys + 'prjMsgSavedRenumber' + 'admMsgSavedPrefix') }).Count -eq 0) "$lbl carries the period warnings, nothing else except the Saved. prefix and the renumber note" }
         '"Success"' { Assert-True (@($bk | Where-Object { $_ -notin $pSuccessKeys }).Count -eq 0) "$lbl has only success texts" }
     }
     switch ($head) {
@@ -1237,7 +1240,7 @@ foreach ($c in $pMsgs) {
         'admHeadDiscarded' { Assert-True ($c.Body -ceq (TT 'prjMsgDiscarded')) "$lbl = changes discarded" }
         'admHeadNotSaved' { Assert-True ($c.Body.Contains('First(colPrjSaveErrors).Message')) "$lbl = first save error (+n more)" }
         'admHeadSaved' { Assert-True ($c.Key -eq 'btnPrjSave.OnSelect') "$lbl only after a verified save" }
-        'admHeadAttention' { throw "FAIL Projects: no live Attention message expected ($($c.Key))" }
+        'admHeadAttention' { Assert-True ($c.Key -eq 'btnPrjSave.OnSelect' -and $c.Kind -eq '"Warning"' -and $c.Body.StartsWith('Trim(' + (TT 'admMsgSavedPrefix') + ' & " " & ')) "$lbl = only the verified save with a warning (amber, body starts with Saved.); no live Attention message" }
     }
 }
 Assert-True ($pKinds['"Error"'] -eq 9 -and $pKinds['"Warning"'] -eq 1 -and $pKinds['"Success"'] -eq 3 -and $pKinds['""'] -eq 2) "Projects: message kinds 9 x Error, 1 x Warning (save with open periods), 3 x Success, 2 x clear ($(($pKinds.Keys | Sort-Object | ForEach-Object { "$_=$($pKinds[$_])" }) -join ' '))"
@@ -1251,10 +1254,10 @@ Assert-True ((($pSaveMsg | ForEach-Object { $_.Kind }) -join ',') -ceq '"Warning
 $pOutHead = 'If(varPrjSaveOpenPeriods>0 || varPrjSavePeriodsUnchecked,'
 Assert-True (([regex]::Matches($pSave, [regex]::Escape($pOutHead))).Count -eq 1 -and $pSaveN.IndexOf((Norm $pOutHead)) -gt $pI.Local -and $pSaveN.IndexOf((Norm $pOutHead)) -lt $pSaveN.IndexOf('varPrjSaveWrites=0,')) 'Projects: verified save shows one message: amber when periods are open or unchecked, else green; head "Saved." in both'
 function PMsg([string]$fixture, [string]$fx) { return "With({LangNl:false,T:$tRec},With({$fixture},$fx))" }
-Assert-Eval (PMsg 'x:0' $pSaveMsg[0].Head) 'Saved.' 'Projects: amber save message head = Saved.'
-Assert-Eval (PMsg 'varPrjSaveRenumbered:false,varPrjSaveOpenPeriods:2,varPrjSavePeriodsUnchecked:false' $pSaveMsg[0].Body) 'Status Closed: 2 open assignment period(s) remain; they are not closed automatically.' 'Projects: Saved. + open-period warning (amber)'
-Assert-Eval (PMsg 'varPrjSaveRenumbered:false,varPrjSaveOpenPeriods:0,varPrjSavePeriodsUnchecked:true' $pSaveMsg[0].Body) 'Status Closed: open assignment periods could not be checked; check Project / team.' 'Projects: Saved. + "could not be checked" warning (read error or >= 500 rows)'
-Assert-Eval (PMsg 'varPrjSaveRenumbered:true,varPrjSaveOpenPeriods:1,varPrjSavePeriodsUnchecked:false' $pSaveMsg[0].Body) 'The new number also shows in Hours Summary. Status Closed: 1 open assignment period(s) remain; they are not closed automatically.' 'Projects: renumber note + period warning in one amber message'
+Assert-Eval (PMsg 'x:0' $pSaveMsg[0].Head) 'Attention.' 'Projects: amber save message head = Attention.'
+Assert-Eval (PMsg 'varPrjSaveRenumbered:false,varPrjSaveOpenPeriods:2,varPrjSavePeriodsUnchecked:false' $pSaveMsg[0].Body) 'Saved. Status Closed: 2 open assignment period(s) remain; they are not closed automatically.' 'Projects: Saved. + open-period warning (amber)'
+Assert-Eval (PMsg 'varPrjSaveRenumbered:false,varPrjSaveOpenPeriods:0,varPrjSavePeriodsUnchecked:true' $pSaveMsg[0].Body) 'Saved. Status Closed: open assignment periods could not be checked; check Project / team.' 'Projects: Saved. + "could not be checked" warning (read error or >= 500 rows)'
+Assert-Eval (PMsg 'varPrjSaveRenumbered:true,varPrjSaveOpenPeriods:1,varPrjSavePeriodsUnchecked:false' $pSaveMsg[0].Body) 'Saved. The new number also shows in Hours Summary. Status Closed: 1 open assignment period(s) remain; they are not closed automatically.' 'Projects: renumber note + period warning in one amber message'
 Assert-Eval (PMsg 'varPrjSaveRenumbered:false' $pSaveMsg[1].Body) '' 'Projects: green message: only the head "Saved."'
 Assert-Eval (PMsg 'colPrjSaveErrors:Table({Field:"Number",Message:T.prjErrDuplicate.en},{Field:"",Message:"y"})' $pSaveMsg[2].Body) 'Fix: Project Number already exists (+1 more)' 'Projects: zero-write error: first error (+n more)'
 Assert-Eval (PMsg 'varPrjSaveMode:"New",colPrjSaveErrors:Table({Field:"",Message:T.prjErrPatch.en})' $pSaveMsg[3].Body) 'Save not confirmed by SharePoint. Maybe created: click Discard, then search the number before retrying.' 'Projects: failed-save error (New)'

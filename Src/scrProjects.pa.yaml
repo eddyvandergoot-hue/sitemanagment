@@ -297,7 +297,7 @@ Screens:
                         - icoPrjSearch:
                             Control: Classic/Icon@2.5.0
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjSearchHint.nl),T.prjSearchHint.nl,T.prjSearchHint.en)
+                              AccessibleLabel: =""
                               Color: =ColorValue("#5A5A5A")
                               Height: =18
                               Icon: =Icon.Search
@@ -370,7 +370,8 @@ Screens:
                               RadiusTopRight: =12
                               Size: =12
                               Text: =""
-                              Tooltip: =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en)
+                              Tooltip: |-
+                                =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en) & ": " & If(Coalesce(varPrjShowInactive,false),If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en),If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en))
                               Width: =44
                               X: =Parent.Width-24-Self.Width
                               Y: =lblPrjCount.Y
@@ -405,7 +406,8 @@ Screens:
                               RadiusTopRight: =9
                               Size: =12
                               Text: =""
-                              Tooltip: =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en)
+                              Tooltip: |-
+                                =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en) & ": " & If(Coalesce(varPrjShowInactive,false),If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en),If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en))
                               Width: =18
                               X: =btnPrjShowInactiveSwitch.X+If(Coalesce(varPrjShowInactive,false),btnPrjShowInactiveSwitch.Width-Self.Width-3,3)
                               Y: =btnPrjShowInactiveSwitch.Y+3
@@ -1790,7 +1792,7 @@ Screens:
                             Set(varProjectsCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
                             Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl);
                             If(varPrjSaveOpenPeriods>0 || varPrjSavePeriodsUnchecked,
-                             Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,Trim(If(varPrjSaveRenumbered,If(LangNl && !IsBlank(T.prjMsgSavedRenumber.nl),T.prjMsgSavedRenumber.nl,T.prjMsgSavedRenumber.en),"") & If(varPrjSaveOpenPeriods>0," " & Substitute(If(LangNl && !IsBlank(T.prjWarnOpenPeriods.nl),T.prjWarnOpenPeriods.nl,T.prjWarnOpenPeriods.en),"{0}",Text(varPrjSaveOpenPeriods)),"") & If(varPrjSavePeriodsUnchecked," " & If(LangNl && !IsBlank(T.prjWarnPeriodsUnchecked.nl),T.prjWarnPeriodsUnchecked.nl,T.prjWarnPeriodsUnchecked.en),""))),
+                             Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,Trim(If(LangNl && !IsBlank(T.admMsgSavedPrefix.nl),T.admMsgSavedPrefix.nl,T.admMsgSavedPrefix.en) & " " & If(varPrjSaveRenumbered,If(LangNl && !IsBlank(T.prjMsgSavedRenumber.nl),T.prjMsgSavedRenumber.nl,T.prjMsgSavedRenumber.en),"") & If(varPrjSaveOpenPeriods>0," " & Substitute(If(LangNl && !IsBlank(T.prjWarnOpenPeriods.nl),T.prjWarnOpenPeriods.nl,T.prjWarnOpenPeriods.en),"{0}",Text(varPrjSaveOpenPeriods)),"") & If(varPrjSavePeriodsUnchecked," " & If(LangNl && !IsBlank(T.prjWarnPeriodsUnchecked.nl),T.prjWarnPeriodsUnchecked.nl,T.prjWarnPeriodsUnchecked.en),""))),
                              Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,If(varPrjSaveRenumbered,If(LangNl && !IsBlank(T.prjMsgSavedRenumber.nl),T.prjMsgSavedRenumber.nl,T.prjMsgSavedRenumber.en),""))
                             );
                             Select(btnPrjFormReset),

@@ -304,7 +304,7 @@ Screens:
                         - icoEmpSearch:
                             Control: Classic/Icon@2.5.0
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.empSearchHint.nl),T.empSearchHint.nl,T.empSearchHint.en)
+                              AccessibleLabel: =""
                               Color: =ColorValue("#5A5A5A")
                               Height: =18
                               Icon: =Icon.Search
@@ -377,7 +377,8 @@ Screens:
                               RadiusTopRight: =12
                               Size: =12
                               Text: =""
-                              Tooltip: =If(LangNl && !IsBlank(T.empShowInactive.nl),T.empShowInactive.nl,T.empShowInactive.en)
+                              Tooltip: |-
+                                =If(LangNl && !IsBlank(T.empShowInactive.nl),T.empShowInactive.nl,T.empShowInactive.en) & ": " & If(Coalesce(varEmpShowInactive,false),If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en),If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en))
                               Width: =44
                               X: =Parent.Width-24-Self.Width
                               Y: =lblEmpCount.Y
@@ -412,7 +413,8 @@ Screens:
                               RadiusTopRight: =9
                               Size: =12
                               Text: =""
-                              Tooltip: =If(LangNl && !IsBlank(T.empShowInactive.nl),T.empShowInactive.nl,T.empShowInactive.en)
+                              Tooltip: |-
+                                =If(LangNl && !IsBlank(T.empShowInactive.nl),T.empShowInactive.nl,T.empShowInactive.en) & ": " & If(Coalesce(varEmpShowInactive,false),If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en),If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en))
                               Width: =18
                               X: =btnEmpShowInactiveSwitch.X+If(Coalesce(varEmpShowInactive,false),btnEmpShowInactiveSwitch.Width-Self.Width-3,3)
                               Y: =btnEmpShowInactiveSwitch.Y+3
@@ -1627,7 +1629,7 @@ Screens:
                             If(varEmpSaveRenamed,IfError(Refresh(Workers),Set(varEmpSaveWorkersRefreshFailed,true);false));
                             Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                             If(varEmpSaveWarnWorkers>0 || varEmpSaveWorkersRefreshFailed,
-                             Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,Trim(If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),"") & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""))),
+                             Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,Trim(If(LangNl && !IsBlank(T.admMsgSavedPrefix.nl),T.admMsgSavedPrefix.nl,T.admMsgSavedPrefix.en) & " " & If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),"") & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""))),
                              Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),""))
                             );
                             Select(btnEmpFormReset),

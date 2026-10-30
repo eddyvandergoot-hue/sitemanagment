@@ -7,14 +7,14 @@ Agents: subagents in .claude/agents/ are picked automatically by task; commands 
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
 
-## 1. Admin screens (plan decided 27-10-2026: ADMIN_PLAN.md; Contractors built, Studio test open)
+## 1. Admin screens (plan: ADMIN_PLAN.md; Contractors approved 29-10-2026, Admin screen pattern written, Projects built)
 
-Next: Eddy's Studio retest of the current Contractors build 20261029_232612 (v5: messages red/orange/green via the notification bar, live orange warning on unchecking Active, title-bar spinner, red field borders; DECISIONS.md H17) with checks I-S (TESTPLAN.md TP-CONTRACTORS-01; build: PROJECT_STATUS.md). Build 221757 was skipped. Build 174723 passed steps 8-11, 12a, 12b and the wide-layout alignment (29-10-2026). MS-020 is done (28-10-2026). Open points: ADMIN_PLAN.md par. 8 and 9.
+Done: Contractors approved (tag approved-20261029-contractors); AGENTS.md section "Admin screen pattern" written (30-10-2026; DECISIONS.md H19); Projects built (ADMIN_PLAN.md par. 4).
 
-After Contractors is approved, in this order:
-1. First step (Eddy 29-10-2026; write it in AGENTS.md only then, not before): write the AGENTS.md section "Admin screen pattern" (docs-keeper), derived from the approved Contractors screen: layout grid list left / form right, form top = top of the list box, search box with margin below the heading; save flow fresh read -> validation -> conflict -> Patch -> normalised verify; messages only red/orange/green in the bar at the top; red border on an invalid field; spinner in the title bar; "Last changed" at the bottom in grey; tests. Projects and Workers MUST reuse this pattern; only the fields differ.
-2. Projects build (powerfx-logic, reviewer, powerfx-ui, verifier; pattern and messages per H17).
-3. Workers build, including the Weekly Hours stale-cache fix (DECISIONS.md H18, approved 29-10-2026, status "approved, not built"): in Save week, before the first write, Refresh(Workers) + re-read colWorkersCache (<=500, staging) and Refresh('Project Workers') + Filter on ProjectKey; compare Employer.Id/Trade/Team/Active of the involved workers with the loaded values; difference = zero writes + message "Worker or team changed in SharePoint; Refresh on Project / team". Save team and Confirm migration need no fix.
+Next: Eddy tests build adminpattern-20261030_071949 in Studio (path and SHA-256: PROJECT_STATUS.md): TESTPLAN.md TP-STYLE-01 (Contractors on the pattern), TP-PROJECTS-01 and the Home checks (Projects tile, Knowledge column). Open points and decisions for Eddy: ADMIN_PLAN.md par. 8 punt 8 (a-g). Then approval and tag.
+
+After that, in this order:
+1. Workers build (powerfx-logic, reviewer, powerfx-ui, verifier) on the Admin screen pattern (AGENTS.md; only fields and rules differ; ADMIN_PLAN.md par. 5), including the Weekly Hours stale-cache fix (DECISIONS.md H18, approved 29-10-2026, status "approved, not built"): in Save week, before the first write, Refresh(Workers) + re-read colWorkersCache (<=500, staging) and Refresh('Project Workers') + Filter on ProjectKey; compare Employer.Id/Trade/Team/Active of the involved workers with the loaded values; difference = zero writes + message "Worker or team changed in SharePoint; Refresh on Project / team". Save team and Confirm migration need no fix. Decision pending: ADMIN_PLAN.md 4.5 (hide Closed projects on Screen1) and 5.5 (inactive workers).
 
 ## 2b. ModernDatePicker 1.0.2
 
@@ -35,7 +35,7 @@ Decided, not built: Screen1 cards show Workers.Title (DECISIONS.md H10); inline 
 Also decided 27-10-2026 (Eddy), not built:
 - Screen1 live validation on check: an invalid card gets a red border; the reason goes in the red notification bar (H17; the red reason text on cards is dropped, decided 29-10-2026: red card border + reason in the bar); Save team disabled while any card is red.
 - Pickers locked while unsaved changes: show a visible hint text on the picker (exception to H17: it is a control hint, not a message; Eddy to confirm) telling how to unlock: Screen1 "haal vinkje weg om te ontgrendelen"; Weekly Hours: Save or Discard changes. Reason: dpTeamWeek/dpHoursWeek are DisplayMode.Disabled when dirty, so the existing OnChange Notify "Week niet gewisseld..." is practically never seen.
-- Messages (Eddy 29-10-2026, DECISIONS.md H17, replaces the earlier status-line items): ALL messages only via the notification bar (Notify): errors red, warnings orange, success green (no Information), one at a time, short; no message text in the form or as a status line (remove lblSelectionLoadStatus as message carrier); invalid field = red border only, the bar says what is wrong ("Fix: ... (+n more)"). Built on Contractors first.
+- Messages (Eddy 29-10-2026, DECISIONS.md H17, replaces the earlier status-line items; admin screens already use their own message bar, H19, and 4b decides whether the other screens take over that bar instead of Notify): ALL messages only via the notification bar (Notify): errors red, warnings orange, success green (no Information), one at a time, short; no message text in the form or as a status line (remove lblSelectionLoadStatus as message carrier); invalid field = red border only, the bar says what is wrong ("Fix: ... (+n more)"). Built on Contractors first.
 - Migration preview result is shown ONLY in the framed popup on Screen1 (not in the notification bar, not as status text).
 - The summary popup (above) must include a reopen notice ("Terug in team vanaf KWxx").
 - Screen1: employer line of one card shown bold. Cause: Subtitle4.FontWeight = If(ThisItem.IsSelected, Semibold, Normal) follows the gallery's selected item, not data. Make it Normal; requires changing the AGENTS.md Subtitle4 rule and artifacts/Test-Fonts.ps1 in the UX round.

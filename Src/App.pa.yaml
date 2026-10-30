@@ -134,6 +134,9 @@ App:
         admHeadSaved: {en: "Saved.", nl: ""},
         admHeadLoaded: {en: "Loaded.", nl: ""},
         admHeadDiscarded: {en: "Discarded.", nl: ""},
+        admMsgSavedPrefix: {en: "Saved.", nl: ""},
+        admOn: {en: "on", nl: ""},
+        admOff: {en: "off", nl: ""},
         admMsgClose: {en: "Close message", nl: ""}
       };
     Theme: =PowerAppsTheme
