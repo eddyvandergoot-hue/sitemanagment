@@ -148,7 +148,7 @@ $vis0 = [string]$screenProps['OnVisible']
 Assert-True ($vis0.Contains('If(IsBlank(varEmpLoadState),') -and $vis0.Contains('Set(varEmpActiveDraft,true); Set(varEmpShowInactive,false);') -and $vis0.IndexOf('Set(varEmpActiveDraft,true)') -lt $vis0.IndexOf('Select(btnEmpLoad)')) 'OnVisible first-visit init: varEmpActiveDraft = true (New snapshot), varEmpShowInactive = false'
 $draftReaders = @($all.Keys | Where-Object { $all[$_] -match '\bvarEmpActiveDraft\b' -and $_ -notmatch '\.On\w+$' } | Sort-Object)
 $draftCmp = 'Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true)'
-$draftOther = @($draftReaders | Where-Object { $_ -notmatch '^(btnEmpActiveSwitch|btnEmpActiveKnob|lblEmpActiveState)\.' -and ([regex]::Matches($all[$_], '\bvarEmpActiveDraft\b')).Count -ne ([regex]::Matches($all[$_], [regex]::Escape($draftCmp))).Count })
+$draftOther = @($draftReaders | Where-Object { $_ -notmatch '^(btnEmpActiveSwitch|btnEmpActiveKnob|lblEmpActiveState|btnEmpFormChip)\.' -and ([regex]::Matches($all[$_], '\bvarEmpActiveDraft\b')).Count -ne ([regex]::Matches($all[$_], [regex]::Escape($draftCmp))).Count })
 Assert-True ($draftOther.Count -eq 0) "Outside the switch controls varEmpActiveDraft is only read in the dirty comparison ($($draftOther -join ', '))"
 foreach ($k in @('btnEmpSave.DisplayMode', 'btnEmpHome.DisplayMode', 'btnEmpNew.DisplayMode', 'btnEmpRefresh.DisplayMode', 'btnEmpDiscard.DisplayMode', 'galEmpList.DisplayMode')) { Assert-True ($all[$k].Contains($draftCmp)) "$k dirty check reads the switch draft ($draftCmp)" }
 $selUses = @($all.Keys | Where-Object { $all[$_] -match 'galEmpList\.Selected' })
@@ -463,7 +463,7 @@ Assert-True ($formulas -match 'empMsgLoaded:\s*\{en:\s*"[^"]*\{0\}[^"]*\{1\}' -a
 Assert-True ($load.Contains('ClearCollect(colPendingEmpModified,ForAll(colPendingEmpRaw As emp,{ID:emp.ID,Modified:emp.Modified}));') -and $loadN.Contains((Norm 'ClearCollect(colEmpModified,colPendingEmpModified);')) -and $loadN.IndexOf((Norm 'ClearCollect(colEmpModified,colPendingEmpModified);')) -gt $iGate) 'Modified staged from the same load read and published only after a successful load'
 Assert-True ($proj -notmatch 'Modified') 'The shared projection (snapshot varEmpEdit, pre-read, duplicate, verify) has no Modified field'
 $modUses = @($all.Keys | Where-Object { $all[$_] -match 'Modified' } | Sort-Object)
-Assert-True (($modUses -join ',') -ceq 'btnEmpLoad.OnSelect,btnEmpSave.OnSelect,lblEmpModified.Text') "Modified used only in the loader, the save display update and lblEmpModified.Text ($($modUses -join ', '))"
+Assert-True (($modUses -join ',') -ceq 'btnEmpLoad.OnSelect,btnEmpSave.OnSelect,lblEmpMetrics.Y,lblEmpModified.Text') "Modified used only in the loader, the save display update, lblEmpModified.Text and the height carrier lblEmpMetrics.Y (reads lblEmpModified.Y) ($($modUses -join ', '))"
 foreach ($k in @('btnEmpSave.DisplayMode', 'btnEmpRefresh.DisplayMode', 'btnEmpDiscard.DisplayMode', 'btnEmpHome.DisplayMode', 'btnEmpNew.DisplayMode', 'galEmpList.DisplayMode')) { Assert-True ($all[$k] -notmatch 'Modified|colEmpModified') "$k guard does not use Modified" }
 Assert-True ($tableFx -notmatch 'Modified|colEmpModified' -and $conflictFx -notmatch 'Modified|colEmpModified' -and $dirty -notmatch 'Modified') 'Modified never in verify, conflict or dirty comparison'
 $modFx = (Get-Prop 'lblEmpModified' 'Text').TrimStart('=')
@@ -691,22 +691,33 @@ $fieldsCollected = @([regex]::Matches($save, 'Collect\(colEmpSaveErrors,\{Field:
 Assert-True (@($fieldsCollected | Where-Object { $_ -ne '' -and $_ -cnotin @($inputMap.Values) }).Count -eq 0) "Every collected error Field is one of the 8 inputs or '' ($($fieldsCollected -join ','))"
 foreach ($k in $inputMap.Keys) {
     $f = $inputMap[$k]
-    foreach ($pv in @(@('BorderColor', '#DCDCDC'), @('HoverBorderColor', '#0303B8'), @('FocusedBorderColor', '#0303B8'))) {
+    foreach ($pv in @(@('BorderColor', '#9B9B9B'), @('HoverBorderColor', '#5A5A5A'), @('FocusedBorderColor', '#0303B8'), @('PressedBorderColor', '#0303B8'))) {
         $exp = '=If(CountIf(colEmpSaveErrors,Field="' + $f + '")>0,ColorValue("#DB1E28"),ColorValue("' + $pv[1] + '"))'
         Assert-True ((Get-Prop $k $pv[0]) -ceq $exp) "$k.$($pv[0]) red #DB1E28 when colEmpSaveErrors has Field=$f, else $($pv[1])"
     }
-    $bc = (Get-Prop $k 'BorderColor').TrimStart('=').Replace('ColorValue("#DB1E28")', '"red"').Replace('ColorValue("#DCDCDC")', '"grey"')
+    $bc = (Get-Prop $k 'BorderColor').TrimStart('=').Replace('ColorValue("#DB1E28")', '"red"').Replace('ColorValue("#9B9B9B")', '"grey"')
     Assert-Eval "With({colEmpSaveErrors:Table({Field:`"City`",Message:`"x`"},{Field:`"`",Message:`"y`"})},$bc)" $(if ($f -eq 'City') { 'red' } else { 'grey' }) "$k border with a City error"
     Assert-Eval "With({colEmpSaveErrors:Filter(Table({Field:`"$f`",Message:`"x`"}),false)},$bc)" 'grey' "$k border without errors"
+    # A2 (30-10-2026): editable field = white, 1px #9B9B9B (2px red when invalid), radius 4, h36, focus 2px
+    Assert-True ((Get-Prop $k 'BorderThickness') -ceq ('=If(CountIf(colEmpSaveErrors,Field="' + $f + '")>0,2,1)') -and (Get-Prop $k 'FocusedBorderThickness') -ceq '=2') "$k : border 1px (2px when invalid), focus 2px"
+    foreach ($kv in @(@('Fill', '=Color.White'), @('HoverFill', '=Color.White'), @('PressedFill', '=Color.White'), @('Height', '=36'), @('RadiusTopLeft', '=4'), @('RadiusTopRight', '=4'), @('RadiusBottomLeft', '=4'), @('RadiusBottomRight', '=4'), @('Width', '=lblEmpGrid.Width'), @('Size', '=14'))) { Assert-True ((Get-Prop $k $kv[0]) -ceq $kv[1]) "$k.$($kv[0]) = $($kv[1])" }
 }
 Assert-True ((Get-Prop 'txtEmpSearch' 'BorderColor') -ceq '=ColorValue("#9B9B9B")') 'Search box has its own admin-pattern border (#9B9B9B, no error binding)'
 
 
+function Get-FormGeom([int]$layW) {
+    $cw = $layW - 48; $c = if ($cw -ge 572) { 3 } elseif ($cw -ge 376) { 2 } else { 1 }
+    $colW = ($cw - 16 * ($c - 1)) / $c
+    $div = 24 + 30 + 16; $g = $div + 1 + 20
+    $a = $g + 38 + [Math]::Ceiling(2 / $c) * 74; $k = $a + 38 + [Math]::Ceiling(4 / $c) * 74; $row = $k + 38 + [Math]::Ceiling(3 / $c) * 74
+    $modWide = $cw -ge 480; $modY = if ($modWide) { $row } else { $row + 32 }
+    return @{ Cols = $c; ColW = $colW; CW = $cw; Gen = $g; Addr = $a; Cont = $k; Row = $row; ModWide = $modWide; ModY = $modY; MetY = $modY + 24 + 24 }
+}
 # Geometry (admin pattern, 30-10-2026): two white cards on #F5F6F8, 24 px margin/gap/padding; wide (>=1000): list card 360 left, form card right, tops equal; narrow: stacked.
 # The carriers' formulas are pinned by exact text, then mirrored here for each width.
 $expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,408,24)'; Width='=If(Self.X=1,Max(0,Parent.Width-432),Parent.Width-48)'; Height='=If(Self.X=1,24,500)' }
 foreach ($k in $expLay.Keys) { Assert-True ((Get-Prop 'lblEmpLayout' $k) -eq $expLay[$k]) "Layout carrier lblEmpLayout.$k formula as mirrored" }
-Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Self.Height-48,452)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+48,568),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
+Assert-True ((Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Self.Height-48,452)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+48,568),lblEmpLayout.Height+Self.Y+24)') 'Layout carrier lblEmpMetrics Width/Height formulas as mirrored (X = columns, Y = content height: see grid tests)'
 foreach ($card in @(@('conEmpListCard', 'Fill', '=Color.White'), @('conEmpListCard', 'DropShadow', '=DropShadow.Light'), @('conEmpListCard', 'RadiusTopLeft', '=8'), @('conEmpListCard', 'X', '=24'), @('conEmpListCard', 'Y', '=24'), @('conEmpListCard', 'Width', '=If(lblEmpLayout.X=1,360,Parent.Width-48)'), @('conEmpListCard', 'Height', '=lblEmpMetrics.Width'),
         @('conEmpFormCard', 'Fill', '=Color.White'), @('conEmpFormCard', 'DropShadow', '=DropShadow.Light'), @('conEmpFormCard', 'RadiusTopLeft', '=8'), @('conEmpFormCard', 'X', '=lblEmpLayout.Y'), @('conEmpFormCard', 'Y', '=lblEmpLayout.Height'), @('conEmpFormCard', 'Width', '=lblEmpLayout.Width'), @('conEmpFormCard', 'Height', '=If(lblEmpLayout.X=1,lblEmpMetrics.Height-48,lblEmpMetrics.Y)'))) {
     Assert-True ((Get-Prop $card[0] $card[1]) -ceq $card[2]) "$($card[0]).$($card[1]) = $($card[2])"
@@ -730,8 +741,8 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
     $layX = [int]$wide; $layY = if ($wide) { 408 } else { 24 }
     $layW = if ($wide) { [Math]::Max(0, $W - 432) } else { $W - 48 }
     $layH = if ($wide) { 24 } else { 500 }
-    $metX = [int](($layW - 48) -ge 536)
-    $metY = 24 + 76 * (8 + (1 - $metX)) + 40 + 12 + 20 + 24
+    $fg = Get-FormGeom $layW
+    $metY = $fg.MetY
     foreach ($bodyH in 300, 700) {
         $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($metY + 48, 568)) } else { $layH + $metY + 24 }
         $listH = if ($wide) { $metH - 48 } else { 452 }
@@ -752,24 +763,60 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
         }
     }
 }
-# 29-10-2026: Contractor Code = read-only TextInput (txtEmpCode, always Disabled, field style); lblEmpModified = small grey line under the Active switch row (lblEmpActiveState).
-function Num($c,$pr){ $t=(Get-Prop $c $pr).TrimStart('='); $t=$t.Replace('lblEmpMetrics.X','1').Replace('24+76*1+24','124').Replace('24+76*2','176'); return [int](Invoke-Expression $t) }
+# 29-10-2026: Contractor Code = read-only TextInput (txtEmpCode, always Disabled). A2 (30-10-2026): form card = header (name + status chip + divider), sections GENERAL/ADDRESS/CONTACT on a 1-3 column grid, bottom row switch + "Last changed".
 Assert-True ($null -eq $idx['lblEmpCodeValue'] -and $idx['txtEmpCode']['Control'] -eq 'Classic/TextInput@2.3.2') 'Contractor Code value is a Classic/TextInput@2.3.2 (txtEmpCode); lblEmpCodeValue is gone'
 Assert-True ((Get-Prop 'txtEmpCode' 'DisplayMode') -eq '=DisplayMode.Disabled') 'txtEmpCode is always DisplayMode.Disabled (never editable)'
 $codeDefault = 'If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpEdit.Code),varEmpEdit.Code,Coalesce(varEmpMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.empCodeAuto.nl),T.empCodeAuto.nl,T.empCodeAuto.en),"")'
 Assert-True ((Norm (Get-Prop 'txtEmpCode' 'Default').TrimStart('=')) -eq (Norm $codeDefault)) 'txtEmpCode Default = the former lblEmpCodeValue Text formula'
-foreach ($kv in @(@('Fill','=ColorValue("#F0F0F0")'),@('DisabledFill','=ColorValue("#F0F0F0")'),@('BorderColor','=ColorValue("#DCDCDC")'),@('DisabledBorderColor','=ColorValue("#DCDCDC")'),@('Color','=ColorValue("#000000")'),@('DisabledColor','=ColorValue("#000000")'),@('BorderThickness','=1'),@('RadiusTopLeft','=6'),@('RadiusBottomRight','=6'),@('PaddingLeft','=8'),@('PaddingRight','=8'),@('Size','=12'),@('FontWeight','=FontWeight.Normal'),@('Height','=40'),@('Width','=Min(256,lblEmpLayout.Width-48)'),@('X','=24'),@('Y','=24+76*1+24'),@('AccessibleLabel','=If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)'))) { Assert-True ((Get-Prop 'txtEmpCode' $kv[0]) -eq $kv[1]) "txtEmpCode.$($kv[0])" }
+foreach ($kv in @(@('Fill','=ColorValue("#F0F0F0")'),@('DisabledFill','=ColorValue("#F0F0F0")'),@('BorderColor','=Color.Transparent'),@('DisabledBorderColor','=Color.Transparent'),@('Color','=ColorValue("#000000")'),@('DisabledColor','=ColorValue("#000000")'),@('BorderThickness','=0'),@('RadiusTopLeft','=4'),@('RadiusBottomRight','=4'),@('PaddingLeft','=12'),@('PaddingRight','=12'),@('Size','=14'),@('FontWeight','=FontWeight.Normal'),@('Height','=36'),@('Width','=lblEmpGrid.Width'),@('AccessibleLabel','=If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)'))) { Assert-True ((Get-Prop 'txtEmpCode' $kv[0]) -eq $kv[1]) "txtEmpCode.$($kv[0]) (read-only: grey fill, no border)" }
 Assert-True ($dirty -notmatch 'txtEmpCode' -and $saveN -notmatch 'txtEmpCode') 'txtEmpCode is not part of dirty/Save (the app never writes Employer Code)'
-$cvY = Num 'txtEmpCode' 'Y'; $cvH = Num 'txtEmpCode' 'Height'; $adY = Num 'lblEmpAddressLabel' 'Y'
-Assert-True ($cvY + $cvH -le $adY) "txtEmpCode (ends $($cvY + $cvH)) above the address label ($adY)"
-$mY = Num 'lblEmpModified' 'Y'; $mH = Num 'lblEmpModified' 'Height'; $chY = Num 'lblEmpActiveState' 'Y'; $chH = Num 'lblEmpActiveState' 'Height'
-foreach ($W in 320, 768, 900, 1000, 1280, 1920) {
-    $X = if ($W - 48 -ge 536) { 1 } else { 0 }
-    $mY2 = 24 + 76 * (8 + (1 - $X)) + 40 + 12; $chY2 = 24 + 76 * (8 + (1 - $X)); $metY = 24 + 76 * (8 + (1 - $X)) + 40 + 12 + 20 + 24
-    Assert-True ($mY2 -ge $chY2 + $chH + 12 -and $mY2 + $mH + 24 -le $metY) "W=$W : lblEmpModified (Y $mY2..$($mY2 + $mH)) 12 px under the Active switch row (ends $($chY2 + $chH)), inside the form panel (ends $metY)"
+# Grid carriers (pinned) and numeric mirror
+Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=572,3,If(lblEmpLayout.Width-48>=376,2,1))' -and (Get-Prop 'lblEmpGrid' 'Width') -eq '=(lblEmpLayout.Width-48-16*(lblEmpMetrics.X-1))/lblEmpMetrics.X' -and (Get-Prop 'lblEmpGrid' 'Visible') -eq '=false') 'Grid: columns = 3 (content >= 572), 2 (>= 376), else 1; column width = (content - 16*(cols-1))/cols (gap 16, min ~180 per column); lblEmpGrid is a hidden label'
+Assert-True ((Get-Prop 'lblEmpMetrics' 'Y') -eq '=lblEmpModified.Y+lblEmpModified.Height+24') 'lblEmpMetrics.Y = bottom of the last row (lblEmpModified) + 24 padding'
+Assert-True ((Get-Prop 'lblEmpSecGeneral' 'Y') -eq '=lblEmpFormDivider.Y+1+20' -and (Get-Prop 'lblEmpSecAddress' 'Y') -eq '=lblEmpSecGeneral.Y+38+RoundUp(2/lblEmpMetrics.X,0)*74' -and (Get-Prop 'lblEmpSecContact' 'Y') -eq '=lblEmpSecAddress.Y+38+RoundUp(4/lblEmpMetrics.X,0)*74' -and (Get-Prop 'btnEmpActiveSwitch' 'Y') -eq '=lblEmpSecContact.Y+38+RoundUp(3/lblEmpMetrics.X,0)*74') 'Section tops: previous top + 38 + rows*74 (label 18 + 4 + field 36 + 16 row gap; header 18 + 12; 24 between sections); bottom row below CONTACT'
+$grid = @{ GENERAL = @('Name', 'Code'); ADDRESS = @('Address', 'Postalcode', 'City', 'Country'); CONTACT = @('ContactName', 'ContactEmail', 'ContactPhone') }
+$secCtl = @{ GENERAL = 'lblEmpSecGeneral'; ADDRESS = 'lblEmpSecAddress'; CONTACT = 'lblEmpSecContact' }
+foreach ($s in $grid.Keys) {
+    Assert-True ($idx[$secCtl[$s]]['Control'] -eq 'Label@2.5.1' -and (Get-Prop $secCtl[$s] 'Size') -eq '=12' -and (Get-Prop $secCtl[$s] 'FontWeight') -eq '=FontWeight.Bold' -and (Get-Prop $secCtl[$s] 'Color') -eq '=ColorValue("#0303B8")' -and (Get-Prop $secCtl[$s] 'Text') -match 'T\.emp' -and (Get-Prop $secCtl[$s] 'Height') -eq '=18') "$($secCtl[$s]): section header 12 Bold #0303B8 from T, h18"
+    for ($n = 0; $n -lt $grid[$s].Count; $n++) {
+        $f = $grid[$s][$n]; $lb = "lblEmp${f}Label"; $tx = "txtEmp$f"
+        $xx = if ($n -eq 0) { '=24' } else { "=24+Mod($n,lblEmpMetrics.X)*(lblEmpGrid.Width+16)" }
+        $yy = if ($n -eq 0) { "=$($secCtl[$s]).Y+30" } else { "=$($secCtl[$s]).Y+30+RoundDown($n/lblEmpMetrics.X,0)*74" }
+        Assert-True ((Get-Prop $lb 'X') -ceq $xx -and (Get-Prop $tx 'X') -ceq $xx -and (Get-Prop $lb 'Y') -ceq $yy -and (Get-Prop $tx 'Y') -ceq "=$lb.Y+22" -and (Get-Prop $lb 'Width') -eq '=lblEmpGrid.Width') "$s field $n ($f): grid cell X/Y by column/row, input 22 px under the label top (label 18 + 4)"
+        Assert-True ((Get-Prop $lb 'Size') -eq '=13' -and (Get-Prop $lb 'FontWeight') -eq '=FontWeight.Semibold' -and (Get-Prop $lb 'Color') -eq '=ColorValue("#000000")' -and (Get-Prop $lb 'Height') -eq '=18') "$lb : 13 Semibold black, h18"
+    }
 }
-Assert-True ((Get-Prop 'lblEmpModified' 'Y') -eq '=24+76*(8+(1-lblEmpMetrics.X))+40+12' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'lblEmpModified Y = checkbox bottom + 12; lblEmpMetrics.Y includes the label + 24 bottom padding'
-Assert-True ((Get-Prop 'lblEmpModified' 'X') -eq '=24' -and (Get-Prop 'lblEmpModified' 'Width') -eq '=Min(512,lblEmpLayout.Width-48)' -and (Get-Prop 'lblEmpModified' 'Size') -eq '=11' -and (Get-Prop 'lblEmpModified' 'FontWeight') -eq '=FontWeight.Normal' -and (Get-Prop 'lblEmpModified' 'Color') -eq '=ColorValue("#787878")' -and (Get-Prop 'lblEmpModified' 'Height') -eq '=20') 'lblEmpModified: Inter 11 Normal, #787878, Height 20, width Min(512,...)'
+Assert-True ((Get-Prop 'lblEmpNameRequired' 'Text') -eq '="*"' -and (Get-Prop 'lblEmpNameRequired' 'Color') -eq '=ColorValue("#DB1E28")' -and (Get-Prop 'lblEmpNameRequired' 'Y') -eq '=lblEmpNameLabel.Y' -and (Get-Prop 'lblEmpNameRequired' 'X').StartsWith('=lblEmpNameLabel.X+Round(Len(lblEmpNameLabel.Text)') -and !$idx.ContainsKey('lblEmpCodeRequired')) 'Required marker: red "*" label right after Contractor Name only'
+# header
+Assert-True ((Get-Prop 'lblEmpFormTitle' 'Size') -eq '=22' -and (Get-Prop 'lblEmpFormTitle' 'FontWeight') -eq '=FontWeight.Semibold' -and (Get-Prop 'lblEmpFormTitle' 'Color') -eq '=ColorValue("#000F41")' -and (Get-Prop 'lblEmpFormTitle' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]' -and (Get-Prop 'lblEmpFormTitle' 'Text').Contains('T.empNewContractor') -and (Get-Prop 'lblEmpFormTitle' 'Text').Contains('varEmpEdit.Name')) 'Header: record name 22 Semibold #000F41 (Edit: varEmpEdit.Name; New: T.empNewContractor), only visible in New/Edit'
+$chipFill = 'If(Coalesce(varEmpActiveDraft,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $chipCol = 'If(Coalesce(varEmpActiveDraft,true),ColorValue("#000F41"),ColorValue("#000000"))'
+Assert-True ($idx['btnEmpFormChip']['Control'] -eq 'Classic/Button@2.2.0' -and (Get-Prop 'btnEmpFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled' -and !$idx['btnEmpFormChip']['Properties'].ContainsKey('OnSelect') -and (Get-Prop 'btnEmpFormChip' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]') 'Status chip btnEmpFormChip: Classic/Button, static (Disabled with identical disabled colours), no OnSelect, New/Edit only'
+foreach ($p in 'Fill', 'HoverFill', 'PressedFill', 'DisabledFill') { Assert-True ((Get-Prop 'btnEmpFormChip' $p) -ceq "=$chipFill") "btnEmpFormChip.$p = green #1AFF80 when Active, grey #E6E6E6 when Inactive (varEmpActiveDraft)" }
+foreach ($p in 'Color', 'HoverColor', 'PressedColor', 'DisabledColor') { Assert-True ((Get-Prop 'btnEmpFormChip' $p) -ceq "=$chipCol") "btnEmpFormChip.$p = #000F41 on green, #000000 on grey" }
+Assert-True ((Get-Prop 'btnEmpFormChip' 'Text').Contains('T.empFieldActive') -and (Get-Prop 'btnEmpFormChip' 'Text').Contains('T.empInactive') -and (Get-Prop 'btnEmpFormChip' 'X') -eq '=lblEmpFormTitle.X+lblEmpFormTitle.Width+12' -and (Get-Prop 'btnEmpFormChip' 'Height') -eq '=24' -and (Get-Prop 'btnEmpFormChip' 'RadiusTopLeft') -eq '=12' -and (Get-Prop 'btnEmpFormChip' 'Size') -eq '=12') 'Chip text is the state (not colour only), right of the name (12 px), h24, radius 12'
+Assert-True ((Get-Prop 'lblEmpFormDivider' 'Fill') -eq '=ColorValue("#EDEDED")' -and (Get-Prop 'lblEmpFormDivider' 'Height') -eq '=1' -and (Get-Prop 'lblEmpFormDivider' 'Width') -eq '=lblEmpLayout.Width-48' -and (Get-Prop 'lblEmpFormDivider' 'Y') -eq '=lblEmpFormTitle.Y+lblEmpFormTitle.Height+16' -and (Get-Prop 'lblEmpFormDivider' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]') 'Divider: 1 px #EDEDED under the header, full content width, New/Edit only'
+$formKids = @($idx['conEmpFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
+$expKids = 'lblEmpFormTitle,btnEmpFormChip,lblEmpFormDivider,lblEmpSecGeneral,lblEmpNameLabel,lblEmpNameRequired,txtEmpName,lblEmpCodeLabel,txtEmpCode,lblEmpSecAddress,lblEmpAddressLabel,txtEmpAddress,lblEmpPostalcodeLabel,txtEmpPostalcode,lblEmpCityLabel,txtEmpCity,lblEmpCountryLabel,txtEmpCountry,lblEmpSecContact,lblEmpContactNameLabel,txtEmpContactName,lblEmpContactEmailLabel,txtEmpContactEmail,lblEmpContactPhoneLabel,txtEmpContactPhone,btnEmpActiveSwitch,btnEmpActiveKnob,lblEmpActiveState,lblEmpModified'
+Assert-True (($formKids -join ',') -ceq $expKids) "conEmpFormCard children (final structure): $($formKids -join ',')"
+# numeric mirror of the grid
+foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
+    $wide = $W -ge 1000; $layW = if ($wide) { [Math]::Max(0, $W - 432) } else { $W - 48 }
+    if ($layW -lt 100) { continue }
+    $g = Get-FormGeom $layW
+    if ($g.Cols -ge 2) { Assert-True ($g.ColW -ge 180) "W=$W (card $layW): $($g.Cols) columns of $([Math]::Round($g.ColW,1)) px (>= 180)" }
+    Assert-True ($g.Cols * $g.ColW + 16 * ($g.Cols - 1) -eq $g.CW) "W=$W : columns + 16 px gaps fill the content width exactly (inside the 24 px padding)"
+    $secStep = 18 + 12
+    foreach ($pair in @(@('GENERAL', $g.Gen, 2, $g.Addr), @('ADDRESS', $g.Addr, 4, $g.Cont), @('CONTACT', $g.Cont, 3, $g.Row))) {
+        $rows = [Math]::Ceiling($pair[2] / $g.Cols); $endY = $pair[1] + $secStep + ($rows - 1) * 74 + 58
+        Assert-True ($endY + 24 -eq $pair[3]) "W=$W : $($pair[0]) last field ends $endY, next block starts 24 px lower ($($pair[3]))"
+    }
+    if ($g.ModWide) { Assert-True (24 + 44 + 12 + 80 + 16 -le 24 + 152) "W=$W : modified label (right aligned, content-152 wide) clear of switch + state" }
+    else { Assert-True ($g.ModY -ge $g.Row + 24 + 8) "W=$W : narrow: modified label on its own line 8 px under the switch row" }
+    Assert-True ($g.MetY -eq $g.ModY + 48) "W=$W : form content height $($g.MetY) = last row + 24 + 24 padding"
+}
+$mdCols = [ordered]@{ Align = '=If(lblEmpLayout.Width-48>=480,Align.Right,Align.Left)'; Width = '=If(lblEmpLayout.Width-48>=480,lblEmpLayout.Width-48-152,lblEmpLayout.Width-48)'; X = '=If(lblEmpLayout.Width-48>=480,24+lblEmpLayout.Width-48-Self.Width,24)'; Y = '=If(lblEmpLayout.Width-48>=480,btnEmpActiveSwitch.Y,btnEmpActiveSwitch.Y+32)'; Size = '=12'; FontWeight = '=FontWeight.Normal'; Color = '=ColorValue("#787878")'; Height = '=24' }
+foreach ($k in $mdCols.Keys) { Assert-True ((Get-Prop 'lblEmpModified' $k) -ceq $mdCols[$k]) "lblEmpModified.$k = $($mdCols[$k]) (same row as the switch, right aligned, 12 #787878)" }
+Assert-True ((Get-Prop 'lblEmpActiveState' 'Y') -eq '=btnEmpActiveSwitch.Y' -and (Get-Prop 'lblEmpActiveState' 'Height') -eq '=24' -and (Get-Prop 'lblEmpActiveState' 'Width') -eq '=80' -and (Get-Prop 'btnEmpActiveSwitch' 'X') -eq '=24') 'Switch row: switch X 24, state label on the same Y (h24, 80 wide)'
 # (16) Load/save spinner in the title bar (imgEmpSpinner) ---------------------------------------------------------------
 Assert-True ($idx.ContainsKey('imgEmpSpinner') -and $idx['imgEmpSpinner']['Control'] -eq 'Image@2.2.3') 'imgEmpSpinner exists as Image@2.2.3'
 $spImg = Get-Prop 'imgEmpSpinner' 'Image'

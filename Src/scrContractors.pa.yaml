@@ -130,10 +130,21 @@ Screens:
           Properties:
             Text: =""
             Visible: =false
-            X: =If(lblEmpLayout.Width-48>=536,1,0)
-            Y: =24+76*(8+(1-Self.X))+40+12+20+24
+            X: =If(lblEmpLayout.Width-48>=572,3,If(lblEmpLayout.Width-48>=376,2,1))
+            Y: =lblEmpModified.Y+lblEmpModified.Height+24
             Width: =If(lblEmpLayout.X=1,Self.Height-48,452)
             Height: =If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+48,568),lblEmpLayout.Height+Self.Y+24)
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - lblEmpGrid:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =lblEmpMetrics.X
+            Y: =74
+            Width: =(lblEmpLayout.Width-48-16*(lblEmpMetrics.X-1))/lblEmpMetrics.X
+            Height: =36
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
       - btnEmpLoad:
@@ -548,30 +559,135 @@ Screens:
                         RadiusBottomLeft: =8
                         RadiusBottomRight: =8
                       Children:
-                        - lblEmpNameLabel:
+                        - lblEmpFormTitle:
                             Control: Label@2.5.1
                             Properties:
-                              Color: =ColorValue("#000000")
+                              Align: =Align.Left
+                              Color: =ColorValue("#000F41")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =22
+                              Text: =If(Coalesce(varEmpMode,"")="New",If(LangNl && !IsBlank(T.empNewContractor.nl),T.empNewContractor.nl,T.empNewContractor.en),(varEmpEdit.Name & ""))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =Coalesce(varEmpMode,"") in ["New","Edit"]
+                              Width: =Max(40,Min(lblEmpLayout.Width-48-84,Round(Len(Self.Text)*12.5,0)+8))
+                              X: =24
+                              Y: =24
+                        - btnEmpFormChip:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =Color.Transparent
+                              BorderThickness: =0
+                              Color: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              DisabledFill: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              DisplayMode: =DisplayMode.Disabled
+                              Fill: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
-                              Height: =20
+                              Height: =24
+                              HoverBorderColor: =Color.Transparent
+                              HoverColor: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              HoverFill: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =Color.Transparent
+                              PressedColor: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              PressedFill: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              Size: =12
+                              Text: =If(Coalesce(varEmpActiveDraft,true),If(LangNl && !IsBlank(T.empFieldActive.nl),T.empFieldActive.nl,T.empFieldActive.en),If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =Coalesce(varEmpMode,"") in ["New","Edit"]
+                              Width: =72
+                              X: =lblEmpFormTitle.X+lblEmpFormTitle.Width+12
+                              Y: =lblEmpFormTitle.Y+(lblEmpFormTitle.Height-Self.Height)/2
+                        - lblEmpFormDivider:
+                            Control: Label@2.5.1
+                            Properties:
+                              Fill: =ColorValue("#EDEDED")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =1
+                              Size: =12
+                              Text: =""
+                              Visible: =Coalesce(varEmpMode,"") in ["New","Edit"]
+                              Width: =lblEmpLayout.Width-48
+                              X: =24
+                              Y: =lblEmpFormTitle.Y+lblEmpFormTitle.Height+16
+                        - lblEmpSecGeneral:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Bold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
                               Size: =12
+                              Text: =If(LangNl && !IsBlank(T.empSecGeneral.nl),T.empSecGeneral.nl,T.empSecGeneral.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =lblEmpLayout.Width-48
+                              X: =24
+                              Y: =lblEmpFormDivider.Y+1+20
+                        - lblEmpNameLabel:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldName.nl),T.empFieldName.nl,T.empFieldName.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(512,lblEmpLayout.Width-48)
+                              Width: =lblEmpGrid.Width
                               X: =24
-                              Y: =24+76*0
+                              Y: =lblEmpSecGeneral.Y+30
+                        - lblEmpNameRequired:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#DB1E28")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =13
+                              Text: ="*"
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =10
+                              X: =lblEmpNameLabel.X+Round(Len(lblEmpNameLabel.Text)*7.2,0)+3
+                              Y: =lblEmpNameLabel.Y
                         - txtEmpName:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldName.nl),T.empFieldName.nl,T.empFieldName.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="Name")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Name
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -579,58 +695,60 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(512,lblEmpLayout.Width-48)
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
                               X: =24
-                              Y: =24+76*0+24
-                              Height: =40
+                              Y: =lblEmpNameLabel.Y+22
+                              Height: =36
                         - lblEmpCodeLabel:
                             Control: Label@2.5.1
                             Properties:
+                              Align: =Align.Left
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =12
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(512,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*1
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecGeneral.Y+30+RoundDown(1/lblEmpMetrics.X,0)*74
                         - txtEmpCode:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)
                               Align: =Align.Left
-                              BorderColor: =ColorValue("#DCDCDC")
-                              BorderThickness: =1
+                              BorderColor: =Color.Transparent
+                              BorderThickness: =0
                               Color: =ColorValue("#000000")
                               Default: |-
                                 =If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpEdit.Code),varEmpEdit.Code,Coalesce(varEmpMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.empCodeAuto.nl),T.empCodeAuto.nl,T.empCodeAuto.en),"")
-                              DisabledBorderColor: =ColorValue("#DCDCDC")
+                              DisabledBorderColor: =Color.Transparent
                               DisabledColor: =ColorValue("#000000")
                               DisabledFill: =ColorValue("#F0F0F0")
                               DisplayMode: =DisplayMode.Disabled
@@ -639,41 +757,60 @@ Screens:
                               FontWeight: =FontWeight.Normal
                               HintText: =""
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*1+24
-                              Height: =40
-                        - lblEmpAddressLabel:
+                              PaddingLeft: =12
+                              PaddingRight: =12
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpCodeLabel.Y+22
+                              Height: =36
+                        - lblEmpSecAddress:
                             Control: Label@2.5.1
                             Properties:
-                              Color: =ColorValue("#000000")
+                              Align: =Align.Left
+                              Color: =ColorValue("#0303B8")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Bold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
                               Size: =12
+                              Text: =If(LangNl && !IsBlank(T.empSecAddress.nl),T.empSecAddress.nl,T.empSecAddress.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =lblEmpLayout.Width-48
+                              X: =24
+                              Y: =lblEmpSecGeneral.Y+38+RoundUp(2/lblEmpMetrics.X,0)*74
+                        - lblEmpAddressLabel:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldAddress.nl),T.empFieldAddress.nl,T.empFieldAddress.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(512,lblEmpLayout.Width-48)
+                              Width: =lblEmpGrid.Width
                               X: =24
-                              Y: =24+76*2
+                              Y: =lblEmpSecAddress.Y+30
                         - txtEmpAddress:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldAddress.nl),T.empFieldAddress.nl,T.empFieldAddress.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="Address")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Address
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -681,54 +818,56 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(512,lblEmpLayout.Width-48)
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
                               X: =24
-                              Y: =24+76*2+24
-                              Height: =40
+                              Y: =lblEmpAddressLabel.Y+22
+                              Height: =36
                         - lblEmpPostalcodeLabel:
                             Control: Label@2.5.1
                             Properties:
+                              Align: =Align.Left
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =12
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldPostalcode.nl),T.empFieldPostalcode.nl,T.empFieldPostalcode.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*3
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecAddress.Y+30+RoundDown(1/lblEmpMetrics.X,0)*74
                         - txtEmpPostalcode:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldPostalcode.nl),T.empFieldPostalcode.nl,T.empFieldPostalcode.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Postalcode
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -736,54 +875,56 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*3+24
-                              Height: =40
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpPostalcodeLabel.Y+22
+                              Height: =36
                         - lblEmpCityLabel:
                             Control: Label@2.5.1
                             Properties:
+                              Align: =Align.Left
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =12
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldCity.nl),T.empFieldCity.nl,T.empFieldCity.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =If(lblEmpMetrics.X=1,24+256+24,24)
-                              Y: =24+76*(3+(1-lblEmpMetrics.X))
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecAddress.Y+30+RoundDown(2/lblEmpMetrics.X,0)*74
                         - txtEmpCity:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldCity.nl),T.empFieldCity.nl,T.empFieldCity.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="City")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.City
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -791,54 +932,56 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =If(lblEmpMetrics.X=1,24+256+24,24)
-                              Y: =24+76*(3+(1-lblEmpMetrics.X))+24
-                              Height: =40
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpCityLabel.Y+22
+                              Height: =36
                         - lblEmpCountryLabel:
                             Control: Label@2.5.1
                             Properties:
+                              Align: =Align.Left
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =12
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*(4+(1-lblEmpMetrics.X))
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(3,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecAddress.Y+30+RoundDown(3/lblEmpMetrics.X,0)*74
                         - txtEmpCountry:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="Country")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.Country
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -846,54 +989,74 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*(4+(1-lblEmpMetrics.X))+24
-                              Height: =40
-                        - lblEmpContactNameLabel:
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(3,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpCountryLabel.Y+22
+                              Height: =36
+                        - lblEmpSecContact:
                             Control: Label@2.5.1
                             Properties:
-                              Color: =ColorValue("#000000")
+                              Align: =Align.Left
+                              Color: =ColorValue("#0303B8")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Bold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
                               Size: =12
+                              Text: =If(LangNl && !IsBlank(T.empSecContact.nl),T.empSecContact.nl,T.empSecContact.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =lblEmpLayout.Width-48
+                              X: =24
+                              Y: =lblEmpSecAddress.Y+38+RoundUp(4/lblEmpMetrics.X,0)*74
+                        - lblEmpContactNameLabel:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldContactName.nl),T.empFieldContactName.nl,T.empFieldContactName.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(512,lblEmpLayout.Width-48)
+                              Width: =lblEmpGrid.Width
                               X: =24
-                              Y: =24+76*(5+(1-lblEmpMetrics.X))
+                              Y: =lblEmpSecContact.Y+30
                         - txtEmpContactName:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldContactName.nl),T.empFieldContactName.nl,T.empFieldContactName.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.ContactName
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -901,54 +1064,56 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(512,lblEmpLayout.Width-48)
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
                               X: =24
-                              Y: =24+76*(5+(1-lblEmpMetrics.X))+24
-                              Height: =40
+                              Y: =lblEmpContactNameLabel.Y+22
+                              Height: =36
                         - lblEmpContactEmailLabel:
                             Control: Label@2.5.1
                             Properties:
+                              Align: =Align.Left
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =12
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldContactEmail.nl),T.empFieldContactEmail.nl,T.empFieldContactEmail.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(512,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*(6+(1-lblEmpMetrics.X))
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecContact.Y+30+RoundDown(1/lblEmpMetrics.X,0)*74
                         - txtEmpContactEmail:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldContactEmail.nl),T.empFieldContactEmail.nl,T.empFieldContactEmail.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.ContactEmail
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -956,54 +1121,56 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(512,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*(6+(1-lblEmpMetrics.X))+24
-                              Height: =40
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpContactEmailLabel.Y+22
+                              Height: =36
                         - lblEmpContactPhoneLabel:
                             Control: Label@2.5.1
                             Properties:
+                              Align: =Align.Left
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =20
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =12
+                              Size: =13
                               Text: =If(LangNl && !IsBlank(T.empFieldContactPhone.nl),T.empFieldContactPhone.nl,T.empFieldContactPhone.en)
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*(7+(1-lblEmpMetrics.X))
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecContact.Y+30+RoundDown(2/lblEmpMetrics.X,0)*74
                         - txtEmpContactPhone:
                             Control: Classic/TextInput@2.3.2
                             Properties:
                               AccessibleLabel: =If(LangNl && !IsBlank(T.empFieldContactPhone.nl),T.empFieldContactPhone.nl,T.empFieldContactPhone.en)
                               Align: =Align.Left
-                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =1
+                              BorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+                              BorderThickness: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,2,1)
                               Color: =ColorValue("#000000")
                               Default: =varEmpEdit.ContactPhone
                               DisabledBorderColor: =ColorValue("#E6E6E6")
@@ -1011,30 +1178,31 @@ Screens:
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
-                              Fill: =ColorValue("#F0F0F0")
+                              Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              FocusedBorderThickness: =2
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+                              HoverBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
                               HoverColor: =ColorValue("#000000")
-                              HoverFill: =ColorValue("#F0F0F0")
+                              HoverFill: =Color.White
                               MaxLength: =255
                               OnChange: =false
-                              PaddingLeft: =8
-                              PaddingRight: =8
+                              PaddingLeft: =12
+                              PaddingRight: =12
                               PressedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000000")
-                              PressedFill: =ColorValue("#F0F0F0")
-                              RadiusBottomLeft: =6
-                              RadiusBottomRight: =6
-                              RadiusTopLeft: =6
-                              RadiusTopRight: =6
-                              Size: =12
-                              Width: =Min(256,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*(7+(1-lblEmpMetrics.X))+24
-                              Height: =40
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =14
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpContactPhoneLabel.Y+22
+                              Height: =36
                         - btnEmpActiveSwitch:
                             Control: Classic/Button@2.2.0
                             Properties:
@@ -1076,7 +1244,7 @@ Screens:
                               Tooltip: =If(Coalesce(varEmpActiveDraft,true),If(LangNl && !IsBlank(T.empFieldActive.nl),T.empFieldActive.nl,T.empFieldActive.en),If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))
                               Width: =44
                               X: =24
-                              Y: =24+76*(8+(1-lblEmpMetrics.X))+8
+                              Y: =lblEmpSecContact.Y+38+RoundUp(3/lblEmpMetrics.X,0)*74
                         - btnEmpActiveKnob:
                             Control: Classic/Button@2.2.0
                             Properties:
@@ -1118,7 +1286,7 @@ Screens:
                               Color: =ColorValue("#000000")
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
-                              Height: =40
+                              Height: =24
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
@@ -1126,28 +1294,28 @@ Screens:
                               Size: =12
                               Text: =If(Coalesce(varEmpActiveDraft,true),If(LangNl && !IsBlank(T.empFieldActive.nl),T.empFieldActive.nl,T.empFieldActive.en),If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =144
+                              Width: =80
                               X: =24+44+12
-                              Y: =24+76*(8+(1-lblEmpMetrics.X))
+                              Y: =btnEmpActiveSwitch.Y
                         - lblEmpModified:
                             Control: Label@2.5.1
                             Properties:
-                              Align: =Align.Left
+                              Align: =If(lblEmpLayout.Width-48>=480,Align.Right,Align.Left)
                               Color: =ColorValue("#787878")
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
-                              Height: =20
+                              Height: =24
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PaddingBottom: =0
-                              Size: =11
+                              Size: =12
                               Text: |-
                                 =With({m:LookUp(colEmpModified,ID=varEmpSelectedID).Modified},If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpSelectedID) && !IsBlank(m),Substitute(If(LangNl && !IsBlank(T.empLastChanged.nl),T.empLastChanged.nl,T.empLastChanged.en),"{0}",Text(m,"dd-mm-yyyy") & " " & Text(m,"hh:mm")),""))
                               VerticalAlign: =VerticalAlign.Middle
-                              Width: =Min(512,lblEmpLayout.Width-48)
-                              X: =24
-                              Y: =24+76*(8+(1-lblEmpMetrics.X))+40+12
+                              Width: =If(lblEmpLayout.Width-48>=480,lblEmpLayout.Width-48-152,lblEmpLayout.Width-48)
+                              X: =If(lblEmpLayout.Width-48>=480,24+lblEmpLayout.Width-48-Self.Width,24)
+                              Y: =If(lblEmpLayout.Width-48>=480,btnEmpActiveSwitch.Y,btnEmpActiveSwitch.Y+32)
       - navEmp:
           Control: GroupContainer@1.5.0
           Variant: AutoLayout
