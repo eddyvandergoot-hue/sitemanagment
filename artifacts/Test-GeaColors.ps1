@@ -8,10 +8,17 @@ $tokens=@('000000','0303B8','000F41','1AFF80','18DD6E','D5EDFF','F0F0F0','DCDCDC
 $old=@('#7040A0','#593080','#194296','#123273','#E8EDF5','#EEE7F5','#193F83','#EAF1FC','#F4F6FA','#E5E7EB','#6B7280','#596579','#E1E6EF','RGBA(','Color.Red')
 $src=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
 foreach($o in $old){ $c=([regex]::Matches($src,[regex]::Escape($o),'IgnoreCase')).Count; if($c){throw "Old colour literal $o still present ($c x)"} }
-$bad=@([regex]::Matches($src,'ColorValue\("#([0-9A-Fa-f]{6})"\)') | Where-Object { $_.Groups[1].Value.ToUpper() -notin $tokens } | ForEach-Object { $_.Value })
+# 30-10-2026 (admin pattern spec): extra literals allowed ONLY on the admin-pattern screens (scrContractors; later scrProjects/scrWorkers).
+$adminScreens=@('scrContractors')
+$adminTokens=@('F5F6F8','9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4','F29400')
+$bad=@()
+foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml){
+ $allowedHex=if(($file.Name -replace '\.pa\.yaml$','') -in $adminScreens){$tokens+$adminTokens}else{$tokens}
+ $bad+=@([regex]::Matches([IO.File]::ReadAllText($file.FullName),'ColorValue\("#([0-9A-Fa-f]{6})"\)') | Where-Object { $_.Groups[1].Value.ToUpper() -notin $allowedHex } | ForEach-Object { "$($file.Name): $($_.Value)" })
+}
 $named=@([regex]::Matches($src,'\bColor\.(\w+)') | Where-Object { $_.Groups[1].Value -notin @('White','Black','Transparent') } | ForEach-Object { $_.Value })
 if($bad.Count -or $named.Count){throw "Non-GEA colours: $(($bad+$named) -join ',')"}
-Write-Output "PASS colour literals: 0x each of $($old -join ' '); only GEA tokens #$($tokens -join ' #') and Color.White/Black/Transparent."
+Write-Output "PASS colour literals: 0x each of $($old -join ' '); only GEA tokens #$($tokens -join ' #') and Color.White/Black/Transparent; admin-pattern extras #$($adminTokens -join ' #') only on $($adminScreens -join ', ')."
 
 $disabled=@{DisabledFill=(CV '#E6E6E6');DisabledColor=(CV '#787878');DisabledBorderColor=(CV '#E6E6E6')}
 $roles=@{
@@ -28,7 +35,16 @@ foreach($a in $assign){
  $p=$indexes[$a[0]][$a[1]]['Properties']
  foreach($kv in @($roles[$a[2]].GetEnumerator())+@($disabled.GetEnumerator())){ if($p[$kv.Key] -ne $kv.Value){throw "$($a[0]).$($a[1]).$($kv.Key) = $($p[$kv.Key]) (expected $($kv.Value) for $($a[2]))"} }
 }
-foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ if($indexes[$screen][$name]['Control'] -like 'Classic/Button@*' -and $indexes[$screen][$name]['Properties']['Visible'] -ne '=false' -and $name -notlike 'btnTile*' -and !($assign | Where-Object { $_[1] -eq $name })){throw "Visible button without GEA role: $screen.$name"} }}
+# 30-10-2026 (admin pattern spec): emulated switches on admin screens = Classic/Button track (#0303B8 on / #B4B4B4 off) + white knob button.
+$switches=@(@('scrContractors','btnEmpActiveSwitch','btnEmpActiveKnob','Coalesce(varEmpActiveDraft,true)'),@('scrContractors','btnEmpShowInactiveSwitch','btnEmpShowInactiveKnob','Coalesce(varEmpShowInactive,false)'))
+foreach($s in $switches){
+ $tp=$indexes[$s[0]][$s[1]]['Properties'];$kp=$indexes[$s[0]][$s[2]]['Properties']
+ $track='=If('+$s[3]+',ColorValue("#0303B8"),ColorValue("#B4B4B4"))'
+ foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){if($tp[$k] -ne $track){throw "Switch track $($s[1]).$k = $($tp[$k]) (expected $track)"}}
+ foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){if($kp[$k] -ne $W){throw "Switch knob $($s[2]).$k must be white"}}
+}
+$switchNames=@($switches | ForEach-Object { $_[1]; $_[2] })
+foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ if($indexes[$screen][$name]['Control'] -like 'Classic/Button@*' -and $indexes[$screen][$name]['Properties']['Visible'] -ne '=false' -and $name -notlike 'btnTile*' -and !($screen -in $adminScreens -and $name -in $switchNames) -and !($assign | Where-Object { $_[1] -eq $name })){throw "Visible button without GEA role: $screen.$name"} }}
 Write-Output 'PASS buttons: navigation #0303B8/white (hover/pressed #000F41); primary Save/Save team/Contractors Save #1AFF80 with #000F41 text (hover/pressed #18DD6E, never white text); secondary Refresh/arrows white with 1px #0303B8 border and text (hover #D5EDFF); disabled #E6E6E6/#787878.'
 
 foreach($t in @(@('scrHome','lblHomeTitle'),@('Screen1','lblProjectTeamTitle'),@('scrHours','lblWeeklyHoursEntryTitle'),@('scrWeeklyHours','lblWeeklyHoursTitle'),@('scrWeeklyHours','lblReportProjectDetails'),@('scrContractors','lblEmpTitle'))){$p=$indexes[$t[0]][$t[1]]['Properties'];if($p['Fill'] -ne (CV '#0303B8') -or $p['Color'] -ne $W){throw "Title bar $($t[1])"}}

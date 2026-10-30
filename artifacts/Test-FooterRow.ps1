@@ -78,12 +78,19 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
    foreach($name in @('dpHoursWeek','lblWeekLoadStatus','galHours','lblHeaderMon')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    if($rects.galHours.Y+$rects.galHours.Height -gt $bar.Y-12 -or $rects.lblHeaderMon.Y+$rects.lblHeaderMon.Height -gt $rects.galHours.Y){throw 'Hours content behind footer'}
   }elseif($cfg.Screen -eq 'scrContractors'){
-   # 29-10-2026 (Eddy): no on-screen status/error lines on Contractors (messages only via Notify); body 12 px under the title bar.
+   # 29-10-2026 (Eddy): no on-screen status/error lines on Contractors. 30-10-2026 (admin pattern A1): shared message bar conEmpMsgBar
+   # directly under the title bar (full title width, 40 px with a message, 0 px without); body 12 px under the bar, above the footer.
    if($index.ContainsKey('lblEmpStatus') -or $index.ContainsKey('lblEmpErrors')){throw 'Contractors must not have lblEmpStatus/lblEmpErrors'}
    foreach($name in @('lblEmpTitle')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    Publish-Rect 'navEmp' $bar
-   $body=Measure-Rect 'conEmpBody' $index['conEmpBody']['Properties'] $screen
-   if($body.Y -ne $rects.lblEmpTitle.Y+$rects.lblEmpTitle.Height+12 -or $body.Y+$body.Height -gt $bar.Y-12){throw 'Contractors body not 12 px under the title bar or behind footer'}
+   foreach($kind in @('""','"Error"')){
+    $layoutEngine.UpdateVariable('varAdmMsgKind',$layoutEngine.Eval($kind,$null,$layoutOptions))
+    $msgBar=Measure-Rect 'conEmpMsgBar' $index['conEmpMsgBar']['Properties'] $screen
+    $expH=if($kind -eq '""'){0}else{40}
+    if($msgBar.Y -ne $rects.lblEmpTitle.Y+$rects.lblEmpTitle.Height -or $msgBar.X -ne $rects.lblEmpTitle.X -or $msgBar.Width -ne $rects.lblEmpTitle.Width -or $msgBar.Height -ne $expH){throw "Contractors message bar not directly under the title bar at full title width with height $expH (kind $kind)"}
+    $body=Measure-Rect 'conEmpBody' $index['conEmpBody']['Properties'] $screen
+    if($body.Y -ne $msgBar.Y+$msgBar.Height+12 -or $body.Y+$body.Height -gt $bar.Y-12){throw "Contractors body not 12 px under the message bar or behind footer (kind $kind)"}
+   }
   }elseif($cfg.Screen -eq 'scrWeeklyHours'){
    # Worst-case viewport height: larger selector content reaches the existing viewport cap.
    Publish-Rect 'conSummaryFiltersContent' @{X=0;Y=0;Width=512;Height=1000}

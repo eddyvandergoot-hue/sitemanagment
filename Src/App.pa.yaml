@@ -44,8 +44,7 @@ App:
         empMsgReloadBlocked: {en: "Not reloaded: unsaved changes. Save or discard first.", nl: ""},
         empMsgActionBlocked: {en: "Not possible now: busy or unsaved changes.", nl: ""},
         empMsgDiscarded: {en: "Changes discarded.", nl: ""},
-        empMsgSaved: {en: "Saved.", nl: ""},
-        empMsgSavedRename: {en: "Saved. The new name also shows on past hours.", nl: ""},
+        empMsgSavedRename: {en: "The new name also shows on past hours.", nl: ""},
         empMsgSaveFailed: {en: "Check SharePoint, then click Discard.", nl: ""},
         empMsgSaveFailedNew: {en: "Maybe created: click Discard, then search the name before retrying.", nl: ""},
         empMsgMore: {en: " (+{0} more)", nl: ""},
@@ -63,6 +62,14 @@ App:
         empErrVerify: {en: "Save not confirmed: read-back failed.", nl: ""},
         empErrVerifyFields: {en: "Save not confirmed: different in SharePoint: {0}.", nl: ""},
         empWarnActiveWorkers: {en: "{0} active worker(s) still have this contractor.", nl: ""},
-        empWarnWorkersRefresh: {en: "Workers not refreshed: open Project / team and click Refresh.", nl: ""}
+        empWarnWorkersRefresh: {en: "Workers not refreshed: open Project / team and click Refresh.", nl: ""},
+        admHeadNotSaved: {en: "Not saved.", nl: ""},
+        admHeadNotLoaded: {en: "Not loaded.", nl: ""},
+        admHeadBlocked: {en: "Blocked.", nl: ""},
+        admHeadAttention: {en: "Attention.", nl: ""},
+        admHeadSaved: {en: "Saved.", nl: ""},
+        admHeadLoaded: {en: "Loaded.", nl: ""},
+        admHeadDiscarded: {en: "Discarded.", nl: ""},
+        admMsgClose: {en: "Close message", nl: ""}
       };
     Theme: =PowerAppsTheme

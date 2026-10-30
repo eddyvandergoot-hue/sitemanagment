@@ -77,7 +77,7 @@ $dirty = Get-Balanced $guards.btnEmpSave $dirtyStart
 foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
     Assert-True ($dirty.Contains("Trim(txtEmp$f.Text & """")<>Trim(varEmpEdit.$f & """")")) "Dirty compares txtEmp$f.Text directly with varEmpEdit, both sides Trim(x & """") (no OnChange dependency, blank = empty)"
 }
-Assert-True ($dirty.Contains('Coalesce(chkEmpActive.Value,true)<>Coalesce(varEmpEdit.Active,true)')) 'Dirty compares chkEmpActive.Value with varEmpEdit.Active, both sides Coalesce(x,true) (blank Active = active)'
+Assert-True ($dirty.Contains('Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true)')) 'Dirty compares the Active switch draft varEmpActiveDraft with varEmpEdit.Active, both sides Coalesce(x,true) (blank Active = active)'
 Assert-True ($guards.btnEmpSave.EndsWith('&& ' + $dirty)) 'Save requires dirty'
 foreach ($ctl in @('btnEmpHome', 'btnEmpNew', 'galEmpList')) { Assert-True ($guards[$ctl].EndsWith('!' + $dirty)) "$ctl blocked while dirty (same dirty text)" }
 Assert-True ($guards.btnEmpRefresh -ceq ('!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || !' + $dirty + ')')) 'Refresh: blocked while loading/saving; allowed when clean or after a failed save (same dirty text)'
@@ -92,12 +92,12 @@ Assert-True ((Get-Prop 'btnEmpHome' 'OnSelect') -match 'Navigate\(scrHome\)' -an
 # Evaluate the guards with fixtures (interpreter; controls supplied as records)
 $fix = 'varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpMode:"Edit",varEmpSelectedID:5,' +
 'varEmpEdit:{ID:5,Name:"A",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true},' +
-'txtEmpName:{Text:"B"},txtEmpAddress:{Text:""},txtEmpPostalcode:{Text:""},txtEmpCity:{Text:""},txtEmpCountry:{Text:""},txtEmpContactName:{Text:""},txtEmpContactEmail:{Text:""},txtEmpContactPhone:{Text:""},chkEmpActive:{Value:true}'
+'txtEmpName:{Text:"B"},txtEmpAddress:{Text:""},txtEmpPostalcode:{Text:""},txtEmpCity:{Text:""},txtEmpCountry:{Text:""},txtEmpContactName:{Text:""},txtEmpContactEmail:{Text:""},txtEmpContactPhone:{Text:""},varEmpActiveDraft:true'
 $clean = $fix.Replace('txtEmpName:{Text:"B"}', 'txtEmpName:{Text:"A"}')
 function Get-GuardFx($name, $fixture) { return 'With({' + $fixture + '},' + $guards[$name] + ')' }
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix) $true 'Save allowed: Loaded, Edit with ID, dirty'
 Assert-Eval (Get-GuardFx 'btnEmpSave' $clean) $false 'Save blocked: not dirty'
-Assert-Eval (Get-GuardFx 'btnEmpSave' $clean.Replace('chkEmpActive:{Value:true}', 'chkEmpActive:{Value:false}')) $true 'Save allowed: only Active unchecked (dirty)'
+Assert-Eval (Get-GuardFx 'btnEmpSave' $clean.Replace('varEmpActiveDraft:true', 'varEmpActiveDraft:false')) $true 'Save allowed: only Active unchecked (dirty)'
 foreach ($s in @('NotLoaded', 'Loading', 'Failed')) { Assert-Eval (Get-GuardFx 'btnEmpSave' $fix.Replace('varEmpLoadState:"Loaded"', "varEmpLoadState:""$s""")) $false "Save blocked: $s" }
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix.Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:Blank()')) $false 'Save blocked: cold start'
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix.Replace('varEmpBusy:false', 'varEmpBusy:true')) $false 'Save blocked: loading busy'
@@ -136,7 +136,21 @@ Assert-Eval (Get-GuardFx 'btnEmpDiscard' $fix.Replace('varEmpSaving:false', 'var
 # Form is bound to varEmpEdit, never to the gallery selection
 $inputMap = [ordered]@{ txtEmpName = 'Name'; txtEmpAddress = 'Address'; txtEmpPostalcode = 'Postalcode'; txtEmpCity = 'City'; txtEmpCountry = 'Country'; txtEmpContactName = 'ContactName'; txtEmpContactEmail = 'ContactEmail'; txtEmpContactPhone = 'ContactPhone' }
 foreach ($k in $inputMap.Keys) { Assert-True ((Get-Prop $k 'Default') -ceq "=varEmpEdit.$($inputMap[$k])") "$k.Default = varEmpEdit.$($inputMap[$k])" }
-Assert-True ((Get-Prop 'chkEmpActive' 'Default') -ceq '=Coalesce(varEmpEdit.Active,true)') 'chkEmpActive.Default = varEmpEdit.Active (blank shown as active)'
+# A1 (30-10-2026): Classic/CheckBox chkEmpActive/chkEmpShowInactive replaced by emulated switches with draft variables.
+Assert-True ($srcAll -notmatch '\bchkEmpActive\b|\bchkEmpShowInactive\b') 'chkEmpActive and chkEmpShowInactive no longer exist in Src'
+Assert-True (@($idx.Keys | Where-Object { $idx[$_]['Control'] -like 'Classic/CheckBox@*' }).Count -eq 0) 'No Classic/CheckBox left on scrContractors'
+$draftSet = 'Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))'
+$draftSets = @($all.Keys | Where-Object { $all[$_] -match 'Set\(varEmpActiveDraft,' } | Sort-Object)
+Assert-True (($draftSets -join ',') -ceq 'btnEmpActiveSwitch.OnSelect,btnEmpDiscard.OnSelect,btnEmpFormReset.OnSelect,btnEmpLoad.OnSelect,btnEmpNew.OnSelect,btnEmpSave.OnSelect,galEmpList.OnSelect,scrContractors.OnVisible') "varEmpActiveDraft set only by the form fills (load, form reset, selection, New, Discard, verified save), the switch toggle and the OnVisible init ($($draftSets -join ', '))"
+foreach ($k in @('btnEmpLoad.OnSelect', 'btnEmpFormReset.OnSelect', 'galEmpList.OnSelect', 'btnEmpNew.OnSelect', 'btnEmpDiscard.OnSelect', 'btnEmpSave.OnSelect')) { Assert-True (([regex]::Matches($all[$k], 'Set\(varEmpActiveDraft,')).Count -eq 1 -and $all[$k].Contains($draftSet)) "$k fills the switch draft from the snapshot: $draftSet" }
+Assert-True ((Get-Prop 'btnEmpActiveSwitch' 'OnSelect').Contains('Set(varEmpActiveDraft,!Coalesce(varEmpActiveDraft,true));') -and ([regex]::Matches((Get-Prop 'btnEmpActiveSwitch' 'OnSelect'), 'Set\(varEmpActiveDraft,')).Count -eq 1) 'Switch OnSelect toggles the draft once: Set(varEmpActiveDraft,!Coalesce(varEmpActiveDraft,true))'
+$vis0 = [string]$screenProps['OnVisible']
+Assert-True ($vis0.Contains('If(IsBlank(varEmpLoadState),') -and $vis0.Contains('Set(varEmpActiveDraft,true); Set(varEmpShowInactive,false);') -and $vis0.IndexOf('Set(varEmpActiveDraft,true)') -lt $vis0.IndexOf('Select(btnEmpLoad)')) 'OnVisible first-visit init: varEmpActiveDraft = true (New snapshot), varEmpShowInactive = false'
+$draftReaders = @($all.Keys | Where-Object { $all[$_] -match '\bvarEmpActiveDraft\b' -and $_ -notmatch '\.On\w+$' } | Sort-Object)
+$draftCmp = 'Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true)'
+$draftOther = @($draftReaders | Where-Object { $_ -notmatch '^(btnEmpActiveSwitch|btnEmpActiveKnob|lblEmpActiveState)\.' -and ([regex]::Matches($all[$_], '\bvarEmpActiveDraft\b')).Count -ne ([regex]::Matches($all[$_], [regex]::Escape($draftCmp))).Count })
+Assert-True ($draftOther.Count -eq 0) "Outside the switch controls varEmpActiveDraft is only read in the dirty comparison ($($draftOther -join ', '))"
+foreach ($k in @('btnEmpSave.DisplayMode', 'btnEmpHome.DisplayMode', 'btnEmpNew.DisplayMode', 'btnEmpRefresh.DisplayMode', 'btnEmpDiscard.DisplayMode', 'galEmpList.DisplayMode')) { Assert-True ($all[$k].Contains($draftCmp)) "$k dirty check reads the switch draft ($draftCmp)" }
 $selUses = @($all.Keys | Where-Object { $all[$_] -match 'galEmpList\.Selected' })
 Assert-True ($selUses.Count -eq 1 -and $selUses[0] -eq 'galEmpList.OnSelect') 'galEmpList.Selected only read in the guarded gallery OnSelect'
 
@@ -241,7 +255,7 @@ foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactNam
 }
 Assert-True ($saveN.Contains('Coalesce(p.Active,true)<>Coalesce(varEmpEdit.Active,true)')) 'Conflict check compares Active (both Coalesce(x,true))'
 Assert-True ($saveN.Contains('D:Coalesce(v.Active,true)<>Coalesce(varEmpSaveRec.Active,true)')) 'Verify read compares Active (both Coalesce(x,true))'
-Assert-True ($save.Contains('Active:Coalesce(chkEmpActive.Value,true)});')) 'Save record: Active = Coalesce(chkEmpActive.Value,true)'
+Assert-True ($save.Contains('Active:Coalesce(varEmpActiveDraft,true)});')) 'Save record: Active = Coalesce(varEmpActiveDraft,true) (switch draft)'
 $modDisplayN = Norm 'RemoveIf(colEmpModified,ID=varEmpPatchedID); Collect(colEmpModified,{ID:varEmpPatchedID,Modified:First(colEmpVerifyRaw).Modified});'
 Assert-True (([regex]::Matches($saveN, [regex]::Escape($modDisplayN))).Count -eq 1) 'Save updates the display-only Modified copy (colEmpModified) from the verify read, once'
 Assert-True ($saveN.Replace($modDisplayN, '') -notmatch 'p\.Code|v\.Code|Modified') 'Conflict/verify ignore Contractor Code (flow MS-019) and Modified (Modified only in the display copy update)'
@@ -259,12 +273,12 @@ $iLocal = $saveN.IndexOf('If(varEmpSaveVerified&&IsEmpty(colEmpSaveErrors),Remov
 Assert-True ($iVal -gt 0 -and $iDupLocal -gt $iVal -and $iGateRead -gt $iDupLocal -and $iPre -gt $iGateRead -and $iDup -gt $iPre -and $iConf -gt $iDup -and $iWriteGate -gt $iConf -and $iPatch -gt $iWriteGate -and $iVerify -gt $iPatch -and $iOk -gt $iVerify -and $iLocal -gt $iOk) 'Order: validation -> (no errors) pre-read -> duplicate read -> conflict -> (no errors) one Patch -> verify read -> local update'
 Assert-True (([regex]::Matches($screenText, '(?<!Clear)Collect\(colAdminEmployers,')).Count -eq 1 -and ([regex]::Matches($screenText, 'RemoveIf\(colAdminEmployers,')).Count -eq 1) 'colAdminEmployers changed only by the loader and after a verified save'
 Assert-True ($saveN.Contains('Set(varEmpEdit,First(colEmpVerify))')) 'Snapshot updated only from the verify read'
-Assert-True ($saveN.Contains('varEmpSaveWrites=0,Notify(') -and $saveN.Contains('Set(varEmpSaveFailed,true);Set(varEmpLoadState,"Failed");')) 'Zero writes + error stays Loaded; write + error -> Failed and SaveFailed (input kept, save blocked)'
+Assert-True ($saveN.Contains('varEmpSaveWrites=0,Set(varAdmMsgKind,"Error");') -and $saveN.Contains('Set(varEmpSaveFailed,true);Set(varEmpLoadState,"Failed");')) 'Zero writes + error stays Loaded; write + error -> Failed and SaveFailed (input kept, save blocked)'
 Assert-True (([regex]::Matches($saveN, 'Set\(varEmpSaveFailed,true\)')).Count -eq 1) 'SaveFailed set in exactly one place'
 Assert-True ($saveN.Contains('Set(varEmpSaveWarnWorkers,If(varEmpSaveMode="Edit"&&Coalesce(varEmpEdit.Active,true)&&!varEmpSaveRec.Active,CountIf(colEmpWorkers,EmployerID=varEmpSaveID')) 'Deactivation with active workers is counted (warning)'
 Assert-True ($screenText -notmatch 'Collect\(colEmpSaveErrors,\{[^}]*empWarnActiveWorkers') 'Active-worker warning never blocks the save'
 Assert-True ($load.Contains('ClearCollect(colPendingEmpWorkers,ForAll(Workers As wrk,{ID:wrk.ID,EmployerID:wrk.Employer.Id,WorkerActive:wrk.Active}))')) 'Workers read for the warning: explicit projection (lookup ID filtered locally)'
-$reset = 'Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Reset(chkEmpActive)'
+$reset = 'Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))'
 foreach ($k in @('btnEmpLoad.OnSelect', 'btnEmpSave.OnSelect', 'btnEmpNew.OnSelect', 'btnEmpDiscard.OnSelect', 'galEmpList.OnSelect')) { Assert-True ($all[$k].Contains($reset)) "$k resets all form inputs" }
 $disc = Get-Prop 'btnEmpDiscard' 'OnSelect'
 Assert-True ($disc -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf)\(' -and $disc.Contains('If(Coalesce(varEmpSaveFailed,false),') -and $disc.Contains('Set(varEmpForceRefresh,true); Select(btnEmpLoad)')) 'Discard is local; after a failed save it reloads through the staged loader'
@@ -363,7 +377,7 @@ function Raw([string]$name, [string]$city, [string]$code, [string]$active, [stri
     return "{ID:7,Title:$name,'Employer Code':$code,Address:$empty,Postalcode:$empty,City:$city,Country:$empty,'Contact Name':$empty,'Contact Email':$empty,'Contact Phone':$empty,Active:$active,Modified:DateTime(2026,10,28,9,0,0)}"
 }
 function Inputs([string]$name, [string]$city, [string]$empty, [string]$active) {
-    return "txtEmpName:{Text:$name},txtEmpAddress:{Text:$empty},txtEmpPostalcode:{Text:$empty},txtEmpCity:{Text:$city},txtEmpCountry:{Text:$empty},txtEmpContactName:{Text:$empty},txtEmpContactEmail:{Text:$empty},txtEmpContactPhone:{Text:$empty},chkEmpActive:{Value:$active}"
+    return "txtEmpName:{Text:$name},txtEmpAddress:{Text:$empty},txtEmpPostalcode:{Text:$empty},txtEmpCity:{Text:$city},txtEmpCountry:{Text:$empty},txtEmpContactName:{Text:$empty},txtEmpContactEmail:{Text:$empty},txtEmpContactPhone:{Text:$empty},varEmpActiveDraft:$active"
 }
 function Proj([string]$raw) { return "With({emp:$raw},$proj)" }
 function SaveRec([string]$inputs) { return "With({$inputs},$saveRecFx)" }
@@ -432,8 +446,8 @@ Assert-True ((Test-RefreshBeforeReads '=ClearCollect(c,Sort(Employers,Title))')[
 Assert-True ($idx.ContainsKey('btnEmpFormReset') -and $idx['btnEmpFormReset']['Control'] -eq 'Classic/Button@2.2.0' -and (Get-Prop 'btnEmpFormReset' 'Visible') -eq '=false') 'btnEmpFormReset exists (hidden Classic/Button@2.2.0, like btnEmpLoad)'
 $fr = Get-Prop 'btnEmpFormReset' 'OnSelect'
 Assert-True ($fr.StartsWith('=If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false),')) 'Form reset only when Loaded, no load errors, not busy/saving, no failed save (kept input after a failed save stays)'
-Assert-True ($fr.Contains($reset)) 'Form reset resets all 8 inputs and the Active checkbox'
-Assert-True ($fr -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate)\(' -and $fr -notmatch '\.Run\(') 'Form reset is local only (no mutation, no variable change, no further Select: no cycle)'
+Assert-True ($fr.Contains($reset)) 'Form reset resets all 8 inputs and refills the Active switch draft from varEmpEdit'
+Assert-True ($fr.Replace($draftSet, '') -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate)\(' -and $fr -notmatch '\.Run\(') 'Form reset is local only (no mutation, no variable change except the switch draft refill, no further Select: no cycle)'
 Assert-True (([regex]::Matches($screenText, 'Select\(btnEmpFormReset\)')).Count -eq 2) 'btnEmpFormReset selected exactly twice (end of loader, verified save)'
 $iBusyOff = $load.LastIndexOf('Set(varEmpForceRefresh,false); Set(varEmpBusy,false);')
 Assert-True ($iBusyOff -gt 0 -and $load.IndexOf('If(varEmpLoadState="Loaded",Select(btnEmpFormReset))') -gt $iBusyOff) 'Loader selects the form reset at its end, after busy is cleared, only when Loaded'
@@ -460,123 +474,218 @@ Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:8},' + $m
 Assert-Eval ('With({' + $modFix + ',varEmpMode:"New",varEmpSelectedID:Blank()},' + $modFx + ')') '' 'Modified line empty for New'
 Assert-Eval ('With({' + $modFix + ',varEmpMode:"Edit",varEmpSelectedID:9},' + $modFx + ')') '' 'Modified line empty when the item has no loaded Modified'
 
-# (15) Messages only via the Power Apps notification bar (Eddy 29-10-2026) ------------------------------------------
-# No message text on the screen: errors NotificationType.Error (15000 ms; Failed/SaveFailed 0 = until closed), success NotificationType.Success (default
-# timeout), one Notify per outcome; an invalid field is shown only by a red #DB1E28 border.
-# Eddy 29-10-2026 (third type, orange): NotificationType.Warning (15000 ms) only for the warning texts empWarnActiveWorkers/empWarnWorkersRefresh,
-# in exactly two places: chkEmpActive.OnUncheck (live, before Save) and the verified save with a warning. Information stays forbidden.
-# Success never carries a warning text; New (btnEmpNew) gives no instruction message.
-foreach ($gone in @('lblEmpStatus', 'lblEmpErrors')) { Assert-True (!$idx.ContainsKey($gone)) "$gone removed (no message text on the screen)" }
+# (15) Messages only via the shared admin message bar (A1, 30-10-2026; spec "Message model", replaces Notify on admin screens) -------
+# Global state shared by the admin screens: varAdmMsgKind ("" | "Error" | "Warning" | "Success"), varAdmMsgHead (bold head word, T admHead*),
+# varAdmMsgBody (the former notification text). One message at a time: every message sets kind + head + body; Close (icoEmpMsgClose) and
+# OnVisible clear all three. Kind mapping as DECISIONS.md H17: Error = red (blocked, load failed, nothing saved, save not confirmed),
+# Warning = amber (empWarn* texts: live switch Active on -> off, verified save with a warning), Success = green (loaded, saved, discarded).
+# No timeouts (no Timer template): a message stays until it is closed or replaced. An invalid field is still shown by a red #DB1E28 border.
+foreach ($gone in @('lblEmpStatus', 'lblEmpErrors')) { Assert-True (!$idx.ContainsKey($gone)) "$gone removed (no status line; messages only in the message bar)" }
 Assert-True ($srcAll -notmatch '\bvarEmpMsg(Error)?\b') 'varEmpMsg/varEmpMsgError no longer exist in Src'
-$msgProps = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_] -match '\.Message\b|\bT\.emp(Msg|Err|Warn)\w*\.' } | Sort-Object)
-Assert-True ($msgProps.Count -eq 0) "No non-behaviour property shows a message or error text ($($msgProps -join ', '))"
-Assert-True ($screenText -notmatch 'NotificationType\.Information') 'No NotificationType.Information on scrContractors'
-$warnKeys = @('empWarnActiveWorkers', 'empWarnWorkersRefresh')
-$warnUses = @($all.Keys | Where-Object { $all[$_] -match 'NotificationType\.Warning' } | Sort-Object)
-Assert-True (($warnUses -join ',') -ceq 'btnEmpSave.OnSelect,chkEmpActive.OnUncheck') "NotificationType.Warning only in btnEmpSave.OnSelect and chkEmpActive.OnUncheck ($($warnUses -join ', '))"
-$notifies = @()
+Assert-True ($screenText -notmatch '\bNotify\(' -and $screenText -notmatch 'NotificationType\.') 'No Notify() and no NotificationType on scrContractors'
+$msgProps = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_] -match '\.Message\b|\bT\.(emp(Msg|Err|Warn)|admHead)\w*\.' } | Sort-Object)
+Assert-True ($msgProps.Count -eq 0) "No non-behaviour property composes a message text; the bar only shows the variables ($($msgProps -join ', '))"
+function TT([string]$k) { return "If(LangNl && !IsBlank(T.$k.nl),T.$k.nl,T.$k.en)" }
+function Triple([string]$kind, [string]$head, [string]$body) { return 'Set(varAdmMsgKind,"' + $kind + '"); Set(varAdmMsgHead,' + (TT $head) + '); Set(varAdmMsgBody,' + $body + ')' }
+function Get-SetArg([string]$text, [int]$parenAt, [string]$var) { $c = Get-Balanced $text $parenAt; return @($c, $c.Substring($var.Length + 2, $c.Length - $var.Length - 3)) }
+$msgs = @()
 foreach ($k in ($all.Keys | Sort-Object)) {
     $fx = $all[$k]
-    foreach ($m in [regex]::Matches($fx, '\bNotify\(')) {
-        $call = Get-Balanced $fx ($m.Index + 6)
-        $notifies += [pscustomobject]@{ Key = $k; Pos = $m.Index; Args = (Split-Args $call.Substring(1, $call.Length - 2)) }
+    foreach ($m in [regex]::Matches($fx, '\bSet\(varAdmMsgKind,')) {
+        $kc = Get-SetArg $fx ($m.Index + 3) 'varAdmMsgKind'
+        $rest = $fx.Substring($m.Index + 3 + $kc[0].Length)
+        $mh = [regex]::Match($rest, '^;\s*Set\(varAdmMsgHead,')
+        Assert-True ($k -match '\.On\w+$' -and $mh.Success) "$k : Set(varAdmMsgKind,$($kc[1])) in a behaviour formula, directly followed by Set(varAdmMsgHead,...)"
+        $hc = Get-SetArg $rest ($mh.Index + $mh.Length - 'varAdmMsgHead,'.Length - 1) 'varAdmMsgHead'
+        $rest2 = $rest.Substring($mh.Index + $mh.Length - 'varAdmMsgHead,'.Length - 1 + $hc[0].Length)
+        $mb = [regex]::Match($rest2, '^;\s*Set\(varAdmMsgBody,')
+        Assert-True $mb.Success "$k : Set(varAdmMsgHead,...) directly followed by Set(varAdmMsgBody,...)"
+        $bc = Get-SetArg $rest2 ($mb.Index + $mb.Length - 'varAdmMsgBody,'.Length - 1) 'varAdmMsgBody'
+        $msgs += [pscustomobject]@{ Key = $k; Pos = $m.Index; Kind = $kc[1].Trim(); Head = $hc[1].Trim(); Body = $bc[1].Trim() }
     }
 }
-$successKeys = @('empMsgLoaded', 'empMsgSaved', 'empMsgSavedRename', 'empMsgDiscarded')
-$types = @{}
-foreach ($n in $notifies) {
-    $type = $n.Args[1].Trim(); $keysIn = @([regex]::Matches($n.Args[0], '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
-    $types[$type] = 1 + [int]$types[$type]
-    Assert-True ($n.Key -match '\.On\w+$') "$($n.Key) : Notify only in a behaviour formula"
-    Assert-True (@($keysIn | Where-Object { $_ -in $warnKeys }).Count -eq 0 -or $type -eq 'NotificationType.Warning') "$($n.Key) : a warning text (empWarn*) is only notified as NotificationType.Warning (T: $($keysIn -join ','); type $type)"
-    if ($type -eq 'NotificationType.Error') {
-        # Failed states (load failed, SaveFailed) leave a read-only screen: that message stays until closed (timeout 0).
-        $sticky = @($keysIn | Where-Object { $_ -in @('empMsgLoadFailed', 'empMsgSaveFailed', 'empMsgSaveFailedNew') }).Count -gt 0
-        $expTimeout = if ($sticky) { '0' } else { '15000' }
-        Assert-True ($n.Args.Count -eq 3 -and $n.Args[2].Trim() -eq $expTimeout -and @($keysIn | Where-Object { $_ -in $successKeys }).Count -eq 0) "$($n.Key) : error Notify (T: $($keysIn -join ',')) uses NotificationType.Error, $expTimeout ms, no success text"
-    } elseif ($type -eq 'NotificationType.Warning') {
-        $allowedW = if ($n.Key -eq 'chkEmpActive.OnUncheck') { @('empWarnActiveWorkers') } else { @('empMsgSaved', 'empMsgSavedRename') + $warnKeys }
-        Assert-True ($n.Key -in @('btnEmpSave.OnSelect', 'chkEmpActive.OnUncheck') -and $n.Args.Count -eq 3 -and $n.Args[2].Trim() -eq '15000' -and @($keysIn | Where-Object { $_ -in $warnKeys }).Count -ge 1 -and @($keysIn | Where-Object { $_ -notin $allowedW }).Count -eq 0) "$($n.Key) : warning Notify (T: $($keysIn -join ',')) uses NotificationType.Warning, 15000 ms, only warning texts (+ saved text on Save)"
-    } else {
-        Assert-True ($type -eq 'NotificationType.Success' -and $n.Args.Count -eq 2 -and @($keysIn | Where-Object { $_ -notin $successKeys }).Count -eq 0 -and @($keysIn | Where-Object { $_ -in $successKeys }).Count -ge 1) "$($n.Key) : success Notify (T: $($keysIn -join ',')) uses NotificationType.Success with the default timeout, no warning text"
+foreach ($v in @('varAdmMsgKind', 'varAdmMsgHead', 'varAdmMsgBody')) { Assert-True (([regex]::Matches($screenText, "\bSet\($v,")).Count -eq $msgs.Count) "Set($v,...) only inside a kind/head/body triple ($($msgs.Count) triples)" }
+$warnKeys = @('empWarnActiveWorkers', 'empWarnWorkersRefresh')
+$successKeys = @('empMsgLoaded', 'empMsgSavedRename', 'empMsgDiscarded')
+$headsByKind = @{ '"Error"' = @('admHeadNotSaved', 'admHeadNotLoaded', 'admHeadBlocked'); '"Warning"' = @('admHeadAttention', 'admHeadSaved'); '"Success"' = @('admHeadLoaded', 'admHeadSaved', 'admHeadDiscarded') }
+$kinds = @{}
+foreach ($c in $msgs) {
+    $kinds[$c.Kind] = 1 + [int]$kinds[$c.Kind]
+    if ($c.Kind -eq '""') {
+        Assert-True ($c.Head -eq '""' -and $c.Body -eq '""' -and $c.Key -in @('icoEmpMsgClose.OnSelect', 'scrContractors.OnVisible')) "$($c.Key) : clear (kind/head/body all empty) only in Close and OnVisible"
+        continue
+    }
+    Assert-True ($headsByKind.ContainsKey($c.Kind)) "$($c.Key) : kind $($c.Kind) is Error, Warning or Success"
+    $hm = [regex]::Match($c.Head, '^If\(LangNl && !IsBlank\(T\.(admHead\w+)\.nl\),T\.\1\.nl,T\.\1\.en\)$')
+    Assert-True ($hm.Success -and $hm.Groups[1].Value -in $headsByKind[$c.Kind]) "$($c.Key) : $($c.Kind) head from T ($($hm.Groups[1].Value)) is one of $($headsByKind[$c.Kind] -join '/')"
+    $head = $hm.Groups[1].Value
+    $bk = @([regex]::Matches($c.Body, '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    $lbl = "$($c.Key) : $($c.Kind)/$head body (T: $($bk -join ','))"
+    switch ($c.Kind) {
+        '"Error"' { Assert-True (@($bk | Where-Object { $_ -in $warnKeys -or $_ -in $successKeys }).Count -eq 0) "$lbl has no warning or success text" }
+        '"Warning"' { Assert-True (@($bk | Where-Object { $_ -in $warnKeys }).Count -ge 1 -and @($bk | Where-Object { $_ -notin ($warnKeys + 'empMsgSavedRename') }).Count -eq 0) "$lbl carries a warning text (empWarn*), nothing else except the rename note" }
+        '"Success"' { Assert-True (@($bk | Where-Object { $_ -notin $successKeys }).Count -eq 0 -and @($bk | Where-Object { $_ -in $warnKeys }).Count -eq 0) "$lbl has only success texts, no warning" }
+    }
+    switch ($head) {
+        'admHeadBlocked' { Assert-True ($c.Body -ceq (TT 'empMsgActionBlocked') -or $c.Body -ceq (TT 'empMsgReloadBlocked')) "$lbl = action blocked / reload blocked" }
+        'admHeadNotLoaded' { Assert-True ($bk -contains 'empMsgLoadFailed' -and $c.Body.Contains('First(colEmpLoadErrors).Message')) "$lbl = load failed + first load error" }
+        'admHeadLoaded' { Assert-True ($bk -contains 'empMsgLoaded') "$lbl = loaded count/time" }
+        'admHeadDiscarded' { Assert-True ($c.Body -ceq (TT 'empMsgDiscarded')) "$lbl = changes discarded" }
+        'admHeadAttention' { Assert-True (($bk -join ',') -ceq 'empWarnActiveWorkers') "$lbl = active-worker warning only" }
+        'admHeadNotSaved' { Assert-True ($c.Body.Contains('First(colEmpSaveErrors).Message')) "$lbl = first save error (+n more)" }
+        'admHeadSaved' { Assert-True ($c.Key -eq 'btnEmpSave.OnSelect') "$lbl only after a verified save" }
     }
 }
-Assert-True ($types['NotificationType.Warning'] -eq 2 -and ($types['NotificationType.Success'] -eq 3) -and @($types.Keys | Where-Object { $_ -notin @('NotificationType.Error', 'NotificationType.Warning', 'NotificationType.Success') }).Count -eq 0) "Notification types: Error/Warning/Success only; 2 x Warning (live + save), 3 x Success (loaded, saved, discarded)"
-$expNotify = [ordered]@{ 'btnEmpLoad.OnSelect' = 3; 'btnEmpSave.OnSelect' = 5; 'btnEmpNew.OnSelect' = 1; 'btnEmpDiscard.OnSelect' = 2; 'btnEmpRefresh.OnSelect' = 1; 'chkEmpActive.OnUncheck' = 1; 'galEmpList.OnSelect' = 1 }
-$gotNotify = (($notifies | Group-Object Key | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ';')
-Assert-True ($gotNotify -ceq (($expNotify.Keys | Sort-Object | ForEach-Object { "$_=$($expNotify[$_])" }) -join ';')) "Notify per formula as expected: $gotNotify"
-$blockedN = Norm ',Notify(If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en),NotificationType.Error,15000))'
-foreach ($ctl in @('btnEmpSave', 'btnEmpNew', 'btnEmpRefresh', 'btnEmpDiscard', 'galEmpList')) { Assert-True ((Norm (Get-Prop $ctl 'OnSelect')).EndsWith($blockedN)) "$ctl : the guard's else branch notifies 'action blocked' as an error (no mutation)" }
-Assert-True ($load.Contains('Notify(If(LangNl && !IsBlank(T.empMsgReloadBlocked.nl),T.empMsgReloadBlocked.nl,T.empMsgReloadBlocked.en),NotificationType.Error,15000),')) 'Loader: reload over unsaved input notifies an error and does nothing else'
-foreach ($k in @('btnEmpLoad.OnSelect', 'btnEmpSave.OnSelect')) { foreach ($m in [regex]::Matches($all[$k], '\bTrace\(')) { Assert-True ((Get-Balanced $all[$k] ($m.Index + 5)) -notmatch 'Notify') "$k : no Notify inside a Trace" } }
-# Texts (T) and the composed notification texts, evaluated with the interpreter
-$fixTexts = [ordered]@{ empErrNameRequired = 'Fix: Contractor Name empty'; empErrEmail = 'Fix: Contact Email invalid'; empErrPhone = 'Fix: Contact Phone invalid'; empErrTooLong = 'Fix: {0} too long'; empErrDuplicate = 'Fix: Contractor Name already exists' }
+Assert-True ($kinds['"Error"'] -eq 9 -and $kinds['"Warning"'] -eq 2 -and $kinds['"Success"'] -eq 3 -and $kinds['""'] -eq 2) "Message kinds: 9 x Error, 2 x Warning (live switch + save), 3 x Success (loaded, saved, discarded), 2 x clear ($(($kinds.Keys | Sort-Object | ForEach-Object { "$_=$($kinds[$_])" }) -join ' '))"
+$expMsg = [ordered]@{ 'btnEmpActiveSwitch.OnSelect' = 1; 'btnEmpDiscard.OnSelect' = 2; 'btnEmpLoad.OnSelect' = 3; 'btnEmpNew.OnSelect' = 1; 'btnEmpRefresh.OnSelect' = 1; 'btnEmpSave.OnSelect' = 5; 'galEmpList.OnSelect' = 1; 'icoEmpMsgClose.OnSelect' = 1; 'scrContractors.OnVisible' = 1 }
+$gotMsg = (($msgs | Group-Object Key | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ';')
+Assert-True ($gotMsg -ceq (($expMsg.Keys | Sort-Object | ForEach-Object { "$_=$($expMsg[$_])" }) -join ';')) "Messages per formula as expected: $gotMsg"
+$blockedN = Norm (',' + (Triple 'Error' 'admHeadBlocked' (TT 'empMsgActionBlocked')) + ')')
+foreach ($ctl in @('btnEmpSave', 'btnEmpNew', 'btnEmpRefresh', 'btnEmpDiscard', 'galEmpList')) { Assert-True ((Norm (Get-Prop $ctl 'OnSelect')).EndsWith($blockedN)) "$ctl : the guard's else branch shows 'Blocked.' + action blocked as an error (no mutation)" }
+Assert-True ($load.Contains((Triple 'Error' 'admHeadBlocked' (TT 'empMsgReloadBlocked')) + ',')) 'Loader: reload over unsaved input shows Blocked. + reload blocked (error) and does nothing else'
+foreach ($k in @('btnEmpLoad.OnSelect', 'btnEmpSave.OnSelect', 'btnEmpActiveSwitch.OnSelect')) { foreach ($m in [regex]::Matches($all[$k], '\bTrace\(')) { Assert-True ((Get-Balanced $all[$k] ($m.Index + 5)) -notmatch 'varAdmMsg') "$k : no message variable inside a Trace" } }
+# Texts (T): head words, unchanged message texts; the body no longer repeats the head word "Saved."
+$fixTexts = [ordered]@{ empErrNameRequired = 'Fix: Contractor Name empty'; empErrEmail = 'Fix: Contact Email invalid'; empErrPhone = 'Fix: Contact Phone invalid'; empErrTooLong = 'Fix: {0} too long'; empErrDuplicate = 'Fix: Contractor Name already exists'
+    admHeadNotSaved = 'Not saved.'; admHeadNotLoaded = 'Not loaded.'; admHeadBlocked = 'Blocked.'; admHeadAttention = 'Attention.'; admHeadSaved = 'Saved.'; admHeadLoaded = 'Loaded.'; admHeadDiscarded = 'Discarded.'; admMsgClose = 'Close message'
+    empMsgSavedRename = 'The new name also shows on past hours.' }
 foreach ($k in $fixTexts.Keys) { Assert-True ($formulas.Contains("$($k): {en: ""$($fixTexts[$k])"", nl: """"}")) "T.$k = '$($fixTexts[$k])'" }
+Assert-True ($formulas -notmatch '\bempMsgSaved:' -and $formulas -notmatch 'en: "(Saved|Not saved)\.\s') 'T.empMsgSaved removed; no body text starts with the head word "Saved." / "Not saved."'
 $conflictMsg = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'
 Assert-True ($formulas.Contains("empErrConflict: {en: ""$conflictMsg"", nl: """"}")) 'T.empErrConflict exact text'
 $unusedT = @($tKeys | Where-Object { $_ -cnotin $used })
 Assert-True ($unusedT.Count -eq 0) "No unused T keys ($($unusedT -join ', '))"
-$saveNot = @($notifies | Where-Object Key -eq 'btnEmpSave.OnSelect' | Sort-Object Pos)
-$loadNot = @($notifies | Where-Object Key -eq 'btnEmpLoad.OnSelect' | Sort-Object Pos)
 function Msg([string]$fixture, [string]$fx) { return "With({LangNl:false,T:$tRec},With({$fixture},$fx))" }
-Assert-True ($saveNot.Count -eq 5 -and $saveNot[0].Args[1].Trim() -eq 'NotificationType.Warning' -and $saveNot[1].Args[1].Trim() -eq 'NotificationType.Success') 'Save notifications in order: warning, success, zero-write error, failed-save error, blocked'
-Assert-True ($saveN.IndexOf((Norm $saveNot[2].Args[0]), $saveN.IndexOf('varEmpSaveWrites=0,')) -gt 0 -and $saveN.IndexOf((Norm $saveNot[3].Args[0]), $saveN.IndexOf('Set(varEmpSaveFailed,true)')) -gt 0) 'Save outcome: zero-write Notify after varEmpSaveWrites=0, failed-save Notify after SaveFailed'
-# Verified save: one notification, orange (Warning) when there is a warning, else green (Success)
+$saveMsg = @($msgs | Where-Object Key -eq 'btnEmpSave.OnSelect' | Sort-Object Pos)
+$loadMsg = @($msgs | Where-Object Key -eq 'btnEmpLoad.OnSelect' | Sort-Object Pos)
+Assert-True ((($saveMsg | ForEach-Object { $_.Kind }) -join ',') -ceq '"Warning","Success","Error","Error","Error"') 'Save messages in order: warning, success, zero-write error, failed-save error, blocked'
+Assert-True ($saveN.Contains('varEmpSaveWrites=0,Set(varAdmMsgKind,"Error");') -and $saveN.Contains('Set(varEmpSaveFailed,true);Set(varEmpLoadState,"Failed");Set(varAdmMsgKind,"Error");')) 'Save outcome: zero-write error directly in the varEmpSaveWrites=0 branch, failed-save error directly after SaveFailed/Failed'
+# Verified save: one message, amber (Warning) when there is a warning, else green (Success); head "Saved." in both
 $outHead = 'If(varEmpSaveWarnWorkers>0 || varEmpSaveWorkersRefreshFailed,'
 $iOutcome = $save.IndexOf($outHead)
 Assert-True ($iOutcome -gt 0 -and ([regex]::Matches($save, [regex]::Escape($outHead))).Count -eq 1) 'Verified save: outcome If(<warning>, Warning, Success) exists once'
 $outCall = Get-Balanced $save ($iOutcome + 2)
 $outArgs = Split-Args $outCall.Substring(1, $outCall.Length - 2)
-Assert-True ($outArgs.Count -eq 3 -and $outArgs[1].Trim().StartsWith('Notify(') -and $outArgs[1].Trim().EndsWith(',NotificationType.Warning,15000)') -and $outArgs[2].Trim().StartsWith('Notify(') -and $outArgs[2].Trim().EndsWith(',NotificationType.Success)')) 'Verified save: exactly one Notify per outcome (warning branch Warning 15000 ms, else Success default timeout)'
+Assert-True ($outArgs.Count -eq 3 -and $outArgs[1].Trim().StartsWith('Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,' + (TT 'admHeadSaved') + ');') -and $outArgs[2].Trim().StartsWith('Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,' + (TT 'admHeadSaved') + ');')) 'Verified save: exactly one message per outcome (warning branch Warning, else Success), head "Saved."'
 $iOutN = $saveN.IndexOf((Norm $outHead))
-Assert-True ($iOutN -gt $iLocal -and $iOutN -gt $saveN.IndexOf('If(varEmpSaveRenamed,IfError(Refresh(Workers),') -and $iOutN -lt $saveN.IndexOf('Select(btnEmpFormReset)') -and $iOutN -lt $saveN.IndexOf('varEmpSaveWrites=0,')) 'Verified save: outcome notification after the Workers refresh (its result is known), before the form reset, success branch only'
+Assert-True ($iOutN -gt $iLocal -and $iOutN -gt $saveN.IndexOf('If(varEmpSaveRenamed,IfError(Refresh(Workers),') -and $iOutN -lt $saveN.IndexOf('Select(btnEmpFormReset)') -and $iOutN -lt $saveN.IndexOf('varEmpSaveWrites=0,')) 'Verified save: outcome message after the Workers refresh (its result is known), before the form reset, success branch only'
 $condFx = $outArgs[0].Trim()
 Assert-Eval "With({varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:false},$condFx)" $false 'No warning: green Success'
-Assert-Eval "With({varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false},$condFx)" $true 'Active workers on deactivation: orange Warning'
-Assert-Eval "With({varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true},$condFx)" $true 'Workers refresh failed after rename: orange Warning'
-Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false' $saveNot[0].Args[0]) 'Saved. 2 active worker(s) still have this contractor.' 'Saved + active-worker warning in one warning notification'
-Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveNot[0].Args[0]) 'Saved. The new name also shows on past hours. Workers not refreshed: open Project / team and click Refresh.' 'Saved + rename + Workers-refresh warning in one warning notification'
-Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:3,varEmpSaveWorkersRefreshFailed:true' $saveNot[0].Args[0]) 'Saved. The new name also shows on past hours. 3 active worker(s) still have this contractor. Workers not refreshed: open Project / team and click Refresh.' 'Both warnings in one warning notification'
-Assert-Eval (Msg 'varEmpSaveRenamed:false' $saveNot[1].Args[0]) 'Saved.' 'Success notification without warning: Saved.'
-Assert-Eval (Msg 'varEmpSaveRenamed:true' $saveNot[1].Args[0]) 'Saved. The new name also shows on past hours.' 'Success notification without warning: Saved + rename'
-# New: no instruction message (Eddy 29-10-2026); the only Notify in btnEmpNew is the blocked else branch
-$newNot = @($notifies | Where-Object Key -eq 'btnEmpNew.OnSelect')
-Assert-True ($newNot.Count -eq 1 -and $newNot[0].Args[0] -match 'T\.empMsgActionBlocked\.en' -and $newNot[0].Args[1].Trim() -eq 'NotificationType.Error') 'btnEmpNew: no Notify in the success path (only the blocked error)'
+Assert-Eval "With({varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false},$condFx)" $true 'Active workers on deactivation: amber Warning'
+Assert-Eval "With({varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true},$condFx)" $true 'Workers refresh failed after rename: amber Warning'
+Assert-Eval (Msg 'x:0' $saveMsg[0].Head) 'Saved.' 'Save message head: Saved.'
+Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:2,varEmpSaveWorkersRefreshFailed:false' $saveMsg[0].Body) '2 active worker(s) still have this contractor.' 'Saved. + active-worker warning in one amber message (no leading space)'
+Assert-Eval (Msg 'varEmpSaveRenamed:false,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'Workers not refreshed: open Project / team and click Refresh.' 'Saved. + Workers-refresh warning'
+Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:0,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'The new name also shows on past hours. Workers not refreshed: open Project / team and click Refresh.' 'Saved. + rename + Workers-refresh warning in one amber message'
+Assert-Eval (Msg 'varEmpSaveRenamed:true,varEmpSaveWarnWorkers:3,varEmpSaveWorkersRefreshFailed:true' $saveMsg[0].Body) 'The new name also shows on past hours. 3 active worker(s) still have this contractor. Workers not refreshed: open Project / team and click Refresh.' 'Both warnings in one amber message'
+Assert-Eval (Msg 'varEmpSaveRenamed:false' $saveMsg[1].Body) '' 'Green message without rename: only the head "Saved."'
+Assert-Eval (Msg 'varEmpSaveRenamed:true' $saveMsg[1].Body) 'The new name also shows on past hours.' 'Green message with rename: Saved. + rename note'
+Assert-Eval (Msg 'colEmpSaveErrors:Table({Field:"Name",Message:T.empErrNameRequired.en},{Field:"",Message:"y"})' $saveMsg[2].Body) 'Fix: Contractor Name empty (+1 more)' 'Zero-write error: Not saved. + first error (+n more)'
+Assert-Eval (Msg 'varEmpSaveMode:"New",colEmpSaveErrors:Table({Field:"",Message:T.empErrPatch.en})' $saveMsg[3].Body) 'Save not confirmed by SharePoint. Maybe created: click Discard, then search the name before retrying.' 'Failed-save error (New): first error + SaveFailedNew text'
+Assert-Eval (Msg 'varEmpSaveMode:"Edit",colEmpSaveErrors:Table({Field:"",Message:T.empErrVerify.en})' $saveMsg[3].Body) 'Save not confirmed: read-back failed. Check SharePoint, then click Discard.' 'Failed-save error (Edit): first error + SaveFailed text'
+Assert-True ((($loadMsg | ForEach-Object { $_.Kind }) -join ',') -ceq '"Error","Success","Error"') 'Loader messages in order: reload blocked, loaded, load failed'
+Assert-Eval (Msg 'colAdminEmployers:Table({ID:1},{ID:2},{ID:3}),varEmpLoadedAt:DateTime(2026,10,29,21,5,7)' $loadMsg[1].Body) '3 contractors loaded at 21:05:07' 'Load success message: count and time'
+Assert-Eval (Msg 'colEmpLoadErrors:Table({Message:T.empErrLoadEmployers.en & " " & "Network error"},{Message:T.empErrLimitWorkers.en})' $loadMsg[2].Body) 'Loading failed. Click Refresh. Contractors not read: Network error (+1 more)' 'Load failure message: first error + (+n more)'
+Assert-True ($load.IndexOf('Set(varEmpLoadedAt,Now());') -lt $load.IndexOf('Set(varAdmMsgKind,"Success")') -and $load.IndexOf('Set(varAdmMsgKind,"Success")') -gt $load.IndexOf('If(IsEmpty(colEmpLoadErrors),') -and $load.IndexOf('Set(varAdmMsgKind,"Success")') -lt $load.IndexOf('Set(varEmpLoadState,"Failed")')) 'Loaded message only in the successful-load branch, after the load time'
+# New: no instruction message (Eddy 29-10-2026); the only message in btnEmpNew is the blocked else branch
+$newMsg = @($msgs | Where-Object Key -eq 'btnEmpNew.OnSelect')
+Assert-True ($newMsg.Count -eq 1 -and $newMsg[0].Kind -eq '"Error"' -and $newMsg[0].Body -ceq (TT 'empMsgActionBlocked')) 'btnEmpNew: no message in the success path (only the blocked error)'
 Assert-True ($srcAll -notmatch '\bempMsgNew\b') 'T.empMsgNew removed (no instruction message)'
-# Live warning when Active is unchecked (chkEmpActive.OnUncheck): local only, same count as the save warning
-Assert-True ((Get-Prop 'chkEmpActive' 'OnCheck') -eq '=false' -and (Get-Prop 'chkEmpShowInactive' 'OnCheck') -eq '=false' -and (Get-Prop 'chkEmpShowInactive' 'OnUncheck') -eq '=false') 'chkEmpActive.OnCheck and chkEmpShowInactive OnCheck/OnUncheck stay no-op'
+
+# Message bar (conEmpMsgBar) directly under the title bar: full title width, 40 px, hidden (height 0) without a message
+Assert-True ($idx['conEmpMsgBar']['Control'] -eq 'GroupContainer@1.5.0' -and $idx['conEmpMsgBar']['Variant'] -eq 'ManualLayout') 'conEmpMsgBar is a manual GroupContainer@1.5.0'
+$barExp = [ordered]@{ X = '=lblEmpTitle.X'; Y = '=lblEmpTitle.Y+lblEmpTitle.Height'; Width = '=lblEmpTitle.Width'; Height = '=If(!IsBlank(varAdmMsgKind),40,0)'; Visible = '=!IsBlank(varAdmMsgKind)'
+    Fill = '=Switch(varAdmMsgKind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)' }
+foreach ($k in $barExp.Keys) { Assert-True ((Get-Prop 'conEmpMsgBar' $k) -ceq $barExp[$k]) "conEmpMsgBar.$k = $($barExp[$k])" }
+$kids3 = @($doc['Screens'][$screenName]['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True ($kids3[3] -eq 'conEmpMsgBar' -and (@($idx['conEmpMsgBar']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'lblEmpMsgHead,lblEmpMsgBody,icoEmpMsgClose') 'Children: conEmpMsgBar after title, logo and spinner; bar holds head, body and close icon'
+Assert-Eval 'IsBlank("")' $true 'Interpreter: IsBlank("") = true (cleared message hides the bar)'
+$barFillFx = (Get-Prop 'conEmpMsgBar' 'Fill').TrimStart('=') -replace 'ColorValue\("(#[0-9A-F]{6})"\)', '"$1"' -replace 'Color\.Transparent', '"none"'
+$textColFx = '=If(varAdmMsgKind="Error",Color.White,ColorValue("#000F41"))'
+foreach ($case in @(@('"Error"', '#DB1E28', 'white', $true), @('"Warning"', '#F29400', '#000F41', $true), @('"Success"', '#1AFF80', '#000F41', $true), @('""', 'none', '#000F41', $false), @('If(false,"x")', 'none', '#000F41', $false))) {
+    Assert-Eval "With({varAdmMsgKind:$($case[0])},$barFillFx)" $case[1] "Bar fill for kind $($case[0]) = $($case[1])"
+    Assert-Eval "With({varAdmMsgKind:$($case[0])},$((Get-Prop 'conEmpMsgBar' 'Visible').TrimStart('=')))" $case[3] "Bar visible for kind $($case[0]) = $($case[3])"
+    Assert-Eval "With({varAdmMsgKind:$($case[0])},$((Get-Prop 'conEmpMsgBar' 'Height').TrimStart('=')))" $(if ($case[3]) { 40 } else { 0 }) "Bar height for kind $($case[0])"
+    Assert-Eval "With({varAdmMsgKind:$($case[0])},$($textColFx.TrimStart('=').Replace('Color.White', '"white"').Replace('ColorValue("#000F41")', '"#000F41"')))" $case[2] "Bar text colour for kind $($case[0]) = $($case[2])"
+}
+foreach ($c in @('lblEmpMsgHead', 'lblEmpMsgBody', 'icoEmpMsgClose')) { Assert-True ((Get-Prop $c 'Color') -ceq $textColFx) "$c.Color: white on red, #000F41 on amber/green" }
+Assert-True ((Get-Prop 'lblEmpMsgHead' 'Text') -ceq '=varAdmMsgHead' -and (Get-Prop 'lblEmpMsgHead' 'FontWeight') -ceq '=FontWeight.Bold' -and (Get-Prop 'lblEmpMsgBody' 'Text') -ceq '=varAdmMsgBody' -and (Get-Prop 'lblEmpMsgBody' 'FontWeight') -ceq '=FontWeight.Normal') 'Head label Bold = varAdmMsgHead; body label Normal = varAdmMsgBody'
+Assert-True ($idx['icoEmpMsgClose']['Control'] -eq 'Classic/Icon@2.5.0' -and (Get-Prop 'icoEmpMsgClose' 'Icon') -ceq '=Icon.Cancel' -and (Get-Prop 'icoEmpMsgClose' 'OnSelect') -ceq '=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")' -and (Get-Prop 'icoEmpMsgClose' 'AccessibleLabel') -ceq ('=' + (TT 'admMsgClose'))) 'Close icon (Classic/Icon Icon.Cancel, label from T) clears kind, head and body'
+Assert-True ($vis.StartsWith('=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");') -and $vis.IndexOf('Set(varAdmMsgKind,"")') -lt $vis.IndexOf('Select(btnEmpLoad)')) 'OnVisible clears the message first, before the load'
+$barReaders = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_] -match '\bvarAdmMsg(Kind|Head|Body)\b' } | ForEach-Object { ($_ -split '\.')[0] } | Sort-Object -Unique)
+Assert-True (($barReaders -join ',') -ceq 'conEmpMsgBar,icoEmpMsgClose,lblEmpMsgBody,lblEmpMsgHead') "Message variables are only displayed by the bar controls ($($barReaders -join ', '))"
+
+# Active switch (btnEmpActiveSwitch): same guard as the former checkbox, toggles varEmpActiveDraft, live amber warning only on -> off
+$swDm = Get-Prop 'btnEmpActiveSwitch' 'DisplayMode'; $swSuffix = ',DisplayMode.Edit,DisplayMode.View)'
+Assert-True ($swDm -ceq (Get-Prop 'txtEmpName' 'DisplayMode') -and $swDm.StartsWith('=If(') -and $swDm.EndsWith($swSuffix)) 'Switch DisplayMode = the form-input guard of the former checkbox (Loaded, no load errors, not busy/saving/SaveFailed, New/Edit; else View)'
+$swGuard = $swDm.Substring(4, $swDm.Length - 4 - $swSuffix.Length)
+$sw = Get-Prop 'btnEmpActiveSwitch' 'OnSelect'
+Assert-True ($sw.StartsWith('=If(' + $swGuard + ',')) 'Switch OnSelect starts with the same guard as its DisplayMode (fail-closed)'
+$swFx = $sw.TrimStart('=')
+$swCall = Get-Balanced $swFx 2
+$swArgs = Split-Args $swCall.Substring(1, $swCall.Length - 2)
+Assert-True ($swArgs.Count -eq 2 -and $swArgs[1].Trim().StartsWith('Set(varEmpActiveDraft,!Coalesce(varEmpActiveDraft,true));')) 'Switch: toggle first, no else branch (a blocked click does nothing, like the former checkbox in View mode)'
 $liveCount = 'CountIf(colEmpWorkers,EmployerID=varEmpSelectedID && Coalesce(WorkerActive,true))'
 $liveGuard = 'Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpSelectedID) && varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpEdit.Active,true) && ' + $liveCount + '>0'
-$unc = Get-Prop 'chkEmpActive' 'OnUncheck'
-Assert-True ($unc.StartsWith('=If(' + $liveGuard + ',')) 'chkEmpActive.OnUncheck guard: Edit with ID, Loaded without load errors, not busy/saving/SaveFailed, loaded record active, active workers > 0'
-Assert-True ($save.Contains('CountIf(colEmpWorkers,EmployerID=varEmpSaveID && Coalesce(WorkerActive,true))') -and $unc.Replace($liveCount, '#').Contains('Text(#)')) 'Live and save warning use the same count (EmployerID = selected/saved ID && Coalesce(WorkerActive,true))'
-Assert-True ($unc -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate|Reset)\(' -and $unc -notmatch '\.Run\(' -and $unc -notmatch '\b(Employers|Workers)\b') 'chkEmpActive.OnUncheck is local only (no mutation, no Reset, no SharePoint call)'
-$uncFx = $unc.TrimStart('=')
-$mU = [regex]::Match($uncFx, '\bNotify\(')
-$uCall = Get-Balanced $uncFx ($mU.Index + 6)
-$uArgs = Split-Args $uCall.Substring(1, $uCall.Length - 2)
-Assert-True ($uArgs.Count -eq 3 -and $uArgs[1].Trim() -eq 'NotificationType.Warning' -and $uArgs[2].Trim() -eq '15000') 'Live warning: NotificationType.Warning, 15000 ms'
-$uncEval = $uncFx.Substring(0, $mU.Index) + '("N:" & (' + $uArgs[0] + '))' + $uncFx.Substring($mU.Index + 6 + $uCall.Length)
+$iLive = $swFx.IndexOf('If(!varEmpActiveDraft && ' + $liveGuard + ',')
+Assert-True ($iLive -gt $swFx.IndexOf('Set(varEmpActiveDraft,!Coalesce(varEmpActiveDraft,true));')) 'Live warning after the toggle, only when the switch went on -> off (!varEmpActiveDraft), with the former OnUncheck guard unchanged'
+$liveCall = Get-Balanced $swFx ($iLive + 2)
+$liveArgs = Split-Args $liveCall.Substring(1, $liveCall.Length - 2)
+$liveMsg = @($msgs | Where-Object Key -eq 'btnEmpActiveSwitch.OnSelect')
+Assert-True ($liveArgs.Count -eq 2 -and $liveMsg.Count -eq 1 -and $liveMsg[0].Kind -eq '"Warning"' -and $liveMsg[0].Head -ceq (TT 'admHeadAttention') -and $liveArgs[1].Trim().StartsWith('Set(varAdmMsgKind,"Warning")')) 'Live warning: amber (Warning), head Attention., inside the on -> off condition only'
+Assert-True ($sw -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|UpdateContext|Select|Navigate|Reset)\(' -and $sw -notmatch '\.Run\(' -and $sw -notmatch '\b(Employers|Workers)\b' -and @([regex]::Matches($sw, '\bSet\((\w+),') | Where-Object { $_.Groups[1].Value -notin @('varEmpActiveDraft', 'varAdmMsgKind', 'varAdmMsgHead', 'varAdmMsgBody') }).Count -eq 0) 'Switch OnSelect is local only (draft + message variables; no mutation, no Reset, no SharePoint call)'
+Assert-True ($save.Contains('CountIf(colEmpWorkers,EmployerID=varEmpSaveID && Coalesce(WorkerActive,true))') -and $liveMsg[0].Body.Replace($liveCount, '#').Contains('Text(#)')) 'Live and save warning use the same count (EmployerID = selected/saved ID && Coalesce(WorkerActive,true))'
 $wrk = 'colEmpWorkers:Table({ID:1,EmployerID:5,WorkerActive:true},{ID:2,EmployerID:5,WorkerActive:If(false,true)},{ID:3,EmployerID:5,WorkerActive:false},{ID:4,EmployerID:6,WorkerActive:true},{ID:5,EmployerID:If(false,1),WorkerActive:true})'
-$liveFix = 'varEmpMode:"Edit",varEmpSelectedID:5,varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpEdit:{Active:true},' + $wrk
-function Live([string]$fixture) { return "With({LangNl:false,T:$tRec},With({$fixture},Coalesce($uncEval,`"none`")))" }
+$liveFix = 'varEmpActiveDraft:false,varEmpMode:"Edit",varEmpSelectedID:5,varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpEdit:{Active:true},' + $wrk
+function Live([string]$fixture) { return "With({LangNl:false,T:$tRec},With({$fixture},If($($liveArgs[0]),`"N:`" & ($($liveMsg[0].Body)),`"none`")))" }
 Assert-Eval (Live $liveFix) 'N:2 active worker(s) still have this contractor.' 'Live warning: 2 active workers (Active blank = active; inactive and other contractors not counted)'
 Assert-Eval (Live $liveFix.Replace('varEmpEdit:{Active:true}', 'varEmpEdit:{Active:If(false,true)}')) 'N:2 active worker(s) still have this contractor.' 'Live warning: loaded record with blank Active counts as active'
 $liveNo = @(
+    @('varEmpActiveDraft:false', 'varEmpActiveDraft:true', 'switch turned on (off -> on)'),
     @('varEmpMode:"Edit"', 'varEmpMode:"New"', 'New contractor'),
     @('varEmpSelectedID:5', 'varEmpSelectedID:Blank()', 'no selected ID (would match workers without contractor)'),
     @('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"', 'load Failed'),
     @('Filter(Table({Message:""}),false)', 'Table({Message:"x"})', 'load errors present'),
     @('varEmpBusy:false', 'varEmpBusy:true', 'loading'),
-    @('varEmpSaving:false', 'varEmpSaving:true', 'saving (Reset after save)'),
+    @('varEmpSaving:false', 'varEmpSaving:true', 'saving'),
     @('varEmpSaveFailed:false', 'varEmpSaveFailed:true', 'after a failed save'),
-    @('varEmpEdit:{Active:true}', 'varEmpEdit:{Active:false}', 'loaded record already inactive (Reset/selection of an inactive contractor)'),
+    @('varEmpEdit:{Active:true}', 'varEmpEdit:{Active:false}', 'loaded record already inactive'),
     @('varEmpSelectedID:5', 'varEmpSelectedID:7', 'no workers for this contractor'))
 foreach ($c in $liveNo) { Assert-Eval (Live $liveFix.Replace($c[0], $c[1])) 'none' "Live warning: nothing when $($c[2])" }
 $saveCountFx = (Get-Balanced $save ($save.IndexOf('Set(varEmpSaveWarnWorkers,') + 3)); $saveCountFx = $saveCountFx.Substring('(varEmpSaveWarnWorkers,'.Length, $saveCountFx.Length - '(varEmpSaveWarnWorkers,'.Length - 1)
 Assert-Eval ("With({varEmpSaveMode:`"Edit`",varEmpSaveID:5,varEmpEdit:{Active:true},varEmpSaveRec:{Active:false},$wrk},$saveCountFx)") 2 'Save warning counts the same 2 active workers as the live warning'
-Assert-Eval (Msg 'colAdminEmployers:Table({ID:1},{ID:2},{ID:3}),varEmpLoadedAt:DateTime(2026,10,29,21,5,7)' $loadNot[1].Args[0]) '3 contractors loaded at 21:05:07' 'Load success notification: count and time'
-Assert-Eval (Msg 'colEmpLoadErrors:Table({Message:T.empErrLoadEmployers.en & " " & "Network error"},{Message:T.empErrLimitWorkers.en})' $loadNot[2].Args[0]) 'Loading failed. Click Refresh. Contractors not read: Network error (+1 more)' 'Load failure notification: first error + (+n more)'
+$gf = 'varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpMode:"Edit"'
+$gCases = @(
+    @($gf, $true, 'Loaded, Edit'), @($gf.Replace('varEmpMode:"Edit"', 'varEmpMode:"New"'), $true, 'Loaded, New'),
+    @($gf.Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:"Failed"'), $false, 'load Failed'), @($gf.Replace('varEmpLoadState:"Loaded"', 'varEmpLoadState:Blank()'), $false, 'cold start'),
+    @($gf.Replace('Filter(Table({Message:""}),false)', 'Table({Message:"x"})'), $false, 'load errors'), @($gf.Replace('varEmpBusy:false', 'varEmpBusy:true'), $false, 'loading'),
+    @($gf.Replace('varEmpSaving:false', 'varEmpSaving:true'), $false, 'saving'), @($gf.Replace('varEmpSaveFailed:false', 'varEmpSaveFailed:true'), $false, 'after a failed save'),
+    @($gf.Replace('varEmpMode:"Edit"', 'varEmpMode:""'), $false, 'no item in the form'))
+foreach ($g in $gCases) { Assert-Eval ('With({' + $g[0] + '},' + $swGuard + ')') $g[1] "Switch guard: $($g[2]) -> $($g[1])" }
+# Switch controls: track (Classic/Button) + knob (Classic/Button on top of the track, same DisplayMode, click forwards to the track) + state text
+$swCfg = @(
+    @{ Track = 'btnEmpActiveSwitch'; Knob = 'btnEmpActiveKnob'; State = 'Coalesce(varEmpActiveDraft,true)'; Parent = 'conEmpForm' },
+    @{ Track = 'btnEmpShowInactiveSwitch'; Knob = 'btnEmpShowInactiveKnob'; State = 'Coalesce(varEmpShowInactive,false)'; Parent = 'conEmpCanvas' })
+foreach ($s in $swCfg) {
+    $t = $s.Track; $kn = $s.Knob
+    Assert-True ($idx[$t]['Control'] -eq 'Classic/Button@2.2.0' -and $idx[$kn]['Control'] -eq 'Classic/Button@2.2.0') "$t / $kn are Classic/Button@2.2.0 (no new control types)"
+    $trackFill = '=If(' + $s.State + ',ColorValue("#0303B8"),ColorValue("#B4B4B4"))'
+    foreach ($p in @('Fill', 'HoverFill', 'PressedFill', 'DisabledFill')) { Assert-True ((Get-Prop $t $p) -ceq $trackFill) "$t.$p = $trackFill (track #0303B8 on / #B4B4B4 off)" }
+    Assert-True ((Get-Prop $t 'Text') -ceq '=""' -and (Get-Prop $t 'Tooltip') -match '^=.*\bT\.\w+\.en\b') "$($t): no caption, tooltip from T"
+    Assert-True ((Get-Prop $kn 'DisplayMode') -ceq "=$t.DisplayMode" -and (Get-Prop $kn 'OnSelect') -ceq "=Select($t)" -and (Get-Prop $kn 'Fill') -ceq '=Color.White') "$($kn): white knob, same DisplayMode as $t, a click forwards to $t (its guard applies)"
+    Assert-True ((Get-Prop $kn 'X') -ceq "=$t.X+If($($s.State),$t.Width-Self.Width-3,3)" -and (Get-Prop $kn 'Y') -ceq "=$t.Y+3") "$kn right when on, left when off"
+    $sib = @($idx[$s.Parent]['Children'] | ForEach-Object { @($_.Keys)[0] })
+    Assert-True ($sib.IndexOf($kn) -eq $sib.IndexOf($t) + 1) "$kn directly after $t in $($s.Parent).Children (drawn on top)"
+}
+Assert-True ((Get-Prop 'btnEmpShowInactiveSwitch' 'OnSelect') -ceq '=Set(varEmpShowInactive,!Coalesce(varEmpShowInactive,false))' -and (Get-Prop 'btnEmpShowInactiveSwitch' 'DisplayMode') -ceq '=DisplayMode.Edit') 'Show inactive switch: local filter toggle only, always available (as the former checkbox)'
+$siSets = @($all.Keys | Where-Object { $all[$_] -match 'Set\(varEmpShowInactive,' } | Sort-Object)
+Assert-True (($siSets -join ',') -ceq 'btnEmpShowInactiveSwitch.OnSelect,scrContractors.OnVisible') "varEmpShowInactive set only by its switch and the OnVisible init ($($siSets -join ', '))"
+$items = (Get-Prop 'galEmpList' 'Items').TrimStart('=')
+Assert-True ($items.Contains('(Coalesce(varEmpShowInactive,false) || Active)')) 'Gallery filter reads varEmpShowInactive (blank = hide inactive)'
+$itemFix = 'colAdminEmployers:Table({ID:1,Name:"A",Code:"",City:"",Active:true},{ID:2,Name:"B",Code:"",City:"",Active:false},{ID:3,Name:"C",Code:"",City:"",Active:If(false,true)}),txtEmpSearch:{Text:""}'
+foreach ($c in @(@('false', 2), @('true', 3), @('If(false,true)', 2))) { Assert-Eval "With({$itemFix,varEmpShowInactive:$($c[0])},CountRows($items))" ($c[1]) "Gallery rows with varEmpShowInactive = $($c[0]): $($c[1])" }
+$stateFx = (Get-Prop 'lblEmpActiveState' 'Text').TrimStart('=')
+foreach ($c in @(@('true', 'Active'), @('false', 'Inactive'), @('If(false,true)', 'Active'))) { Assert-Eval "With({LangNl:false,T:$tRec,varEmpActiveDraft:$($c[0])},$stateFx)" $c[1] "lblEmpActiveState shows the state as text ($($c[0]) -> $($c[1])), not only colour" }
+Assert-True ((Get-Prop 'btnEmpActiveSwitch' 'Tooltip') -ceq (Get-Prop 'lblEmpActiveState' 'Text')) 'Active switch tooltip = state text'
 # Red border per field, bound to colEmpSaveErrors.Field
 $fieldsCollected = @([regex]::Matches($save, 'Collect\(colEmpSaveErrors,\{Field:"(\w*)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
 Assert-True (@($fieldsCollected | Where-Object { $_ -ne '' -and $_ -cnotin @($inputMap.Values) }).Count -eq 0) "Every collected error Field is one of the 8 inputs or '' ($($fieldsCollected -join ','))"
@@ -599,11 +708,12 @@ $expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,464,40)'; Width='=
 foreach ($k in $expLay.Keys) { Assert-True ((Get-Prop 'lblEmpLayout' $k) -eq $expLay[$k]) "Layout carrier lblEmpLayout.$k formula as mirrored" }
 Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,lblEmpLayout.Height+Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
 $sY = [int](Get-Prop 'txtEmpSearch' 'Y').TrimStart('='); $sH = [int](Get-Prop 'txtEmpSearch' 'Height').TrimStart('=')
-$cY = [int](Get-Prop 'chkEmpShowInactive' 'Y').TrimStart('='); $cH = [int](Get-Prop 'chkEmpShowInactive' 'Height').TrimStart('=')
+$cY = [int](Get-Prop 'lblEmpShowInactive' 'Y').TrimStart('='); $cH = [int](Get-Prop 'lblEmpShowInactive' 'Height').TrimStart('=')
+$tY = [int](Get-Prop 'btnEmpShowInactiveSwitch' 'Y').TrimStart('='); $tH = [int](Get-Prop 'btnEmpShowInactiveSwitch' 'Height').TrimStart('=')
 $gY = [int](Get-Prop 'galEmpList' 'Y').TrimStart('=')
 Assert-True ($sY -ge 12) "Search box Y=$sY >= 12 (full border visible below the container top / status area)"
-Assert-True ($cY -ge $sY + $sH + 8 -and $gY -ge $cY + $cH + 8) "Search < checkbox < list stack without overlap (Y $sY, $cY, $gY)"
-Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=lblEmpTitle.Y+lblEmpTitle.Height+12') 'Body starts 12 px under the title bar (no status line; messages only via Notify)'
+Assert-True ($cY -ge $sY + $sH + 8 -and $gY -ge $cY + $cH + 8 -and $tY -ge $cY -and $tY + $tH -le $cY + $cH) "Search < show-inactive row (switch inside the label row) < list stack without overlap (Y $sY, $cY, switch $tY, $gY)"
+Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=conEmpMsgBar.Y+conEmpMsgBar.Height+12') 'Body starts 12 px under the message bar (bar directly under the title bar, height 0 when no message)'
 foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
     foreach ($errH in @(0)) {
         $wide = $W -ge 1000
@@ -629,7 +739,7 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
         }
     }
 }
-# 29-10-2026: Contractor Code = read-only TextInput (txtEmpCode, always Disabled, field style); lblEmpModified = small grey line under chkEmpActive.
+# 29-10-2026: Contractor Code = read-only TextInput (txtEmpCode, always Disabled, field style); lblEmpModified = small grey line under the Active switch row (lblEmpActiveState).
 function Num($c,$pr){ $t=(Get-Prop $c $pr).TrimStart('='); $t=$t.Replace('lblEmpMetrics.X','1').Replace('24+76*1+24','124').Replace('24+76*2','176'); return [int](Invoke-Expression $t) }
 Assert-True ($null -eq $idx['lblEmpCodeValue'] -and $idx['txtEmpCode']['Control'] -eq 'Classic/TextInput@2.3.2') 'Contractor Code value is a Classic/TextInput@2.3.2 (txtEmpCode); lblEmpCodeValue is gone'
 Assert-True ((Get-Prop 'txtEmpCode' 'DisplayMode') -eq '=DisplayMode.Disabled') 'txtEmpCode is always DisplayMode.Disabled (never editable)'
@@ -639,11 +749,11 @@ foreach ($kv in @(@('Fill','=ColorValue("#F0F0F0")'),@('DisabledFill','=ColorVal
 Assert-True ($dirty -notmatch 'txtEmpCode' -and $saveN -notmatch 'txtEmpCode') 'txtEmpCode is not part of dirty/Save (the app never writes Employer Code)'
 $cvY = Num 'txtEmpCode' 'Y'; $cvH = Num 'txtEmpCode' 'Height'; $adY = Num 'lblEmpAddressLabel' 'Y'
 Assert-True ($cvY + $cvH -le $adY) "txtEmpCode (ends $($cvY + $cvH)) above the address label ($adY)"
-$mY = Num 'lblEmpModified' 'Y'; $mH = Num 'lblEmpModified' 'Height'; $chY = Num 'chkEmpActive' 'Y'; $chH = Num 'chkEmpActive' 'Height'
+$mY = Num 'lblEmpModified' 'Y'; $mH = Num 'lblEmpModified' 'Height'; $chY = Num 'lblEmpActiveState' 'Y'; $chH = Num 'lblEmpActiveState' 'Height'
 foreach ($W in 320, 768, 900, 1000, 1280, 1920) {
     $X = if ($W - 48 -ge 536) { 1 } else { 0 }
     $mY2 = 24 + 76 * (8 + (1 - $X)) + 40 + 12; $chY2 = 24 + 76 * (8 + (1 - $X)); $metY = 24 + 76 * (8 + (1 - $X)) + 40 + 12 + 20 + 24
-    Assert-True ($mY2 -ge $chY2 + $chH + 12 -and $mY2 + $mH + 24 -le $metY) "W=$W : lblEmpModified (Y $mY2..$($mY2 + $mH)) 12 px under chkEmpActive (ends $($chY2 + $chH)), inside the form panel (ends $metY)"
+    Assert-True ($mY2 -ge $chY2 + $chH + 12 -and $mY2 + $mH + 24 -le $metY) "W=$W : lblEmpModified (Y $mY2..$($mY2 + $mH)) 12 px under the Active switch row (ends $($chY2 + $chH)), inside the form panel (ends $metY)"
 }
 Assert-True ((Get-Prop 'lblEmpModified' 'Y') -eq '=24+76*(8+(1-lblEmpMetrics.X))+40+12' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'lblEmpModified Y = checkbox bottom + 12; lblEmpMetrics.Y includes the label + 24 bottom padding'
 Assert-True ((Get-Prop 'lblEmpModified' 'X') -eq '=24' -and (Get-Prop 'lblEmpModified' 'Width') -eq '=Min(512,lblEmpLayout.Width-48)' -and (Get-Prop 'lblEmpModified' 'Size') -eq '=11' -and (Get-Prop 'lblEmpModified' 'FontWeight') -eq '=FontWeight.Normal' -and (Get-Prop 'lblEmpModified' 'Color') -eq '=ColorValue("#787878")' -and (Get-Prop 'lblEmpModified' 'Height') -eq '=20') 'lblEmpModified: Inter 11 Normal, #787878, Height 20, width Min(512,...)'
