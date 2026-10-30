@@ -21,7 +21,7 @@ foreach($c in $cfg){
  foreach($bad in 'Fill','OnSelect'){if($p.ContainsKey($bad)){throw "$screen logo has $bad"}}
  if($p['X'] -ne "=$title.X+15"){throw "$screen X formula"}
  if($p['Y'] -ne "=$title.Y+($title.Height-Self.Height)/2"){throw "$screen Y formula"}
- if($t['Height'] -ne '=56' -or $t['Y'] -ne '=24' -or $t['X'] -ne '=40'){throw "$screen title geometry"}
+ $admin=$screen -eq 'scrContractors'; if($t['Height'] -ne $(if($admin){'=60'}else{'=56'}) -or $t['Y'] -ne $(if($admin){'=0'}else{'=24'}) -or $t['X'] -ne $(if($admin){'=0'}else{'=40'})){throw "$screen title geometry"}
  if($t['Fill'] -ne '=ColorValue("#0303B8")'){throw "$screen title fill"}
  if($t['PaddingLeft'] -ne '=129'){throw "$screen title PaddingLeft (needs 15+99+15)"}
  if($order.IndexOf($logo) -ne $order.IndexOf($title)+1){throw "$screen logo must directly follow the title in Children (above it)"}

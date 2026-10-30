@@ -663,8 +663,8 @@ $gCases = @(
 foreach ($g in $gCases) { Assert-Eval ('With({' + $g[0] + '},' + $swGuard + ')') $g[1] "Switch guard: $($g[2]) -> $($g[1])" }
 # Switch controls: track (Classic/Button) + knob (Classic/Button on top of the track, same DisplayMode, click forwards to the track) + state text
 $swCfg = @(
-    @{ Track = 'btnEmpActiveSwitch'; Knob = 'btnEmpActiveKnob'; State = 'Coalesce(varEmpActiveDraft,true)'; Parent = 'conEmpForm' },
-    @{ Track = 'btnEmpShowInactiveSwitch'; Knob = 'btnEmpShowInactiveKnob'; State = 'Coalesce(varEmpShowInactive,false)'; Parent = 'conEmpCanvas' })
+    @{ Track = 'btnEmpActiveSwitch'; Knob = 'btnEmpActiveKnob'; State = 'Coalesce(varEmpActiveDraft,true)'; Parent = 'conEmpFormCard' },
+    @{ Track = 'btnEmpShowInactiveSwitch'; Knob = 'btnEmpShowInactiveKnob'; State = 'Coalesce(varEmpShowInactive,false)'; Parent = 'conEmpListCard' })
 foreach ($s in $swCfg) {
     $t = $s.Track; $kn = $s.Knob
     Assert-True ($idx[$t]['Control'] -eq 'Classic/Button@2.2.0' -and $idx[$kn]['Control'] -eq 'Classic/Button@2.2.0') "$t / $kn are Classic/Button@2.2.0 (no new control types)"
@@ -699,43 +699,56 @@ foreach ($k in $inputMap.Keys) {
     Assert-Eval "With({colEmpSaveErrors:Table({Field:`"City`",Message:`"x`"},{Field:`"`",Message:`"y`"})},$bc)" $(if ($f -eq 'City') { 'red' } else { 'grey' }) "$k border with a City error"
     Assert-Eval "With({colEmpSaveErrors:Filter(Table({Field:`"$f`",Message:`"x`"}),false)},$bc)" 'grey' "$k border without errors"
 }
-Assert-True ((Get-Prop 'txtEmpSearch' 'BorderColor') -ceq '=ColorValue("#DCDCDC")') 'Search box keeps the standard border (no error binding)'
+Assert-True ((Get-Prop 'txtEmpSearch' 'BorderColor') -ceq '=ColorValue("#9B9B9B")') 'Search box has its own admin-pattern border (#9B9B9B, no error binding)'
 
 
-# Geometry (TP-CONTRACTORS-01): search border not under the header, wide form top = list top, narrow no overlap.
+# Geometry (admin pattern, 30-10-2026): two white cards on #F5F6F8, 24 px margin/gap/padding; wide (>=1000): list card 360 left, form card right, tops equal; narrow: stacked.
 # The carriers' formulas are pinned by exact text, then mirrored here for each width.
-$expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,464,40)'; Width='=If(Self.X=1,Min(584,Parent.Width-504),Min(584,Parent.Width-80))'; Height='=If(Self.X=1,100,404)' }
+$expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,408,24)'; Width='=If(Self.X=1,Max(0,Parent.Width-432),Parent.Width-48)'; Height='=If(Self.X=1,24,500)' }
 foreach ($k in $expLay.Keys) { Assert-True ((Get-Prop 'lblEmpLayout' $k) -eq $expLay[$k]) "Layout carrier lblEmpLayout.$k formula as mirrored" }
-Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Max(200,Self.Height-124),280)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,lblEmpLayout.Height+Self.Y+24,288),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
+Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=536,1,0)' -and (Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Self.Height-48,452)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+48,568),lblEmpLayout.Height+Self.Y+24)' -and (Get-Prop 'lblEmpMetrics' 'Y') -eq '=24+76*(8+(1-Self.X))+40+12+20+24') 'Layout carrier lblEmpMetrics formulas as mirrored'
+foreach ($card in @(@('conEmpListCard', 'Fill', '=Color.White'), @('conEmpListCard', 'DropShadow', '=DropShadow.Light'), @('conEmpListCard', 'RadiusTopLeft', '=8'), @('conEmpListCard', 'X', '=24'), @('conEmpListCard', 'Y', '=24'), @('conEmpListCard', 'Width', '=If(lblEmpLayout.X=1,360,Parent.Width-48)'), @('conEmpListCard', 'Height', '=lblEmpMetrics.Width'),
+        @('conEmpFormCard', 'Fill', '=Color.White'), @('conEmpFormCard', 'DropShadow', '=DropShadow.Light'), @('conEmpFormCard', 'RadiusTopLeft', '=8'), @('conEmpFormCard', 'X', '=lblEmpLayout.Y'), @('conEmpFormCard', 'Y', '=lblEmpLayout.Height'), @('conEmpFormCard', 'Width', '=lblEmpLayout.Width'), @('conEmpFormCard', 'Height', '=If(lblEmpLayout.X=1,lblEmpMetrics.Height-48,lblEmpMetrics.Y)'))) {
+    Assert-True ((Get-Prop $card[0] $card[1]) -ceq $card[2]) "$($card[0]).$($card[1]) = $($card[2])"
+}
+$canvKids = @($idx['conEmpCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True (($canvKids -join ',') -ceq 'conEmpListCard,conEmpFormCard') 'conEmpCanvas holds exactly the list card and the form card'
+$listKids = @($idx['conEmpListCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True (($listKids -join ',') -ceq 'txtEmpSearch,icoEmpSearch,lblEmpCount,lblEmpShowInactive,btnEmpShowInactiveSwitch,btnEmpShowInactiveKnob,galEmpList') "List card children: $($listKids -join ',')"
 $sY = [int](Get-Prop 'txtEmpSearch' 'Y').TrimStart('='); $sH = [int](Get-Prop 'txtEmpSearch' 'Height').TrimStart('=')
-$cY = [int](Get-Prop 'lblEmpShowInactive' 'Y').TrimStart('='); $cH = [int](Get-Prop 'lblEmpShowInactive' 'Height').TrimStart('=')
-$tY = [int](Get-Prop 'btnEmpShowInactiveSwitch' 'Y').TrimStart('='); $tH = [int](Get-Prop 'btnEmpShowInactiveSwitch' 'Height').TrimStart('=')
-$gY = [int](Get-Prop 'galEmpList' 'Y').TrimStart('=')
-Assert-True ($sY -ge 12) "Search box Y=$sY >= 12 (full border visible below the container top / status area)"
-Assert-True ($cY -ge $sY + $sH + 8 -and $gY -ge $cY + $cH + 8 -and $tY -ge $cY -and $tY + $tH -le $cY + $cH) "Search < show-inactive row (switch inside the label row) < list stack without overlap (Y $sY, $cY, switch $tY, $gY)"
-Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=conEmpMsgBar.Y+conEmpMsgBar.Height+12') 'Body starts 12 px under the message bar (bar directly under the title bar, height 0 when no message)'
+Assert-True ($sY -eq 24 -and $sH -eq 36 -and (Get-Prop 'txtEmpSearch' 'Width') -eq '=Parent.Width-48' -and (Get-Prop 'txtEmpSearch' 'PaddingLeft') -eq '=40' -and (Get-Prop 'txtEmpSearch' 'RadiusTopLeft') -eq '=4' -and (Get-Prop 'txtEmpSearch' 'Fill') -eq '=Color.White' -and (Get-Prop 'txtEmpSearch' 'BorderColor') -eq '=ColorValue("#9B9B9B")' -and (Get-Prop 'txtEmpSearch' 'HoverBorderColor') -eq '=ColorValue("#5A5A5A")') 'Search field: white, 1px #9B9B9B (hover #5A5A5A), radius 4, h36, PaddingLeft 40 (room for the magnifier)'
+Assert-True ((Get-Prop 'icoEmpSearch' 'Icon') -eq '=Icon.Search' -and $idx['icoEmpSearch']['Control'] -eq 'Classic/Icon@2.5.0' -and (Get-Prop 'icoEmpSearch' 'X') -eq '=txtEmpSearch.X+12' -and (Get-Prop 'icoEmpSearch' 'Width') -eq '=18') 'Magnifier = Classic/Icon Icon.Search inside the search field (X+12, 18 wide, ends before the text at 40)'
+Assert-True ((Get-Prop 'txtEmpSearch' 'HintText') -eq (Get-Prop 'txtEmpSearch' 'AccessibleLabel') -and (Get-Prop 'txtEmpSearch' 'HintText') -eq '=If(LangNl && !IsBlank(T.empSearchHint.nl),T.empSearchHint.nl,T.empSearchHint.en)' -and $srcAll -match 'empSearchHint: \{en: "Search name, code or city"') 'Search hint from T: "Search name, code or city"'
+Assert-True ((Get-Prop 'lblEmpCount' 'Text') -ceq '=Substitute(If(LangNl && !IsBlank(T.empCount.nl),T.empCount.nl,T.empCount.en),"{0}",Text(CountRows(galEmpList.AllItems)))' -and $srcAll -match 'empCount: \{en: "\{0\} contractors"') 'Count label: T.empCount with {0} = CountRows(galEmpList.AllItems) (visible gallery rows, no new data logic)'
+$cH = 24
+Assert-True ((Get-Prop 'lblEmpCount' 'Y') -eq '=txtEmpSearch.Y+txtEmpSearch.Height+12' -and (Get-Prop 'lblEmpShowInactive' 'Y') -eq '=lblEmpCount.Y' -and (Get-Prop 'btnEmpShowInactiveSwitch' 'Y') -eq '=lblEmpCount.Y' -and (Get-Prop 'btnEmpShowInactiveSwitch' 'X') -eq '=Parent.Width-24-Self.Width' -and (Get-Prop 'lblEmpShowInactive' 'X') -eq '=btnEmpShowInactiveSwitch.X-8-Self.Width' -and (Get-Prop 'lblEmpCount' 'X') -eq '=24') 'Row under the search: count left, Show inactive label + switch right (same Y)'
+Assert-True ((Get-Prop 'galEmpList' 'Y') -eq '=lblEmpCount.Y+lblEmpCount.Height+12' -and (Get-Prop 'galEmpList' 'X') -eq '=0' -and (Get-Prop 'galEmpList' 'Width') -eq '=Parent.Width' -and (Get-Prop 'galEmpList' 'Height') -eq '=Parent.Height-Self.Y-12' -and (Get-Prop 'galEmpList' 'TemplateSize') -eq '=64') 'Gallery below the count row, full card width, row height 64 (padding 12/16)'
+$gY = $sY + $sH + 12 + $cH + 12
+Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=conEmpMsgBar.Y+conEmpMsgBar.Height' -and (Get-Prop 'conEmpBody' 'Height') -eq '=Max(0,navEmp.Y-Self.Y)') 'Body starts directly under the message bar (bar directly under the title bar, height 0 when no message) and ends at the footer'
 foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
-    foreach ($errH in @(0)) {
-        $wide = $W -ge 1000
-        $layX = [int]$wide; $layY = if ($wide) { 464 } else { 40 }
-        $layW = if ($wide) { [Math]::Min(584, $W - 504) } else { [Math]::Min(584, $W - 80) }
-        $layH = if ($wide) { 100 } else { 404 }
-        $metX = [int](($layW - 48) -ge 536)
-        $metY = 24 + 76 * (8 + (1 - $metX)) + 40 + 12 + 20 + 24
-        $bodyH = 500
-        $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($layH + $metY + 24, 288)) } else { $layH + $metY + 24 }
-        $galH = if ($wide) { [Math]::Max(200, $metH - 124) } else { 280 }
-        $galW = [Math]::Min(400, $W - 80)
-        $lbl = "W=$W errBlock=$errH"
-        Assert-True ($sY -ge 12 -and $gY + $galH -le $metH) "$lbl : search top $sY, list bottom $($gY + $galH) within canvas $metH"
-        Assert-True ((($W -ge 1000) -and ($layY + $layW + 40 -le $W)) -or (($W -lt 1000) -and ($layY + $layW -le $W))) "$lbl : form (X=$layY, w=$layW) inside screen"
+    $wide = $W -ge 1000
+    $layX = [int]$wide; $layY = if ($wide) { 408 } else { 24 }
+    $layW = if ($wide) { [Math]::Max(0, $W - 432) } else { $W - 48 }
+    $layH = if ($wide) { 24 } else { 500 }
+    $metX = [int](($layW - 48) -ge 536)
+    $metY = 24 + 76 * (8 + (1 - $metX)) + 40 + 12 + 20 + 24
+    foreach ($bodyH in 300, 700) {
+        $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($metY + 48, 568)) } else { $layH + $metY + 24 }
+        $listH = if ($wide) { $metH - 48 } else { 452 }
+        $listW = if ($wide) { 360 } else { $W - 48 }
+        $formH = if ($wide) { $metH - 48 } else { $metY }
+        $galH = $listH - $gY - 12
+        $lbl = "W=$W body=$bodyH"
+        Assert-True ($galH -ge 200 -and $gY + $galH + 12 -eq $listH) "$lbl : gallery $galH px tall inside the list card ($listH)"
+        Assert-True ($formH -ge $metY) "$lbl : form card $formH >= form content $metY"
+        Assert-True ($layY + $layW + 24 -le $W -or $layW -le 0) "$lbl : form card (X=$layY, w=$layW) keeps the 24 px right margin"
+        Assert-True (24 + $listW + 24 -le $W) "$lbl : list card inside the screen"
         if ($wide) {
-            Assert-True ($layH -eq $gY) "$lbl : wide form top ($layH) = galEmpList top ($gY), below search ($sY) and checkbox ($cY)"
-            Assert-True (40 + $galW + 24 -le $layY) "$lbl : wide list (right edge $(40 + $galW)) clear of form X=$layY"
-            Assert-True ($layH + $metY -le $metH) "$lbl : form bottom $($layH + $metY) within canvas $metH"
+            Assert-True ($layH -eq 24 -and 24 + $listW + 24 -eq $layY) "$lbl : wide: both card tops 24, 24 px gap between the cards"
+            Assert-True (24 + $listH + 24 -eq $metH -and $listH -eq $formH) "$lbl : wide: equal card heights, 24 px bottom margin in the canvas ($metH)"
         } else {
-            Assert-True ($layH -ge $gY + $galH + 24) "$lbl : narrow form top $layH >= list bottom $($gY + $galH) + 24 (no overlap)"
-            Assert-True ($layH + $metY -le $metH) "$lbl : narrow form bottom within canvas $metH"
+            Assert-True ($layH -ge 24 + $listH + 24) "$lbl : narrow: form top $layH >= list bottom $(24 + $listH) + 24 (stacked, no overlap)"
+            Assert-True ($layH + $formH + 24 -eq $metH) "$lbl : narrow: canvas $metH ends 24 px below the form card"
         }
     }
 }
@@ -768,9 +781,9 @@ Assert-True ($spImg -notmatch 'opacity|rgba?\(|hsla?\(' -and $spImg -notmatch "(
 Assert-True ((Get-Prop 'imgEmpSpinner' 'Visible') -eq '=Coalesce(varEmpBusy,false) || Coalesce(varEmpSaving,false) || varEmpLoadState="Loading"') 'Spinner Visible = busy || saving || LoadState="Loading"'
 Assert-True ((Get-Prop 'imgEmpSpinner' 'Width') -eq '=24' -and (Get-Prop 'imgEmpSpinner' 'Height') -eq '=24' -and (Get-Prop 'imgEmpSpinner' 'ImagePosition') -eq '=ImagePosition.Fit' -and (Get-Prop 'imgEmpSpinner' 'AccessibleLabel') -eq '=If(LangNl && !IsBlank(T.empBusy.nl),T.empBusy.nl,T.empBusy.en)') 'Spinner: 24x24, ImagePosition Fit, AccessibleLabel from T (empBusy)'
 Assert-True (!$idx['imgEmpSpinner']['Properties'].ContainsKey('Fill') -and !$idx['imgEmpSpinner']['Properties'].ContainsKey('OnSelect')) 'Spinner has no Fill/OnSelect'
-Assert-True ((Get-Prop 'imgEmpSpinner' 'X') -eq '=lblEmpTitle.X+lblEmpTitle.Width-24-24' -and (Get-Prop 'imgEmpSpinner' 'Y') -eq '=lblEmpTitle.Y+16') 'Spinner at the right of the title bar (24 px margin), Y = title Y + 16 (centred in 56 px)'
+Assert-True ((Get-Prop 'imgEmpSpinner' 'X') -eq '=lblEmpTitle.X+lblEmpTitle.Width-24-Self.Width' -and (Get-Prop 'imgEmpSpinner' 'Y') -eq '=lblEmpTitle.Y+(lblEmpTitle.Height-Self.Height)/2') 'Spinner at the right of the title bar (24 px margin), vertically centred in the 60 px bar'
 foreach ($W in 320, 480, 768, 1280) {
-    $tX = 40; $tW = $W - 80; $sX = $tX + $tW - 48; $lX = $tX + 15
+    $tX = 0; $tW = $W; $sX = $tX + $tW - 48; $lX = $tX + 15
     Assert-True ($sX -ge $lX + 99 -and $sX + 24 -le $tX + $tW) "W=$W : spinner (X $sX..$($sX + 24)) inside the title bar and clear of the logo (ends $($lX + 99))"
 }
 $kids = @($doc['Screens'][$screenName]['Children'] | ForEach-Object { @($_.Keys)[0] })

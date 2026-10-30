@@ -9,7 +9,7 @@ $old=@('#7040A0','#593080','#194296','#123273','#E8EDF5','#EEE7F5','#193F83','#E
 $src=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
 foreach($o in $old){ $c=([regex]::Matches($src,[regex]::Escape($o),'IgnoreCase')).Count; if($c){throw "Old colour literal $o still present ($c x)"} }
 # 30-10-2026 (admin pattern spec): extra literals allowed ONLY on the admin-pattern screens (scrContractors; later scrProjects/scrWorkers).
-$adminScreens=@('scrContractors')
+$adminScreens=@('scrContractors','scrProjects')
 $adminTokens=@('F5F6F8','9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4','F29400')
 $bad=@()
 foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml){
@@ -44,7 +44,7 @@ foreach($s in $switches){
  foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){if($kp[$k] -ne $W){throw "Switch knob $($s[2]).$k must be white"}}
 }
 $switchNames=@($switches | ForEach-Object { $_[1]; $_[2] })
-foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ if($indexes[$screen][$name]['Control'] -like 'Classic/Button@*' -and $indexes[$screen][$name]['Properties']['Visible'] -ne '=false' -and $name -notlike 'btnTile*' -and !($screen -in $adminScreens -and $name -in $switchNames) -and !($assign | Where-Object { $_[1] -eq $name })){throw "Visible button without GEA role: $screen.$name"} }}
+foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ if($indexes[$screen][$name]['Control'] -like 'Classic/Button@*' -and $indexes[$screen][$name]['Properties']['Visible'] -ne '=false' -and $name -notlike 'btnTile*' -and !($screen -in $adminScreens -and ($name -in $switchNames -or $name -eq 'btnEmpRowInactive')) -and !($assign | Where-Object { $_[1] -eq $name })){throw "Visible button without GEA role: $screen.$name"} }}
 Write-Output 'PASS buttons: navigation #0303B8/white (hover/pressed #000F41); primary Save/Save team/Contractors Save #1AFF80 with #000F41 text (hover/pressed #18DD6E, never white text); secondary Refresh/arrows white with 1px #0303B8 border and text (hover #D5EDFF); disabled #E6E6E6/#787878.'
 
 foreach($t in @(@('scrHome','lblHomeTitle'),@('Screen1','lblProjectTeamTitle'),@('scrHours','lblWeeklyHoursEntryTitle'),@('scrWeeklyHours','lblWeeklyHoursTitle'),@('scrWeeklyHours','lblReportProjectDetails'),@('scrContractors','lblEmpTitle'))){$p=$indexes[$t[0]][$t[1]]['Properties'];if($p['Fill'] -ne (CV '#0303B8') -or $p['Color'] -ne $W){throw "Title bar $($t[1])"}}
@@ -58,6 +58,8 @@ foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){
  if($c['Control'] -like 'Classic/DropDown@*' -or $c['Control'] -like 'Classic/TextInput@*'){
   # 29-10-2026 (Eddy): Contractors form inputs show an invalid field only by a red #DB1E28 border (Border/Hover/Focused) bound to colEmpSaveErrors.Field.
   if($screen -eq 'scrContractors' -and $name -eq 'txtEmpCode'){ foreach($kv in @(@('Fill','#F0F0F0'),@('DisabledFill','#F0F0F0'),@('BorderColor','#DCDCDC'),@('DisabledBorderColor','#DCDCDC'),@('Color','#000000'),@('DisabledColor','#000000'))){ if($p[$kv[0]] -ne (CV $kv[1])){throw "Read-only code field $($kv[0])"} }; if($p['DisplayMode'] -ne '=DisplayMode.Disabled'){throw 'txtEmpCode must stay Disabled'}; if($p['BorderThickness'] -ne '=1'){throw 'txtEmpCode border'}; continue }
+  # 30-10-2026 (admin pattern): list-card search field = white, 1px #9B9B9B (hover #5A5A5A, focus #0303B8), radius 4, h36.
+  if($screen -in $adminScreens -and $name -eq 'txtEmpSearch'){ foreach($kv in @(@('Fill','=Color.White'),@('HoverFill','=Color.White'),@('BorderColor',(CV '#9B9B9B')),@('HoverBorderColor',(CV '#5A5A5A')),@('FocusedBorderColor',(CV '#0303B8')),@('BorderThickness','=1'),@('RadiusTopLeft','=4'),@('Height','=36'))){ if($p[$kv[0]] -ne $kv[1]){throw "Search field $($kv[0])"} }; continue }
   foreach($kv in @(@('Fill','#F0F0F0'),@('BorderColor','#DCDCDC'),@('HoverBorderColor','#0303B8'),@('FocusedBorderColor','#0303B8'))){ $exp=CV $kv[1]; if($screen -eq 'scrContractors' -and $empErrField.ContainsKey($name) -and $kv[0] -ne 'Fill'){ $exp='=If(CountIf(colEmpSaveErrors,Field="'+$empErrField[$name]+'")>0,ColorValue("#DB1E28"),'+$exp.TrimStart('=')+')' }; if($p[$kv[0]] -ne $exp){throw "Input $screen.$name.$($kv[0])"} }
   if($p['BorderThickness'] -ne '=1'){throw "Input $screen.$name border thickness"}
   if($c['Control'] -like 'Classic/DropDown@*'){ foreach($kv in @(@('HoverFill','#D5EDFF'),@('HoverColor','#000F41'),@('SelectionFill','#0303B8'),@('PressedFill','#D5EDFF'),@('PressedColor','#000F41'),@('Color','#000000'),@('ChevronBackground','#F0F0F0'),@('ChevronFill','#0303B8'),@('ChevronHoverBackground','#D5EDFF'))){ if($p[$kv[0]] -ne (CV $kv[1])){throw "Dropdown state $screen.$name.$($kv[0])"} }; if($p['SelectionColor'] -ne $W){throw "Dropdown selection colour $screen.$name"} }

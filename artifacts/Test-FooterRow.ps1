@@ -44,7 +44,7 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   $w=$case[0];$h=$case[1];$screen=@{Width=$w;Height=$h};$index=$indexes[$cfg.Screen];$rects=@{}
   $buttons=$cfg.Nav+$cfg.Actions
   foreach($name in $buttons){
-   $p=$index[$name]['Properties'];if($p['Y'] -ne '=lblFooterButtonMetrics.Y' -or $p['Height'] -ne '=lblFooterButtonMetrics.Height'){throw 'Nonshared vertical alignment'}
+   $p=$index[$name]['Properties'];if($p['Y'] -ne $(if($cfg.Screen -eq 'scrContractors'){'=(Parent.Height-Self.Height)/2'}else{'=lblFooterButtonMetrics.Y'}) -or $p['Height'] -ne '=lblFooterButtonMetrics.Height'){throw 'Nonshared vertical alignment'}
    $rects[$name]=@{X=0;Y=$metric.Y;Width=(Layout-Number $p['Width'] $screen @{X=0;Y=0;Width=0;Height=0});Height=$metric.Height};Publish-Rect $name $rects[$name]
   }
   $bar=Measure-Rect $cfg.Bar $index[$cfg.Bar]['Properties'] $screen
@@ -52,8 +52,10 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   foreach($name in $cfg.Nav){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $row}
   for($i=$cfg.Actions.Count-1;$i -ge 0;$i--){$name=$cfg.Actions[$i];$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $row}
   $previous=$null
-  foreach($name in $buttons){$r=$rects[$name];if($r.Y -ne 16 -or $r.Height -ne 40 -or $r.X -lt 40 -or $r.X+$r.Width -gt $row.Width-40){throw 'Button outside one row'};if($previous -and $r.X-($previous.X+$previous.Width) -lt 12){throw 'Overlap/gap under 12'};$previous=$r}
+  foreach($name in $buttons){$r=$rects[$name];if($r.Y -ne $(if($cfg.Screen -eq 'scrContractors'){14}else{16}) -or $r.Height -ne 40 -or $r.X -lt 40 -or $r.X+$r.Width -gt $row.Width-40){throw 'Button outside one row'};if($previous -and $r.X-($previous.X+$previous.Width) -lt 12){throw 'Overlap/gap under 12'};$previous=$r}
   foreach($group in @($cfg.Nav,$cfg.Actions)){for($i=1;$i -lt $group.Count;$i++){if($rects[$group[$i]].X-($rects[$group[$i-1]].X+$rects[$group[$i-1]].Width) -ne 12){throw 'Incorrect group gap'}}}
+  if($cfg.Screen -eq 'scrContractors' -and ($bar.Height -ne 68 -or $row.Height -ne 68 -or $index[$cfg.Bar]['Properties']['Fill'] -ne '=Color.White')){throw 'Admin footer must be white and 68 px high (bar and row)'}
+  if($cfg.Screen -eq 'scrContractors'){$kidsRow=@($index[$cfg.Row]['Children']|ForEach-Object {@($_.Keys)[0]}); if($kidsRow[1] -ne 'icoEmpHome' -or $index['icoEmpHome']['Control'] -ne 'Classic/Icon@2.5.0' -or $index['icoEmpHome']['Properties']['Icon'] -ne '=Icon.Home' -or $index['icoEmpHome']['Properties']['OnSelect'] -ne '=Select(btnEmpHome)' -or $index['recEmpFooterLine']['Properties']['Fill'] -ne '=ColorValue("#DCDCDC")' -or $index['recEmpFooterLine']['Properties']['Y'] -ne '=navEmp.Y' -or $index['recEmpFooterLine']['Properties']['Height'] -ne '=1'){throw 'Admin footer: Home icon (direct row child after the Home button) or 1 px #DCDCDC top line missing'}}
   if($bar.Y+$bar.Height -ne $h -or $index[$cfg.Bar]['Properties']['LayoutWrap'] -ne '=false' -or $index[$cfg.Bar]['Properties']['LayoutOverflowX'] -ne '=LayoutOverflow.Scroll'){throw 'Footer not fixed/single row/scrollable'}
   $children=@($index[$cfg.Row]['Children']|ForEach-Object {@($_.Keys)[0]});foreach($name in $buttons){if($name -notin $children){throw 'Button in separate parent'}}
   # 26-10-2026 (powerfx-logic): Home has its own guard, identical in DisplayMode and OnSelect (If(<guard>,Navigate(scrHome))); the guard values are checked in Test-SaveRegression.ps1.
@@ -89,7 +91,7 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
     $expH=if($kind -eq '""'){0}else{40}
     if($msgBar.Y -ne $rects.lblEmpTitle.Y+$rects.lblEmpTitle.Height -or $msgBar.X -ne $rects.lblEmpTitle.X -or $msgBar.Width -ne $rects.lblEmpTitle.Width -or $msgBar.Height -ne $expH){throw "Contractors message bar not directly under the title bar at full title width with height $expH (kind $kind)"}
     $body=Measure-Rect 'conEmpBody' $index['conEmpBody']['Properties'] $screen
-    if($body.Y -ne $msgBar.Y+$msgBar.Height+12 -or $body.Y+$body.Height -gt $bar.Y-12){throw "Contractors body not 12 px under the message bar or behind footer (kind $kind)"}
+    if($body.Y -ne $msgBar.Y+$msgBar.Height -or $body.Y+$body.Height -gt $bar.Y){throw "Contractors body not directly under the message bar or behind footer (kind $kind)"}
    }
   }elseif($cfg.Screen -eq 'scrWeeklyHours'){
    # Worst-case viewport height: larger selector content reaches the existing viewport cap.
