@@ -1,0 +1,88 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpMessageBar:
+    DefinitionType: CanvasComponent
+    Description: Admin screen message bar (Admin screen pattern), directly below the title bar. An empty Kind shows nothing (BarHeight 0). The host sets the instance Height to BarHeight and handles OnClose (clears its message variables).
+    CustomProperties:
+      Kind:
+        PropertyKind: Input
+        DataType: Text
+        Description: Empty (no message), Error, Warning or Success.
+        Default: =""
+      Head:
+        PropertyKind: Input
+        DataType: Text
+        Description: Bold first word, for example Saved.
+        Default: =""
+      Body:
+        PropertyKind: Input
+        DataType: Text
+        Description: Rest of the message, plain text (escaped by the component).
+        Default: =""
+      CloseLabel:
+        PropertyKind: Input
+        DataType: Text
+        Description: Accessible label and tooltip of the close icon.
+        Default: ="Close"
+      BarHeight:
+        PropertyKind: Output
+        DataType: Number
+        Description: 40 when a message is shown, otherwise 0. The host uses it as the instance Height.
+      OnClose:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Raised by the close icon. The host clears its message variables.
+    Properties:
+      BarHeight: =If(IsBlank(cmpMessageBar.Kind),0,40)
+      Fill: =Color.Transparent
+      Height: =40
+      Width: =1366
+    Children:
+      - recCmpMsgFill:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =Color.Transparent
+            Fill: =Switch(cmpMessageBar.Kind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)
+            Height: =Parent.Height
+            Visible: =!IsBlank(cmpMessageBar.Kind)
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - htmlCmpMsgText:
+          Control: HtmlViewer@2.1.0
+          Properties:
+            AutoHeight: =false
+            Color: =If(cmpMessageBar.Kind="Error",Color.White,ColorValue("#000F41"))
+            Fill: =Color.Transparent
+            Font: ="Inter, Arial, sans-serif"
+            Height: =Parent.Height
+            HtmlText: ="<div style='width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:" & Parent.Height & "px;color:" & If(cmpMessageBar.Kind="Error","#FFFFFF","#000F41") & "'><b>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpMessageBar.Head,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</b> " & Substitute(Substitute(Substitute(Substitute(Substitute(cmpMessageBar.Body,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =14
+            Visible: =!IsBlank(cmpMessageBar.Kind)
+            Width: =Max(0,Parent.Width-Self.X-56)
+            X: =24
+            Y: =0
+      - icoCmpMsgClose:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            AccessibleLabel: =cmpMessageBar.CloseLabel
+            Color: =If(cmpMessageBar.Kind="Error",Color.White,ColorValue("#000F41"))
+            Height: =24
+            Icon: =Icon.Cancel
+            OnSelect: =cmpMessageBar.OnClose()
+            Tooltip: =cmpMessageBar.CloseLabel
+            Visible: =!IsBlank(cmpMessageBar.Kind)
+            Width: =24
+            X: =Parent.Width-Self.Width-16
+            Y: =(Parent.Height-Self.Height)/2

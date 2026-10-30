@@ -1,0 +1,330 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpFooter:
+    DefinitionType: CanvasComponent
+    Description: Admin screen footer (Admin screen pattern). Presentation only. Contract - the host passes the complete guard of each button in <Button>Enabled (a Boolean, DisplayMode is not a component data type) and puts the SAME guard as the first condition inside its event handler (OnHome, OnNew, OnRefresh, OnDiscard, OnSave). The component only calls the event when its Enabled input is true; it never decides, mutates or navigates.
+    CustomProperties:
+      HomeText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Home button text.
+        Default: ="Home"
+      NewText:
+        PropertyKind: Input
+        DataType: Text
+        Description: New button text.
+        Default: ="New"
+      RefreshText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Refresh button text.
+        Default: ="Refresh"
+      DiscardText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Discard changes button text.
+        Default: ="Discard changes"
+      SaveText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Save button text.
+        Default: ="Save"
+      HomeEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Home guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      NewEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: New guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      RefreshEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Refresh guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      DiscardEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Discard guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      SaveEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Save guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      OnHome:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Home pressed. The host handler starts with its guard.
+      OnNew:
+        PropertyKind: Event
+        ReturnType: None
+        Description: New pressed. The host handler starts with its guard.
+      OnRefresh:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Refresh pressed. The host handler starts with its guard.
+      OnDiscard:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Discard pressed. The host handler starts with its guard.
+      OnSave:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Save pressed. The host handler starts with the complete admission check.
+    Properties:
+      Fill: =Color.White
+      Height: =68
+      Width: =1366
+    Children:
+      - lblCmpFooterMetrics:
+          Control: Label@2.5.1
+          Properties:
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =40
+            Text: =""
+            Visible: =false
+            Width: =12
+            X: =40
+            Y: =(Parent.Height-Self.Height)/2
+      - conCmpFooter:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =Color.White
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Start
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowX: =LayoutOverflow.Scroll
+            LayoutOverflowY: =LayoutOverflow.Hide
+            LayoutWrap: =false
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+          Children:
+            - conCmpFooterRow:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  FillPortions: =0
+                  Height: =68
+                  Width: =Max(Parent.Width,2*lblCmpFooterMetrics.X+btnCmpHome.Width+btnCmpNew.Width+btnCmpRefresh.Width+btnCmpDiscard.Width+btnCmpSave.Width+4*lblCmpFooterMetrics.Width)
+                Children:
+                  - btnCmpHome:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        Color: =Color.White
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#000F41")
+                        HoverColor: =Color.White
+                        HoverFill: =ColorValue("#000F41")
+                        PressedBorderColor: =ColorValue("#000F41")
+                        PressedColor: =Color.White
+                        PressedFill: =ColorValue("#000F41")
+                        Text: =cmpFooter.HomeText
+                        DisplayMode: =If(cmpFooter.HomeEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpFooter.HomeEnabled,cmpFooter.OnHome())
+                        X: =lblCmpFooterMetrics.X
+                        Width: =110
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =40
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - icoCmpHome:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =If(btnCmpHome.DisplayMode=DisplayMode.Edit,Color.White,ColorValue("#787878"))
+                        Height: =20
+                        Icon: =Icon.Home
+                        OnSelect: =Select(btnCmpHome)
+                        Width: =20
+                        X: =btnCmpHome.X+14
+                        Y: =btnCmpHome.Y+(btnCmpHome.Height-Self.Height)/2
+                  - btnCmpNew:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Color: =ColorValue("#0303B8")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =Color.White
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        PressedColor: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        Text: =cmpFooter.NewText
+                        DisplayMode: =If(cmpFooter.NewEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpFooter.NewEnabled,cmpFooter.OnNew())
+                        X: =btnCmpRefresh.X-lblCmpFooterMetrics.Width-Self.Width
+                        Width: =90
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnCmpRefresh:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Color: =ColorValue("#0303B8")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =Color.White
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        PressedColor: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        Text: =cmpFooter.RefreshText
+                        DisplayMode: =If(cmpFooter.RefreshEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpFooter.RefreshEnabled,cmpFooter.OnRefresh())
+                        X: =btnCmpDiscard.X-lblCmpFooterMetrics.Width-Self.Width
+                        Width: =110
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnCmpDiscard:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Color: =ColorValue("#0303B8")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =Color.White
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        PressedColor: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        Text: =cmpFooter.DiscardText
+                        DisplayMode: =If(cmpFooter.DiscardEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpFooter.DiscardEnabled,cmpFooter.OnDiscard())
+                        X: =btnCmpSave.X-lblCmpFooterMetrics.Width-Self.Width
+                        Width: =188
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnCmpSave:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#1AFF80")
+                        BorderThickness: =0
+                        Color: =ColorValue("#000F41")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =ColorValue("#1AFF80")
+                        HoverBorderColor: =ColorValue("#18DD6E")
+                        HoverColor: =ColorValue("#000F41")
+                        HoverFill: =ColorValue("#18DD6E")
+                        PressedBorderColor: =ColorValue("#18DD6E")
+                        PressedColor: =ColorValue("#000F41")
+                        PressedFill: =ColorValue("#18DD6E")
+                        Text: =cmpFooter.SaveText
+                        DisplayMode: =If(cmpFooter.SaveEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpFooter.SaveEnabled,cmpFooter.OnSave())
+                        X: =Parent.Width-lblCmpFooterMetrics.X-Self.Width
+                        Width: =140
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+      - recCmpFooterLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =Color.Transparent
+            Fill: =ColorValue("#DCDCDC")
+            Height: =1
+            Width: =Parent.Width
+            X: =0
+            Y: =0

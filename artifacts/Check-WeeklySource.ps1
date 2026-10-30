@@ -67,12 +67,42 @@ if ($settings.DefaultConnectedDataSourceMaxGetRowsCount -ne 500 -or !$settings.A
 }
 $script:controlCount=0
 $script:names=@{}
+# Canvas component definitions (App components) live in Src\Component (docs: power-apps-yaml "File structure"); one file per component.
+$script:componentDefs=@{}
+$componentDir=Join-Path $projectRoot 'Src\Component'
+$componentDocs=@{}
+if(Test-Path $componentDir) {
+    foreach($componentFile in Get-ChildItem $componentDir -Filter '*.pa.yaml') {
+        $componentDoc = $builder.Build().Deserialize([IO.File]::ReadAllText($componentFile.FullName))
+        foreach($docKey in $componentDoc.Keys) { if($docKey -ne 'ComponentDefinitions') { throw "Componentbestand $($componentFile.Name): onverwachte topniveausleutel $docKey" } }
+        foreach($componentName in $componentDoc['ComponentDefinitions'].Keys) {
+            if($componentName -ne ($componentFile.Name -replace '\.pa\.yaml$','')) { throw "Componentbestand $($componentFile.Name) moet precies de component met dezelfde naam bevatten." }
+            $script:componentDefs[$componentName] = $componentDoc['ComponentDefinitions'][$componentName]
+        }
+        $componentDocs[$componentFile.Name] = $componentDoc
+    }
+}
 function Check-Control($entry,[bool]$autoLayoutChild=$false) {
     if ($entry.Count -ne 1) { throw 'Een control-entry moet exact één naam bevatten.' }
     $name = @($entry.Keys)[0]
     if ($script:names.ContainsKey($name)) { throw "Dubbele controlnaam: $name" }
     $script:names[$name]=$true
     $control = $entry[$name]
+    if ($control['Control'] -eq 'CanvasComponent') {
+        # Canvas component instance (schema pa.schema.yaml v3.0, Control-instance): ComponentName required, no Variant/Children.
+        foreach($key in $control.Keys) {
+            if($key -notin @('Control','ComponentName','ComponentLibraryUniqueName','Group','Properties')) { throw "Ongeldig veld voor CanvasComponent-instantie: $name.$key" }
+        }
+        $def = $script:componentDefs[[string]$control['ComponentName']]
+        if(!$def) { throw "CanvasComponent-instantie $name verwijst naar onbekende ComponentName '$($control['ComponentName'])'." }
+        $instanceAllowed = @('X','Y','Width','Height','Visible','Fill','ContentLanguage','ChildTabPriority','EnableChildFocus','OnReset')
+        foreach($cp in $def['CustomProperties'].Keys) { if($def['CustomProperties'][$cp]['PropertyKind'] -in @('Input','Event','InputFunction')) { $instanceAllowed += $cp } }
+        foreach($property in $control['Properties'].Keys) {
+            if($property -notin $instanceAllowed) { throw "Onbekende of niet-instelbare eigenschap op CanvasComponent-instantie: $name.$property" }
+        }
+        $script:controlCount++
+        return
+    }
     if ($control['Control'] -eq 'Classic/Button@2.2.0' -and $control['Properties'].ContainsKey('AccessibleLabel')) {
         throw "PA2108: AccessibleLabel is ongeldig voor Classic/Button@2.2.0: $name"
     }
@@ -122,7 +152,7 @@ if($iconFold.Success) { $iconEnum += $iconFold.Groups[1].Value.Split('|') }
 $iconEnum = @($iconEnum | Sort-Object -Unique)
 if($iconEnum.Count -lt 100) { throw "Icon-enumlijst niet gevonden in template ($($iconEnum.Count) namen)." }
 $iconUses = 0
-foreach($srcFile in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter '*.pa.yaml') {
+foreach($srcFile in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter '*.pa.yaml' -Recurse) {
     foreach($iconMatch in [regex]::Matches([IO.File]::ReadAllText($srcFile.FullName),'(?<![\w.%])Icon\.(\w+)')) {
         $iconUses++
         if($iconMatch.Groups[1].Value -cnotin $iconEnum) { throw "Onbekende Icon-naam in $($srcFile.Name): Icon.$($iconMatch.Groups[1].Value)" }
@@ -130,3 +160,37 @@ foreach($srcFile in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter '*.pa.y
 }
 if($iconUses -eq 0) { throw 'Geen Icon.<Naam>-verwijzingen gevonden in Src.' }
 Write-Output "Icon-namen: $iconUses verwijzingen in Src bestaan in de Classic/Icon 2.5.0-enum ($($iconEnum.Count) namen)."
+# Canvas component definitions (Src\Component): schema subset of pa.schema.yaml v3.0 (ComponentDefinition-instance, ComponentDefinition-CustomProperty) plus control templates.
+$pfxDataTypes=@('Text','Number','Boolean','DateAndTime','Screen','Record','Table','Image','VideoOrAudio','Color','Currency')
+$propertyKinds=@('Input','Output','InputFunction','OutputFunction','Event','Action')
+$componentChecked=0
+foreach($componentFileName in $componentDocs.Keys) {
+    $componentDoc=$componentDocs[$componentFileName]
+    $script:formulas=0; $script:failures=0
+    Check-Node $componentDoc "Component.$componentFileName"
+    if($script:failures -gt 0) { throw "Power Fx syntaxcontrole mislukt in componentbestand $componentFileName." }
+    foreach($componentName in $componentDoc['ComponentDefinitions'].Keys) {
+        $def=$componentDoc['ComponentDefinitions'][$componentName]
+        if($def['DefinitionType'] -ne 'CanvasComponent') { throw "$componentName : DefinitionType moet CanvasComponent zijn." }
+        foreach($key in $def.Keys) { if($key -notin @('DefinitionType','Description','AllowCustomization','AccessAppScope','CustomProperties','Properties','Children')) { throw "$componentName : ongeldig veld $key" } }
+        foreach($propName in $def['Properties'].Keys) {
+            if($propName -in @('X','Y','Visible')) { throw "$componentName : Properties mag $propName niet bevatten (gereserveerd in het schema)." }
+            if(([string]$def['Properties'][$propName]) -notmatch '^=') { throw "$componentName.$propName : formule moet met = beginnen." }
+        }
+        foreach($cpName in $def['CustomProperties'].Keys) {
+            $cp=$def['CustomProperties'][$cpName]
+            if($cp['PropertyKind'] -notin $propertyKinds) { throw "$componentName.$cpName : ongeldige PropertyKind $($cp['PropertyKind'])" }
+            if($cp['PropertyKind'] -in @('Input','Output')) {
+                if($cp['DataType'] -notin $pfxDataTypes) { throw "$componentName.$cpName : DataType '$($cp['DataType'])' is niet geldig in het schema." }
+                foreach($key in $cp.Keys) { if($key -notin @('PropertyKind','DisplayName','Description','DataType','RaiseOnReset','Default')) { throw "$componentName.$cpName : ongeldig veld $key voor $($cp['PropertyKind'])" } }
+            } elseif($cp['PropertyKind'] -in @('Event','Action','InputFunction','OutputFunction')) {
+                if(!$cp.ContainsKey('ReturnType')) { throw "$componentName.$cpName : ReturnType is verplicht voor $($cp['PropertyKind'])." }
+                if($cp['ReturnType'] -ne 'None' -and $cp['ReturnType'] -notin $pfxDataTypes) { throw "$componentName.$cpName : ongeldig ReturnType $($cp['ReturnType'])" }
+            }
+            if($cp.ContainsKey('Default') -and ([string]$cp['Default']) -notmatch '^=') { throw "$componentName.$cpName : Default moet met = beginnen." }
+        }
+        foreach($entry in $def['Children']) { Check-Control $entry }
+        $componentChecked++
+    }
+}
+Write-Output "Canvas-componenten: $componentChecked definitie(s) in Src\Component gecontroleerd (DefinitionType, CustomProperties/PropertyKind/DataType, Power Fx-syntaxis, kinderen tegen Templates.json); HtmlViewer@2.1.0 en ModernSpinner@1.1.0 komen uit de templates."

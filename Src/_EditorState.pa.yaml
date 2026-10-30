@@ -14,3 +14,7 @@ EditorState:
     - scrWeeklyHours
     - scrContractors
     - scrProjects
+  ComponentDefinitionsOrder:
+    - cmpTitleBar
+    - cmpMessageBar
+    - cmpFooter

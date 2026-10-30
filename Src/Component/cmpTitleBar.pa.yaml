@@ -1,0 +1,80 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpTitleBar:
+    DefinitionType: CanvasComponent
+    Description: Admin screen title bar (Admin screen pattern). The host passes the title, the busy flag and the logo image. No logic.
+    CustomProperties:
+      Title:
+        PropertyKind: Input
+        DataType: Text
+        Description: Screen title (white, 22 Semibold).
+        Default: =""
+      Busy:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: True while the screen is loading or saving; shows the spinner.
+        Default: =false
+      BusyLabel:
+        PropertyKind: Input
+        DataType: Text
+        Description: Accessible label of the spinner.
+        Default: ="Busy"
+      Logo:
+        PropertyKind: Input
+        DataType: Image
+        Description: Official logo, the host passes the app media resource GEA_logo_white unchanged.
+    Properties:
+      Fill: =ColorValue("#0303B8")
+      Height: =60
+      Width: =1366
+    Children:
+      - lblCmpTitleText:
+          Control: Label@2.5.1
+          Properties:
+            Color: =Color.White
+            Fill: =ColorValue("#0303B8")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            PaddingLeft: =129
+            Size: =22
+            Text: =cmpTitleBar.Title
+            VerticalAlign: =VerticalAlign.Middle
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - imgCmpTitleLogo:
+          Control: Image@2.2.3
+          Properties:
+            AccessibleLabel: ="GEA"
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Height: =30
+            Image: =cmpTitleBar.Logo
+            ImagePosition: =ImagePosition.Fit
+            Width: =99
+            X: =lblCmpTitleText.X+15
+            Y: =lblCmpTitleText.Y+(lblCmpTitleText.Height-Self.Height)/2
+      - spnCmpTitleBusy:
+          Control: ModernSpinner@1.1.0
+          Properties:
+            AccessibleLabel: =cmpTitleBar.BusyLabel
+            Font: ="Inter, Arial, sans-serif"
+            Height: =24
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            SpinnerColor: =Color.White
+            TrackColor: =ColorValue("#0303B8")
+            Visible: =cmpTitleBar.Busy
+            Width: =24
+            X: =Parent.Width-24-Self.Width
+            Y: =(Parent.Height-Self.Height)/2

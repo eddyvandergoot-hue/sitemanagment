@@ -6,14 +6,19 @@ function CV($hex){ '=ColorValue("'+$hex+'")' }
 $W='=Color.White'
 $tokens=@('000000','0303B8','000F41','1AFF80','18DD6E','D5EDFF','F0F0F0','DCDCDC','E6E6E6','787878','DB1E28','FFFFFF')
 $old=@('#7040A0','#593080','#194296','#123273','#E8EDF5','#EEE7F5','#193F83','#EAF1FC','#F4F6FA','#E5E7EB','#6B7280','#596579','#E1E6EF','RGBA(','Color.Red')
-$src=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
+$src=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
 foreach($o in $old){ $c=([regex]::Matches($src,[regex]::Escape($o),'IgnoreCase')).Count; if($c){throw "Old colour literal $o still present ($c x)"} }
 # 30-10-2026 (admin pattern spec): extra literals allowed ONLY on the admin-pattern screens (scrContractors; later scrProjects/scrWorkers).
 $adminScreens=@('scrContractors','scrProjects')
 $adminTokens=@('F5F6F8','9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4','F29400')
 $bad=@()
-foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml){
- $allowedHex=if(($file.Name -replace '\.pa\.yaml$','') -in $adminScreens){$tokens+$adminTokens}else{$tokens}
+foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse){
+ $baseName=($file.Name -replace '\.pa\.yaml$','')
+ $allowedHex=if($baseName -in $adminScreens){$tokens+$adminTokens}elseif($baseName -eq 'cmpMessageBar'){$tokens+'F29400'}else{$tokens}
+ if($file.DirectoryName -like '*\Src\Component'){
+  # Components: every #RRGGBB literal (ColorValue and inline CSS in HtmlText) must be a palette token; amber only in the message bar.
+  $bad+=@([regex]::Matches([IO.File]::ReadAllText($file.FullName),'#([0-9A-Fa-f]{6})') | Where-Object { $_.Groups[1].Value.ToUpper() -notin $allowedHex } | ForEach-Object { "$($file.Name): $($_.Value)" })
+ }
  $bad+=@([regex]::Matches([IO.File]::ReadAllText($file.FullName),'ColorValue\("#([0-9A-Fa-f]{6})"\)') | Where-Object { $_.Groups[1].Value.ToUpper() -notin $allowedHex } | ForEach-Object { "$($file.Name): $($_.Value)" })
 }
 $named=@([regex]::Matches($src,'\bColor\.(\w+)') | Where-Object { $_.Groups[1].Value -notin @('White','Black','Transparent') } | ForEach-Object { $_.Value })
