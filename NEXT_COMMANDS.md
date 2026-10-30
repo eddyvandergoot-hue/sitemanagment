@@ -39,6 +39,18 @@ Step 1 result (30-10-2026, report only; source: template definitions + Studio-as
 - HtmlViewer 2.1.0 (HTML text): HtmlText, Font, Size, Color, Fill, AutoHeight, borders -> inline CSS (Inter, #DB1E28 star, bold head). Recommendation: USE for label+star and message bar.
 - ModernTextInput 1.1.2 / ModernDropdown 1.0.3: theme-driven like Toggle. Recommendation: keep Classic/TextInput and Classic/DropDown (GEA styling already done). Notes: canvas components in SourceCode layout must use a schema Microsoft documents (component definitions in Src, check pa.yaml docs and pac 2.11.2 support before building; Studio import is the first check); component input/output/behavior properties must be documented property kinds. Items 1, 2, 3, 6, 7 and the layout rules of the command below are delivered through the components in steps 2-3 (Test-Layout is built in step 3).
 
+**Queued by Eddy 30-10-2026, after step 3** (orchestrator decision: separate small build after step 3 is approved, before the Workers build of step 4, so Home and Workers are tested and approved separately):
+
+```bash
+claude << 'EOF'
+Queue after step 3 (same build as Workers or separate small build, your call):
+- cmpTile component: square 190, fill #0303B8, icon 56 white top-left, label bottom-left 18 medium white, arrow bottom-right; hover/pressed fill #000F41 (icon+arrow #1AFF80 if feasible); Soon variant grey #E6E6E6, icon #9B9B9B, "SOON" top-right, no arrow, inert.
+- Home redesign per earlier block (Eddy 30-10): stacked categories full width, header + 2px #0303B8 line + horizontal tile row. Order: Team & hours, Master data, Inventory, CAD tools, Knowledge. Replaces 4-column home.
+EOF
+```
+
+Notes: "per earlier block" = an earlier Home message of Eddy that is not in the repo; ask Eddy for it if details (tiles per category, responsive behaviour) are needed. "18 medium": Inter has no Medium in Power Apps (use Semibold, or HtmlViewer font-weight:500 if the label is HTML). Existing Home tests (tiles, 4-column layout) must be rewritten. Tile hover icon colour change needs an icon control whose Color follows hover state of the tile button (check feasibility).
+
 Studio test 30-10-2026 (Eddy): TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (build adminpattern-20261030_071949). Next command (queued by Eddy 30-10-2026, NOT started; a first attempt was stopped before any change, HEAD 15f845c):
 
 ```bash
