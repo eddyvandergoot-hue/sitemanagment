@@ -1,0 +1,169 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+#
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+#
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpField:
+    DefinitionType: CanvasComponent
+    Description: 'Admin screen form field (Admin screen pattern): label with optional required star above one input (text, dropdown or read-only), total height 58 (label 18 + 4 + input 36). Presentation only. Contract - the host passes the complete edit guard in Enabled and puts the SAME guard as the first condition in its OnChange handler. Reset contract - after every load, row select, New, Discard or save the host calls Reset(<instance>); this runs the component OnReset, which resets the inner input to Value (RaiseOnReset on Value also resets when Value changes). Dirty check and Save read CurrentValue, never the inner controls. OnChange may also fire after a reset, so the host handler must compare CurrentValue with the saved value and stay idempotent.'
+    CustomProperties:
+      Label:
+        PropertyKind: Input
+        DataType: Text
+        Description: Label text (plain text, escaped by the component). Shown semibold 13 above the field, one line with ellipsis.
+        Default: =""
+      Required:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: True shows a red star directly after the label text.
+        Default: =false
+      InputType:
+        PropertyKind: Input
+        DataType: Text
+        Description: 'text, dropdown or readonly. Any other value renders a disabled white text field (fail-closed).'
+        Default: ="text"
+      Value:
+        PropertyKind: Input
+        DataType: Text
+        Description: The Default of the input (text, selected dropdown item or read-only text). A dropdown Value that is not in Items stays unselected and CurrentValue returns it unchanged.
+        RaiseOnReset: true
+        Default: =""
+      Items:
+        PropertyKind: Input
+        DataType: Table
+        Description: Dropdown choices, one column Value. Ignored for text and readonly.
+        Default: '=Filter(Table({Value: ""}),false)'
+      Invalid:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: True gives the field a 2 px red border (all states).
+        Default: =false
+      Enabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Edit guard (true = Edit, false = Disabled). Fail-closed default. Read-only fields are always Disabled.
+        Default: =false
+      HintText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Placeholder of the text field.
+        Default: =""
+      MaxLength:
+        PropertyKind: Input
+        DataType: Number
+        Description: Maximum number of characters of the text field.
+        Default: =255
+      CurrentValue:
+        PropertyKind: Output
+        DataType: Text
+        Description: The current input or choice, for the dirty check and Save. For a dropdown without a selection (Value not in Items) it returns Value unchanged.
+      OnChange:
+        PropertyKind: Event
+        ReturnType: None
+        Description: The user changed the text or the choice. Only raised while Enabled is true. The host handler starts with its guard and compares CurrentValue with the saved value.
+    Properties:
+      CurrentValue: =Coalesce(If(cmpField.InputType="dropdown",Coalesce(ddCmpFieldInput.Selected.Value,cmpField.Value),txtCmpFieldInput.Text),"")
+      Fill: =Color.Transparent
+      Height: =58
+      OnReset: =Reset(txtCmpFieldInput); Reset(ddCmpFieldInput)
+      Width: =360
+    Children:
+      - htmlCmpFieldLabel:
+          Control: HtmlViewer@2.1.0
+          Properties:
+            AutoHeight: =false
+            Color: =ColorValue("#000000")
+            Fill: =Color.Transparent
+            Font: ="Inter, Arial, sans-serif"
+            Height: =18
+            HtmlText: ="<div style='display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;font-weight:600;line-height:18px;color:#000000'><span style='min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpField.Label,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span>" & If(cmpField.Required,"<span style='color:#DB1E28'>&nbsp;*</span>","") & "</div>"
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =13
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - txtCmpFieldInput:
+          Control: Classic/TextInput@2.3.2
+          Properties:
+            AccessibleLabel: =cmpField.Label
+            Align: =Align.Left
+            BorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),If(cmpField.InputType="readonly",Color.Transparent,ColorValue("#9B9B9B")))
+            BorderThickness: =If(cmpField.Invalid,2,If(cmpField.InputType="readonly",0,1))
+            Color: =ColorValue("#000000")
+            Default: =cmpField.Value
+            DisabledBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),If(cmpField.InputType="readonly",Color.Transparent,ColorValue("#9B9B9B")))
+            DisabledColor: =ColorValue("#000000")
+            DisabledFill: =If(cmpField.InputType="readonly",ColorValue("#F0F0F0"),Color.White)
+            DisplayMode: =If(cmpField.Enabled && cmpField.InputType="text",DisplayMode.Edit,DisplayMode.Disabled)
+            Fill: =Color.White
+            FocusedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            FocusedBorderThickness: =2
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =36
+            HintText: =cmpField.HintText
+            HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
+            HoverColor: =ColorValue("#000000")
+            HoverFill: =Color.White
+            MaxLength: =cmpField.MaxLength
+            OnChange: =If(cmpField.Enabled,cmpField.OnChange())
+            PaddingLeft: =12
+            PaddingRight: =12
+            PressedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            PressedColor: =ColorValue("#000000")
+            PressedFill: =Color.White
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Size: =14
+            Visible: =cmpField.InputType<>"dropdown"
+            Width: =Parent.Width
+            X: =0
+            Y: =htmlCmpFieldLabel.Y+htmlCmpFieldLabel.Height+4
+      - ddCmpFieldInput:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            AccessibleLabel: =cmpField.Label
+            AllowEmptySelection: =true
+            BorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+            BorderThickness: =If(cmpField.Invalid,2,1)
+            ChevronBackground: =ColorValue("#F0F0F0")
+            ChevronFill: =ColorValue("#0303B8")
+            ChevronHoverBackground: =ColorValue("#D5EDFF")
+            ChevronHoverFill: =ColorValue("#0303B8")
+            Color: =ColorValue("#000000")
+            Default: =cmpField.Value
+            DisabledBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+            DisabledColor: =ColorValue("#000000")
+            DisabledFill: =Color.White
+            DisplayMode: =If(cmpField.Enabled && cmpField.InputType="dropdown",DisplayMode.Edit,DisplayMode.Disabled)
+            Fill: =Color.White
+            FocusedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            FocusedBorderThickness: =2
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =36
+            HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
+            Items: =cmpField.Items
+            Items.Value: =Value
+            OnChange: =If(cmpField.Enabled,cmpField.OnChange())
+            PressedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
+            SelectionColor: =Color.White
+            SelectionFill: =ColorValue("#0303B8")
+            Size: =14
+            Visible: =cmpField.InputType="dropdown"
+            Width: =Parent.Width
+            X: =0
+            Y: =htmlCmpFieldLabel.Y+htmlCmpFieldLabel.Height+4

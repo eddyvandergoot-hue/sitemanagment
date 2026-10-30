@@ -14,9 +14,10 @@ $adminTokens=@('F5F6F8','9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4','F29400')
 $bad=@()
 foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse){
  $baseName=($file.Name -replace '\.pa\.yaml$','')
- $allowedHex=if($baseName -in $adminScreens){$tokens+$adminTokens}elseif($baseName -eq 'cmpMessageBar'){$tokens+'F29400'}else{$tokens}
+ $componentExtra=@{cmpMessageBar=@('F29400');cmpField=@('9B9B9B','5A5A5A');cmpListCard=@('9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4')}
+ $allowedHex=if($baseName -in $adminScreens){$tokens+$adminTokens}elseif($componentExtra.ContainsKey($baseName)){$tokens+$componentExtra[$baseName]}else{$tokens}
  if($file.DirectoryName -like '*\Src\Component'){
-  # Components: every #RRGGBB literal (ColorValue and inline CSS in HtmlText) must be a palette token; amber only in the message bar.
+  # Components: every #RRGGBB literal (ColorValue and inline CSS in HtmlText) must be a palette token; admin-pattern greys only in cmpField/cmpListCard, amber only in the message bar.
   $bad+=@([regex]::Matches([IO.File]::ReadAllText($file.FullName),'#([0-9A-Fa-f]{6})') | Where-Object { $_.Groups[1].Value.ToUpper() -notin $allowedHex } | ForEach-Object { "$($file.Name): $($_.Value)" })
  }
  $bad+=@([regex]::Matches([IO.File]::ReadAllText($file.FullName),'ColorValue\("#([0-9A-Fa-f]{6})"\)') | Where-Object { $_.Groups[1].Value.ToUpper() -notin $allowedHex } | ForEach-Object { "$($file.Name): $($_.Value)" })

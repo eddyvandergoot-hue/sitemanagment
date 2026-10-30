@@ -1,0 +1,355 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+#
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+#
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpListCard:
+    DefinitionType: CanvasComponent
+    Description: 'Admin screen list card (Admin screen pattern): white card (radius 8, DropShadow.Light, padding 24) with search field, one info row (count left, Show inactive switch right) and a gallery of rows (height 64). Presentation only: the host filters and sorts and passes the ready Items; the component never filters. Selection contract - the host passes SelectedID and handles OnSelectRow(RowID) with its guard as the first condition; the component highlights the row where ID = SelectedID and only raises the event while Enabled is true. Switch contract - the host passes ShowInactive and handles OnToggleShowInactive by flipping its own variable (guard first); the component never flips the state itself. Search contract - the host reads Output SearchText in its Items filter. Reset contract - Reset(<instance>) clears the search field.'
+    CustomProperties:
+      Items:
+        PropertyKind: Input
+        DataType: Table
+        Description: 'Rows, already filtered and sorted by the host. Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean, grey title), ChipText (Text, empty = no chip).'
+        Default: '=Filter(Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""}),false)'
+      SelectedID:
+        PropertyKind: Input
+        DataType: Number
+        Description: ID of the selected row (blank or no match = no highlight).
+        Default: =Blank()
+      SearchHint:
+        PropertyKind: Input
+        DataType: Text
+        Description: Placeholder and accessible label of the search field.
+        Default: =""
+      CountText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Count text composed by the host, for example 6 contractors (plain text, escaped by the component).
+        Default: =""
+      ShowInactiveText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Label of the switch, for example Show inactive (plain text, escaped by the component).
+        Default: =""
+      OnText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Word for the switch state on, used in the tooltip.
+        Default: ="On"
+      OffText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Word for the switch state off, used in the tooltip.
+        Default: ="Off"
+      ShowInactive:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Switch state (true = on).
+        Default: =false
+      Enabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Guard for search, row selection and the switch (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      SearchText:
+        PropertyKind: Output
+        DataType: Text
+        Description: Current text of the search field.
+      ShowInactiveValue:
+        PropertyKind: Output
+        DataType: Boolean
+        Description: Echo of the ShowInactive input (the component keeps no state of its own).
+      OnSelectRow:
+        PropertyKind: Event
+        ReturnType: None
+        Description: A row was selected. Parameter RowID is the ID of that row. Only raised while Enabled is true. The host handler starts with its guard.
+        Parameters:
+          - RowID:
+              DataType: Number
+              Description: ID of the selected row.
+      OnToggleShowInactive:
+        PropertyKind: Event
+        ReturnType: None
+        Description: The switch was pressed. Only raised while Enabled is true. The host handler starts with its guard and flips its own variable.
+    Properties:
+      Fill: =Color.Transparent
+      Height: =600
+      OnReset: =Reset(txtCmpListSearch)
+      SearchText: =txtCmpListSearch.Text
+      ShowInactiveValue: =cmpListCard.ShowInactive
+      Width: =360
+    Children:
+      - conCmpListCard:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.White
+            Height: =Parent.Height
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+          Children:
+            - txtCmpListSearch:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  AccessibleLabel: =cmpListCard.SearchHint
+                  Align: =Align.Left
+                  BorderColor: =ColorValue("#9B9B9B")
+                  BorderThickness: =1
+                  Color: =ColorValue("#000000")
+                  Default: =""
+                  DisabledBorderColor: =ColorValue("#9B9B9B")
+                  DisabledColor: =ColorValue("#000000")
+                  DisabledFill: =Color.White
+                  DisplayMode: =If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)
+                  Fill: =Color.White
+                  FocusedBorderColor: =ColorValue("#0303B8")
+                  FocusedBorderThickness: =2
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Height: =36
+                  HintText: =cmpListCard.SearchHint
+                  HoverBorderColor: =ColorValue("#5A5A5A")
+                  HoverColor: =ColorValue("#000000")
+                  HoverFill: =Color.White
+                  MaxLength: =255
+                  PaddingLeft: =40
+                  PaddingRight: =12
+                  PressedBorderColor: =ColorValue("#0303B8")
+                  PressedColor: =ColorValue("#000000")
+                  PressedFill: =Color.White
+                  RadiusBottomLeft: =4
+                  RadiusBottomRight: =4
+                  RadiusTopLeft: =4
+                  RadiusTopRight: =4
+                  Size: =14
+                  Width: =Parent.Width-48
+                  X: =24
+                  Y: =24
+            - icoCmpListSearch:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: =""
+                  Color: =ColorValue("#5A5A5A")
+                  Height: =18
+                  Icon: =Icon.Search
+                  Width: =18
+                  X: =txtCmpListSearch.X+12
+                  Y: =txtCmpListSearch.Y+(txtCmpListSearch.Height-Self.Height)/2
+            - htmlCmpListInfo:
+                Control: HtmlViewer@2.1.0
+                Properties:
+                  AutoHeight: =false
+                  Color: =ColorValue("#000000")
+                  Fill: =Color.Transparent
+                  Font: ="Inter, Arial, sans-serif"
+                  Height: =24
+                  HtmlText: ="<div style='display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =13
+                  Width: =Max(0,btnCmpListSwitch.X-8-Self.X)
+                  X: =24
+                  Y: =txtCmpListSearch.Y+txtCmpListSearch.Height+12
+            - btnCmpListSwitch:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =Color.Transparent
+                  BorderThickness: =0
+                  Color: =Color.White
+                  DisabledBorderColor: =Color.Transparent
+                  DisabledColor: =Color.White
+                  DisabledFill: =If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                  DisplayMode: =If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)
+                  Fill: =If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Height: =24
+                  HoverBorderColor: =Color.Transparent
+                  HoverColor: =Color.White
+                  HoverFill: =If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                  OnSelect: =If(cmpListCard.Enabled,cmpListCard.OnToggleShowInactive())
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Color.Transparent
+                  PressedColor: =Color.White
+                  PressedFill: =If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =12
+                  Text: =""
+                  Tooltip: '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)'
+                  Width: =44
+                  X: =Parent.Width-24-Self.Width
+                  Y: =htmlCmpListInfo.Y
+            - btnCmpListKnob:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =Color.Transparent
+                  BorderThickness: =0
+                  Color: =Color.White
+                  DisabledBorderColor: =Color.Transparent
+                  DisabledColor: =Color.White
+                  DisabledFill: =Color.White
+                  DisplayMode: =btnCmpListSwitch.DisplayMode
+                  Fill: =Color.White
+                  Font: ="Inter, Arial, sans-serif"
+                  FontWeight: =FontWeight.Normal
+                  Height: =18
+                  HoverBorderColor: =Color.Transparent
+                  HoverColor: =Color.White
+                  HoverFill: =Color.White
+                  OnSelect: =Select(btnCmpListSwitch)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Color.Transparent
+                  PressedColor: =Color.White
+                  PressedFill: =Color.White
+                  RadiusBottomLeft: =9
+                  RadiusBottomRight: =9
+                  RadiusTopLeft: =9
+                  RadiusTopRight: =9
+                  Size: =12
+                  Text: =""
+                  Tooltip: =btnCmpListSwitch.Tooltip
+                  Width: =18
+                  X: =btnCmpListSwitch.X+If(cmpListCard.ShowInactive,btnCmpListSwitch.Width-Self.Width-3,3)
+                  Y: =btnCmpListSwitch.Y+3
+            - galCmpList:
+                Control: Gallery@2.15.0
+                Variant: BrowseLayout_Vertical_TwoTextVariant_ver5.0
+                Properties:
+                  BorderColor: =Color.Transparent
+                  BorderThickness: =0
+                  DisplayMode: =If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)
+                  Fill: =Color.White
+                  Height: =Max(0,Parent.Height-Self.Y-12)
+                  Items: =cmpListCard.Items
+                  OnSelect: =If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow(galCmpList.Selected.ID))
+                  TemplateFill: =Color.Transparent
+                  TemplatePadding: =0
+                  TemplateSize: =64
+                  Width: =Parent.Width
+                  X: =0
+                  Y: =htmlCmpListInfo.Y+htmlCmpListInfo.Height+12
+                Children:
+                  - recCmpRowFill:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        BorderColor: =Color.Transparent
+                        Fill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),Color.White)
+                        Height: =Parent.TemplateHeight
+                        HoverFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
+                        OnSelect: =Select(Parent)
+                        PressedFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
+                        Width: =Parent.TemplateWidth
+                  - recCmpRowBar:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        BorderColor: =Color.Transparent
+                        Fill: =ColorValue("#0303B8")
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Visible: =ThisItem.ID=cmpListCard.SelectedID
+                        Width: =3
+                  - recCmpRowLine:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        BorderColor: =Color.Transparent
+                        Fill: =ColorValue("#EDEDED")
+                        Height: =1
+                        OnSelect: =Select(Parent)
+                        Width: =Parent.TemplateWidth
+                        Y: =Parent.TemplateHeight-1
+                  - htmlCmpRowTitle:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        AutoHeight: =false
+                        Color: =If(ThisItem.Inactive,ColorValue("#6B6B6B"),ColorValue("#000F41"))
+                        Fill: =Color.Transparent
+                        Font: ="Inter, Arial, sans-serif"
+                        Height: =22
+                        HtmlText: ="<div style='width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:600;line-height:22px;color:" & If(ThisItem.Inactive,"#6B6B6B","#000F41") & "'>" & Substitute(Substitute(Substitute(Substitute(Substitute(ThisItem.Title,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
+                        OnSelect: =Select(Parent)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =15
+                        Tooltip: =ThisItem.Title
+                        Width: =Max(0,Parent.TemplateWidth-Self.X-If(IsBlank(ThisItem.ChipText),16,16+btnCmpRowChip.Width+8))
+                        X: =16
+                        Y: =12
+                  - htmlCmpRowSub:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        AutoHeight: =false
+                        Color: =ColorValue("#5A5A5A")
+                        Fill: =Color.Transparent
+                        Font: ="Inter, Arial, sans-serif"
+                        Height: =18
+                        HtmlText: ="<div style='width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:18px;color:#5A5A5A'>" & Substitute(Substitute(Substitute(Substitute(Substitute(ThisItem.Subtitle,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
+                        OnSelect: =Select(Parent)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =13
+                        Tooltip: =ThisItem.Subtitle
+                        Width: =Max(0,Parent.TemplateWidth-Self.X-16)
+                        X: =16
+                        Y: =34
+                  - btnCmpRowChip:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =Color.Transparent
+                        BorderThickness: =0
+                        Color: =ColorValue("#000000")
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ColorValue("#000000")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        DisplayMode: =DisplayMode.Disabled
+                        Fill: =ColorValue("#E6E6E6")
+                        Font: ="Inter, Arial, sans-serif"
+                        FontWeight: =FontWeight.Normal
+                        Height: =20
+                        HoverBorderColor: =Color.Transparent
+                        HoverColor: =ColorValue("#000000")
+                        HoverFill: =ColorValue("#E6E6E6")
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Color.Transparent
+                        PressedColor: =ColorValue("#000000")
+                        PressedFill: =ColorValue("#E6E6E6")
+                        RadiusBottomLeft: =10
+                        RadiusBottomRight: =10
+                        RadiusTopLeft: =10
+                        RadiusTopRight: =10
+                        Size: =12
+                        Text: =ThisItem.ChipText
+                        VerticalAlign: =VerticalAlign.Middle
+                        Visible: =!IsBlank(ThisItem.ChipText)
+                        Width: =80
+                        X: =Parent.TemplateWidth-16-Self.Width
+                        Y: =13
