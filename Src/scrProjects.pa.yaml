@@ -179,7 +179,11 @@ Screens:
                    Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)),
                    varPrjMode="New" && !Coalesce(varPrjSaveFailed,false),
                    Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""}),
-                   Set(varPrjMode,""); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""})
+                   Set(varPrjSelectedID,First(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed") && (IsBlank(Trim(txtPrjSearch.Text)) || Lower(Trim(txtPrjSearch.Text)) in Lower(Number) || Lower(Trim(txtPrjSearch.Text)) in Lower(Name) || Lower(Trim(txtPrjSearch.Text)) in Lower(City))),Lower(Number),SortOrder.Ascending)).ID);
+                   If(!IsBlank(varPrjSelectedID) && !IsBlank(LookUp(colAdminProjects,ID=varPrjSelectedID).ID),
+                    Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)); Set(varPrjMode,"Edit"),
+                    Set(varPrjMode,""); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""})
+                   )
                   );
                   Set(varPrjSaveFailed,false); Clear(colPrjSaveErrors); Set(varPrjLoadState,"Loaded");
                   Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl);
@@ -419,6 +423,8 @@ Screens:
                                 =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),DisplayMode.Edit,DisplayMode.Disabled)
                               BorderColor: =Color.Transparent
                               BorderThickness: =0
+                              Default: |-
+                                =LookUp(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed") && (IsBlank(Trim(txtPrjSearch.Text)) || Lower(Trim(txtPrjSearch.Text)) in Lower(Number) || Lower(Trim(txtPrjSearch.Text)) in Lower(Name) || Lower(Trim(txtPrjSearch.Text)) in Lower(City))),Lower(Number),SortOrder.Ascending),ID=varPrjSelectedID)
                               Fill: =Color.White
                               Height: =Parent.Height-Self.Y-12
                               Items: |-
@@ -688,7 +694,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -762,7 +768,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Number")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -818,7 +824,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Reference")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -874,7 +880,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Customer")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -952,7 +958,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =ColorValue("#F0F0F0")
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Status")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
@@ -960,7 +966,8 @@ Screens:
                               HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Status")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000F41")
                               HoverFill: =ColorValue("#D5EDFF")
-                              Items: =Choices([@Projects].Status)
+                              Items: |-
+                                =Split(Concat(Choices([@Projects].Status),Value,Char(31)) & If(!IsBlank(varPrjEdit.Status) && CountIf(Choices([@Projects].Status),Value=varPrjEdit.Status)=0,Char(31) & varPrjEdit.Status,""),Char(31))
                               Items.Value: =Value
                               PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Status")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000F41")
@@ -1020,7 +1027,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Street")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1076,7 +1083,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="HouseNumber")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1132,7 +1139,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="PostalCode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1188,7 +1195,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1248,7 +1255,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =ColorValue("#F0F0F0")
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               Font: ="Inter, Arial, sans-serif"
@@ -1256,7 +1263,8 @@ Screens:
                               HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               HoverColor: =ColorValue("#000F41")
                               HoverFill: =ColorValue("#D5EDFF")
-                              Items: =Choices([@Projects].Country)
+                              Items: |-
+                                =Split(Concat(Choices([@Projects].Country),Value,Char(31)) & If(!IsBlank(varPrjEdit.Country) && CountIf(Choices([@Projects].Country),Value=varPrjEdit.Country)=0,Char(31) & varPrjEdit.Country,""),Char(31))
                               Items.Value: =Value
                               PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               PressedColor: =ColorValue("#000F41")
@@ -1428,7 +1436,7 @@ Screens:
                               DisabledBorderColor: =ColorValue("#E6E6E6")
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Url")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1715,7 +1723,7 @@ Screens:
                            Set(varPrjSaveCheckPeriods,varPrjSaveMode="Edit" && !IsBlank(varPrjSaveID) && varPrjEdit.Status<>"Closed" && varPrjSaveRec.Status="Closed");
                            If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name",Message:If(LangNl && !IsBlank(T.prjErrNameRequired.nl),T.prjErrNameRequired.nl,T.prjErrNameRequired.en)}));
                            If(IsBlank(varPrjSaveRec.Number),Collect(colPrjSaveErrors,{Field:"Number",Message:If(LangNl && !IsBlank(T.prjErrNumberRequired.nl),T.prjErrNumberRequired.nl,T.prjErrNumberRequired.en)}));
-                           If(IsBlank(varPrjSaveRec.Status) || CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0,Collect(colPrjSaveErrors,{Field:"Status",Message:If(LangNl && !IsBlank(T.prjErrStatusRequired.nl),T.prjErrStatusRequired.nl,T.prjErrStatusRequired.en)}));
+                           If(IsBlank(varPrjSaveRec.Status) || (CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0 && !(varPrjSaveMode="Edit" && varPrjSaveRec.Status=varPrjEdit.Status)),Collect(colPrjSaveErrors,{Field:"Status",Message:If(LangNl && !IsBlank(T.prjErrStatusRequired.nl),T.prjErrStatusRequired.nl,T.prjErrStatusRequired.en)}));
                            If(Len(varPrjSaveRec.Name)>255,Collect(colPrjSaveErrors,{Field:"Name",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en))}));
                            If(Len(varPrjSaveRec.Number)>255,Collect(colPrjSaveErrors,{Field:"Number",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en))}));
                            If(Len(varPrjSaveRec.Reference)>255,Collect(colPrjSaveErrors,{Field:"Reference",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en))}));
@@ -1759,11 +1767,12 @@ Screens:
                              Set(varPrjSaveOpenPeriods,CountIf(colPrjPeriods,ProjectKey=varPrjSaveKey && IsBlank(Until)))
                             );
                             If(IsEmpty(colPrjSaveErrors),
-                             Set(varPrjSaveWrites,1);
+                             Set(varPrjPatchError,false);
                              IfError(CountRows(ClearCollect(colPrjPatched,Patch(Projects,If(varPrjSaveMode="New",Defaults(Projects),First(colPrjPreRaw)),{Title:varPrjSaveRec.Name,'Project Number':varPrjSaveRec.Number,'Project Reference':varPrjSaveRec.Reference,'Customer Name':varPrjSaveRec.Customer,Status:{Value:varPrjSaveRec.Status},Street:varPrjSaveRec.Street,'House Number':varPrjSaveRec.HouseNumber,'Postal Code':varPrjSaveRec.PostalCode,City:varPrjSaveRec.City,Country:If(IsBlank(varPrjSaveRec.Country),Blank(),{Value:varPrjSaveRec.Country}),'ProjectHomeSite URL':If(IsBlank(varPrjSaveRec.Url),Blank(),varPrjSaveRec.Url)})))>=0,
-                              Collect(colPrjSaveErrors,{Field:If("duplicate" in Lower(FirstError.Message),"Number",""),Message:If("duplicate" in Lower(FirstError.Message),If(LangNl && !IsBlank(T.prjErrDuplicateServer.nl),T.prjErrDuplicateServer.nl,T.prjErrDuplicateServer.en),If(LangNl && !IsBlank(T.prjErrPatch.nl),T.prjErrPatch.nl,T.prjErrPatch.en) & " " & FirstError.Message)});false);
+                              Set(varPrjPatchError,true); Collect(colPrjSaveErrors,{Field:If("duplicate" in Lower(FirstError.Message),"Number",""),Message:If("duplicate" in Lower(FirstError.Message),If(LangNl && !IsBlank(T.prjErrDuplicateServer.nl),T.prjErrDuplicateServer.nl,T.prjErrDuplicateServer.en),If(LangNl && !IsBlank(T.prjErrSharePoint.nl),T.prjErrSharePoint.nl,T.prjErrSharePoint.en) & " " & FirstError.Message)});false);
                              If(CountIf(colPrjSaveErrors,Field="Number")>0,Set(varPrjSaveDupFound,true));
                              Set(varPrjPatchedID,First(colPrjPatched).ID);
+                             Set(varPrjSaveWrites,If(varPrjPatchError && IsBlank(varPrjPatchedID),0,1));
                              If(IsEmpty(colPrjSaveErrors) && (IsBlank(varPrjPatchedID) || (varPrjSaveMode="Edit" && varPrjPatchedID<>varPrjSaveID)),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrPatch.nl),T.prjErrPatch.nl,T.prjErrPatch.en)}));
                              If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrVerify.nl),T.prjErrVerify.nl,T.prjErrVerify.en)});false));
                              If(IsEmpty(colPrjSaveErrors),

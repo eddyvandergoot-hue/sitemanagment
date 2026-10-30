@@ -265,7 +265,7 @@ $iGateRead = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),IfError(Refresh(Employ
 $iPre = $saveN.IndexOf('ClearCollect(colEmpPreRaw,Filter(Employers,ID=varEmpSaveID))')
 $iDup = $saveN.IndexOf('ClearCollect(colEmpDup,')
 $iConf = $saveN.IndexOf('Set(varEmpSaveConflict,true)')
-$iWriteGate = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),Set(varEmpSaveWrites,1);IfError(CountRows(ClearCollect(colEmpPatched,Patch(Employers,')
+$iWriteGate = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),Set(varEmpPatchError,false);IfError(CountRows(ClearCollect(colEmpPatched,Patch(Employers,')
 $iPatch = $saveN.IndexOf('Patch(Employers,')
 $iVerify = $saveN.IndexOf('ClearCollect(colEmpVerifyRaw,Filter(Employers,ID=varEmpPatchedID))')
 $iOk = $saveN.IndexOf('Set(varEmpSaveVerified,true)')
@@ -417,7 +417,7 @@ Assert-Eval ('With({varEmpMode:"New",varEmpEdit:' + $newSnap + ',' + (Inputs '"T
 # Diagnosability: verify mismatch in the notification (labels only) and in Trace (field names only); Patch reason in the notification only
 Assert-True ($saveN.Contains((Norm 'Trace("DIAG|Contractors|VerifyMismatch",TraceSeverity.Warning,{Screen:"Contractors",ItemID:Coalesce(varEmpPatchedID,0),Rows:CountRows(colEmpVerifyRaw),Fields:varEmpVerifyDiff})'))) 'Trace DIAG|Contractors|VerifyMismatch with field names only'
 Assert-True ($saveN.Contains((Norm 'Set(varEmpVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));')) -and $saveN.Contains((Norm 'Substitute(If(LangNl && !IsBlank(T.empErrVerifyFields.nl),T.empErrVerifyFields.nl,T.empErrVerifyFields.en),"{0}",Concat(d,L,", "))'))) 'Verify mismatch: technical names to Trace, labels in the notification (never values)'
-Assert-True ($saveN.Contains((Norm 'Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrPatch.nl),T.empErrPatch.nl,T.empErrPatch.en) & " " & FirstError.Message});false);'))) 'Patch error: SharePoint reason (FirstError.Message) appended to the notified error only (never Trace)'
+Assert-True ($saveN.Contains((Norm 'Set(varEmpPatchError,true); Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrSharePoint.nl),T.empErrSharePoint.nl,T.empErrSharePoint.en) & " " & FirstError.Message});false);'))) 'Patch error: flag set, SharePoint reason (FirstError.Message) appended to the shown error only (never Trace)'
 $feAll = @([regex]::Matches($screenText, 'FirstError\.Message'))
 $feOk = @($feAll | Where-Object { $screenText.Substring([Math]::Max(0, $_.Index - 220), [Math]::Min(220, $_.Index)) -match 'Collect\(col\w*Errors,\{[^{}]*$' })
 Assert-True ($feAll.Count -ge 5 -and $feOk.Count -eq $feAll.Count) "FirstError.Message only inside notified error collections ($($feAll.Count) uses: load errors + Patch error)"
@@ -555,7 +555,10 @@ foreach ($k in $fixTexts.Keys) { Assert-True ($formulas.Contains("$($k): {en: ""
 Assert-True ($formulas -notmatch '\bempMsgSaved:' -and $formulas -notmatch 'en: "(Saved|Not saved)\.\s') 'T.empMsgSaved removed; no body text starts with the head word "Saved." / "Not saved."'
 $conflictMsg = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'
 Assert-True ($formulas.Contains("empErrConflict: {en: ""$conflictMsg"", nl: """"}")) 'T.empErrConflict exact text'
-$unusedT = @($tKeys | Where-Object { $_ -cnotin $used })
+# Keys delivered by powerfx-logic for the form header that powerfx-ui builds next (30-10-2026); remove a key from this list once the header uses it.
+$pendingUiT = @('empNoSelection', 'prjNoSelection')
+foreach ($k in $pendingUiT) { Assert-True ($tKeys -ccontains $k) "T.$k exists (header 'no record selected')"; if ($used -cnotcontains $k) { Write-Output "WARN T.$k not yet used in Src (pending powerfx-ui header)" } }
+$unusedT = @($tKeys | Where-Object { $_ -cnotin $used -and $_ -cnotin $pendingUiT })
 Assert-True ($unusedT.Count -eq 0) "No unused T keys ($($unusedT -join ', '))"
 function Msg([string]$fixture, [string]$fx) { return "With({LangNl:false,T:$tRec},With({$fixture},$fx))" }
 $saveMsg = @($msgs | Where-Object Key -eq 'btnEmpSave.OnSelect' | Sort-Object Pos)
@@ -618,8 +621,8 @@ $barReaders = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_]
 Assert-True (($barReaders -join ',') -ceq 'conEmpMsgBar,icoEmpMsgClose,lblEmpMsgBody,lblEmpMsgHead') "Message variables are only displayed by the bar controls ($($barReaders -join ', '))"
 
 # Active switch (btnEmpActiveSwitch): same guard as the former checkbox, toggles varEmpActiveDraft, live amber warning only on -> off
-$swDm = Get-Prop 'btnEmpActiveSwitch' 'DisplayMode'; $swSuffix = ',DisplayMode.Edit,DisplayMode.View)'
-Assert-True ($swDm -ceq (Get-Prop 'txtEmpName' 'DisplayMode') -and $swDm.StartsWith('=If(') -and $swDm.EndsWith($swSuffix)) 'Switch DisplayMode = the form-input guard of the former checkbox (Loaded, no load errors, not busy/saving/SaveFailed, New/Edit; else View)'
+$swDm = Get-Prop 'btnEmpActiveSwitch' 'DisplayMode'; $swSuffix = ',DisplayMode.Edit,DisplayMode.Disabled)'
+Assert-True ($swDm -ceq (Get-Prop 'txtEmpName' 'DisplayMode') -and $swDm.StartsWith('=If(') -and $swDm.EndsWith($swSuffix)) 'Switch DisplayMode = the form-input guard of the former checkbox (Loaded, no load errors, not busy/saving/SaveFailed, New/Edit; else Disabled)'
 $swGuard = $swDm.Substring(4, $swDm.Length - 4 - $swSuffix.Length)
 $sw = Get-Prop 'btnEmpActiveSwitch' 'OnSelect'
 Assert-True ($sw.StartsWith('=If(' + $swGuard + ',')) 'Switch OnSelect starts with the same guard as its DisplayMode (fail-closed)'
@@ -838,6 +841,89 @@ foreach ($W in 320, 480, 768, 1280) {
 }
 $kids = @($doc['Screens'][$screenName]['Children'] | ForEach-Object { @($_.Keys)[0] })
 Assert-True ($kids[0] -eq 'lblEmpTitle' -and $kids[1] -eq 'imgLogoContractors' -and $kids[2] -eq 'imgEmpSpinner') 'Children order: title, logo directly after, spinner after the logo'
+
+# (17) Studio FAIL build adminpattern-20261030_071949 (Eddy 30-10-2026): items 4, 5 and d (shared helpers, reused for Projects) --
+# Item 4 cause: the form inputs fell back to DisplayMode.View when no record was in the form (Mode ""). A Classic/TextInput in
+# View mode renders as read-only text without field box or border (white on the white card): with an empty Default it was
+# invisible; the dropdowns kept their grey fill. Fix: the fallback is DisplayMode.Disabled, so the field box always renders.
+function Test-FormInputsRender($index, [string[]]$editable, [string[]]$readOnly, [string]$card, [string]$guardFix, [string]$scr) {
+    $kidsOf = @($index[$card]['Children'] | ForEach-Object { @($_.Keys)[0] })
+    foreach ($c in @($editable) + @($readOnly)) {
+        $props = $index[$c]['Properties']
+        $vis = if ($props.ContainsKey('Visible')) { ([string]$props['Visible']).Trim() } else { $null }
+        Assert-True ($null -eq $vis -or $vis -eq '=true') "$scr : $c has no Visible formula (always rendered)"
+        Assert-True ($kidsOf -ccontains $c -and ([string]$props['Height']).Trim() -eq '=36' -and ([string]$props['DisplayMode']) -notmatch 'DisplayMode\.View') "$scr : $c is a direct child of $card, h36, never DisplayMode.View"
+    }
+    foreach ($c in $readOnly) { Assert-True (([string]$index[$c]['Properties']['DisplayMode']).Trim() -eq '=DisplayMode.Disabled') "$scr : read-only $c always Disabled" }
+    $dm0 = ([string]$index[$editable[0]]['Properties']['DisplayMode']).Trim(); $sfx = ',DisplayMode.Edit,DisplayMode.Disabled)'
+    Assert-True ($dm0.StartsWith('=If(') -and $dm0.EndsWith($sfx)) "$scr : form DisplayMode = If(<guard>,Edit,Disabled)"
+    foreach ($c in $editable) { Assert-True (([string]$index[$c]['Properties']['DisplayMode']).Trim() -ceq $dm0) "$scr : $c uses the same form DisplayMode" }
+    $g = $dm0.Substring(4, $dm0.Length - 4 - $sfx.Length)
+    Assert-Eval "With({$guardFix},$g)" $true "$scr : inputs editable: Loaded, idle, Edit"
+    foreach ($m in @('""', 'If(false,"x")')) { Assert-Eval "With({$($guardFix -replace 'Mode:"Edit"', "Mode:$m")},$g)" $false "$scr : no record in the form (Mode $m, e.g. empty list): all inputs Disabled (rendered, not editable)" }
+}
+# Item 5: after a successful load, Mode empty (or the selected ID vanished) -> select the first row of the visible (filtered,
+# sorted) list exactly like the gallery OnSelect; empty visible list -> Mode "" (no selection). The loader itself refuses to run
+# over unsaved input (dirty block above), so the auto-selection never replaces typed input.
+function Test-AutoSelect([string]$load, [string]$itemsFx, [string]$defaultFx, [string]$onSelect, [string]$p, [string]$col, [string]$emptySnap, [string]$dirtyFx, [string]$scr) {
+    $lN = Norm $load
+    $sel = "Set(var${p}SelectedID,First($itemsFx).ID);"
+    $branch = "If(!IsBlank(var${p}SelectedID) && !IsBlank(LookUp($col,ID=var${p}SelectedID).ID),Set(var${p}Edit,LookUp($col,ID=var${p}SelectedID)); Set(var${p}Mode,`"Edit`"),Set(var${p}Mode,`"`"); Set(var${p}SelectedID,Blank()); Set(var${p}Edit,$emptySnap))"
+    Assert-True ($lN.Contains((Norm ($sel + $branch)))) "$scr : loader auto-selects the first visible row (gallery Items text), else no selection with an empty snapshot"
+    Assert-True (([regex]::Matches($lN, [regex]::Escape((Norm $sel)))).Count -eq 1 -and ([regex]::Matches((Norm $onSelect), [regex]::Escape((Norm "Set(var${p}Edit,LookUp($col,ID=var${p}SelectedID)); Set(var${p}Mode,`"Edit`");")))).Count -eq 1) "$scr : auto-selection fills var${p}SelectedID/var${p}Edit/Mode Edit like the gallery OnSelect"
+    $iDirty = $lN.IndexOf((Norm ('If(' + $dirtyFx + " && !Coalesce(var${p}SaveFailed,false),"))); $iGate = $lN.IndexOf((Norm "If(IsEmpty(col${p}LoadErrors),ClearCollect("))
+    $iNew = $lN.IndexOf((Norm "var${p}Mode=`"New`" && !Coalesce(var${p}SaveFailed,false),")); $iSel = $lN.IndexOf((Norm $sel)); $iOk = $lN.IndexOf((Norm "Set(var${p}SaveFailed,false); Clear(col${p}SaveErrors); Set(var${p}LoadState,`"Loaded`");"))
+    Assert-True ($iDirty -ge 0 -and $iGate -gt $iDirty -and $iNew -gt $iGate -and $iSel -gt $iNew -and $iOk -gt $iSel) "$scr : auto-selection only after the dirty block, in the successful-load branch, as the last branch (Mode empty or the selected ID no longer exists), before Loaded + form reset"
+    Assert-True ($defaultFx -ceq "=LookUp($itemsFx,ID=var${p}SelectedID)") "$scr : gallery Default = the selected record within the visible list"
+}
+# Item d: "nothing written" (SharePoint refused: Patch error AND no record with ID) -> Not saved., state stays Loaded, input kept,
+# retry possible; a returned ID with an error, no ID without an error (uncertain), an ID mismatch or a verify read/mismatch
+# after a successful Patch -> Failed + SaveFailed (locked, Refresh = Discard).
+function Test-WriteCounter([string]$save, [string]$p, [string]$list, [string]$scr) {
+    $sN = Norm $save
+    $wFx = "If(var${p}PatchError && IsBlank(var${p}PatchedID),0,1)"
+    $iInit = $sN.IndexOf("Set(var${p}SaveWrites,0);"); $iF0 = $sN.IndexOf((Norm "Set(var${p}PatchError,false);IfError(CountRows(ClearCollect(col${p}Patched,Patch($list,"))
+    $iPatch = $sN.IndexOf("Patch($list,"); $iF1 = $sN.IndexOf((Norm "Set(var${p}PatchError,true); Collect(col${p}SaveErrors,{"))
+    $iId = $sN.IndexOf((Norm "Set(var${p}PatchedID,First(col${p}Patched).ID);")); $iW = $sN.IndexOf((Norm "Set(var${p}SaveWrites,$wFx);"))
+    $iVer = $sN.IndexOf("ClearCollect(col${p}VerifyRaw,")
+    Assert-True ($iInit -gt 0 -and $iF0 -gt $iInit -and $iPatch -gt $iF0 -and $iF1 -gt $iPatch -and $iId -gt $iF1 -and $iW -gt $iId -and $iVer -gt $iW) "$scr : write counter set only after the Patch from its result: $wFx (flag reset before the Patch, set in its error branch)"
+    Assert-True (([regex]::Matches($sN, "Set\(var${p}SaveWrites,")).Count -eq 2 -and ([regex]::Matches($sN, "Set\(var${p}PatchError,")).Count -eq 2) "$scr : var${p}SaveWrites set twice (init 0, after the Patch); var${p}PatchError twice"
+    $iOut = $sN.IndexOf((Norm "If(var${p}SaveVerified && IsEmpty(col${p}SaveErrors),RemoveIf(")); $iZero = $sN.IndexOf("var${p}SaveWrites=0,"); $iFail = $sN.IndexOf((Norm "Set(var${p}SaveFailed,true); Set(var${p}LoadState,`"Failed`");"))
+    Assert-True ($iOut -gt $iVer -and $iZero -gt $iOut -and $iFail -gt $iZero) "$scr : outcome If(verified, saved; writes = 0, Not saved (Loaded); else Failed + SaveFailed)"
+    $zb = $sN.Substring($iZero, $iFail - $iZero)
+    Assert-True ($zb -notmatch 'Reset\(|Select\(|Clear\(|Set\(var\w*(Edit|Mode|LoadState|SelectedID|SaveFailed),' -and $zb.Contains('T.admHeadNotSaved.en')) "$scr : zero-write branch only shows Not saved. + reason: input, selection and Loaded state kept (retry possible)"
+    $out = "If(var${p}SaveVerified && IsEmpty(col${p}SaveErrors),`"Saved`",var${p}SaveWrites=0,`"Loaded`",`"Failed`")"
+    $err = 'Table({Field:"",Message:"x"})'; $none = 'Filter(Table({Field:"",Message:""}),false)'
+    foreach ($c in @(@('true', 'If(false,0)', $err, 'false', 'Loaded', 'Patch error without a returned record (SharePoint refused): nothing written'),
+                    @('true', '7', $err, 'false', 'Failed', 'Patch error but a record with ID returned: possibly written'),
+                    @('false', 'If(false,0)', $err, 'false', 'Failed', 'no error and no record (uncertain): counted as a write'),
+                    @('false', '7', $err, 'false', 'Failed', 'Patch returned ID 7, then verify read error or mismatch'),
+                    @('false', '7', $none, 'true', 'Saved', 'Patch ID 7 and verify OK'))) {
+        Assert-Eval "With({var${p}PatchError:$($c[0]),var${p}PatchedID:$($c[1])},With({var${p}SaveWrites:$wFx},With({col${p}SaveErrors:$($c[2]),var${p}SaveVerified:$($c[3])},$out)))" $c[4] "$scr : $($c[5]) -> $($c[4])"
+    }
+}
+$empEditable = @('txtEmpName', 'txtEmpAddress', 'txtEmpPostalcode', 'txtEmpCity', 'txtEmpCountry', 'txtEmpContactName', 'txtEmpContactEmail', 'txtEmpContactPhone')
+Test-FormInputsRender $idx $empEditable @('txtEmpCode') 'conEmpFormCard' 'varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpMode:"Edit"' 'Contractors'
+Assert-True ((Get-Prop 'btnEmpActiveSwitch' 'DisplayMode') -ceq (Get-Prop 'txtEmpName' 'DisplayMode') -and !$idx['btnEmpActiveSwitch']['Properties'].ContainsKey('Visible') -and !$idx['btnEmpActiveKnob']['Properties'].ContainsKey('Visible')) 'Contractors: Active switch always rendered, Disabled like the inputs when no record is in the form'
+Assert-True ($screenText -notmatch 'DisplayMode\.View') 'Contractors: no DisplayMode.View on the screen'
+$empItems = (Get-Prop 'galEmpList' 'Items').TrimStart('=')
+$empEmpty = '{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
+Test-AutoSelect $load $empItems (Get-Prop 'galEmpList' 'Default') (Get-Prop 'galEmpList' 'OnSelect') 'Emp' 'colAdminEmployers' $empEmpty $dirty 'Contractors'
+$empSelFix = 'colAdminEmployers:Table({ID:1,Name:"Zeta",Code:"EMP-001",City:"Ede",Active:true},{ID:2,Name:"alpha",Code:"EMP-002",City:"",Active:false},{ID:3,Name:"Beta",Code:"",City:"Delft",Active:If(false,true)})'
+foreach ($c in @(@('false', '""', '3', 'first active row by name (inactive alpha hidden; blank Active = active)'), @('true', '""', '2', 'Show inactive on: alpha first'), @('false', '" ZET "', '1', 'search filter applied'))) {
+    Assert-Eval "With({$empSelFix,varEmpShowInactive:$($c[0]),txtEmpSearch:{Text:$($c[1])}},Text(First($empItems).ID))" $c[2] "Contractors auto-select: $($c[3]) -> ID $($c[2])"
+}
+Assert-Eval "With({$empSelFix,varEmpShowInactive:false,txtEmpSearch:{Text:`"nomatch`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty visible list -> no ID -> Mode "" (no selection)'
+Assert-Eval "With({colAdminEmployers:Filter(Table({ID:1,Name:`"`",Code:`"`",City:`"`",Active:true}),false),varEmpShowInactive:false,txtEmpSearch:{Text:`"`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty list -> no selection'
+Test-WriteCounter $save 'Emp' 'Employers' 'Contractors'
+Assert-Eval (Get-GuardFx 'btnEmpSave' $fix) $true 'Contractors: after a refused save (Loaded, SaveFailed false, input kept) Save is allowed again (retry)'
+$empPatchErr = Get-Balanced $save ($save.IndexOf('Set(varEmpPatchError,true); Collect(colEmpSaveErrors,') + 'Set(varEmpPatchError,true); Collect'.Length)
+$empPatchErrRec = (Split-Args $empPatchErr.Substring(1, $empPatchErr.Length - 2))[1].Replace('FirstError.Message', 'fe')
+Assert-Eval "With({LangNl:false,T:$tRec,fe:`"Access denied.`"},$empPatchErrRec.Field & `"|`" & $empPatchErrRec.Message)" '|SharePoint error: Access denied.' 'Contractors: refused Patch -> red message with the SharePoint reason'
+# Item f (statuschip = saved status): varEmpEdit.Active comes only from the loaded/verified rows or the New default
+function Get-SetValues([string]$text, [string]$var) { return @([regex]::Matches($text, "Set\($var,") | ForEach-Object { $b = Get-Balanced $text ($_.Index + 3); $b.Substring($var.Length + 2, $b.Length - $var.Length - 3).Trim() } | Sort-Object -Unique) }
+$empEditSets = Get-SetValues $screenText 'varEmpEdit'
+Assert-True ($empEditSets.Count -ge 3 -and @($empEditSets | Where-Object { $_ -notmatch '^(LookUp\(colAdminEmployers,ID=varEmpSelectedID\)|First\(colEmpVerify\)|\{ID:Blank\(\),.*Active:true\})$' }).Count -eq 0) "Contractors: varEmpEdit (saved status source for the chip) only from the loaded list, the verify read or the empty/New snapshot ($($empEditSets -join ' | '))"
 Write-Output 'PASS Test-AdminScreens (Contractors): static structure only. Studio import, binding, delegation (Monitor), SharePoint case-sensitivity of Title = and functional tests NOT verified.'
 # =====================================================================================================================
 # Build 2 (30-10-2026): Projects (scrProjects, list Projects). Same admin pattern as Contractors; only fields and rules differ.
@@ -1008,8 +1094,9 @@ foreach ($v in @(@('Set(varPrjSaveNumber,varPrjSaveRec.Number)', "Filter(Project
 }
 $pChoices = @($pAll.Keys | Where-Object { $pAll[$_] -match '\bChoices\(' } | Sort-Object)
 Assert-True (($pChoices -join ',') -ceq 'btnPrjSave.OnSelect,ddPrjCountry.Items,ddPrjStatus.Items') "Projects: Choices() only on the two dropdown Items and in Save ($($pChoices -join ', '))"
-Assert-True ((PGet 'ddPrjStatus' 'Items') -ceq '=Choices([@Projects].Status)' -and (PGet 'ddPrjCountry' 'Items') -ceq '=Choices([@Projects].Country)' -and (PGet 'ddPrjStatus' 'Items.Value') -eq '=Value') 'Projects: Status/Country dropdown Items = Choices([@Projects].<column>) once (SharePoint values, not translated)'
-Assert-True (([regex]::Matches($pSave, '\bChoices\(')).Count -eq 1 -and $pSave.Contains('If(IsBlank(varPrjSaveRec.Status) || CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0,Collect(colPrjSaveErrors,{Field:"Status"')) 'Projects: Save validates Status once against Choices (not inside ForAll)'
+$pAsIs = @{}; foreach ($c in @('Status', 'Country')) { $pAsIs[$c] = "Split(Concat(Choices([@Projects].$c),Value,Char(31)) & If(!IsBlank(varPrjEdit.$c) && CountIf(Choices([@Projects].$c),Value=varPrjEdit.$c)=0,Char(31) & varPrjEdit.$c,`"`"),Char(31))" }
+Assert-True ((PGet 'ddPrjStatus' 'Items') -ceq ('=' + $pAsIs.Status) -and (PGet 'ddPrjCountry' 'Items') -ceq ('=' + $pAsIs.Country) -and (PGet 'ddPrjStatus' 'Items.Value') -eq '=Value' -and (PGet 'ddPrjCountry' 'Items.Value') -eq '=Value') 'Projects: Status/Country dropdown Items = Choices([@Projects].<column>) (SharePoint values, not translated) plus the stored value of the record when it is not in Choices (shown as-is)'
+Assert-True (([regex]::Matches($pSave, '\bChoices\(')).Count -eq 1 -and $pSave.Contains('If(IsBlank(varPrjSaveRec.Status) || (CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0 && !(varPrjSaveMode="Edit" && varPrjSaveRec.Status=varPrjEdit.Status)),Collect(colPrjSaveErrors,{Field:"Status"')) 'Projects: Save validates Status once against Choices (not inside ForAll); an unchanged stored value outside Choices is accepted in Edit'
 Assert-True (@($pAll.Values | Where-Object { $_ -match 'ForAll\([^;]*\bChoices\(' }).Count -eq 0 -and $pText -notmatch '\bSearch\(') 'Projects: no Choices() inside ForAll, no Search()'
 Assert-True ($pText -notmatch "ForAll\([^)]*\bProjects\b[^)]*\)[^;]*\b(?:LookUp|Filter)\(\s*Projects") 'Projects: no remote LookUp/Filter inside ForAll'
 
@@ -1052,7 +1139,7 @@ Assert-True (([regex]::Matches($pSaveN, [regex]::Escape($pModDisp))).Count -eq 1
 $pI = [ordered]@{
     Val = $pSaveN.IndexOf('If(IsBlank(varPrjSaveRec.Name)'); DupLocal = $pSaveN.IndexOf('CountIf(colAdminProjects,'); GateRead = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),')
     Pre = $pSaveN.IndexOf('ClearCollect(colPrjPreRaw,Filter(Projects,ID=varPrjSaveID))'); Dup = $pSaveN.IndexOf('ClearCollect(colPrjDup,'); Conf = $pSaveN.IndexOf('Set(varPrjSaveConflict,true)')
-    Periods = $pSaveN.IndexOf("ClearCollect(colPrjPeriods,"); WriteGate = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),Set(varPrjSaveWrites,1);IfError(CountRows(ClearCollect(colPrjPatched,Patch(Projects,')
+    Periods = $pSaveN.IndexOf("ClearCollect(colPrjPeriods,"); WriteGate = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),Set(varPrjPatchError,false);IfError(CountRows(ClearCollect(colPrjPatched,Patch(Projects,')
     Patch = $pSaveN.IndexOf('Patch(Projects,'); Verify = $pSaveN.IndexOf('ClearCollect(colPrjVerifyRaw,Filter(Projects,ID=varPrjPatchedID))'); Ok = $pSaveN.IndexOf('Set(varPrjSaveVerified,true)')
     Local = $pSaveN.IndexOf('If(varPrjSaveVerified&&IsEmpty(colPrjSaveErrors),RemoveIf(colAdminProjects,ID=varPrjPatchedID);Collect(colAdminProjects,First(colPrjVerify));')
 }
@@ -1064,7 +1151,7 @@ Assert-True ($pSaveN.Contains('varPrjSaveWrites=0,Set(varAdmMsgKind,"Error");') 
 $pPatchErr = Get-Balanced $pSave ($pSave.IndexOf('Collect(colPrjSaveErrors,{Field:If("duplicate" in Lower(FirstError.Message)') + 7)
 $pPatchErrRec = (Split-Args $pPatchErr.Substring(1, $pPatchErr.Length - 2))[1].Replace('FirstError.Message', 'fe')
 Assert-Eval "With({LangNl:false,T:$tRec,fe:`"The list item could not be added or updated because duplicate values were found in the following field(s) in the list: [Project Number].`"},$pPatchErrRec.Field & `"|`" & $pPatchErrRec.Message)" 'Number|Fix: Project Number already exists (refused by SharePoint).' 'Projects: SharePoint uniqueness refusal -> duplicate Project Number (red Number field)'
-Assert-Eval "With({LangNl:false,T:$tRec,fe:`"Access denied.`"},$pPatchErrRec.Field & `"|`" & $pPatchErrRec.Message)" '|Save not confirmed by SharePoint. Access denied.' 'Projects: other Patch error -> not confirmed + SharePoint reason'
+Assert-Eval "With({LangNl:false,T:$tRec,fe:`"Access denied.`"},$pPatchErrRec.Field & `"|`" & $pPatchErrRec.Message)" '|SharePoint error: Access denied.' 'Projects: other Patch error -> "SharePoint error:" + SharePoint reason'
 Assert-True ($pSaveN.Contains('If(CountIf(colPrjSaveErrors,Field="Number")>0,Set(varPrjSaveDupFound,true));')) 'Projects: a refused duplicate is counted in the SaveEnd trace (DupFound)'
 
 # Conflict check and verify read: exactly the app-written fields, both sides normalized
@@ -1151,7 +1238,7 @@ Assert-True ($pFe.Count -eq 5 -and $pFeOk.Count -eq $pFe.Count) "Projects: First
 $pUsedT = @([regex]::Matches($pText, '\bT\.(\w+)\.(?:en|nl)\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
 Assert-True (@($pUsedT | Where-Object { $_ -notmatch '^(prj|adm)' }).Count -eq 0) "Projects: only prj* and shared adm* T keys used ($($pUsedT.Count))"
 $pPrjKeys = @($tKeys | Where-Object { $_ -like 'prj*' })
-Assert-True ($pPrjKeys.Count -ge 50 -and @($pPrjKeys | Where-Object { $_ -cnotin $pUsedT }).Count -eq 0) "Projects: all $($pPrjKeys.Count) prj* T keys exist with English text and are used on scrProjects (nl empty)"
+Assert-True ($pPrjKeys.Count -ge 50 -and @($pPrjKeys | Where-Object { $_ -cnotin $pUsedT -and $_ -cnotin $pendingUiT }).Count -eq 0) "Projects: all $($pPrjKeys.Count) prj* T keys exist with English text and are used on scrProjects (nl empty)"
 $pPrjOk = @([regex]::Matches($formulas, '(?m)^\s*prj\w+:\s*\{en:\s*"[^"]+",\s*nl:\s*""\}')).Count
 Assert-True ($pPrjOk -eq $pPrjKeys.Count) "Projects: every prj* key has an English text and an empty nl text ($pPrjOk of $($pPrjKeys.Count))"
 $pHard = @()
@@ -1333,7 +1420,7 @@ foreach ($k in $pTextFields.Keys) {
 foreach ($k in $pDropFields.Keys) { $f = $pDropFields[$k]; Assert-True ((PGet $k 'BorderColor') -ceq "=If(CountIf(colPrjSaveErrors,Field=""$f"")>0,ColorValue(""#DB1E28""),ColorValue(""#DCDCDC""))" -and (PGet $k 'DisplayMode') -ceq (PGet 'txtPrjName' 'DisplayMode')) "Projects: $k red border on Field=$f, same form DisplayMode" }
 $pFields = @([regex]::Matches($pSave, 'Collect\(colPrjSaveErrors,\{Field:"(\w*)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
 Assert-True (@($pFields | Where-Object { $_ -ne '' -and $_ -cnotin $pWritten }).Count -eq 0) "Projects: every collected error Field is an input field or '' ($($pFields -join ','))"
-Assert-True ((PGet 'txtPrjName' 'DisplayMode') -ceq '=If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)') 'Projects: inputs editable only when Loaded, idle, no failed save, New/Edit'
+Assert-True ((PGet 'txtPrjName' 'DisplayMode') -ceq '=If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)') 'Projects: inputs editable only when Loaded, idle, no failed save, New/Edit (else Disabled: the field box always renders)'
 $pFormKids = @($pIdx['conPrjFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
 $pExpKids = 'lblPrjFormTitle,btnPrjFormChip,lblPrjFormDivider,lblPrjSecGeneral,lblPrjNameLabel,lblPrjNameRequired,txtPrjName,lblPrjNumberLabel,lblPrjNumberRequired,txtPrjNumber,lblPrjReferenceLabel,txtPrjReference,lblPrjCustomerLabel,txtPrjCustomer,lblPrjStatusLabel,lblPrjStatusRequired,ddPrjStatus,lblPrjSecAddress,lblPrjStreetLabel,txtPrjStreet,lblPrjHouseNumberLabel,txtPrjHouseNumber,lblPrjPostalCodeLabel,txtPrjPostalCode,lblPrjCityLabel,txtPrjCity,lblPrjCountryLabel,ddPrjCountry,lblPrjSecPeople,lblPrjLeaderLabel,txtPrjLeader,lblPrjSiteManagerLabel,txtPrjSiteManager,lblPrjSecLinks,lblPrjUrlLabel,txtPrjUrl,lblPrjModified'
 Assert-True (($pFormKids -join ',') -ceq $pExpKids) "Projects: conPrjFormCard children: $($pFormKids -join ',')"
@@ -1409,4 +1496,53 @@ foreach ($w in 320, 728, 895, 896, 900, 1280, 1920) {
 }
 $edState = [IO.File]::ReadAllText((Join-Path $srcDir '_EditorState.pa.yaml'))
 Assert-True ($edState -match '(?m)^\s+- scrProjects\s*$') 'Projects: scrProjects listed in _EditorState ScreensOrder'
+
+# (P19) Studio FAIL build adminpattern-20261030_071949 (Eddy 30-10-2026): items 4, 5, a, d, e, f (helpers from section 17) ------
+# Item 4: same cause as on Contractors (View fallback rendered the empty inputs invisibly); all inputs always render.
+Test-FormInputsRender $pIdx (@($pTextFields.Keys) + @($pDropFields.Keys)) @('txtPrjLeader', 'txtPrjSiteManager') 'conPrjFormCard' 'varPrjLoadState:"Loaded",colPrjLoadErrors:Filter(Table({Message:""}),false),varPrjBusy:false,varPrjSaving:false,varPrjSaveFailed:false,varPrjMode:"Edit"' 'Projects'
+Assert-True ($pText -notmatch 'DisplayMode\.View') 'Projects: no DisplayMode.View on the screen'
+# Item 5: auto-select the first visible row after a successful load
+$prjEmpty = '{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""}'
+Test-AutoSelect $pLoad $pItems (PGet 'galPrjList' 'Default') (PGet 'galPrjList' 'OnSelect') 'Prj' 'colAdminProjects' $prjEmpty $pDirty 'Projects'
+foreach ($c in @(@('false', '""', '4', 'first visible row by Project Number (A-1; Closed hidden)'), @('true', '""', '4', 'Show inactive on: A-1 still first'), @('false', '"test"', '2', 'search filter applied (TEST-001)'), @('true', '"p-9"', '3', 'Closed row selectable when shown'))) {
+    Assert-Eval "With({$pItemFix,varPrjShowInactive:$($c[0]),txtPrjSearch:{Text:$($c[1])}},Text(First($pItems).ID))" $c[2] "Projects auto-select: $($c[3]) -> ID $($c[2])"
+}
+Assert-Eval "With({$pItemFix,varPrjShowInactive:false,txtPrjSearch:{Text:`"p-9`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: only a hidden Closed project matches -> no selection (Mode "")'
+Assert-Eval "With({colAdminProjects:Filter(Table({ID:1,Name:`"`",Number:`"`",Customer:`"`",City:`"`",Status:`"`"}),false),varPrjShowInactive:false,txtPrjSearch:{Text:`"`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: empty list -> no selection'
+# Item d: SharePoint refusal (nothing written) keeps Loaded and the input; partial write / verify failure -> Failed
+Test-WriteCounter $pSave 'Prj' 'Projects' 'Projects'
+Assert-Eval (PG 'btnPrjSave' $pFix) $true 'Projects: after a refused save (Loaded, SaveFailed false, input kept) Save is allowed again (retry)'
+Assert-True ($pPatchErrRec.Contains('T.prjErrSharePoint.en') -and $pSave.Contains('Set(varPrjPatchError,true); Collect(colPrjSaveErrors,{Field:If("duplicate" in Lower(FirstError.Message)')) 'Projects: Patch error branch sets the flag and keeps the duplicate mapping (red Project Number)'
+# Item a: a stored Status/Country outside Choices is shown as-is (extra option for this record only), never counts as a change,
+# is not blocked by the Status validation when unchanged, and is written back unchanged as {Value: <stored>}.
+$chS = 'Table({Value:"Active"},{Value:"On hold"},{Value:"Closed"})'; $chC = 'Table({Value:"Netherlands"},{Value:"Germany"})'
+$stFx = $pAsIs.Status.Replace('Choices([@Projects].Status)', 'chS'); $coFx = $pAsIs.Country.Replace('Choices([@Projects].Country)', 'chC')
+foreach ($c in @(@('"Archived"', 'Active,On hold,Closed,Archived', 'unknown stored value added once, after the choices'), @('"Active"', 'Active,On hold,Closed', 'known value: no extra option'), @('""', 'Active,On hold,Closed', 'empty: no extra option'), @('If(false,"x")', 'Active,On hold,Closed', 'blank: no extra option'))) {
+    Assert-Eval "With({chS:$chS,varPrjEdit:{Status:$($c[0])}},Concat($stFx,Value,`",`"))" $c[1] "Projects a: Status items, $($c[2])"
+}
+Assert-Eval "With({chC:$chC,varPrjEdit:{Country:`"Belgium`"}},Concat($coFx,Value,`",`"))" 'Netherlands,Germany,Belgium' 'Projects a: Country items, unknown stored value added'
+foreach ($v in @('"Archived"', '"Active"')) { Assert-Eval "With({chS:$chS,varPrjEdit:{Status:$v}},CountIf($stFx,Value=varPrjEdit.Status))" 1 "Projects a: stored Status $v is exactly one dropdown item, so Default = varPrjEdit.Status shows it as-is" }
+$pRawUnk = PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"Archived"}' '{Value:"Belgium"}' $bT $bP
+Assert-Eval (PDirty $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""')) $false 'Projects a: unknown Status/Country shown as-is: not dirty'
+Assert-Eval (PDirty $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Active"' '"Belgium"' '""')) $true 'Projects a: user picks another Status: dirty'
+Assert-Eval (PDirty $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Germany"' '""')) $true 'Projects a: user picks another Country: dirty'
+$pUnkBase = $pBase.Replace('Status:"Active"', 'Status:"Archived"').Replace('Country:"Netherlands"', 'Country:"Belgium"')
+$pUnkClean = $pUnkBase + (PIn '"A"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""')
+foreach ($g in @('btnPrjHome', 'btnPrjNew', 'galPrjList')) { Assert-Eval (PG $g $pUnkClean) $true "Projects a: $g allowed with an untouched unknown Status/Country" }
+Assert-Eval (PG 'btnPrjSave' $pUnkClean) $false 'Projects a: Save not enabled by an untouched unknown value'
+Assert-Eval (PG 'btnPrjSave' ($pUnkBase + (PIn '"B"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""'))) $true 'Projects a: other field changed with unknown Status: Save allowed'
+Assert-Eval (PConflict $pRawUnk $pRawUnk) $false 'Projects a: conflict check ignores the dropdown (SharePoint pre-read vs loaded snapshot, both "Archived")'
+$stVal = Get-Balanced $pSave ($pSave.IndexOf('If(IsBlank(varPrjSaveRec.Status) || (') + 2)
+$stCond = (Split-Args $stVal.Substring(1, $stVal.Length - 2))[0].Replace('Choices([@Projects].Status)', 'chS')
+foreach ($c in @(@('"Edit"', '"Archived"', '"Archived"', $false, 'Edit, unknown value unchanged: accepted'), @('"Edit"', '"Archived"', '"Retired"', $true, 'Edit, other unknown value: error'), @('"New"', '""', '"Archived"', $true, 'New with an unknown value: error'), @('"Edit"', '"Archived"', '""', $true, 'empty Status: error (required)'), @('"Edit"', '"Active"', '"Closed"', $false, 'known value: accepted'))) {
+    Assert-Eval "With({chS:$chS,varPrjSaveMode:$($c[0]),varPrjEdit:{Status:$($c[1])},varPrjSaveRec:{Status:$($c[2])}},$stCond)" $c[3] "Projects a/e: Status validation: $($c[4])"
+}
+$pInUnk = PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""'
+Assert-Eval "With({$pInUnk},With($pSrFx,Status & `"|`" & Country))" 'Archived|Belgium' 'Projects a: unchanged unknown values written back as-is ({Value: stored})'
+Assert-Eval (PVerify $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""') 'F') '' 'Projects a: verify passes after writing back the unknown values unchanged'
+# Item e: Project Name stays required (validation present, red star)
+Assert-True ($pSaveN.Contains('If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name"') -and (PGet 'lblPrjNameRequired' 'Text') -eq '="*"') 'Projects e: Project Name required (validation + star)'
+# Item f: varPrjEdit (saved status source for the chip) only from the loaded list, the verify read or the empty/New snapshot
+$prjEditSets = Get-SetValues $pText 'varPrjEdit'
+Assert-True ($prjEditSets.Count -ge 3 -and @($prjEditSets | Where-Object { $_ -notmatch '^(LookUp\(colAdminProjects,ID=varPrjSelectedID\)|First\(colPrjVerify\)|\{ID:Blank\(\),.*\})$' }).Count -eq 0) "Projects f: varPrjEdit only from the loaded list, the verify read or the empty/New snapshot ($($prjEditSets -join ' | '))"
 Write-Output 'PASS Test-AdminScreens (Projects): static structure only. Studio import, binding (Choices/[@Projects], Hyperlink URL, person DisplayName), delegation (Monitor), SharePoint case-sensitivity of ''Project Number'' = and functional tests NOT verified.'

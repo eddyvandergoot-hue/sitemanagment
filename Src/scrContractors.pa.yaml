@@ -186,7 +186,11 @@ Screens:
                    Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)),
                    varEmpMode="New" && !Coalesce(varEmpSaveFailed,false),
                    Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}),
-                   Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
+                   Set(varEmpSelectedID,First(Sort(Filter(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),(Coalesce(varEmpShowInactive,false) || Active) && (IsBlank(Trim(txtEmpSearch.Text)) || Lower(Trim(txtEmpSearch.Text)) in Lower(Name) || Lower(Trim(txtEmpSearch.Text)) in Lower(Code) || Lower(Trim(txtEmpSearch.Text)) in Lower(City))),Lower(Name),SortOrder.Ascending)).ID);
+                   If(!IsBlank(varEmpSelectedID) && !IsBlank(LookUp(colAdminEmployers,ID=varEmpSelectedID).ID),
+                    Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)); Set(varEmpMode,"Edit"),
+                    Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
+                   )
                   );
                   Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");
                   Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
@@ -426,6 +430,8 @@ Screens:
                                 =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(txtEmpName.Text & "")<>Trim(varEmpEdit.Name & "") || Trim(txtEmpAddress.Text & "")<>Trim(varEmpEdit.Address & "") || Trim(txtEmpPostalcode.Text & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(txtEmpCity.Text & "")<>Trim(varEmpEdit.City & "") || Trim(txtEmpCountry.Text & "")<>Trim(varEmpEdit.Country & "") || Trim(txtEmpContactName.Text & "")<>Trim(varEmpEdit.ContactName & "") || Trim(txtEmpContactEmail.Text & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(txtEmpContactPhone.Text & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true))),DisplayMode.Edit,DisplayMode.Disabled)
                               BorderColor: =Color.Transparent
                               BorderThickness: =0
+                              Default: |-
+                                =LookUp(Sort(Filter(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),(Coalesce(varEmpShowInactive,false) || Active) && (IsBlank(Trim(txtEmpSearch.Text)) || Lower(Trim(txtEmpSearch.Text)) in Lower(Name) || Lower(Trim(txtEmpSearch.Text)) in Lower(Code) || Lower(Trim(txtEmpSearch.Text)) in Lower(City))),Lower(Name),SortOrder.Ascending),ID=varEmpSelectedID)
                               Fill: =Color.White
                               Height: =Parent.Height-Self.Y-12
                               Items: |-
@@ -696,7 +702,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -819,7 +825,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Address")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -876,7 +882,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Postalcode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -933,7 +939,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -990,7 +996,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1065,7 +1071,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactName")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1122,7 +1128,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactEmail")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1179,7 +1185,7 @@ Screens:
                               DisabledColor: =ColorValue("#787878")
                               DisabledFill: =ColorValue("#E6E6E6")
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =Color.White
                               FocusedBorderColor: =If(CountIf(colEmpSaveErrors,Field="ContactPhone")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
                               FocusedBorderThickness: =2
@@ -1215,7 +1221,7 @@ Screens:
                               DisabledColor: =Color.White
                               DisabledFill: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
                               DisplayMode: |-
-                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)
+                                =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
                               Fill: =If(Coalesce(varEmpActiveDraft,true),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
@@ -1596,10 +1602,11 @@ Screens:
                              )
                             );
                             If(IsEmpty(colEmpSaveErrors),
-                             Set(varEmpSaveWrites,1);
+                             Set(varEmpPatchError,false);
                              IfError(CountRows(ClearCollect(colEmpPatched,Patch(Employers,If(varEmpSaveMode="New",Defaults(Employers),First(colEmpPreRaw)),{Title:varEmpSaveRec.Name,Address:varEmpSaveRec.Address,Postalcode:varEmpSaveRec.Postalcode,City:varEmpSaveRec.City,Country:varEmpSaveRec.Country,'Contact Name':varEmpSaveRec.ContactName,'Contact Email':varEmpSaveRec.ContactEmail,'Contact Phone':varEmpSaveRec.ContactPhone,Active:varEmpSaveRec.Active})))>=0,
-                              Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrPatch.nl),T.empErrPatch.nl,T.empErrPatch.en) & " " & FirstError.Message});false);
+                              Set(varEmpPatchError,true); Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrSharePoint.nl),T.empErrSharePoint.nl,T.empErrSharePoint.en) & " " & FirstError.Message});false);
                              Set(varEmpPatchedID,First(colEmpPatched).ID);
+                             Set(varEmpSaveWrites,If(varEmpPatchError && IsBlank(varEmpPatchedID),0,1));
                              If(IsEmpty(colEmpSaveErrors) && (IsBlank(varEmpPatchedID) || (varEmpSaveMode="Edit" && varEmpPatchedID<>varEmpSaveID)),Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrPatch.nl),T.empErrPatch.nl,T.empErrPatch.en)}));
                              If(IsEmpty(colEmpSaveErrors),IfError(Refresh(Employers),Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrVerify.nl),T.empErrVerify.nl,T.empErrVerify.en)});false));
                              If(IsEmpty(colEmpSaveErrors),
