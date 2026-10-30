@@ -30,6 +30,7 @@ ComponentDefinitions:
         PropertyKind: Input
         DataType: Image
         Description: Official logo, the host passes the app media resource GEA_logo_white unchanged.
+        Default: =SampleImage
     Properties:
       Fill: =ColorValue("#0303B8")
       Height: =60

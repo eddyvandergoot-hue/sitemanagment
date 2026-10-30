@@ -120,7 +120,7 @@ After that, in this order:
 
 ## 2b. ModernDatePicker 1.0.2
 
-Src en de Check-WeeklySource-allow-list uitlijnen op ModernDatePicker@1.0.2 (Studio schreef 1.0.0 om naar 1.0.2); een Studio-import bevestigt de combinatie. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 5 ook het logo op scrWeekReport.
+GEBOUWD 30-10-2026 in build components-20261030_135641 (Src en Check-WeeklySource op 1.0.2; 1.0.0 wordt geweigerd); Studio-hertest: TESTPLAN.md TP-COMP-01 stap 9. Optioneel erbij: App checker-toegankelijkheidsmeldingen doorlopen (PROJECT_STATUS.md, Studio-bewijs). Bij punt 5 ook het logo op scrWeekReport.
 
 ## 4. Assignment periods (built 26-10-2026, waiting for Studio test; design: DECISIONS.md H9)
 

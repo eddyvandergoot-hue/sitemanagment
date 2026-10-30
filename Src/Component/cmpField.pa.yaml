@@ -65,6 +65,7 @@ ComponentDefinitions:
         PropertyKind: Event
         ReturnType: None
         Description: The user changed the text or the choice. Only raised while Enabled is true. The host handler starts with its guard and compares CurrentValue with the saved value.
+        Default: =false
     Properties:
       CurrentValue: =If(cmpField.InputType="dropdown",Coalesce(ddCmpFieldInput.Selected.Value,""),Coalesce(txtCmpFieldInput.Text,""))
       Fill: =Color.Transparent

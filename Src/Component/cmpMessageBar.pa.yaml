@@ -39,6 +39,7 @@ ComponentDefinitions:
         PropertyKind: Event
         ReturnType: None
         Description: Raised by the close icon. The host clears its message variables.
+        Default: =false
     Properties:
       BarHeight: =If(cmpMessageBar.Kind in ["Error","Warning","Success"],40,0)
       Fill: =Color.Transparent

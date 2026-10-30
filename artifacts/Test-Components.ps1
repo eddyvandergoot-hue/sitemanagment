@@ -33,7 +33,8 @@ foreach ($c in $contract.Keys) {
         $cp = $cps[$p]
         Assert-True ($null -ne $cp -and $cp['PropertyKind'] -eq $kind) "$c.$p is $kind"
         if ($kind -eq 'Event') { Assert-True ($cp['ReturnType'] -eq $type) "$c.$p ReturnType None" } else { Assert-True ($cp['DataType'] -eq $type) "$c.$p DataType $type" }
-        if ($kind -eq 'Input' -and $type -ne 'Image') { Assert-True ($cp.ContainsKey('Default') -and ([string]$cp['Default']).StartsWith('=')) "$c.$p has a Default formula" }
+        # Studio PA2231 (import 30-10-2026): every Input and Event custom property needs a non-empty Default formula.
+        if ($kind -in @('Input', 'Event')) { Assert-True ($cp.ContainsKey('Default') -and ([string]$cp['Default']).StartsWith('=') -and ([string]$cp['Default']).Trim().Length -gt 1) "$c.$p has a non-empty Default formula (PA2231)" }
     }
     Assert-True (!$defs[$c].ContainsKey('AccessAppScope') -or $defs[$c]['AccessAppScope'] -eq $false) "$c does not use app scope (pure presentation, no app variables)"
     foreach ($bad in 'X', 'Y', 'Visible') { Assert-True (!$defs[$c]['Properties'].ContainsKey($bad)) "$c Properties has no reserved $bad" }
@@ -285,4 +286,16 @@ foreach ($chipText in 'Inactive', 'On hold', 'Closed') {
     $wIn = Measure-Text $fonts['IN.Normal'] $chipText $chipSize; $wAr = Measure-Text $fonts['AR.Normal'] $chipText $chipSize
     Assert-True ([Math]::Max($wIn, $wAr) -le 64) "chip '$chipText' at size ${chipSize}: Inter $wIn px / Arial $wAr px (worst case <= 64 px in the 80 px chip)"
 }
+# Every custom property of kind Input/Event (all components, not only the contract list) has a non-empty Default (PA2231).
+foreach ($c in $defs.Keys) { foreach ($p in $defs[$c]['CustomProperties'].Keys) { $cp = $defs[$c]['CustomProperties'][$p]; if ($cp['PropertyKind'] -in @('Input', 'Event', 'InputFunction')) { Assert-True (([string]$cp['Default']).Trim() -match '^=.+') "$c.$p ($($cp['PropertyKind'])) has a non-empty Default" } } }
+# No control version older than its template in the .msapr (Studio PA2105 on ModernDatePicker@1.0.0, 30-10-2026).
+$tplVer = @{}; foreach ($tp in $templates) { $tplVer[$tp.Name.ToLowerInvariant()] = [version]$tp.Version }
+$older = @()
+foreach ($f in Get-ChildItem (Join-Path $projectRoot 'Src') -Recurse -Filter *.pa.yaml) {
+    foreach ($m in [regex]::Matches([IO.File]::ReadAllText($f.FullName), '(?m)^\s*Control:\s*([\w/]+)@([\d.]+)\s*$')) {
+        $t = ($m.Groups[1].Value -split '/')[-1].ToLowerInvariant(); if ($t -eq 'textinput') { $t = 'text' }
+        if ($tplVer.ContainsKey($t) -and [version]$m.Groups[2].Value -lt $tplVer[$t]) { $older += "$($f.Name): $($m.Groups[1].Value)@$($m.Groups[2].Value) < template $($tplVer[$t])" }
+    }
+}
+Assert-True ($older.Count -eq 0) "No control version older than its template in the .msapr ($($older -join '; '))"
 Write-Output 'Not verified locally: Studio import, rendering, chip text in the real browser font.'

@@ -31,7 +31,7 @@ foreach($name in @('lblReportFrom','lblReportFromWeek','dpReportFrom','lblReport
 foreach($ref in @('lblddReportStartYear','ddReportStartYear','lblddReportStartWeek','ddReportStartWeek','lblddReportEndYear','ddReportEndYear','lblddReportEndWeek','ddReportEndWeek','colReportYears','colReportStartWeeks','colReportEndWeeks','varReportDefaultStartYear','varReportDefaultEndYear','lblReportIsoPeriod')){if($source -match "\b$ref\b"){throw "Reference to removed $ref"}}
 foreach($name in @('dpReportFrom','dpReportUntil')){
  $p=$new[$name]['Properties']
- if($new[$name]['Control'] -ne 'ModernDatePicker@1.0.0' -or $p['Format'] -ne '="dd-mm-yyyy"' -or $p['StartOfWeek'] -ne '=StartOfWeek.Monday' -or $p['Font'] -ne '="Inter, Arial, sans-serif"' -or $p['FontWeight'] -ne '=FontWeight.Normal' -or $p['Color'] -ne '=ColorValue("#000000")'){throw "$name settings"}
+ if($new[$name]['Control'] -ne 'ModernDatePicker@1.0.2' -or $p['Format'] -ne '="dd-mm-yyyy"' -or $p['StartOfWeek'] -ne '=StartOfWeek.Monday' -or $p['Font'] -ne '="Inter, Arial, sans-serif"' -or $p['FontWeight'] -ne '=FontWeight.Normal' -or $p['Color'] -ne '=ColorValue("#000000")'){throw "$name settings"}
  # 27-10-2026 (TP-PERIOD-01 6.1): range = varReportMinMonday..varReportMaxSunday from the loader; no range -> disabled (same condition as btnBuildReport).
  if($p['DisplayMode'] -ne '=If(varReportBusy || !varReportReady || IsBlank(varReportMinMonday) || IsBlank(varReportMaxSunday),DisplayMode.Disabled,DisplayMode.Edit)'){throw "$name DisplayMode changed"}
  # Fixed fallbacks only apply while the picker is disabled (no range); no Today() in the picker bounds.

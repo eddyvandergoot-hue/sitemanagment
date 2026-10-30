@@ -72,10 +72,12 @@ ComponentDefinitions:
           - RowID:
               DataType: Number
               Description: ID of the selected row.
+        Default: =false
       OnToggleShowInactive:
         PropertyKind: Event
         ReturnType: None
         Description: The switch was pressed. Only raised while Enabled is true. The host handler starts with its guard and flips its own variable.
+        Default: =false
     Properties:
       Fill: =Color.Transparent
       Height: =600

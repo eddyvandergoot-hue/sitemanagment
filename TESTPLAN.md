@@ -23,7 +23,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-STYLE-01 | Admin screen pattern: Contractors visueel + kort regressie | OPEN (build adminpattern-20261030_071949) | - | Eddy |
 | TP-PROJECTS-01 | Projects-scherm (beheer) + Home-tegels | OPEN (build adminpattern-20261030_071949) | - | Eddy |
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
-| TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | OPEN (build components-20261030_132104) | - | Eddy |
+| TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | FAIL import build 132104 (PA2231, opgelost); hertest OPEN op build components-20261030_135641 | 30-10-2026 | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -285,7 +285,9 @@ Alleen TEST-projecten (TEST-000, TEST-001, nieuw TEST-002); echte projecten alle
 | 15 | Cache na Save (Screen1, Hours Summary) | nieuwe naam/nummer zichtbaar na het openen |
 | 16 | Home: Projects-tegel actief; Knowledge-kolom met grijze placeholder "Knowledge Base" (Coming soon, geen actie); ~900 px = vier kolommen; smaller = één kolom | zoals beschreven; noteer het kleine verschil titel X 40 / content X 24 |
 
-## TP-COMP-01 Stap 2: componenten en logicafixes (OPEN; build components-20261030_132104, PROJECT_STATUS.md)
+## TP-COMP-01 Stap 2: componenten en logicafixes (hertest OPEN op build components-20261030_135641, PROJECT_STATUS.md)
+
+Resultaat 30-10-2026 (Eddy, build 132104): import FAIL met PA2231 (Event-/Input-properties zonder Default in cmpField, cmpFooter, cmpListCard, cmpMessageBar, cmpTitleBar); Studio parste de componenten wel. Waarschuwing PA2105: ModernDatePicker 1.0.0 -> 1.0.2. Beide opgelost in build 135641.
 
 Doel: bevestigen dat Studio de handgeschreven componenten accepteert vóór de migratie (stap 3), en de logicafixes op Contractors/Projects. Alleen TEST-records. De layout van Contractors/Projects is nog die van adminpattern (layoutfixes komen in stap 3).
 
@@ -299,5 +301,6 @@ Doel: bevestigen dat Studio de handgeschreven componenten accepteert vóór de m
 | 6 | Projects: project met Status/Country buiten de keuzelijst (alleen als er al zo een is; geen testdata maken) | waarde zichtbaar, formulier niet gewijzigd (Home/New niet geblokkeerd) |
 | 7 | Projects: dubbel Project Number opslaan (TEST-project) | rode melding, invoer blijft staan, opnieuw opslaan kan (scherm niet vergrendeld) |
 | 8 | Regressie: Home, Project / team, Weekly Hours, Hours Summary laden | als voorheen |
+| 9 | Datumkiezers (nu ModernDatePicker 1.0.2): Project / team "Week", Weekly Hours "Week", Hours Summary From/Till; kies een dag midden in een week en 01-01-2027 | gekozen dag blijft zichtbaar (geen sprong), labels "YYYY KWxx" kloppen (01-01-2027 = 2026 KW53), From/Till-bereik en Till-voor-From-blokkade werken als voorheen; geen PA2105-waarschuwing meer bij import |
 
 Mislukt: noteer stap, foutmelding (exact) en scherm.

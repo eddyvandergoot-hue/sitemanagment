@@ -184,7 +184,7 @@ Screens:
             X: =lblHeaderSun.X + lblHeaderSun.Width + 12
             Y: =lblHeaderMon.Y
       - dpHoursWeek:
-          Control: ModernDatePicker@1.0.0
+          Control: ModernDatePicker@1.0.2
           Properties:
             AccessibleLabel: '="Week: any day of the work week"'
             DefaultDate: =Coalesce(varHoursPickedDay,Today())

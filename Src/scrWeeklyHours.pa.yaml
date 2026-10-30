@@ -552,7 +552,7 @@ Screens:
                       Size: =12
                       Color: =ColorValue("#000000")
                 - dpReportFrom:
-                    Control: ModernDatePicker@1.0.0
+                    Control: ModernDatePicker@1.0.2
                     Properties:
                       BorderColor: =ColorValue("#DCDCDC")
                       AccessibleLabel: '="From: Monday of the first report week"'
@@ -609,7 +609,7 @@ Screens:
                       Size: =12
                       Color: =ColorValue("#000000")
                 - dpReportUntil:
-                    Control: ModernDatePicker@1.0.0
+                    Control: ModernDatePicker@1.0.2
                     Properties:
                       BorderColor: =ColorValue("#DCDCDC")
                       AccessibleLabel: '="Till: Sunday of the last report week"'

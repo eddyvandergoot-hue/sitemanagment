@@ -65,22 +65,27 @@ ComponentDefinitions:
         PropertyKind: Event
         ReturnType: None
         Description: Home pressed. The host handler starts with its guard.
+        Default: =false
       OnNew:
         PropertyKind: Event
         ReturnType: None
         Description: New pressed. The host handler starts with its guard.
+        Default: =false
       OnRefresh:
         PropertyKind: Event
         ReturnType: None
         Description: Refresh pressed. The host handler starts with its guard.
+        Default: =false
       OnDiscard:
         PropertyKind: Event
         ReturnType: None
         Description: Discard pressed. The host handler starts with its guard.
+        Default: =false
       OnSave:
         PropertyKind: Event
         ReturnType: None
         Description: Save pressed. The host handler starts with the complete admission check.
+        Default: =false
     Properties:
       Fill: =Color.White
       Height: =68

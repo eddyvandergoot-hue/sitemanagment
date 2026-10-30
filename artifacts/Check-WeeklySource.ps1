@@ -114,9 +114,10 @@ function Check-Control($entry,[bool]$autoLayoutChild=$false) {
     $type = ($type -split '/')[-1].ToLowerInvariant()
     # Classic/TextInput is stored as 'text' in the original control templates.
     if($type -eq 'textinput') { $type='text' }
-    if($control['Control'] -eq 'ModernDatePicker@1.0.0') {
-        # Not in the original app templates; property list from the Microsoft Learn reference
-        # (modern-control-date-picker, updated 2026-10-13). Studio import must confirm the template.
+    if($control['Control'] -eq 'ModernDatePicker@1.0.0') { throw "ModernDatePicker@1.0.0 is older than the template in the .msapr (1.0.2; Studio warning PA2105): $name" }
+    if($control['Control'] -eq 'ModernDatePicker@1.0.2') {
+        # Template 1.0.2 is in the .msapr (Studio rewrote 1.0.0 -> 1.0.2, PA2105 on 30-10-2026); the modern template lists
+        # only its own properties, common ones come from the Microsoft Learn reference (modern-control-date-picker).
         $allowed = @('Placeholder','DefaultDate','Format','DateTimeZone','OnChange','IsEditable','StartDate','EndDate','StartOfWeek','ValidationState','PaddingTop','PaddingBottom','PaddingLeft','PaddingRight','Appearance','BasePaletteColor','Font','Size','Color','FontWeight','Italic','Underline','Strikethrough','Fill','BorderColor','BorderStyle','BorderThickness','RadiusTopLeft','RadiusTopRight','RadiusBottomLeft','RadiusBottomRight','AccessibleLabel','ContentLanguage')
     } else {
     $template = $templates | Where-Object { $_.Name -eq $type -and $_.Version -eq $version }

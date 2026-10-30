@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference='Stop'
+$ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Check-WeeklySource.ps1')
 [Reflection.Assembly]::LoadFrom((Join-Path $pacDir 'Microsoft.PowerFx.Interpreter.dll')) | Out-Null
 $e=New-Object Microsoft.PowerFx.RecalcEngine
@@ -75,7 +75,7 @@ $hoursControls=$hoursYaml['Screens']['scrHours']['Children']
 $picker=Find-SummaryControl $hoursControls 'dpHoursWeek'
 $weekLabel=(Find-SummaryControl $hoursControls 'lblHoursWeekKW')['Properties']['Text'].TrimStart('=')
 if(!$picker -or (Find-SummaryControl $hoursControls 'ddHoursYear') -or (Find-SummaryControl $hoursControls 'ddHoursWeek')){ throw 'dpHoursWeek ontbreekt of oude dropdowns staan er nog.' }
-if($picker['Control'] -ne 'ModernDatePicker@1.0.0' -or $picker['Properties']['DefaultDate'] -ne '=Coalesce(varHoursPickedDay,Today())' -or $picker['Properties'].ContainsKey('StartDate') -or $picker['Properties'].ContainsKey('EndDate')){ throw 'dpHoursWeek instellingen' }
+if($picker['Control'] -ne 'ModernDatePicker@1.0.2' -or $picker['Properties']['DefaultDate'] -ne '=Coalesce(varHoursPickedDay,Today())' -or $picker['Properties'].ContainsKey('StartDate') -or $picker['Properties'].ContainsKey('EndDate')){ throw 'dpHoursWeek instellingen' }
 $change=$picker['Properties']['OnChange'].TrimStart('=')
 $tagged=$change
 foreach($pair in @(
