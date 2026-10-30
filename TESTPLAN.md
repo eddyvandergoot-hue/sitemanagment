@@ -23,7 +23,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-STYLE-01 | Admin screen pattern: Contractors visueel + kort regressie | OPEN (build adminpattern-20261030_071949) | - | Eddy |
 | TP-PROJECTS-01 | Projects-scherm (beheer) + Home-tegels | OPEN (build adminpattern-20261030_071949) | - | Eddy |
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
-| TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | FAIL import 132104 (PA2231) en 135641 (ErrOpeningDocument_UnknownError); diagnose: cmpListCard (D7) gerepareerd; D8 + volledige build 150632 OPEN | 30-10-2026 | Eddy |
+| TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | PASS op build components-20261030_150632 (eerder FAIL 132104 PA2231, 135641 cmpListCard) | 30-10-2026 | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -285,7 +285,9 @@ Alleen TEST-projecten (TEST-000, TEST-001, nieuw TEST-002); echte projecten alle
 | 15 | Cache na Save (Screen1, Hours Summary) | nieuwe naam/nummer zichtbaar na het openen |
 | 16 | Home: Projects-tegel actief; Knowledge-kolom met grijze placeholder "Knowledge Base" (Coming soon, geen actie); ~900 px = vier kolommen; smaller = één kolom | zoals beschreven; noteer het kleine verschil titel X 40 / content X 24 |
 
-## TP-COMP-01 Stap 2: componenten en logicafixes (hertest OPEN op build components-20261030_135641, PROJECT_STATUS.md)
+## TP-COMP-01 Stap 2: componenten en logicafixes (PASS 30-10-2026, Eddy, build components-20261030_150632)
+
+Resultaat 30-10-2026 (Eddy): D8 opent; volledige build 150632 opent (Logo-input van type Image in cmpTitleBar werkt). Componenten zichtbaar zonder fouten; Projects-velden zichtbaar en eerste rij geselecteerd; Contractors eerste rij geselecteerd; datumkiezers (1.0.2) ok; overige schermen laden.
 
 Resultaat 30-10-2026 (Eddy, build 132104): import FAIL met PA2231 (Event-/Input-properties zonder Default in cmpField, cmpFooter, cmpListCard, cmpMessageBar, cmpTitleBar); Studio parste de componenten wel. Waarschuwing PA2105: ModernDatePicker 1.0.0 -> 1.0.2. Beide opgelost in build 135641.
 
