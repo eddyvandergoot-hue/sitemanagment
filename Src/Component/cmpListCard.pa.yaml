@@ -9,18 +9,18 @@
 ComponentDefinitions:
   cmpListCard:
     DefinitionType: CanvasComponent
-    Description: 'Admin screen list card (Admin screen pattern): white card (radius 8, DropShadow.Light, padding 24) with search field, one info row (count left, Show inactive switch right) and a gallery of rows (height 64). Presentation only: the host filters and sorts and passes the ready Items; the component never filters. Selection contract - the host passes SelectedID and handles OnSelectRow(RowID) with its guard as the first condition; the component highlights the row where ID = SelectedID and only raises the event while Enabled is true. Switch contract - the host passes ShowInactive and handles OnToggleShowInactive by flipping its own variable (guard first); the component never flips the state itself. Search contract - the host reads Output SearchText in its Items filter. Reset contract - Reset(<instance>) clears the search field.'
+    Description: 'Admin screen list card (Admin screen pattern): white card (radius 8, DropShadow.Light, padding 24) with search field, one info row (count left, Show inactive switch right) and a gallery of rows (height 64). Presentation only: the host filters and sorts and passes the ready Items; the component never filters. Selection contract - the host passes SelectedID and handles OnSelectRow (no parameters) with its guard as the first condition, reading the clicked row from Output SelectedRowID; the component highlights the row where ID = SelectedID and only raises the event while Enabled is true. Switch contract - the host passes ShowInactive and handles OnToggleShowInactive by flipping its own variable (guard first); the component never flips the state itself. Search contract - the host reads Output SearchText in its Items filter. No OnReset and no RaiseOnReset (no preview-only component features, AGENTS): the search text stays until the user clears it.'
     CustomProperties:
       Items:
         PropertyKind: Input
         DataType: Table
         Description: 'Rows, already filtered and sorted by the host. Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean, grey title), ChipText (Text, empty = no chip). Allowed ChipText values are Inactive, On hold and Closed (80 px chip, Inter 12, measured text at most 64 px); other texts need a new measurement.'
-        Default: '=Filter(Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""}),false)'
+        Default: '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""})'
       SelectedID:
         PropertyKind: Input
         DataType: Number
-        Description: ID of the selected row (blank or no match = no highlight).
-        Default: =Blank()
+        Description: ID of the selected row (0 or no match = no highlight; SharePoint IDs start at 1).
+        Default: =0
       SearchHint:
         PropertyKind: Input
         DataType: Text
@@ -64,14 +64,14 @@ ComponentDefinitions:
         PropertyKind: Output
         DataType: Boolean
         Description: Echo of the ShowInactive input (the component keeps no state of its own).
+      SelectedRowID:
+        PropertyKind: Output
+        DataType: Number
+        Description: ID of the row the user clicked last (0 = none). Read it in the OnSelectRow handler.
       OnSelectRow:
         PropertyKind: Event
         ReturnType: None
-        Description: A row was selected. Parameter RowID is the ID of that row. Only raised while Enabled is true. The host handler starts with its guard.
-        Parameters:
-          - RowID:
-              DataType: Number
-              Description: ID of the selected row.
+        Description: A row was selected; the row ID is in Output SelectedRowID. No event parameters (AGENTS). Only raised while Enabled is true. The host handler starts with its guard.
         Default: =false
       OnToggleShowInactive:
         PropertyKind: Event
@@ -81,8 +81,8 @@ ComponentDefinitions:
     Properties:
       Fill: =Color.Transparent
       Height: =600
-      OnReset: =Reset(txtCmpListSearch)
       SearchText: =txtCmpListSearch.Text
+      SelectedRowID: =Coalesce(galCmpList.Selected.ID,0)
       ShowInactiveValue: =cmpListCard.ShowInactive
       Width: =360
     Children:
@@ -247,7 +247,7 @@ ComponentDefinitions:
                   Fill: =Color.White
                   Height: =Max(0,Parent.Height-Self.Y-12)
                   Items: =cmpListCard.Items
-                  OnSelect: =If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow(galCmpList.Selected.ID))
+                  OnSelect: =If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow())
                   TemplateFill: =Color.Transparent
                   TemplatePadding: =0
                   TemplateSize: =64

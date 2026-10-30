@@ -220,14 +220,8 @@ foreach($componentFileName in $componentDocs.Keys) {
                 $okKeys=@('PropertyKind','DisplayName','Description','ReturnType','Parameters')
                 if($kind -in @('Event','InputFunction')) { $okKeys+='Default' }
                 foreach($key in $cp.Keys) { if($key -notin $okKeys) { throw "$componentName.$cpName : ongeldig veld $key voor $kind" } }
-                if($cp.ContainsKey('Parameters')) {
-                    foreach($param in $cp['Parameters']) {
-                        if(@($param.Keys).Count -ne 1) { throw "$componentName.$cpName : elk Parameters-item moet exact een sleutel hebben." }
-                        $pn=@($param.Keys)[0]; $pd=$param[$pn]
-                        if($pd['DataType'] -notin $pfxDataTypes) { throw "$componentName.$cpName.$pn : DataType '$($pd['DataType'])' is niet geldig." }
-                        foreach($key in $pd.Keys) { if($key -notin @('DataType','Description','IsOptional','Default')) { throw "$componentName.$cpName.$pn : ongeldig veld $key" } }
-                    }
-                }
+                # AGENTS (Studio import failure D7, 30-10-2026): no event parameters on component properties.
+                if($cp.ContainsKey('Parameters')) { throw "$componentName.$cpName : Parameters zijn niet toegestaan (geen event-parameters; Studio-import faalde)." }
             }
             if($cp.ContainsKey('Default') -and ([string]$cp['Default']) -notmatch '^=') { throw "$componentName.$cpName : Default moet met = beginnen." }
         }

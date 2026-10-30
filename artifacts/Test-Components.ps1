@@ -23,7 +23,7 @@ $contract = @{
     cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; Value = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
                        CurrentValue = 'Output:Text'; OnChange = 'Event:None' }
     cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountText = 'Input:Text'; ShowInactiveText = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
-                       SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; OnSelectRow = 'Event:None'; OnToggleShowInactive = 'Event:None' }
+                       SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; SelectedRowID = 'Output:Number'; OnSelectRow = 'Event:None'; OnToggleShowInactive = 'Event:None' }
 }
 foreach ($c in $contract.Keys) {
     $cps = $defs[$c]['CustomProperties']
@@ -194,10 +194,10 @@ Assert-True ($fd['Children'].Count -eq 3) 'cmpField: three children (label, text
 # (8) cmpListCard ------------------------------------------------------------------------------------------
 $ld = $defs['cmpListCard']; $li = $idx['cmpListCard']; $ldp = $ld['Properties']
 Assert-True ($ld['CustomProperties']['Enabled']['Default'] -eq '=false' -and $ld['CustomProperties']['ShowInactive']['Default'] -eq '=false') 'cmpListCard: Enabled fail-closed =false, ShowInactive default false'
-Assert-True ($ld['CustomProperties']['Items']['Default'] -eq '=Filter(Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""}),false)') 'cmpListCard: Items default is an empty table with columns ID, Title, Subtitle, Inactive, ChipText'
+Assert-True ($ld['CustomProperties']['Items']['Default'] -eq '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""})' -and $ld['CustomProperties']['SelectedID']['Default'] -eq '=0') 'cmpListCard: Items default is a plain typed table (ID, Title, Subtitle, Inactive, ChipText; no Filter trick, D7 import failure 30-10-2026), SelectedID default 0'
 $sr = $ld['CustomProperties']['OnSelectRow']
-Assert-True ($sr['Parameters'].Count -eq 1 -and @($sr['Parameters'][0].Keys)[0] -eq 'RowID' -and $sr['Parameters'][0]['RowID']['DataType'] -eq 'Number') 'cmpListCard selection contract: OnSelectRow has exactly one parameter RowID (Number)'
-Assert-True ($ldp['SearchText'] -eq '=txtCmpListSearch.Text' -and $ldp['ShowInactiveValue'] -eq '=cmpListCard.ShowInactive' -and $ldp['OnReset'] -eq '=Reset(txtCmpListSearch)') 'cmpListCard outputs: SearchText from the search field, ShowInactiveValue echoes the input, OnReset clears the search'
+Assert-True (!$sr.ContainsKey('Parameters') -and $ldp['SelectedRowID'] -eq '=Coalesce(galCmpList.Selected.ID,0)') 'cmpListCard selection contract: OnSelectRow has no parameters (AGENTS: no event parameters); the row ID is Output SelectedRowID'
+Assert-True ($ldp['SearchText'] -eq '=txtCmpListSearch.Text' -and $ldp['ShowInactiveValue'] -eq '=cmpListCard.ShowInactive' -and !$ldp.ContainsKey('OnReset') -and $ld['CustomProperties'].Values.Where({ $_.ContainsKey('RaiseOnReset') }).Count -eq 0) 'cmpListCard outputs: SearchText from the search field, ShowInactiveValue echoes the input, OnReset clears the search'
 $card = $li['conCmpListCard']; $cp3 = $card['Properties']
 Assert-True ($card['Control'] -eq 'GroupContainer@1.5.0' -and $card['Variant'] -eq 'ManualLayout' -and $cp3['DropShadow'] -eq '=DropShadow.Light' -and $cp3['Fill'] -eq '=Color.White' -and $cp3['RadiusTopLeft'] -eq '=8' -and $cp3['RadiusBottomRight'] -eq '=8' -and $cp3['Width'] -eq '=Parent.Width' -and $cp3['Height'] -eq '=Parent.Height' -and $ldp['Fill'] -eq '=Color.Transparent') 'cmpListCard card: white GroupContainer radius 8, DropShadow.Light (component fill transparent so the corners show)'
 $se = $li['txtCmpListSearch']['Properties']
@@ -215,7 +215,7 @@ $sw = $li['btnCmpListSwitch']; $swp = $sw['Properties']; $kn = $li['btnCmpListKn
 Assert-True ($sw['Control'] -eq 'Classic/Button@2.2.0' -and !$swp.ContainsKey('AccessibleLabel') -and $swp['Width'] -eq '=44' -and $swp['Height'] -eq '=24' -and $swp['RadiusTopLeft'] -eq '=12' -and $swp['Fill'] -eq '=If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))' -and $swp['Tooltip'] -eq '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)') 'cmpListCard switch: track 44x24 radius 12, #0303B8 on / #B4B4B4 off, tooltip with label and state'
 Assert-True ($swp['OnSelect'] -eq '=If(cmpListCard.Enabled,cmpListCard.OnToggleShowInactive())' -and $swp['DisplayMode'] -eq '=If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)' -and $kn['OnSelect'] -eq '=Select(btnCmpListSwitch)' -and $kn['DisplayMode'] -eq '=btnCmpListSwitch.DisplayMode' -and $kn['Fill'] -eq '=Color.White' -and $kn['Width'] -eq '=18') 'cmpListCard switch contract: only raises OnToggleShowInactive while Enabled, never flips state; white 18 px knob selects the track'
 $ga = $li['galCmpList']; $gp = $ga['Properties']
-Assert-True ($ga['Control'] -eq 'Gallery@2.15.0' -and $gp['TemplateSize'] -eq '=64' -and $gp['TemplatePadding'] -eq '=0' -and $gp['Items'] -eq '=cmpListCard.Items' -and $gp['OnSelect'] -eq '=If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow(galCmpList.Selected.ID))') 'cmpListCard gallery: Gallery@2.15.0 fixed row height 64, Items = Items input, OnSelect raises OnSelectRow(ID) only while Enabled (no own guard)'
+Assert-True ($ga['Control'] -eq 'Gallery@2.15.0' -and $gp['TemplateSize'] -eq '=64' -and $gp['TemplatePadding'] -eq '=0' -and $gp['Items'] -eq '=cmpListCard.Items' -and $gp['OnSelect'] -eq '=If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow())') 'cmpListCard gallery: Gallery@2.15.0 fixed row height 64, Items = Items input, OnSelect raises OnSelectRow(ID) only while Enabled (no own guard)'
 $rowN = @($ga['Children'] | ForEach-Object { @($_.Keys)[0] })
 Assert-True (($rowN -join ',') -eq 'recCmpRowFill,recCmpRowBar,recCmpRowLine,htmlCmpRowTitle,htmlCmpRowSub,btnCmpRowChip') 'cmpListCard row: fill, selection bar, divider, title, subtitle, chip'
 $row = @{}; Index-CmpControls $ga['Children'] $row
@@ -298,4 +298,6 @@ foreach ($f in Get-ChildItem (Join-Path $projectRoot 'Src') -Recurse -Filter *.p
     }
 }
 Assert-True ($older.Count -eq 0) "No control version older than its template in the .msapr ($($older -join '; '))"
+# AGENTS (D7 import failure 30-10-2026): no event parameters in any component.
+foreach ($c in $defs.Keys) { foreach ($p in $defs[$c]['CustomProperties'].Keys) { $cp = $defs[$c]['CustomProperties'][$p]; Assert-True (!$cp.ContainsKey('Parameters')) "$c.$p has no Parameters (no event parameters)" } }
 Write-Output 'Not verified locally: Studio import, rendering, chip text in the real browser font.'
