@@ -11,7 +11,36 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 Done: Contractors approved (tag approved-20261029-contractors); AGENTS.md section "Admin screen pattern" written (30-10-2026; DECISIONS.md H19); Projects built (ADMIN_PLAN.md par. 4).
 
-Next: Eddy tests build adminpattern-20261030_071949 in Studio (path and SHA-256: PROJECT_STATUS.md): TESTPLAN.md TP-STYLE-01 (Contractors on the pattern), TP-PROJECTS-01 and the Home checks (Projects tile, Knowledge column). Open points and decisions for Eddy: ADMIN_PLAN.md par. 8 punt 8 (a-g). Then approval and tag.
+Studio test 30-10-2026 (Eddy): TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (build adminpattern-20261030_071949). Next command (queued by Eddy 30-10-2026, NOT started; a first attempt was stopped before any change, HEAD 15f845c):
+
+```bash
+claude << 'EOF'
+TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (adminpattern-20261030_071949). Fix layout before anything else.
+Contractors:
+1 "Show inactive" wraps + clipped. One line, Wrap=false, width fits text, switch right of it, vertically centered with count label.
+2 Form header: name wraps + clipped, and duplicates name field. Header = fixed text "Contractor details" (New: "New contractor"), status chip right-aligned at card right padding. Same on Projects ("Project details" / "New project").
+3 Required star overlaps label text. Use HtmlText label "Name <span style='color:#DB1E28'>*</span>" or star placed directly after text, 4 px gap. No overlap any label.
+Projects:
+4 Text inputs invisible for Project Name, Project Number, Customer Name, Street, House Number, City (only Status + Country dropdowns visible). All fields must always render (white, border #9B9B9B), also with no record selected.
+5 No record selected on load -> auto-select first row (same on Contractors). Empty list -> header "No project selected", fields disabled.
+6 List row title wraps over subline. Row: line 1 Project Name, one line, ellipsis; line 2 "Number · City" grey. No "Test-000 – Test-000" duplication. Fixed row height.
+Both:
+7 Message bar "Loaded." breaks at dot. Bold word + text in one HtmlText (or bold label AutoWidth), one line, ellipsis if too long.
+Layout rules -> AGENTS Admin screen pattern:
+- No estimated text widths. Labels Wrap=false + Overflow hidden/ellipsis, or AutoHeight with container that grows. Nothing may overlap or clip at 1366, 1000, 700 px.
+- Mixed formatting (bold word, red star) = HtmlText.
+- Add Test-Layout check: every label/input inside parent bounds, no two controls overlap in same container, all form inputs Visible=true.
+Also decided (ADMIN_PLAN par. 8): a choice value not in list never counts as change, show as-is. c dropdowns white + border #9B9B9B like other fields. d SharePoint reject (nothing written) -> keep input, red reason, allow retry; only partial/verify fail locks (Contractors + Projects). e Project Name required. f status chip = SAVED status, not unsaved choice.
+Home redesign NOT in this build (next).
+Flow: powerfx-ui + powerfx-logic -> verifier (incl Test-Layout) -> reviewer -> full + pack + SHA. Commit + push. Report path + SHA + per item 1-7 what changed.
+EOF
+```
+
+Notes for whoever runs it (orchestrator, 30-10-2026):
+- HtmlText: Templates.json in the .msapr has NO html-text template (only button, label, image, groupContainer, dropdown, gallery, icon, checkbox, rectangle, modernDatePicker, text); AGENTS requires the template before a new control type. Either Eddy first inserts one "HTML text" control in Studio, saves and downloads the .msapr into artifacts\ (template is then merged), or use the command's alternative: star 4 px after the label text and a bold head label with MEASURED widths (artifacts/Measure-FontFit.ps1 -InterDir C:\Windows\Fonts, worst case Inter/Arial; Test-Layout re-measures) instead of estimates. Classic Label@2.5.1 has no AutoWidth.
+- Order: powerfx-logic first (4, 5, a, d, e; f = provide saved-status source), then powerfx-ui (1, 2, 3, 6, 7, c, f chip + new artifacts/Test-Layout.ps1), because both edit scrContractors/scrProjects. Work in small steps with WIP commits; agents have hung before: use a no-change watchdog. Src uses LF (.gitattributes * -text). The untracked folder 3D/ is Eddy's: do not add it.
+
+After that build is approved: Eddy's open points ADMIN_PLAN.md par. 8 punt 8 (b, g remain Studio checks; a, c, d, e, f decided above), approval and tag.
 
 After that, in this order:
 1. Workers build (powerfx-logic, reviewer, powerfx-ui, verifier) on the Admin screen pattern (AGENTS.md; only fields and rules differ; ADMIN_PLAN.md par. 5), including the Weekly Hours stale-cache fix (DECISIONS.md H18, approved 29-10-2026, status "approved, not built"): in Save week, before the first write, Refresh(Workers) + re-read colWorkersCache (<=500, staging) and Refresh('Project Workers') + Filter on ProjectKey; compare Employer.Id/Trade/Team/Active of the involved workers with the loaded values; difference = zero writes + message "Worker or team changed in SharePoint; Refresh on Project / team". Save team and Confirm migration need no fix. Decision pending: ADMIN_PLAN.md 4.5 (hide Closed projects on Screen1) and 5.5 (inactive workers).
