@@ -101,7 +101,7 @@ Write-Output 'PASS inputs/dropdowns/date pickers #F0F0F0 with 1px #DCDCDC border
 
 # Home screen (26-10-2026): active tiles = navigation role, placeholder tiles = disabled look, headers Navy with a #0303B8 line.
 $activeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','Contractors','Projects')
-$placeholderTiles=@('WeekReport','Workers','Viewer3D','PIDTracker','ComponentLibrary','SkidConfigurator','StockOverview','Locations','Usage','Requests')
+$placeholderTiles=@('WeekReport','Workers','Viewer3D','PIDTracker','ComponentLibrary','SkidConfigurator','StockOverview','Locations','Usage','Requests','KnowledgeBase')
 # Every btnTile* on scrHome must be a listed active or placeholder tile (the general role check skips btnTile*).
 $tileSet=@($homeIdx.Keys | Where-Object { $_ -like 'btnTile*' } | Sort-Object)
 $tileExpected=@(($activeTiles+$placeholderTiles) | ForEach-Object { 'btnTile'+$_ } | Sort-Object)
@@ -120,11 +120,11 @@ foreach($t in $placeholderTiles){
  if($p.ContainsKey('OnSelect')){throw "Placeholder tile $t must have no OnSelect"}
  $s=$homeIdx['lblTileSub'+$t]['Properties'];if($s['Color'] -ne (CV '#787878') -or $s['Text'] -ne '="Coming soon"'){throw "Placeholder subtext $t"}
 }
-foreach($h in 'Admin','Cad','Inventory'){
+foreach($h in 'Admin','Cad','Inventory','Knowledge'){
  if($homeIdx['lblHomeHeader'+$h]['Properties']['Color'] -ne (CV '#000F41')){throw "Home header $h colour"}
  if($homeIdx['recHomeLine'+$h]['Properties']['Fill'] -ne (CV '#0303B8') -or $homeIdx['recHomeLine'+$h]['Properties']['Height'] -ne '=2'){throw "Home header line $h"}
 }
 foreach($pair in @(@('btnTileProjectTeam','=Navigate(Screen1)'),@('btnTileHoursSummary','=Navigate(scrWeeklyHours)'),@('btnTileContractors','=Navigate(scrContractors)'),@('btnTileProjects','=Navigate(scrProjects)'))){if($homeIdx[$pair[0]]['Properties']['OnSelect'] -ne $pair[1]){throw "Home navigation $($pair[0])"}}
 # Weekly Hours tile: conditional navigation (loaded -> scrHours, else Screen1 + Notify); exact logic checked in Test-SaveRegression.ps1.
 $tileWh=[string]$homeIdx['btnTileWeeklyHours']['Properties']['OnSelect'];if(!$tileWh.StartsWith('=If(') -or !$tileWh.Contains('Navigate(scrHours)') -or !$tileWh.Contains('Navigate(Screen1)')){throw 'Home navigation btnTileWeeklyHours'}
-Write-Output 'PASS Home tiles: 5 active (Fill/border #0303B8, white text/icon, hover/pressed #000F41, OnSelect present), 10 placeholders (#E6E6E6 / #787878, DisplayMode.Disabled, no OnSelect, subtext "Coming soon"); headers #000F41 with 2 px #0303B8 line; Home footer buttons = navigation role.'
+Write-Output 'PASS Home tiles: 5 active (Fill/border #0303B8, white text/icon, hover/pressed #000F41, OnSelect present), 11 placeholders (#E6E6E6 / #787878, DisplayMode.Disabled, no OnSelect, subtext "Coming soon"); headers #000F41 with 2 px #0303B8 line; Home footer buttons = navigation role.'

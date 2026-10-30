@@ -1390,6 +1390,20 @@ foreach ($b in $pFoot.Keys) { $e = 'btnEmp' + $b.Substring(6); Assert-True ((PGe
 Assert-True ((@($pIdx['conPrjButtonRow']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'btnPrjHome,icoPrjHome,btnPrjNew,btnPrjRefresh,btnPrjDiscard,btnPrjSave' -and (PGet 'conPrjButtonRow' 'Width') -ceq (Get-Prop 'conEmpButtonRow' 'Width').Replace('btnEmp', 'btnPrj')) 'Projects: one footer row: Home (+ icon) left; New, Refresh, Discard changes, Save right'
 $homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrHome.pa.yaml'))); $homeIdx2 = @{}; Index-Controls $homeDoc['Screens']['scrHome']['Children'] $homeIdx2
 Assert-True ($homeIdx2['btnTileProjects']['Properties']['OnSelect'] -eq '=Navigate(scrProjects)' -and !$homeIdx2['btnTileProjects']['Properties'].ContainsKey('DisplayMode') -and $homeIdx2['icoTileProjects']['Properties']['Icon'] -eq '=Icon.Folder' -and $homeIdx2['icoTileProjects']['Properties']['OnSelect'] -eq '=Select(btnTileProjects)' -and !$homeIdx2.ContainsKey('lblTileSubProjects')) 'Home: Projects tile active (Navigate(scrProjects), Icon.Folder, no "Coming soon")'
+# Home layout: 4 columns from 896 px (margin 24, column gap 16, tile min 200, tile gap 12); static formula check plus mirrored geometry.
+$hlp = $homeIdx2['lblHomeLayout']['Properties']
+Assert-True ((Norm $hlp['X']) -ceq '=If(conHomeScroll.Width-48>=848,4,1)' -and (Norm $hlp['Y']) -ceq '=If(Self.X=4,(conHomeScroll.Width-48-48)/4,conHomeScroll.Width-48)') 'Home layout formulas: 4 columns when content width >= 848 (screen 896), margin 24, column gap 16'
+Assert-True ((Norm $homeIdx2['btnTileKnowledgeBase']['Properties']['X']).StartsWith('=24+If(lblHomeLayout.X=4,3*(lblHomeLayout.Y+16),0)') -and (Norm $homeIdx2['lblHomeHeaderKnowledge']['Properties']['X']).StartsWith('=24+If(lblHomeLayout.X=4,3*(lblHomeLayout.Y+16),0)')) 'Home Knowledge column X = 24 + 3 x (column width + 16)'
+foreach ($w in 320, 728, 895, 896, 900, 1280, 1920) {
+  $avail = $w - 48; $cols = if ($avail -ge 848) { 4 } else { 1 }
+  $colW = if ($cols -eq 4) { [math]::Floor(($avail - 48) / 4) } else { $avail }
+  $n = [math]::Max(1, [math]::Floor(($colW + 12) / 212)); $tileW = ($colW - ($n - 1) * 12) / $n
+  $right = 24 + ($cols - 1) * ($colW + 16) + $colW
+  if ($w -eq 900 -or $w -eq 896) { Assert-True ($cols -eq 4) "Home $w px: 4 columns" }
+  if ($w -eq 895) { Assert-True ($cols -eq 1) 'Home 895 px: stacked mode (no 4 columns)' }
+  if ($w -ge 896) { Assert-True ($colW -ge 200) "Home $w px: column width $colW >= 200" }
+  Assert-True (($tileW -ge 200 -or $avail -lt 200 + 0) -and $right -le $w - 24 + 0.5) "Home $w px: no overlap, tile width $tileW, content right edge $right <= $($w - 24)"
+}
 $edState = [IO.File]::ReadAllText((Join-Path $srcDir '_EditorState.pa.yaml'))
 Assert-True ($edState -match '(?m)^\s+- scrProjects\s*$') 'Projects: scrProjects listed in _EditorState ScreensOrder'
 Write-Output 'PASS Test-AdminScreens (Projects): static structure only. Studio import, binding (Choices/[@Projects], Hyperlink URL, person DisplayName), delegation (Monitor), SharePoint case-sensitivity of ''Project Number'' = and functional tests NOT verified.'

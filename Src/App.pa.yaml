@@ -12,6 +12,7 @@ App:
     StartScreen: =scrHome
     Formulas: |-
       =LangNl = Coalesce(varLang,"en")="nl";
+      KnowledgeBaseUrl = "";
       T = {
         empTitle: {en: "Contractors", nl: ""},
         empHome: {en: "Home", nl: ""},

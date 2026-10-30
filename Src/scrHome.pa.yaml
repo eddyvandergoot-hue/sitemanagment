@@ -43,8 +43,8 @@ Screens:
         Properties:
           Text: =""
           Visible: =false
-          X: =If(conHomeScroll.Width-80>=648,3,1)
-          Y: =If(Self.X=3,(conHomeScroll.Width-80-48)/3,conHomeScroll.Width-80)
+          X: =If(conHomeScroll.Width-48>=848,4,1)
+          Y: =If(Self.X=4,(conHomeScroll.Width-48-48)/4,conHomeScroll.Width-48)
           Width: =Max(1,RoundDown((Self.Y+12)/212,0))
           Height: =(Self.Y-(Self.Width-1)*12)/Self.Width
     - lblHomeRows:
@@ -55,16 +55,16 @@ Screens:
           X: =RoundUp(7/lblHomeLayout.Width,0)
           Y: =RoundUp(4/lblHomeLayout.Width,0)
           Width: =RoundUp(4/lblHomeLayout.Width,0)
-          Height: =0
+          Height: =RoundUp(1/lblHomeLayout.Width,0)
     - lblHomeColumns:
         Control: Label@2.5.1
         Properties:
           Text: =""
           Visible: =false
           X: =0
-          Y: =If(lblHomeLayout.X=3,0,34+122*lblHomeRows.X+24)
-          Width: =If(lblHomeLayout.X=3,0,Self.Y+34+122*lblHomeRows.Y+24)
-          Height: =If(lblHomeLayout.X=3,Max(34+122*lblHomeRows.X,34+122*lblHomeRows.Y,34+122*lblHomeRows.Width),Self.Width+34+122*lblHomeRows.Width)+24
+          Y: =If(lblHomeLayout.X=4,0,34+122*lblHomeRows.X+24)
+          Width: =If(lblHomeLayout.X=4,0,Self.Y+34+122*lblHomeRows.Y+24)
+          Height: =If(lblHomeLayout.X=4,Max(34+122*lblHomeRows.X,34+122*lblHomeRows.Y,34+122*lblHomeRows.Width,34+122*lblHomeRows.Height),Self.Width+34+122*lblHomeRows.Width+24+34+122*lblHomeRows.Height)+24
     - conHomeScroll:
         Control: GroupContainer@1.5.0
         Variant: AutoLayout
@@ -109,7 +109,7 @@ Screens:
                       Text: ="Administration"
                       VerticalAlign: =VerticalAlign.Middle
                       Width: =lblHomeLayout.Y
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)
                       Y: =lblHomeColumns.X
                 - recHomeLineAdmin:
                     Control: Rectangle@2.3.0
@@ -133,7 +133,7 @@ Screens:
                       Text: ="CAD tools"
                       VerticalAlign: =VerticalAlign.Middle
                       Width: =lblHomeLayout.Y
-                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)
+                      X: =24+If(lblHomeLayout.X=4,1*(lblHomeLayout.Y+16),0)
                       Y: =lblHomeColumns.Y
                 - recHomeLineCad:
                     Control: Rectangle@2.3.0
@@ -157,7 +157,7 @@ Screens:
                       Text: ="Inventory"
                       VerticalAlign: =VerticalAlign.Middle
                       Width: =lblHomeLayout.Y
-                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)
+                      X: =24+If(lblHomeLayout.X=4,2*(lblHomeLayout.Y+16),0)
                       Y: =lblHomeColumns.Width
                 - recHomeLineInventory:
                     Control: Rectangle@2.3.0
@@ -199,7 +199,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(0/lblHomeLayout.Width,0)*122
                 - icoTileProjectTeam:
                     Control: Classic/Icon@2.5.0
@@ -260,7 +260,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(1/lblHomeLayout.Width,0)*122
                 - icoTileWeeklyHours:
                     Control: Classic/Icon@2.5.0
@@ -321,7 +321,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(2/lblHomeLayout.Width,0)*122
                 - icoTileHoursSummary:
                     Control: Classic/Icon@2.5.0
@@ -383,7 +383,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(3/lblHomeLayout.Width,0)*122
                 - lblTileSubWeekReport:
                     Control: Label@2.5.1
@@ -434,7 +434,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(4,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)+Mod(4,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(4/lblHomeLayout.Width,0)*122
                 - lblTileSubWorkers:
                     Control: Label@2.5.1
@@ -484,7 +484,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(5,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)+Mod(5,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(5/lblHomeLayout.Width,0)*122
                 - icoTileContractors:
                     Control: Classic/Icon@2.5.0
@@ -545,7 +545,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(6,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,0*(lblHomeLayout.Y+16),0)+Mod(6,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(6/lblHomeLayout.Width,0)*122
                 - icoTileProjects:
                     Control: Classic/Icon@2.5.0
@@ -607,7 +607,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,1*(lblHomeLayout.Y+16),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Y+46+RoundDown(0/lblHomeLayout.Width,0)*122
                 - lblTileSubViewer3D:
                     Control: Label@2.5.1
@@ -658,7 +658,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,1*(lblHomeLayout.Y+16),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Y+46+RoundDown(1/lblHomeLayout.Width,0)*122
                 - lblTileSubPIDTracker:
                     Control: Label@2.5.1
@@ -709,7 +709,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,1*(lblHomeLayout.Y+16),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Y+46+RoundDown(2/lblHomeLayout.Width,0)*122
                 - lblTileSubComponentLibrary:
                     Control: Label@2.5.1
@@ -760,7 +760,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,1*(lblHomeLayout.Y+24),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,1*(lblHomeLayout.Y+16),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Y+46+RoundDown(3/lblHomeLayout.Width,0)*122
                 - lblTileSubSkidConfigurator:
                     Control: Label@2.5.1
@@ -811,7 +811,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,2*(lblHomeLayout.Y+16),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Width+46+RoundDown(0/lblHomeLayout.Width,0)*122
                 - lblTileSubStockOverview:
                     Control: Label@2.5.1
@@ -862,7 +862,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,2*(lblHomeLayout.Y+16),0)+Mod(1,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Width+46+RoundDown(1/lblHomeLayout.Width,0)*122
                 - lblTileSubLocations:
                     Control: Label@2.5.1
@@ -913,7 +913,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,2*(lblHomeLayout.Y+16),0)+Mod(2,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Width+46+RoundDown(2/lblHomeLayout.Width,0)*122
                 - lblTileSubUsage:
                     Control: Label@2.5.1
@@ -964,7 +964,7 @@ Screens:
                       VerticalAlign: =VerticalAlign.Bottom
                       Height: =110
                       Width: =lblHomeLayout.Height
-                      X: =40+If(lblHomeLayout.X=3,2*(lblHomeLayout.Y+24),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      X: =24+If(lblHomeLayout.X=4,2*(lblHomeLayout.Y+16),0)+Mod(3,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.Width+46+RoundDown(3/lblHomeLayout.Width,0)*122
                 - lblTileSubRequests:
                     Control: Label@2.5.1
@@ -982,3 +982,78 @@ Screens:
                       Width: =btnTileRequests.Width-24
                       X: =btnTileRequests.X+12
                       Y: =btnTileRequests.Y+12
+                - lblHomeHeaderKnowledge:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#000F41")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      Height: =32
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =16
+                      Text: ="Knowledge"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =lblHomeLayout.Y
+                      X: =24+If(lblHomeLayout.X=4,3*(lblHomeLayout.Y+16),0)
+                      Y: =If(lblHomeLayout.X=4,0,lblHomeColumns.Width+34+122*lblHomeRows.Width+24)
+                - recHomeLineKnowledge:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Fill: =ColorValue("#0303B8")
+                      Height: =2
+                      Width: =lblHomeLayout.Y
+                      X: =lblHomeHeaderKnowledge.X
+                      Y: =lblHomeHeaderKnowledge.Y+lblHomeHeaderKnowledge.Height
+                - btnTileKnowledgeBase:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      BorderColor: =ColorValue("#E6E6E6")
+                      Color: =ColorValue("#787878")
+                      DisabledBorderColor: =ColorValue("#E6E6E6")
+                      DisabledColor: =ColorValue("#787878")
+                      DisabledFill: =ColorValue("#E6E6E6")
+                      DisplayMode: =DisplayMode.Disabled
+                      Fill: =ColorValue("#E6E6E6")
+                      HoverBorderColor: =ColorValue("#E6E6E6")
+                      HoverColor: =ColorValue("#787878")
+                      HoverFill: =ColorValue("#E6E6E6")
+                      PressedBorderColor: =ColorValue("#E6E6E6")
+                      PressedColor: =ColorValue("#787878")
+                      PressedFill: =ColorValue("#E6E6E6")
+                      TabIndex: =-1
+                      Text: ="Knowledge Base"
+                      Align: =Align.Left
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Semibold
+                      PaddingBottom: =12
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =0
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      Size: =14
+                      VerticalAlign: =VerticalAlign.Bottom
+                      Height: =110
+                      Width: =lblHomeLayout.Height
+                      X: =24+If(lblHomeLayout.X=4,3*(lblHomeLayout.Y+16),0)+Mod(0,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
+                      Y: =lblHomeHeaderKnowledge.Y+46+RoundDown(0/lblHomeLayout.Width,0)*122
+                - lblTileSubKnowledgeBase:
+                    Control: Label@2.5.1
+                    Properties:
+                      Align: =Align.Left
+                      Color: =ColorValue("#787878")
+                      Font: ="Inter, Arial, sans-serif"
+                      FontWeight: =FontWeight.Normal
+                      Height: =20
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Size: =12
+                      Text: ="Coming soon"
+                      VerticalAlign: =VerticalAlign.Middle
+                      Width: =btnTileKnowledgeBase.Width-24
+                      X: =btnTileKnowledgeBase.X+12
+                      Y: =btnTileKnowledgeBase.Y+12
