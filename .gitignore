@@ -47,3 +47,5 @@ Assets/GEA_Logo_w_Claim_*
 
 # Studio downloads handed in by Eddy (may contain signed URLs); never commit
 Incoming/
+# Tile icon set v1: SVGs + README + preview are tracked; the delivery zip duplicates them
+Assets/Icons/*.zip
