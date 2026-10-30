@@ -31,7 +31,13 @@ Flow per step: powerfx-ui + powerfx-logic -> verifier -> reviewer -> pack + SHA.
 EOF
 ```
 
-Blocked on MS-023 (MANUAL_STEPS.md). Notes: canvas components in SourceCode layout must use a schema Microsoft documents (component definitions in Src, check pa.yaml docs and pac 2.11.2 support before building; Studio import is the first check); component input/output/behavior properties must be documented property kinds. Items 1, 2, 3, 6, 7 and the layout rules of the command below are delivered through the components in steps 2-3 (Test-Layout is built in step 3).
+MS-023 done 30-10-2026 (templates merged). Logic fixes 4, 5, a, d, e built (commit f500822; reviewer: no blocking findings; open N1 control-read after a Patch error before assuming zero writes, N2 status chip bound to saved status, N3 do not re-write an unchanged choice value outside the list: take into step 2/3).
+Step 1 result (30-10-2026, report only; source: template definitions + Studio-assigned rules in the MS-023 save; pac pack of a throwaway test screen in a scratch worktree): pac pack also accepts NON-existing properties (Fill on ModernToggle packed fine), so pack proves nothing; Check-WeeklySource (template property check) and Studio import are the real checks.
+- ModernToggle 1.0.1: only Checked/Default/Label/LabelPosition/ToggleSize/OnCheck/OnUncheck; no colour or font property (theme-driven) -> #0303B8/#B4B4B4 and Inter not settable per control. Recommendation: keep own switch (or change the app modern theme later, affects all modern controls).
+- ModernSpinner 1.1.0: SpinnerColor + TrackColor + Width/Height -> white on #0303B8 possible. Recommendation: USE (replaces the animated SVG image).
+- ModernBadge 1.0.0: Appearance/Intent/Shape only, no Fill/Color -> #1AFF80/#E6E6E6 not possible. Recommendation: keep own chip (Classic/Button).
+- HtmlViewer 2.1.0 (HTML text): HtmlText, Font, Size, Color, Fill, AutoHeight, borders -> inline CSS (Inter, #DB1E28 star, bold head). Recommendation: USE for label+star and message bar.
+- ModernTextInput 1.1.2 / ModernDropdown 1.0.3: theme-driven like Toggle. Recommendation: keep Classic/TextInput and Classic/DropDown (GEA styling already done). Notes: canvas components in SourceCode layout must use a schema Microsoft documents (component definitions in Src, check pa.yaml docs and pac 2.11.2 support before building; Studio import is the first check); component input/output/behavior properties must be documented property kinds. Items 1, 2, 3, 6, 7 and the layout rules of the command below are delivered through the components in steps 2-3 (Test-Layout is built in step 3).
 
 Studio test 30-10-2026 (Eddy): TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (build adminpattern-20261030_071949). Next command (queued by Eddy 30-10-2026, NOT started; a first attempt was stopped before any change, HEAD 15f845c):
 
