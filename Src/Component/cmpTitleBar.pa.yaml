@@ -44,9 +44,11 @@ ComponentDefinitions:
             FontWeight: =FontWeight.Semibold
             Height: =Parent.Height
             PaddingLeft: =129
+            PaddingRight: =72
             Size: =22
             Text: =cmpTitleBar.Title
             VerticalAlign: =VerticalAlign.Middle
+            Wrap: =false
             Width: =Parent.Width
             X: =0
             Y: =0

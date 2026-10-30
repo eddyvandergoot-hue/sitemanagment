@@ -165,10 +165,12 @@ ComponentDefinitions:
                   - icoCmpHome:
                       Control: Classic/Icon@2.5.0
                       Properties:
+                        AccessibleLabel: =""
                         Color: =If(btnCmpHome.DisplayMode=DisplayMode.Edit,Color.White,ColorValue("#787878"))
                         Height: =20
                         Icon: =Icon.Home
                         OnSelect: =Select(btnCmpHome)
+                        TabIndex: =-1
                         Width: =20
                         X: =btnCmpHome.X+14
                         Y: =btnCmpHome.Y+(btnCmpHome.Height-Self.Height)/2

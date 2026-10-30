@@ -18,3 +18,5 @@ EditorState:
     - cmpTitleBar
     - cmpMessageBar
     - cmpFooter
+    - cmpField
+    - cmpListCard

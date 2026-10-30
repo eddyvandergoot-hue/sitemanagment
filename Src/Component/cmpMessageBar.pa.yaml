@@ -9,12 +9,12 @@
 ComponentDefinitions:
   cmpMessageBar:
     DefinitionType: CanvasComponent
-    Description: Admin screen message bar (Admin screen pattern), directly below the title bar. An empty Kind shows nothing (BarHeight 0). The host sets the instance Height to BarHeight and handles OnClose (clears its message variables).
+    Description: Admin screen message bar (Admin screen pattern), directly below the title bar. An empty or unknown Kind shows nothing (BarHeight 0). The host sets the instance Height to BarHeight and handles OnClose (clears its message variables).
     CustomProperties:
       Kind:
         PropertyKind: Input
         DataType: Text
-        Description: Empty (no message), Error, Warning or Success.
+        Description: Error, Warning or Success. Empty or any other value shows nothing.
         Default: =""
       Head:
         PropertyKind: Input
@@ -40,7 +40,7 @@ ComponentDefinitions:
         ReturnType: None
         Description: Raised by the close icon. The host clears its message variables.
     Properties:
-      BarHeight: =If(IsBlank(cmpMessageBar.Kind),0,40)
+      BarHeight: =If(cmpMessageBar.Kind in ["Error","Warning","Success"],40,0)
       Fill: =Color.Transparent
       Height: =40
       Width: =1366
@@ -51,7 +51,7 @@ ComponentDefinitions:
             BorderColor: =Color.Transparent
             Fill: =Switch(cmpMessageBar.Kind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)
             Height: =Parent.Height
-            Visible: =!IsBlank(cmpMessageBar.Kind)
+            Visible: =(cmpMessageBar.Kind in ["Error","Warning","Success"])
             Width: =Parent.Width
             X: =0
             Y: =0
@@ -69,7 +69,8 @@ ComponentDefinitions:
             PaddingRight: =0
             PaddingTop: =0
             Size: =14
-            Visible: =!IsBlank(cmpMessageBar.Kind)
+            Tooltip: =cmpMessageBar.Head & " " & cmpMessageBar.Body
+            Visible: =(cmpMessageBar.Kind in ["Error","Warning","Success"])
             Width: =Max(0,Parent.Width-Self.X-56)
             X: =24
             Y: =0
@@ -82,7 +83,7 @@ ComponentDefinitions:
             Icon: =Icon.Cancel
             OnSelect: =cmpMessageBar.OnClose()
             Tooltip: =cmpMessageBar.CloseLabel
-            Visible: =!IsBlank(cmpMessageBar.Kind)
+            Visible: =(cmpMessageBar.Kind in ["Error","Warning","Success"])
             Width: =24
             X: =Parent.Width-Self.Width-16
             Y: =(Parent.Height-Self.Height)/2

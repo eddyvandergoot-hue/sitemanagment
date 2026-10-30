@@ -14,7 +14,7 @@ ComponentDefinitions:
       Items:
         PropertyKind: Input
         DataType: Table
-        Description: 'Rows, already filtered and sorted by the host. Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean, grey title), ChipText (Text, empty = no chip).'
+        Description: 'Rows, already filtered and sorted by the host. Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean, grey title), ChipText (Text, empty = no chip). Allowed ChipText values are Inactive, On hold and Closed (80 px chip, Inter 12, measured text at most 64 px); other texts need a new measurement.'
         Default: '=Filter(Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""}),false)'
       SelectedID:
         PropertyKind: Input
@@ -194,6 +194,7 @@ ComponentDefinitions:
                   RadiusTopRight: =12
                   Size: =12
                   Text: =""
+                  TabIndex: =-1
                   Tooltip: '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)'
                   Width: =44
                   X: =Parent.Width-24-Self.Width
@@ -229,6 +230,7 @@ ComponentDefinitions:
                   RadiusTopRight: =9
                   Size: =12
                   Text: =""
+                  TabIndex: =-1
                   Tooltip: =btnCmpListSwitch.Tooltip
                   Width: =18
                   X: =btnCmpListSwitch.X+If(cmpListCard.ShowInactive,btnCmpListSwitch.Width-Self.Width-3,3)
@@ -260,6 +262,7 @@ ComponentDefinitions:
                         HoverFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
                         OnSelect: =Select(Parent)
                         PressedFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
+                        TabIndex: =-1
                         Width: =Parent.TemplateWidth
                   - recCmpRowBar:
                       Control: Rectangle@2.3.0
@@ -269,6 +272,7 @@ ComponentDefinitions:
                         Height: =Parent.TemplateHeight
                         OnSelect: =Select(Parent)
                         Visible: =ThisItem.ID=cmpListCard.SelectedID
+                        TabIndex: =-1
                         Width: =3
                   - recCmpRowLine:
                       Control: Rectangle@2.3.0
@@ -277,6 +281,7 @@ ComponentDefinitions:
                         Fill: =ColorValue("#EDEDED")
                         Height: =1
                         OnSelect: =Select(Parent)
+                        TabIndex: =-1
                         Width: =Parent.TemplateWidth
                         Y: =Parent.TemplateHeight-1
                   - htmlCmpRowTitle:

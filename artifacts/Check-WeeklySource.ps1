@@ -95,7 +95,7 @@ function Check-Control($entry,[bool]$autoLayoutChild=$false) {
         }
         $def = $script:componentDefs[[string]$control['ComponentName']]
         if(!$def) { throw "CanvasComponent-instantie $name verwijst naar onbekende ComponentName '$($control['ComponentName'])'." }
-        $instanceAllowed = @('X','Y','Width','Height','Visible','Fill','ContentLanguage','ChildTabPriority','EnableChildFocus','OnReset')
+        $instanceAllowed = @('X','Y','Width','Height','Visible','Fill','ContentLanguage','ChildTabPriority','EnableChildFocus')
         foreach($cp in $def['CustomProperties'].Keys) { if($def['CustomProperties'][$cp]['PropertyKind'] -in @('Input','Event','InputFunction')) { $instanceAllowed += $cp } }
         foreach($property in $control['Properties'].Keys) {
             if($property -notin $instanceAllowed) { throw "Onbekende of niet-instelbare eigenschap op CanvasComponent-instantie: $name.$property" }
@@ -142,6 +142,24 @@ foreach($entry in $contractorsYaml['Screens']['scrContractors']['Children']) { C
 # Projects build (30-10-2026): admin screen scrProjects, same templates as scrContractors.
 $projectsYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrProjects.pa.yaml')))
 foreach($entry in $projectsYaml['Screens']['scrProjects']['Children']) { Check-Control $entry }
+# Every screen file: validate all CanvasComponent instances (also in screens that Check-Control does not walk completely).
+function Check-Instances($entries, $where) {
+    foreach($entry in $entries) {
+        $iname = @($entry.Keys)[0]; $ictl = $entry[$iname]
+        if($ictl['Control'] -eq 'CanvasComponent') {
+            $saved = $script:names; $script:names = @{}; $savedCount = $script:controlCount
+            Check-Control ([ordered]@{ $iname = $ictl }); $script:names = $saved; $script:controlCount = $savedCount
+        }
+        if($ictl['Children']) { Check-Instances $ictl['Children'] $where }
+    }
+}
+$instanceScreens = 0
+foreach($screenFile in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter '*.pa.yaml') {
+    if($screenFile.Name -like '_*') { continue }
+    $screenDoc = $builder.Build().Deserialize([IO.File]::ReadAllText($screenFile.FullName))
+    foreach($screenName in $screenDoc['Screens'].Keys) { Check-Instances $screenDoc['Screens'][$screenName]['Children'] $screenFile.Name; $instanceScreens++ }
+}
+Write-Output "Component-instanties: $instanceScreens schermen gecontroleerd op CanvasComponent-instanties."
 Write-Output "Structuur en bestaande templates: $script:controlCount controls gecontroleerd; rijlimiet 500 en errorhandling bevestigd."
 # 26-10-2026: every Icon.<Name> in Src must exist in the Classic/Icon 2.5.0 template enum of the .msapr (read-only).
 $iconTemplate = $templates | Where-Object { $_.Name -eq 'icon' -and $_.Version -eq '2.5.0' }
@@ -164,6 +182,10 @@ Write-Output "Icon-namen: $iconUses verwijzingen in Src bestaan in de Classic/Ic
 $pfxDataTypes=@('Text','Number','Boolean','DateAndTime','Screen','Record','Table','Image','VideoOrAudio','Color','Currency')
 $propertyKinds=@('Input','Output','InputFunction','OutputFunction','Event','Action')
 $componentChecked=0
+$editorState=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/_EditorState.pa.yaml')))
+$orderList=@($editorState['EditorState']['ComponentDefinitionsOrder'] | ForEach-Object { [string]$_ } | Sort-Object)
+$fileList=@($componentDocs.Keys | ForEach-Object { $_ -replace '\.pa\.yaml$','' } | Sort-Object)
+if(($orderList -join ',') -ne ($fileList -join ',')) { throw "_EditorState ComponentDefinitionsOrder ($($orderList -join ',')) is niet gelijk aan de bestanden in Src\Component ($($fileList -join ','))." }
 foreach($componentFileName in $componentDocs.Keys) {
     $componentDoc=$componentDocs[$componentFileName]
     $script:formulas=0; $script:failures=0
@@ -173,19 +195,38 @@ foreach($componentFileName in $componentDocs.Keys) {
         $def=$componentDoc['ComponentDefinitions'][$componentName]
         if($def['DefinitionType'] -ne 'CanvasComponent') { throw "$componentName : DefinitionType moet CanvasComponent zijn." }
         foreach($key in $def.Keys) { if($key -notin @('DefinitionType','Description','AllowCustomization','AccessAppScope','CustomProperties','Properties','Children')) { throw "$componentName : ongeldig veld $key" } }
+        $behaviourNames=@($def['CustomProperties'].Keys | Where-Object { $def['CustomProperties'][$_]['PropertyKind'] -in @('Output','OutputFunction','Action') })
+        $fixedProps=@('Fill','Height','Width','OnReset','ContentLanguage','ChildTabPriority','EnableChildFocus')
         foreach($propName in $def['Properties'].Keys) {
             if($propName -in @('X','Y','Visible')) { throw "$componentName : Properties mag $propName niet bevatten (gereserveerd in het schema)." }
+            if($propName -notin $fixedProps -and $propName -notin $behaviourNames) { throw "$componentName.$propName : Properties mag alleen $($fixedProps -join '/') en de namen van Output/OutputFunction/Action bevatten." }
             if(([string]$def['Properties'][$propName]) -notmatch '^=') { throw "$componentName.$propName : formule moet met = beginnen." }
         }
         foreach($cpName in $def['CustomProperties'].Keys) {
             $cp=$def['CustomProperties'][$cpName]
-            if($cp['PropertyKind'] -notin $propertyKinds) { throw "$componentName.$cpName : ongeldige PropertyKind $($cp['PropertyKind'])" }
-            if($cp['PropertyKind'] -in @('Input','Output')) {
+            $kind=$cp['PropertyKind']
+            if($kind -notin $propertyKinds) { throw "$componentName.$cpName : ongeldige PropertyKind $kind" }
+            if($kind -eq 'Input') {
                 if($cp['DataType'] -notin $pfxDataTypes) { throw "$componentName.$cpName : DataType '$($cp['DataType'])' is niet geldig in het schema." }
-                foreach($key in $cp.Keys) { if($key -notin @('PropertyKind','DisplayName','Description','DataType','RaiseOnReset','Default')) { throw "$componentName.$cpName : ongeldig veld $key voor $($cp['PropertyKind'])" } }
-            } elseif($cp['PropertyKind'] -in @('Event','Action','InputFunction','OutputFunction')) {
-                if(!$cp.ContainsKey('ReturnType')) { throw "$componentName.$cpName : ReturnType is verplicht voor $($cp['PropertyKind'])." }
+                foreach($key in $cp.Keys) { if($key -notin @('PropertyKind','DisplayName','Description','DataType','RaiseOnReset','Default')) { throw "$componentName.$cpName : ongeldig veld $key voor Input" } }
+            } elseif($kind -eq 'Output') {
+                if($cp['DataType'] -notin $pfxDataTypes) { throw "$componentName.$cpName : DataType '$($cp['DataType'])' is niet geldig in het schema." }
+                foreach($key in $cp.Keys) { if($key -notin @('PropertyKind','DisplayName','Description','DataType')) { throw "$componentName.$cpName : ongeldig veld $key voor Output" } }
+                if(!$def['Properties'].ContainsKey($cpName) -or ([string]$def['Properties'][$cpName]) -notmatch '^=') { throw "$componentName.$cpName : Output moet een formule in Properties hebben." }
+            } else {
+                if(!$cp.ContainsKey('ReturnType')) { throw "$componentName.$cpName : ReturnType is verplicht voor $kind." }
                 if($cp['ReturnType'] -ne 'None' -and $cp['ReturnType'] -notin $pfxDataTypes) { throw "$componentName.$cpName : ongeldig ReturnType $($cp['ReturnType'])" }
+                $okKeys=@('PropertyKind','DisplayName','Description','ReturnType','Parameters')
+                if($kind -in @('Event','InputFunction')) { $okKeys+='Default' }
+                foreach($key in $cp.Keys) { if($key -notin $okKeys) { throw "$componentName.$cpName : ongeldig veld $key voor $kind" } }
+                if($cp.ContainsKey('Parameters')) {
+                    foreach($param in $cp['Parameters']) {
+                        if(@($param.Keys).Count -ne 1) { throw "$componentName.$cpName : elk Parameters-item moet exact een sleutel hebben." }
+                        $pn=@($param.Keys)[0]; $pd=$param[$pn]
+                        if($pd['DataType'] -notin $pfxDataTypes) { throw "$componentName.$cpName.$pn : DataType '$($pd['DataType'])' is niet geldig." }
+                        foreach($key in $pd.Keys) { if($key -notin @('DataType','Description','IsOptional','Default')) { throw "$componentName.$cpName.$pn : ongeldig veld $key" } }
+                    }
+                }
             }
             if($cp.ContainsKey('Default') -and ([string]$cp['Default']) -notmatch '^=') { throw "$componentName.$cpName : Default moet met = beginnen." }
         }

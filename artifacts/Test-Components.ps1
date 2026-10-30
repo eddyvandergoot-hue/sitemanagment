@@ -44,7 +44,7 @@ Assert-True ($defs['cmpTitleBar']['CustomProperties']['Busy']['Default'] -eq '=f
 # (2) Pure presentation: no app state, navigation or writes ----------------------------------------------
 foreach ($c in $files.Keys) {
     $body = ($files[$c] -split "`n" | Where-Object { $_ -notmatch '^\s*#' -and $_ -notmatch '^\s*Description:' }) -join "`n"
-    foreach ($pat in '\bvar[A-Z]\w*', '\bcol[A-Z]\w*', '\bT\.\w+', '\bLangNl\b', '\bNavigate\(', '\bPatch\(', '\bNotify\(', '\bSet\(', '\bCollect\(', '\bRefresh\(', '\bUpdateContext\(', 'GEA_logo_white') {
+    foreach ($pat in '\bvar[A-Z]\w*', '\bcol[A-Z]\w*', '\bT\.\w+', '\bLangNl\b', '\bNavigate\(', '\bPatch\(', '\bNotify\(', '\bSet\(', '\bCollect\(', '\bRefresh\(', '\bUpdateContext\(', '\bClearCollect\(', '\bRemove\(', '\bRemoveIf\(', '\bUpdate\(', '\bUpdateIf\(', '\bSubmitForm\(', '\bLaunch\(', '\bBack\(', '\bExit\(', 'GEA_logo_white') {
         Assert-True ($body -cnotmatch $pat) "$c has no app-level reference ($pat)"
     }
     Assert-True ($body -notmatch 'Len\([^)]*\)\s*\*\s*\d') "$c has no estimated text widths (Len(...)*n)"
@@ -55,7 +55,7 @@ foreach ($c in $files.Keys) {
 $t = $idx['cmpTitleBar']; $tp = $defs['cmpTitleBar']['Properties']
 Assert-True ($tp['Fill'] -eq '=ColorValue("#0303B8")' -and $tp['Height'] -eq '=60') 'cmpTitleBar: Fill #0303B8, height 60'
 $title = $t['lblCmpTitleText']['Properties']
-Assert-True ($title['Text'] -eq '=cmpTitleBar.Title' -and $title['Color'] -eq '=Color.White' -and $title['Size'] -eq '=22' -and $title['FontWeight'] -eq '=FontWeight.Semibold' -and $title['PaddingLeft'] -eq '=129' -and $title['Width'] -eq '=Parent.Width' -and $title['Height'] -eq '=Parent.Height') 'cmpTitleBar title: white 22 Semibold Inter, PaddingLeft 129, full width'
+Assert-True ($title['Text'] -eq '=cmpTitleBar.Title' -and $title['Color'] -eq '=Color.White' -and $title['Size'] -eq '=22' -and $title['FontWeight'] -eq '=FontWeight.Semibold' -and $title['PaddingLeft'] -eq '=129' -and $title['PaddingRight'] -eq '=72' -and $title['Wrap'] -eq '=false' -and $title['Width'] -eq '=Parent.Width' -and $title['Height'] -eq '=Parent.Height') 'cmpTitleBar title: white 22 Semibold Inter, PaddingLeft 129, full width'
 $logo = $t['imgCmpTitleLogo']; $lp = $logo['Properties']
 Assert-True ($logo['Control'] -eq 'Image@2.2.3' -and $lp['Width'] -eq '=99' -and $lp['Height'] -eq '=30' -and $lp['ImagePosition'] -eq '=ImagePosition.Fit' -and $lp['Image'] -eq '=cmpTitleBar.Logo' -and $lp['X'] -eq '=lblCmpTitleText.X+15' -and $lp['Y'] -eq '=lblCmpTitleText.Y+(lblCmpTitleText.Height-Self.Height)/2') 'cmpTitleBar logo: Image@2.2.3 99x30 Fit, X title+15, centred, Image = Logo input (media passed by host)'
 Assert-True (!$lp.ContainsKey('Fill') -and !$lp.ContainsKey('OnSelect') -and $lp['AccessibleLabel'] -eq '="GEA"') 'cmpTitleBar logo: no Fill/OnSelect, AccessibleLabel GEA'
@@ -66,10 +66,10 @@ Assert-True ($sp['Control'] -eq 'ModernSpinner@1.1.0' -and $spp['SpinnerColor'] 
 
 # (4) cmpMessageBar ---------------------------------------------------------------------------------------
 $m = $idx['cmpMessageBar']; $mp = $defs['cmpMessageBar']['Properties']
-Assert-True ($mp['Height'] -eq '=40' -and $mp['BarHeight'] -eq '=If(IsBlank(cmpMessageBar.Kind),0,40)') 'cmpMessageBar: height 40, BarHeight output 0 when Kind empty'
+Assert-True ($mp['Height'] -eq '=40' -and $mp['BarHeight'] -eq '=If(cmpMessageBar.Kind in ["Error","Warning","Success"],40,0)') 'cmpMessageBar: height 40, BarHeight 0 unless Kind is Error/Warning/Success (unknown Kind shows nothing)'
 $fill = $m['recCmpMsgFill']['Properties']['Fill']
 Assert-True ($fill -eq '=Switch(cmpMessageBar.Kind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)') 'cmpMessageBar fill: Error #DB1E28, Warning #F29400, Success #1AFF80, otherwise transparent'
-Assert-True ($m['recCmpMsgFill']['Properties']['Visible'] -eq '=!IsBlank(cmpMessageBar.Kind)') 'cmpMessageBar fill hidden when Kind empty'
+Assert-True ($m['recCmpMsgFill']['Properties']['Visible'] -eq '=(cmpMessageBar.Kind in ["Error","Warning","Success"])') 'cmpMessageBar fill hidden unless Kind is Error/Warning/Success'
 $texts = @($m.Keys | Where-Object { $m[$_]['Control'] -like 'Label@*' -or $m[$_]['Control'] -like 'HtmlViewer@*' })
 Assert-True ($texts.Count -eq 1 -and $m[$texts[0]]['Control'] -eq 'HtmlViewer@2.1.0') 'cmpMessageBar: the text is exactly one HtmlViewer@2.1.0 (no separate head/body labels)'
 $h = $m[$texts[0]]['Properties']; $html = [string]$h['HtmlText']
@@ -85,7 +85,8 @@ foreach ($field in @($subs.Keys)) {
 }
 $ico = $m['icoCmpMsgClose']; $ip = $ico['Properties']
 Assert-True ($ico['Control'] -eq 'Classic/Icon@2.5.0' -and $ip['Icon'] -eq '=Icon.Cancel' -and $ip['OnSelect'] -eq '=cmpMessageBar.OnClose()' -and $ip['X'] -eq '=Parent.Width-Self.Width-16') 'cmpMessageBar close: Classic/Icon Icon.Cancel at the right, OnSelect = OnClose()'
-foreach ($n in 'htmlCmpMsgText', 'icoCmpMsgClose') { Assert-True ($m[$n]['Properties']['Visible'] -eq '=!IsBlank(cmpMessageBar.Kind)') "cmpMessageBar $n hidden when Kind empty" }
+foreach ($n in 'htmlCmpMsgText', 'icoCmpMsgClose') { Assert-True ($m[$n]['Properties']['Visible'] -eq '=(cmpMessageBar.Kind in ["Error","Warning","Success"])') "cmpMessageBar $n hidden unless Kind is Error/Warning/Success" }
+Assert-True ($m['htmlCmpMsgText']['Properties']['Tooltip'] -eq '=cmpMessageBar.Head & " " & cmpMessageBar.Body') 'cmpMessageBar text has Tooltip = Head and Body (full text when the line is cut)'
 
 # (5) cmpFooter -------------------------------------------------------------------------------------------
 $f = $idx['cmpFooter']; $fp = $defs['cmpFooter']['Properties']
@@ -117,6 +118,7 @@ Assert-True ($pri['Fill'] -eq '=ColorValue("#1AFF80")' -and $pri['Color'] -eq '=
 $xs = @{ btnCmpHome = $f['btnCmpHome']['Properties']['X']; btnCmpNew = $f['btnCmpNew']['Properties']['X']; btnCmpRefresh = $f['btnCmpRefresh']['Properties']['X']; btnCmpDiscard = $f['btnCmpDiscard']['Properties']['X']; btnCmpSave = $f['btnCmpSave']['Properties']['X'] }
 Assert-True ($xs['btnCmpHome'] -eq '=lblCmpFooterMetrics.X' -and $xs['btnCmpSave'] -eq '=Parent.Width-lblCmpFooterMetrics.X-Self.Width' -and $xs['btnCmpDiscard'] -eq '=btnCmpSave.X-lblCmpFooterMetrics.Width-Self.Width' -and $xs['btnCmpRefresh'] -eq '=btnCmpDiscard.X-lblCmpFooterMetrics.Width-Self.Width' -and $xs['btnCmpNew'] -eq '=btnCmpRefresh.X-lblCmpFooterMetrics.Width-Self.Width') 'cmpFooter: right buttons chained with 12 px gaps, margins 40'
 Assert-True ($f['icoCmpHome']['Properties']['Icon'] -eq '=Icon.Home' -and $f['icoCmpHome']['Properties']['OnSelect'] -eq '=Select(btnCmpHome)') 'cmpFooter: Home icon selects the Home button (so the guard stays in the gated OnSelect)'
+Assert-True ($f['icoCmpHome']['Properties']['TabIndex'] -eq '=-1' -and $f['icoCmpHome']['Properties']['AccessibleLabel'] -eq '=""') 'cmpFooter: Home icon is decorative (TabIndex -1, AccessibleLabel empty); the button carries the label'
 
 # Geometry helper: evaluates the simple X/Y/Width/Height formulas of one component for a given Parent size (no measured text).
 function Get-Geo($ctrls, $name, $prop, $env) {
@@ -145,7 +147,17 @@ Assert-True ($fdp['Height'] -eq '=58' -and $fdp['Fill'] -eq '=Color.Transparent'
 Assert-True ($fd['CustomProperties']['Value']['RaiseOnReset'] -eq $true -and $fdp['OnReset'] -eq '=Reset(txtCmpFieldInput); Reset(ddCmpFieldInput)') 'cmpField reset contract: Value RaiseOnReset, OnReset resets the text input and the dropdown'
 Assert-True ($fd['CustomProperties']['Enabled']['Default'] -eq '=false' -and $fd['CustomProperties']['InputType']['Default'] -eq '="text"' -and $fd['CustomProperties']['Invalid']['Default'] -eq '=false') 'cmpField: Enabled fail-closed =false, InputType default text, Invalid default false'
 Assert-True ($fd['CustomProperties']['Items']['Default'] -eq '=Filter(Table({Value: ""}),false)' -and $fd['CustomProperties']['MaxLength']['Default'] -eq '=255') 'cmpField: Items default is an empty table with column Value, MaxLength 255'
-Assert-True ($fdp['CurrentValue'] -eq '=Coalesce(If(cmpField.InputType="dropdown",Coalesce(ddCmpFieldInput.Selected.Value,cmpField.Value),txtCmpFieldInput.Text),"")') 'cmpField output CurrentValue: dropdown selection (Value when nothing selected, so a value outside the list is never a change) or text'
+Assert-True ($fdp['CurrentValue'] -eq '=If(cmpField.InputType="dropdown",Coalesce(ddCmpFieldInput.Selected.Value,""),Coalesce(txtCmpFieldInput.Text,""))') 'cmpField output CurrentValue: dropdown selection or empty string (an explicit empty choice never returns the old value), otherwise the text'
+$itemsF = [string]$fi['ddCmpFieldInput']['Properties']['Items']
+Assert-True ($itemsF -eq '=If(IsBlank(cmpField.Value) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.Value)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,"Value")},{t: Table({Value: cmpField.Value})}),"t"))') 'cmpField dropdown Items: host Items plus one extra row {Value: Value} when Value is filled and not in Items (shown as-is)'
+# Interpreter fixtures: the same rules evaluated in PowerShell (dropdown rows and CurrentValue), proving the intended behaviour of the formulas above.
+function Fx-Rows($items, $value) { if ([string]::IsNullOrEmpty($value) -or ($items -contains $value)) { return @($items) } else { return @($items) + @($value) } }
+function Fx-Current($rows, $selected) { if ($null -eq $selected -or $selected -eq '') { return '' } else { return $selected } }
+$fxRows = Fx-Rows @('Active', 'On hold', 'Closed') 'Legacy'
+Assert-True ($fxRows -contains 'Legacy' -and $fxRows.Count -eq 4) 'fixture: a Value outside the list is shown as an extra row (as-is)'
+Assert-True ((Fx-Current $fxRows 'Legacy') -eq 'Legacy') 'fixture: the as-is value is the default selection, CurrentValue equals Value so it is not dirty'
+Assert-True ((Fx-Rows @('Active', 'Closed') 'Active').Count -eq 2 -and (Fx-Rows @('Active', 'Closed') '').Count -eq 2) 'fixture: no extra row when Value is in the list or empty'
+Assert-True ((Fx-Current $fxRows $null) -eq '') 'fixture: an explicit empty choice gives an empty string, not the old value'
 $lblN = @($fi.Keys | Where-Object { $fi[$_]['Control'] -like 'Label@*' -or $fi[$_]['Control'] -like 'HtmlViewer@*' })
 Assert-True ($lblN.Count -eq 1 -and $fi[$lblN[0]]['Control'] -eq 'HtmlViewer@2.1.0') 'cmpField: exactly one HtmlViewer@2.1.0 for the label (no separate star control)'
 $lp2 = $fi['htmlCmpFieldLabel']['Properties']; $lh = [string]$lp2['HtmlText']
@@ -173,9 +185,9 @@ Assert-True ($tp2['BorderThickness'] -eq '=If(cmpField.Invalid,2,If(cmpField.Inp
 Assert-True ($tp2['DisabledBorderColor'] -match '"#9B9B9B"' -and $tp2['DisplayMode'] -eq '=If(cmpField.Enabled && cmpField.InputType="text",DisplayMode.Edit,DisplayMode.Disabled)') 'cmpField text: disabled border #9B9B9B; readonly (and unknown InputType) is always Disabled, text only Edit while Enabled'
 Assert-True ($tp2['Default'] -eq '=cmpField.Value' -and $tp2['HintText'] -eq '=cmpField.HintText' -and $tp2['MaxLength'] -eq '=cmpField.MaxLength') 'cmpField text: Default = Value, HintText, MaxLength from the inputs'
 Assert-True ($dp2['Fill'] -eq '=Color.White' -and $dp2['DisabledFill'] -eq '=Color.White' -and $dp2['BorderColor'] -match '"#9B9B9B"' -and $dp2['DisabledBorderColor'] -match '"#9B9B9B"' -and $dp2['DisplayMode'] -eq '=If(cmpField.Enabled && cmpField.InputType="dropdown",DisplayMode.Edit,DisplayMode.Disabled)') 'cmpField dropdown: white, border #9B9B9B (decision c), Edit only while Enabled'
-$ddStyle = @{ HoverFill = '=ColorValue("#D5EDFF")'; HoverColor = '=ColorValue("#000F41")'; PressedFill = '=ColorValue("#D5EDFF")'; PressedColor = '=ColorValue("#000F41")'; SelectionFill = '=ColorValue("#0303B8")'; SelectionColor = '=Color.White'; ChevronBackground = '=ColorValue("#F0F0F0")'; ChevronFill = '=ColorValue("#0303B8")'; ChevronHoverBackground = '=ColorValue("#D5EDFF")' }
+$ddStyle = @{ HoverFill = '=ColorValue("#D5EDFF")'; HoverColor = '=ColorValue("#000F41")'; PressedFill = '=ColorValue("#D5EDFF")'; PressedColor = '=ColorValue("#000F41")'; SelectionFill = '=ColorValue("#0303B8")'; SelectionColor = '=Color.White'; ChevronBackground = '=Color.White'; ChevronFill = '=ColorValue("#0303B8")'; ChevronHoverBackground = '=ColorValue("#D5EDFF")' }
 foreach ($k in $ddStyle.Keys) { Assert-True ($dp2[$k] -eq $ddStyle[$k]) "cmpField dropdown $k per the GEA dropdown style" }
-Assert-True ($dp2['HoverFill'] -ne $dp2['Fill'] -and $dp2['Items'] -eq '=cmpField.Items' -and $dp2['Items.Value'] -eq '=Value' -and $dp2['Default'] -eq '=cmpField.Value' -and $dp2['HoverBorderColor'] -match '"#0303B8"') 'cmpField dropdown: HoverFill differs from Fill, Items = Items input (column Value), Default = Value, hover border #0303B8'
+Assert-True ($dp2['HoverFill'] -ne $dp2['Fill'] -and $dp2['Items.Value'] -eq '=Value' -and $dp2['Default'] -eq '=cmpField.Value' -and $dp2['HoverBorderColor'] -match '"#5A5A5A"' -and $dp2['ChevronBackground'] -eq '=Color.White' -and $dp2['Items.Value'] -eq '=Value') 'cmpField dropdown: HoverFill differs from Fill, Default = Value, hover border #5A5A5A like the text field, chevron background white (hover #D5EDFF)'
 Assert-True ($fd['Children'].Count -eq 3) 'cmpField: three children (label, text input, dropdown), no stacked or hidden extra controls'
 
 # (8) cmpListCard ------------------------------------------------------------------------------------------
@@ -246,6 +258,8 @@ Check-Control ([ordered]@{ cmpTestOk = [ordered]@{ Control = 'CanvasComponent'; 
 Assert-True ($script:controlCount -eq 1) 'Check-Control accepts a valid CanvasComponent instance (ComponentName, custom Input/Event properties)'
 foreach ($case in @(
         @{ n = 'cmpTestUnknown'; v = [ordered]@{ Control = 'CanvasComponent'; ComponentName = 'cmpNope'; Properties = [ordered]@{} } },
+        @{ n = 'cmpTestOutputOnInstance'; v = [ordered]@{ Control = 'CanvasComponent'; ComponentName = 'cmpMessageBar'; Properties = [ordered]@{ BarHeight = '=40' } } },
+        @{ n = 'cmpTestOnResetOnInstance'; v = [ordered]@{ Control = 'CanvasComponent'; ComponentName = 'cmpField'; Properties = [ordered]@{ OnReset = '=false' } } },
         @{ n = 'cmpTestBadProp'; v = [ordered]@{ Control = 'CanvasComponent'; ComponentName = 'cmpFooter'; Properties = [ordered]@{ BarHeight = '=1' } } },
         @{ n = 'cmpTestNoName'; v = [ordered]@{ Control = 'CanvasComponent'; Variant = 'x'; ComponentName = 'cmpFooter'; Properties = [ordered]@{} } })) {
     $rejected = $false
@@ -253,3 +267,22 @@ foreach ($case in @(
     Assert-True $rejected "Check-Control rejects invalid instance $($case.n)"
 }
 Write-Output 'Not verified locally: Studio import of ComponentDefinitions, rendering of HtmlViewer/ModernSpinner, property binding and event wiring.'
+
+# (10) Accessibility: decorative/emulated parts are not tab stops --------------------------------------------
+Assert-True ($li['btnCmpListSwitch']['Properties']['TabIndex'] -eq '=-1' -and $li['btnCmpListKnob']['Properties']['TabIndex'] -eq '=-1') 'cmpListCard: switch track and knob TabIndex -1 (the row/host handles keyboard access)'
+foreach ($n in 'recCmpRowFill', 'recCmpRowBar', 'recCmpRowLine') { Assert-True ($row[$n]['Properties']['TabIndex'] -eq '=-1') "cmpListCard row $n TabIndex -1" }
+
+# (11) Chip text widths (worst case Inter/Arial at the chip font size, Measure-FontFit.ps1 with C:\Windows\Fonts) --
+$chipSize = [int](([string]$row['btnCmpRowChip']['Properties']['Size']).TrimStart('='))
+$fitText = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Measure-FontFit.ps1'))
+$fitHead = $fitText.Substring(0, $fitText.IndexOf('# Name, text, pt, weight'))
+$InterDir = Join-Path $env:WINDIR 'Fonts'; $ArialDir = Join-Path $env:WINDIR 'Fonts'
+$fitHead = $fitHead -replace '^param\([^\r\n]*\)', ''
+Invoke-Expression $fitHead
+$chipDesc = [string]$defs['cmpListCard']['CustomProperties']['Items']['Description']
+foreach ($chipText in 'Inactive', 'On hold', 'Closed') {
+    Assert-True ($chipDesc.Contains($chipText)) "cmpListCard Items description records the allowed chip text '$chipText'"
+    $wIn = Measure-Text $fonts['IN.Normal'] $chipText $chipSize; $wAr = Measure-Text $fonts['AR.Normal'] $chipText $chipSize
+    Assert-True ([Math]::Max($wIn, $wAr) -le 64) "chip '$chipText' at size ${chipSize}: Inter $wIn px / Arial $wAr px (worst case <= 64 px in the 80 px chip)"
+}
+Write-Output 'Not verified locally: Studio import, rendering, chip text in the real browser font.'

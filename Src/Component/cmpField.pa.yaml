@@ -29,13 +29,13 @@ ComponentDefinitions:
       Value:
         PropertyKind: Input
         DataType: Text
-        Description: The Default of the input (text, selected dropdown item or read-only text). A dropdown Value that is not in Items stays unselected and CurrentValue returns it unchanged.
+        Description: Loaded or saved value; never a draft that is set from OnChange (RaiseOnReset resets the input when it changes). A dropdown Value that is not in Items is shown as an extra row (as-is) and CurrentValue returns it unchanged.
         RaiseOnReset: true
         Default: =""
       Items:
         PropertyKind: Input
         DataType: Table
-        Description: Dropdown choices, one column Value. Ignored for text and readonly.
+        Description: Dropdown choices, one column Value. Ignored for text and readonly. A Value outside this list is appended by the component as one extra row.
         Default: '=Filter(Table({Value: ""}),false)'
       Invalid:
         PropertyKind: Input
@@ -60,13 +60,13 @@ ComponentDefinitions:
       CurrentValue:
         PropertyKind: Output
         DataType: Text
-        Description: The current input or choice, for the dirty check and Save. For a dropdown without a selection (Value not in Items) it returns Value unchanged.
+        Description: The current input or choice, for the dirty check and Save. A dropdown shows a Value outside Items as an extra row, so it is not a change; an explicit empty choice returns an empty string.
       OnChange:
         PropertyKind: Event
         ReturnType: None
         Description: The user changed the text or the choice. Only raised while Enabled is true. The host handler starts with its guard and compares CurrentValue with the saved value.
     Properties:
-      CurrentValue: =Coalesce(If(cmpField.InputType="dropdown",Coalesce(ddCmpFieldInput.Selected.Value,cmpField.Value),txtCmpFieldInput.Text),"")
+      CurrentValue: =If(cmpField.InputType="dropdown",Coalesce(ddCmpFieldInput.Selected.Value,""),Coalesce(txtCmpFieldInput.Text,""))
       Fill: =Color.Transparent
       Height: =58
       OnReset: =Reset(txtCmpFieldInput); Reset(ddCmpFieldInput)
@@ -135,7 +135,7 @@ ComponentDefinitions:
             AllowEmptySelection: =true
             BorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
             BorderThickness: =If(cmpField.Invalid,2,1)
-            ChevronBackground: =ColorValue("#F0F0F0")
+            ChevronBackground: =Color.White
             ChevronFill: =ColorValue("#0303B8")
             ChevronHoverBackground: =ColorValue("#D5EDFF")
             ChevronHoverFill: =ColorValue("#0303B8")
@@ -151,10 +151,10 @@ ComponentDefinitions:
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
             Height: =36
-            HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
             HoverColor: =ColorValue("#000F41")
             HoverFill: =ColorValue("#D5EDFF")
-            Items: =cmpField.Items
+            Items: '=If(IsBlank(cmpField.Value) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.Value)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,"Value")},{t: Table({Value: cmpField.Value})}),"t"))'
             Items.Value: =Value
             OnChange: =If(cmpField.Enabled,cmpField.OnChange())
             PressedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
