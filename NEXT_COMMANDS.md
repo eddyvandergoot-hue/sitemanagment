@@ -49,7 +49,40 @@ Queue after step 3 (same build as Workers or separate small build, your call):
 EOF
 ```
 
-Notes: "per earlier block" = an earlier Home message of Eddy that is not in the repo; ask Eddy for it if details (tiles per category, responsive behaviour) are needed. "18 medium": Inter has no Medium in Power Apps (use Semibold, or HtmlViewer font-weight:500 if the label is HTML). Existing Home tests (tiles, 4-column layout) must be rewritten. Tile hover icon colour change needs an icon control whose Color follows hover state of the tile button (check feasibility).
+Home redesign spec (Eddy 30-10-2026, approved mockup; full text also in ADMIN_PLAN.md par. 11):
+
+```bash
+claude << 'EOF'
+Home redesign spec (Eddy 30-10, approved mockup). For cmpTile + Home build (after step 3 approved, before Workers). Save in NEXT_COMMANDS / ADMIN_PLAN.
+Replaces current 3/4-column home.
+
+Page: bg white. cmpTitleBar title "Site Management". Content padding 32/40. Vertical scroll if taller than screen.
+Categories stacked vertically, full width, gap 32. Each category:
+- header text 16 semibold #000F41
+- line 2px #0303B8 directly under header (8 px gap), full content width
+- tile row 12 px below line: tiles horizontal, gap 10, wrap to next line when no room.
+
+Order + tiles (active = navigates; soon = inert):
+1 Team & hours: Project / team (active, scrTeam/Screen1), Weekly hours (active, scrHours), Hours summary (active, scrWeeklyHours), Week report (soon)
+2 Master data: Contractors (active), Projects (active), Workers (soon until Workers build)
+3 Inventory: Stock overview (soon), Locations (soon), Requests (soon)
+4 CAD tools: 3D viewer (soon), P&ID tracker (soon), Component library (soon)
+5 Knowledge: Knowledge base (soon; later Launch(KB URL named formula))
+Removed from home: Skid configurator, Usage, Employers tile (now Contractors).
+
+cmpTile (props: Label, Icon, Active bool, OnSelect event):
+- 190x190 square, radius 0, padding 20.
+- Active: fill #0303B8; icon 56 px white top-left; label bottom-left white 18 semibold (HTML text font-weight 500 ok), max 2 lines; arrow -> 28x20 white bottom-right.
+- Hover/pressed/focus: fill #000F41; icon + arrow #1AFF80 if feasible, else white (report).
+- Soon: fill #E6E6E6; icon #9B9B9B; label #6B6B6B; "SOON" 11 semibold uppercase #5A5A5A top-right; no arrow; DisplayMode disabled, no OnSelect.
+- Icons: thin line style, same stroke for all. Suggested: team=two people, weekly hours=clock, hours summary=bar chart, week report=calendar, contractors=building, projects=clipboard, workers=hard hat, stock=warehouse, locations=map pin, requests=chat bubble, 3D viewer=cube, P&ID tracker=valve/diagram, component library=grid of shapes, knowledge=open book. Report which icon used per tile.
+
+Responsive: >=1000 px tiles 190; 700-999 px tiles 160 (icon 48, label 16); <700 px tiles 2 per row width (screen-padding-gap)/2. Never overlap, never clip label.
+Test TP-HOME-02: active tiles navigate, soon tiles inert, hover/pressed colors, wrap at ~900 and ~700 px, Home button on every screen returns here.
+EOF
+```
+
+Build notes (orchestrator): Screen1 keeps its internal name (AGENTS: internal screen names stay; "scrTeam" is not a rename). Weekly hours tile keeps the existing guard (project/team loaded, else Navigate(Screen1) + message). Icons: Classic/Icon 2.5.0 has a fixed enum (no hard hat, warehouse, valve, cube?) and no stroke control; "thin line, same stroke" may need inline SVG images (one style, white/#9B9B9B/#1AFF80 variants via data-URI with a colour parameter) — check the enum first and report per tile. Hover icon colour: an icon/image inside the tile cannot read the button's hover state; feasible only if the tile is a component with its own hover tracking (no hover event exists in canvas) -> likely "else white" (report). Wrapping tile row: use a horizontal AutoLayout GroupContainer with LayoutWrap or a flexible-height gallery (WrapCount) — no manual X estimates. "18 medium": Inter has no Medium in Power Apps (use Semibold, or HtmlViewer font-weight:500 if the label is HTML). Existing Home tests (tiles, 4-column layout) must be rewritten. Tile hover icon colour change needs an icon control whose Color follows hover state of the tile button (check feasibility).
 
 Studio test 30-10-2026 (Eddy): TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (build adminpattern-20261030_071949). Next command (queued by Eddy 30-10-2026, NOT started; a first attempt was stopped before any change, HEAD 15f845c):
 

@@ -145,3 +145,24 @@ Status 30-10-2026: Contractors gebouwd en goedgekeurd (Eddy 29-10-2026, tag appr
 - Saveflow: Refresh + verse read, lokale validatie (vóór de eerste read/write), duplicaatcontrole, conflictcheck (app-velden genormaliseerd Trim(x & "")), één Patch, Refresh + genormaliseerde verify, lokale cache pas na verify, caches invalideren; Failed na >= 1 write; Refresh = Discard na SaveFailed (H15, H16). Guards: DisplayMode = eerste OnSelect-voorwaarde.
 - Kleuren alleen op beheerschermen: #F5F6F8, #9B9B9B, #5A5A5A, #EDEDED, #6B6B6B, #B4B4B4, #F29400. Grijze tekst alleen voor subregels, inactieve namen en "Last changed". De groene statuschip is een uitzondering op "groen alleen primaire actie". De AGENTS-maten voor titelbalk 56, footer 88/72 en Home 90 gelden niet voor beheerschermen.
 - Tests: Test-AdminScreens (per scherm: guards, loaders, 500-guards, H16, predicaten, Patch-vorm, meldingsmodel, geometrie), Test-GeaColors ($adminScreens), Test-Fonts, Test-FooterRow -GeometryOnly, Test-Logo (titelbalk 60). Studio: TESTPLAN.md TP-STYLE-01, TP-PROJECTS-01.
+
+## 11. Home redesign + cmpTile (spec Eddy 30-10-2026, goedgekeurde mockup; NIET gebouwd; aparte build na goedkeuring van stap 3, vóór Workers)
+
+Vervangt de huidige Home met 3/4 kolommen.
+- Pagina wit; cmpTitleBar titel "Site Management"; content-padding 32/40; verticaal scrollen als het niet past.
+- Categorieën onder elkaar, volle breedte, onderlinge afstand 32. Per categorie: kop 16 Semibold #000F41; lijn 2 px #0303B8 8 px onder de kop over de volle contentbreedte; tegelrij 12 px onder de lijn, tegels horizontaal met 10 px tussenruimte, naar de volgende regel als er geen ruimte is.
+- Volgorde en tegels (actief = navigeert, soon = inert):
+  1. Team & hours: Project / team (actief, Screen1), Weekly hours (actief, scrHours, bestaande guard), Hours summary (actief, scrWeeklyHours), Week report (soon).
+  2. Master data: Contractors (actief), Projects (actief), Workers (soon tot de Workers-build).
+  3. Inventory: Stock overview, Locations, Requests (alle soon).
+  4. CAD tools: 3D viewer, P&ID tracker, Component library (alle soon).
+  5. Knowledge: Knowledge base (soon; later Launch(KnowledgeBaseUrl)).
+  Van Home verwijderd: Skid configurator, Usage, Employers-tegel (nu Contractors).
+- cmpTile (props Label, Icon, Active, event OnSelect): 190x190, radius 0, padding 20.
+  - Actief: Fill #0303B8; icoon 56 px wit linksboven; label linksonder wit 18 Semibold (HTML text font-weight 500 mag), max. 2 regels; pijl -> 28x20 wit rechtsonder.
+  - Hover/pressed/focus: Fill #000F41; icoon en pijl #1AFF80 als dat haalbaar is, anders wit (rapporteren).
+  - Soon: Fill #E6E6E6; icoon #9B9B9B; label #6B6B6B; "SOON" 11 Semibold hoofdletters #5A5A5A rechtsboven; geen pijl; DisplayMode Disabled, geen OnSelect.
+  - Iconen: dunne lijnstijl, overal dezelfde lijndikte. Voorstel: team = twee personen, weekly hours = klok, hours summary = staafdiagram, week report = kalender, contractors = gebouw, projects = klembord, workers = veiligheidshelm, stock = magazijn, locations = kaartpin, requests = tekstballon, 3D viewer = kubus, P&ID tracker = klep/schema, component library = raster van vormen, knowledge = open boek. Rapporteer per tegel welk icoon gebruikt is.
+- Responsief: >= 1000 px tegels 190; 700-999 px tegels 160 (icoon 48, label 16); < 700 px twee tegels per rij, breedte (scherm - padding - gap)/2. Nooit overlap, label nooit afgekapt.
+- Test TP-HOME-02: actieve tegels navigeren, soon-tegels inert, hover/pressed-kleuren, omloop bij ~900 en ~700 px, de Home-knop op elk scherm keert hier terug.
+- Bouwnotities: Screen1 behoudt zijn interne naam. Classic/Icon 2.5.0 heeft een vaste set iconen zonder lijndikte-instelling (o.a. geen helm, magazijn of klep): waarschijnlijk inline SVG-afbeeldingen in één stijl nodig. Een icoon kan de hoverstatus van een knop niet uitlezen, dus #1AFF80 bij hover is waarschijnlijk niet haalbaar (dan wit, rapporteren). Tegelrij met omloop via een horizontale AutoLayout-GroupContainer met LayoutWrap of een gallery met WrapCount, zonder handmatige X-schattingen. De huidige Home-tests (tegelset, 4-kolomslayout) moeten worden herschreven.
