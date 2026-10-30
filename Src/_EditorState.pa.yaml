@@ -13,3 +13,4 @@ EditorState:
     - scrHours
     - scrWeeklyHours
     - scrContractors
+    - scrProjects

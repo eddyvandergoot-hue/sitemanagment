@@ -516,20 +516,19 @@ Screens:
                 - btnTileProjects:
                     Control: Classic/Button@2.2.0
                     Properties:
-                      BorderColor: =ColorValue("#E6E6E6")
-                      Color: =ColorValue("#787878")
+                      BorderColor: =ColorValue("#0303B8")
+                      Color: =Color.White
                       DisabledBorderColor: =ColorValue("#E6E6E6")
                       DisabledColor: =ColorValue("#787878")
                       DisabledFill: =ColorValue("#E6E6E6")
-                      DisplayMode: =DisplayMode.Disabled
-                      Fill: =ColorValue("#E6E6E6")
-                      HoverBorderColor: =ColorValue("#E6E6E6")
-                      HoverColor: =ColorValue("#787878")
-                      HoverFill: =ColorValue("#E6E6E6")
-                      PressedBorderColor: =ColorValue("#E6E6E6")
-                      PressedColor: =ColorValue("#787878")
-                      PressedFill: =ColorValue("#E6E6E6")
-                      TabIndex: =-1
+                      Fill: =ColorValue("#0303B8")
+                      HoverBorderColor: =ColorValue("#000F41")
+                      HoverColor: =Color.White
+                      HoverFill: =ColorValue("#000F41")
+                      OnSelect: =Navigate(scrProjects)
+                      PressedBorderColor: =ColorValue("#000F41")
+                      PressedColor: =Color.White
+                      PressedFill: =ColorValue("#000F41")
                       Text: ="Projects"
                       Align: =Align.Left
                       Font: ="Inter, Arial, sans-serif"
@@ -548,20 +547,31 @@ Screens:
                       Width: =lblHomeLayout.Height
                       X: =40+If(lblHomeLayout.X=3,0*(lblHomeLayout.Y+24),0)+Mod(6,lblHomeLayout.Width)*(lblHomeLayout.Height+12)
                       Y: =lblHomeColumns.X+46+RoundDown(6/lblHomeLayout.Width,0)*122
-                - lblTileSubProjects:
-                    Control: Label@2.5.1
+                - icoTileProjects:
+                    Control: Classic/Icon@2.5.0
                     Properties:
-                      Align: =Align.Left
-                      Color: =ColorValue("#787878")
-                      Font: ="Inter, Arial, sans-serif"
-                      FontWeight: =FontWeight.Normal
-                      Height: =20
+                      AccessibleLabel: =""
+                      BorderColor: =Color.Transparent
+                      Color: =Color.White
+                      DisabledBorderColor: =Color.Transparent
+                      DisabledColor: =Color.White
+                      DisabledFill: =Color.Transparent
+                      Fill: =Color.Transparent
+                      Height: =28
+                      HoverBorderColor: =Color.Transparent
+                      HoverColor: =Color.White
+                      HoverFill: =Color.Transparent
+                      Icon: =Icon.Folder
+                      OnSelect: =Select(btnTileProjects)
+                      PaddingBottom: =0
                       PaddingLeft: =0
                       PaddingRight: =0
-                      Size: =12
-                      Text: ="Coming soon"
-                      VerticalAlign: =VerticalAlign.Middle
-                      Width: =btnTileProjects.Width-24
+                      PaddingTop: =0
+                      PressedBorderColor: =Color.Transparent
+                      PressedColor: =Color.White
+                      PressedFill: =Color.Transparent
+                      TabIndex: =-1
+                      Width: =28
                       X: =btnTileProjects.X+12
                       Y: =btnTileProjects.Y+12
                 - btnTileViewer3D:

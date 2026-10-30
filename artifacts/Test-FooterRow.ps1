@@ -37,14 +37,17 @@ $configs=@(
  @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnHomeScreen1','btnGotoHours','btnGotoHoursSummary');Actions=@('btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam')},
  @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
  @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnHomeSummary','btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')},
- @{Screen='scrContractors';Bar='navEmp';Row='conEmpButtonRow';Nav=@('btnEmpHome');Actions=@('btnEmpNew','btnEmpRefresh','btnEmpDiscard','btnEmpSave')}
+ @{Screen='scrContractors';Bar='navEmp';Row='conEmpButtonRow';Nav=@('btnEmpHome');Actions=@('btnEmpNew','btnEmpRefresh','btnEmpDiscard','btnEmpSave');P='Emp'},
+ @{Screen='scrProjects';Bar='navPrj';Row='conPrjButtonRow';Nav=@('btnPrjHome');Actions=@('btnPrjNew','btnPrjRefresh','btnPrjDiscard','btnPrjSave');P='Prj'}
 )
+# 30-10-2026 (Projects build): admin-pattern screens share the white 68 px footer, Home icon and message-bar checks.
+$adminFooter=@('scrContractors','scrProjects')
 foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){
  foreach($cfg in $configs){
   $w=$case[0];$h=$case[1];$screen=@{Width=$w;Height=$h};$index=$indexes[$cfg.Screen];$rects=@{}
   $buttons=$cfg.Nav+$cfg.Actions
   foreach($name in $buttons){
-   $p=$index[$name]['Properties'];if($p['Y'] -ne $(if($cfg.Screen -eq 'scrContractors'){'=(Parent.Height-Self.Height)/2'}else{'=lblFooterButtonMetrics.Y'}) -or $p['Height'] -ne '=lblFooterButtonMetrics.Height'){throw 'Nonshared vertical alignment'}
+   $p=$index[$name]['Properties'];if($p['Y'] -ne $(if($cfg.Screen -in $adminFooter){'=(Parent.Height-Self.Height)/2'}else{'=lblFooterButtonMetrics.Y'}) -or $p['Height'] -ne '=lblFooterButtonMetrics.Height'){throw 'Nonshared vertical alignment'}
    $rects[$name]=@{X=0;Y=$metric.Y;Width=(Layout-Number $p['Width'] $screen @{X=0;Y=0;Width=0;Height=0});Height=$metric.Height};Publish-Rect $name $rects[$name]
   }
   $bar=Measure-Rect $cfg.Bar $index[$cfg.Bar]['Properties'] $screen
@@ -52,16 +55,16 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   foreach($name in $cfg.Nav){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $row}
   for($i=$cfg.Actions.Count-1;$i -ge 0;$i--){$name=$cfg.Actions[$i];$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $row}
   $previous=$null
-  foreach($name in $buttons){$r=$rects[$name];if($r.Y -ne $(if($cfg.Screen -eq 'scrContractors'){14}else{16}) -or $r.Height -ne 40 -or $r.X -lt 40 -or $r.X+$r.Width -gt $row.Width-40){throw 'Button outside one row'};if($previous -and $r.X-($previous.X+$previous.Width) -lt 12){throw 'Overlap/gap under 12'};$previous=$r}
+  foreach($name in $buttons){$r=$rects[$name];if($r.Y -ne $(if($cfg.Screen -in $adminFooter){14}else{16}) -or $r.Height -ne 40 -or $r.X -lt 40 -or $r.X+$r.Width -gt $row.Width-40){throw 'Button outside one row'};if($previous -and $r.X-($previous.X+$previous.Width) -lt 12){throw 'Overlap/gap under 12'};$previous=$r}
   foreach($group in @($cfg.Nav,$cfg.Actions)){for($i=1;$i -lt $group.Count;$i++){if($rects[$group[$i]].X-($rects[$group[$i-1]].X+$rects[$group[$i-1]].Width) -ne 12){throw 'Incorrect group gap'}}}
-  if($cfg.Screen -eq 'scrContractors' -and ($bar.Height -ne 68 -or $row.Height -ne 68 -or $index[$cfg.Bar]['Properties']['Fill'] -ne '=Color.White')){throw 'Admin footer must be white and 68 px high (bar and row)'}
-  if($cfg.Screen -eq 'scrContractors'){$kidsRow=@($index[$cfg.Row]['Children']|ForEach-Object {@($_.Keys)[0]}); if($kidsRow[1] -ne 'icoEmpHome' -or $index['icoEmpHome']['Control'] -ne 'Classic/Icon@2.5.0' -or $index['icoEmpHome']['Properties']['Icon'] -ne '=Icon.Home' -or $index['icoEmpHome']['Properties']['OnSelect'] -ne '=Select(btnEmpHome)' -or $index['recEmpFooterLine']['Properties']['Fill'] -ne '=ColorValue("#DCDCDC")' -or $index['recEmpFooterLine']['Properties']['Y'] -ne '=navEmp.Y' -or $index['recEmpFooterLine']['Properties']['Height'] -ne '=1'){throw 'Admin footer: Home icon (direct row child after the Home button) or 1 px #DCDCDC top line missing'}}
+  if($cfg.Screen -in $adminFooter -and ($bar.Height -ne 68 -or $row.Height -ne 68 -or $index[$cfg.Bar]['Properties']['Fill'] -ne '=Color.White')){throw 'Admin footer must be white and 68 px high (bar and row)'}
+  if($cfg.Screen -in $adminFooter){$pp=$cfg.P;$kidsRow=@($index[$cfg.Row]['Children']|ForEach-Object {@($_.Keys)[0]}); if($kidsRow[1] -ne "ico${pp}Home" -or $index["ico${pp}Home"]['Control'] -ne 'Classic/Icon@2.5.0' -or $index["ico${pp}Home"]['Properties']['Icon'] -ne '=Icon.Home' -or $index["ico${pp}Home"]['Properties']['OnSelect'] -ne "=Select(btn${pp}Home)" -or $index["rec${pp}FooterLine"]['Properties']['Fill'] -ne '=ColorValue("#DCDCDC")' -or $index["rec${pp}FooterLine"]['Properties']['Y'] -ne "=nav${pp}.Y" -or $index["rec${pp}FooterLine"]['Properties']['Height'] -ne '=1'){throw 'Admin footer: Home icon (direct row child after the Home button) or 1 px #DCDCDC top line missing'}}
   if($bar.Y+$bar.Height -ne $h -or $index[$cfg.Bar]['Properties']['LayoutWrap'] -ne '=false' -or $index[$cfg.Bar]['Properties']['LayoutOverflowX'] -ne '=LayoutOverflow.Scroll'){throw 'Footer not fixed/single row/scrollable'}
   $children=@($index[$cfg.Row]['Children']|ForEach-Object {@($_.Keys)[0]});foreach($name in $buttons){if($name -notin $children){throw 'Button in separate parent'}}
   # 26-10-2026 (powerfx-logic): Home has its own guard, identical in DisplayMode and OnSelect (If(<guard>,Navigate(scrHome))); the guard values are checked in Test-SaveRegression.ps1.
   $homeBtn=$cfg.Nav[0];$homeDm=[string]$index[$homeBtn]['Properties']['DisplayMode'];$homeOs=[string]$index[$homeBtn]['Properties']['OnSelect']
   $homeGuardOk=$homeDm.StartsWith('=If(') -and $homeDm.EndsWith(',DisplayMode.Edit,DisplayMode.Disabled)') -and $homeOs -ceq ('=If('+$homeDm.Substring(4,$homeDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)+',Navigate(scrHome))')
-  $homeText=if($cfg.Screen -eq 'scrContractors'){'=If(LangNl && !IsBlank(T.empHome.nl),T.empHome.nl,T.empHome.en)'}else{'="Home"'}; $homeGap=if($cfg.Nav.Count -gt 1){$rects[$cfg.Nav[1]].X-($rects[$homeBtn].X+$rects[$homeBtn].Width) -ne 12}else{$false}; if($children[0] -ne $homeBtn -or !$homeGuardOk -or $index[$homeBtn]['Properties']['Text'] -ne $homeText -or $rects[$homeBtn].X -ne 40 -or $homeGap){throw "Home button must be first (X=40, 12 px before next nav button) and navigate to scrHome behind the same guard in DisplayMode and OnSelect: $($cfg.Screen)"}
+  $homeText=if($cfg.Screen -eq 'scrContractors'){'=If(LangNl && !IsBlank(T.empHome.nl),T.empHome.nl,T.empHome.en)'}elseif($cfg.Screen -eq 'scrProjects'){'=If(LangNl && !IsBlank(T.prjHome.nl),T.prjHome.nl,T.prjHome.en)'}else{'="Home"'}; $homeGap=if($cfg.Nav.Count -gt 1){$rects[$cfg.Nav[1]].X-($rects[$homeBtn].X+$rects[$homeBtn].Width) -ne 12}else{$false}; if($children[0] -ne $homeBtn -or !$homeGuardOk -or $index[$homeBtn]['Properties']['Text'] -ne $homeText -or $rects[$homeBtn].X -ne 40 -or $homeGap){throw "Home button must be first (X=40, 12 px before next nav button) and navigate to scrHome behind the same guard in DisplayMode and OnSelect: $($cfg.Screen)"}
   if($cfg.Screen -eq 'Screen1'){
    foreach($name in @('ddTeam','ddProject','lblTeamWeek','dpTeamWeek','lblProject','lblTeam')){Publish-Rect $name @{X=0;Y=0;Width=0;Height=0}}
    foreach($name in @('conSelection','lblProject','lblTeam','ddProject','ddTeam','lblTeamWeek','dpTeamWeek','lblTeamWeekKW','lblSelectionLoadStatus','Label2','Gallery1')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
@@ -79,19 +82,20 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   }elseif($cfg.Screen -eq 'scrHours'){
    foreach($name in @('dpHoursWeek','lblWeekLoadStatus','galHours','lblHeaderMon')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
    if($rects.galHours.Y+$rects.galHours.Height -gt $bar.Y-12 -or $rects.lblHeaderMon.Y+$rects.lblHeaderMon.Height -gt $rects.galHours.Y){throw 'Hours content behind footer'}
-  }elseif($cfg.Screen -eq 'scrContractors'){
+  }elseif($cfg.Screen -in $adminFooter){$pp=$cfg.P
    # 29-10-2026 (Eddy): no on-screen status/error lines on Contractors. 30-10-2026 (admin pattern A1): shared message bar conEmpMsgBar
    # directly under the title bar (full title width, 40 px with a message, 0 px without); body 12 px under the bar, above the footer.
-   if($index.ContainsKey('lblEmpStatus') -or $index.ContainsKey('lblEmpErrors')){throw 'Contractors must not have lblEmpStatus/lblEmpErrors'}
-   foreach($name in @('lblEmpTitle')){$rects[$name]=Measure-Rect $name $index[$name]['Properties'] $screen}
-   Publish-Rect 'navEmp' $bar
+   # Projects build (30-10-2026): same checks for scrProjects (prefix Prj).
+   if($index.ContainsKey("lbl${pp}Status") -or $index.ContainsKey("lbl${pp}Errors")){throw "$($cfg.Screen) must not have lbl${pp}Status/lbl${pp}Errors"}
+   $tName="lbl${pp}Title"; $rects[$tName]=Measure-Rect $tName $index[$tName]['Properties'] $screen
+   Publish-Rect "nav$pp" $bar
    foreach($kind in @('""','"Error"')){
     $layoutEngine.UpdateVariable('varAdmMsgKind',$layoutEngine.Eval($kind,$null,$layoutOptions))
-    $msgBar=Measure-Rect 'conEmpMsgBar' $index['conEmpMsgBar']['Properties'] $screen
+    $msgBar=Measure-Rect "con${pp}MsgBar" $index["con${pp}MsgBar"]['Properties'] $screen
     $expH=if($kind -eq '""'){0}else{40}
-    if($msgBar.Y -ne $rects.lblEmpTitle.Y+$rects.lblEmpTitle.Height -or $msgBar.X -ne $rects.lblEmpTitle.X -or $msgBar.Width -ne $rects.lblEmpTitle.Width -or $msgBar.Height -ne $expH){throw "Contractors message bar not directly under the title bar at full title width with height $expH (kind $kind)"}
-    $body=Measure-Rect 'conEmpBody' $index['conEmpBody']['Properties'] $screen
-    if($body.Y -ne $msgBar.Y+$msgBar.Height -or $body.Y+$body.Height -gt $bar.Y){throw "Contractors body not directly under the message bar or behind footer (kind $kind)"}
+    if($msgBar.Y -ne $rects[$tName].Y+$rects[$tName].Height -or $msgBar.X -ne $rects[$tName].X -or $msgBar.Width -ne $rects[$tName].Width -or $msgBar.Height -ne $expH){throw "$($cfg.Screen) message bar not directly under the title bar at full title width with height $expH (kind $kind)"}
+    $body=Measure-Rect "con${pp}Body" $index["con${pp}Body"]['Properties'] $screen
+    if($body.Y -ne $msgBar.Y+$msgBar.Height -or $body.Y+$body.Height -gt $bar.Y){throw "$($cfg.Screen) body not directly under the message bar or behind footer (kind $kind)"}
    }
   }elseif($cfg.Screen -eq 'scrWeeklyHours'){
    # Worst-case viewport height: larger selector content reaches the existing viewport cap.

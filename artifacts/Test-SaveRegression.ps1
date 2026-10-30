@@ -6,7 +6,7 @@ $regressionOptions=New-Object Microsoft.PowerFx.ParserOptions
 $regressionOptions.Culture=[Globalization.CultureInfo]::GetCultureInfo('en-US')
 function Index-RegressionControls($entries,$index){foreach($entry in $entries){$name=@($entry.Keys)[0];$index[$name]=$entry[$name];Index-RegressionControls $entry[$name]['Children'] $index}}
 $indexes=@{};$count=0
-foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors')){
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects')){
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  if($screen -ne 'scrWeeklyHours'){Check-Node $doc $screen}
  $index=@{};Index-RegressionControls $doc['Screens'][$screen]['Children'] $index;$indexes[$screen]=$index
@@ -360,8 +360,8 @@ foreach($name in $homeIdx.Keys){foreach($prop in @($homeIdx[$name]['Properties']
  Assert-True ($fx -notmatch "(?<![\w])(?:Hours|Workers|Projects|Employers)\b\s*[,)]" -and $fx -notmatch "'Project Workers'" -and $fx -notmatch '\bChoices\(') "scrHome.$name.$prop reads no SharePoint source"
  $homeSets=@([regex]::Matches($fx,'\bSet\(\s*(\w+)\s*,') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
  Assert-True (@($homeSets | Where-Object { $_ -notin @('varProject','varTeam') }).Count -eq 0) "scrHome.$name.$prop sets no state other than varProject/varTeam"
- foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($sel.Groups[1].Value -in @('btnTileProjectTeam','btnTileWeeklyHours','btnTileHoursSummary','btnTileContractors')) "scrHome.$name.$prop selects only a navigation tile ($($sel.Groups[1].Value))" }
- foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
+ foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($sel.Groups[1].Value -in @('btnTileProjectTeam','btnTileWeeklyHours','btnTileHoursSummary','btnTileContractors','btnTileProjects')) "scrHome.$name.$prop selects only a navigation tile ($($sel.Groups[1].Value))" }
+ foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
 }}
 Assert-True ($homeOn -gt 0) "scrHome event formulas checked: $homeOn"
 # Non-event properties (Text, Visible, DisplayMode, layout...) on scrHome must not read SharePoint either.
@@ -450,7 +450,7 @@ foreach($k in $all.Keys){foreach($m in [regex]::Matches($all[$k],"Filter\('Assig
  $rest=$all[$k].Substring($m.Index+$m.Length)
  if($rest -notmatch '^ProjectKey=var\w+\)'){throw "FAIL non-delegable or non-global 'Assignment Periods' predicate at ${k}: $($rest.Substring(0,[Math]::Min(60,$rest.Length)))"}
 }}
-Assert-True ($apSites -eq 8) "All $apSites 'Assignment Periods' reads use Filter(...,ProjectKey=<global var>) (delegable text equality, indexed column)"
+Assert-True ($apSites -eq 9) "All $apSites 'Assignment Periods' reads use Filter(...,ProjectKey=<global var>) (delegable text equality, indexed column)"
 $readWeekFx=$indexes.scrHours['btnReadWeek']['Properties']['OnSelect'];$loadReport=$indexes.scrWeeklyHours['btnLoadReport']['Properties']['OnSelect'];$buildReport=$indexes.scrWeeklyHours['btnBuildReport']['Properties']['OnSelect']
 $applyWeek=$indexes.Screen1['btnApplyTeamWeek']['Properties']['OnSelect'];$migPrev=$indexes.Screen1['btnMigratePreview']['Properties']['OnSelect'];$migConf=$indexes.Screen1['btnMigrateConfirm']['Properties']['OnSelect']
 foreach($case in @(
@@ -694,7 +694,7 @@ try { $dsReader=New-Object IO.StreamReader(($msaprZip.Entries | Where-Object Ful
 $usedColumns=@{
  'Workers'=@('ID','First Name','Surname','Employer','Trade','Active')
  'Employers'=@('ID','Title','Employer Code','Address','Postalcode','City','Country','Contact Name','Contact Email','Contact Phone','Active','Modified')
- 'Projects'=@('ID','Title','Project Number','Project Reference')
+ 'Projects'=@('ID','Title','Project Number','Project Reference','Customer Name','Status','Street','House Number','Postal Code','City','Country','Project Leader','Site Managers','ProjectHomeSite URL','Modified')
  'Hours'=@('ID','Title','EntryKey','Work Date','Assignment','Employer','Team','Trade','Hours','Modified')
  'Project Workers'=@('ID','Title','ProjectKey','AssignmentKey','Project','Worker','Team','Active')
  'Assignment Periods'=@('ID','AssignmentKey','ProjectKey','From','Until')

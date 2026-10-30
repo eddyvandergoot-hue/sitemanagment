@@ -2,7 +2,7 @@
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Test-SaveRegression.ps1')
 $font='="Inter, Arial, sans-serif"'
-$technical=@('btnApplyTeamWeek','lblHomeLayout','lblHomeRows','lblHomeColumns','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid')
+$technical=@('btnApplyTeamWeek','lblHomeLayout','lblHomeRows','lblHomeColumns','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid','btnPrjLoad','btnPrjFormReset','lblPrjLayout','lblPrjMetrics','lblPrjGrid')
 $textTypes='^(Label@|Classic/Button@|Classic/DropDown@|Classic/TextInput@|Classic/CheckBox@|ModernDatePicker@)'
 $homeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','WeekReport','Workers','Contractors','Projects','Viewer3D','PIDTracker','ComponentLibrary','SkidConfigurator','StockOverview','Locations','Usage','Requests')
 $semibold=@{
@@ -10,19 +10,21 @@ $semibold=@{
  'Screen1'=@('lblProjectTeamTitle','btnHomeScreen1','btnGotoHours','btnGotoHoursSummary','btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam')
  'scrHours'=@('lblWeeklyHoursEntryTitle','lblHeaderWorker','lblHeaderMon','lblHeaderTue','lblHeaderWed','lblHeaderThu','lblHeaderFri','lblHeaderSat','lblHeaderSun','lblHeaderTotal','btnHomeHours','btnWeeklyProjectTeam','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')
  'scrContractors'=@('lblEmpTitle','lblEmpFormTitle','lblEmpNameLabel','lblEmpNameRequired','lblEmpCodeLabel','lblEmpAddressLabel','lblEmpPostalcodeLabel','lblEmpCityLabel','lblEmpCountryLabel','lblEmpContactNameLabel','lblEmpContactEmailLabel','lblEmpContactPhoneLabel','lblEmpRowName','btnEmpHome','btnEmpNew','btnEmpRefresh','btnEmpDiscard','btnEmpSave')
+ 'scrProjects'=@('lblPrjTitle','lblPrjFormTitle','lblPrjNameLabel','lblPrjNameRequired','lblPrjNumberLabel','lblPrjNumberRequired','lblPrjReferenceLabel','lblPrjCustomerLabel','lblPrjStatusLabel','lblPrjStatusRequired','lblPrjStreetLabel','lblPrjHouseNumberLabel','lblPrjPostalCodeLabel','lblPrjCityLabel','lblPrjCountryLabel','lblPrjLeaderLabel','lblPrjSiteManagerLabel','lblPrjUrlLabel','lblPrjRowName','btnPrjHome','btnPrjNew','btnPrjRefresh','btnPrjDiscard','btnPrjSave')
  'scrWeeklyHours'=@('lblWeeklyHoursTitle','lblReportNameHeader','lblReportEmployerHeader','lblReportWeekHeader','btnHomeSummary','btnSummaryProjectTeam','btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')
 }
-$bold=@{'scrContractors'=@('lblEmpMsgHead','lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact');'scrHome'=@();'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
+$bold=@{'scrContractors'=@('lblEmpMsgHead','lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact');'scrProjects'=@('lblPrjMsgHead','lblPrjSecGeneral','lblPrjSecAddress','lblPrjSecPeople','lblPrjSecLinks');'scrHome'=@();'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
 # Conditional weights: Screen1 selection feedback; Hours Summary values that show an en dash (Normal) for 0 and Bold otherwise.
 $conditional=@{
  'Screen1'=@{'Subtitle4'='=If(ThisItem.IsSelected, FontWeight.Semibold, FontWeight.Normal)'}
  'scrHours'=@{}
  'scrHome'=@{}
  'scrContractors'=@{}
+ 'scrProjects'=@{}
  'scrWeeklyHours'=@{'lblReportWorkerTotal'='=If(ThisItem.PeriodTotal=0,FontWeight.Normal,FontWeight.Bold)';'lblReportTotalWeekHours'='=If(ThisItem.WeekSum=0,FontWeight.Normal,FontWeight.Bold)';'lblReportTotalRowValue'='=If(Sum(colReportRows,PeriodTotal)=0,FontWeight.Normal,FontWeight.Bold)'}
 }
 $fonts=0;$checked=0
-foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors')){
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects')){
  $new=$indexes[$screen]
  foreach($name in $new.Keys){
   $b=$new[$name]['Properties'];$type=[string]$new[$name]['Control']

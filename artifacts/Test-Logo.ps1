@@ -5,12 +5,12 @@ function Flat-Children($entries){foreach($e in $entries){$e;Flat-Children $e[@($
 $svgText=[IO.File]::ReadAllText((Join-Path $projectRoot 'Assets\GEA_logo_white.svg'))
 if($svgText -notmatch 'viewBox="0 0 ([0-9.]+) ([0-9.]+)"'){throw 'SVG viewBox not found'}
 $svgAspect=[double]::Parse($Matches[1],[Globalization.CultureInfo]::InvariantCulture)/[double]::Parse($Matches[2],[Globalization.CultureInfo]::InvariantCulture)
-$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'),@('scrContractors','lblEmpTitle','imgLogoContractors'))
+$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'),@('scrContractors','lblEmpTitle','imgLogoContractors'),@('scrProjects','lblPrjTitle','imgLogoProjects'))
 foreach($c in $cfg){
  $screen,$title,$logo=$c
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  $order=@(Flat-Children $doc['Screens'][$screen]['Children'] | ForEach-Object {@($_.Keys)[0]})
- $imgs=@($indexes[$screen].Keys | Where-Object {$indexes[$screen][$_]['Control'] -like 'Image@*' -and !($screen -eq 'scrContractors' -and $_ -eq 'imgEmpSpinner')})  # imgEmpSpinner on scrContractors only: explicit exception (title-bar spinner, checked in Test-AdminScreens)
+ $imgs=@($indexes[$screen].Keys | Where-Object {$indexes[$screen][$_]['Control'] -like 'Image@*' -and !(($screen -eq 'scrContractors' -and $_ -eq 'imgEmpSpinner') -or ($screen -eq 'scrProjects' -and $_ -eq 'imgPrjSpinner'))})  # imgEmpSpinner/imgPrjSpinner on the admin screens only: explicit exception (title-bar spinner, checked in Test-AdminScreens)
  if($imgs.Count -ne 1 -or $imgs[0] -ne $logo){throw "$screen : expected exactly one Image ($logo), found $($imgs -join ',')"}
  $i=$indexes[$screen][$logo];$p=$i['Properties'];$t=$indexes[$screen][$title]['Properties']
  if($i['Control'] -ne 'Image@2.2.3'){throw "$screen logo control $($i['Control'])"}
@@ -21,7 +21,7 @@ foreach($c in $cfg){
  foreach($bad in 'Fill','OnSelect'){if($p.ContainsKey($bad)){throw "$screen logo has $bad"}}
  if($p['X'] -ne "=$title.X+15"){throw "$screen X formula"}
  if($p['Y'] -ne "=$title.Y+($title.Height-Self.Height)/2"){throw "$screen Y formula"}
- $admin=$screen -eq 'scrContractors'; if($t['Height'] -ne $(if($admin){'=60'}else{'=56'}) -or $t['Y'] -ne $(if($admin){'=0'}else{'=24'}) -or $t['X'] -ne $(if($admin){'=0'}else{'=40'})){throw "$screen title geometry"}
+ $admin=$screen -in @('scrContractors','scrProjects'); if($t['Height'] -ne $(if($admin){'=60'}else{'=56'}) -or $t['Y'] -ne $(if($admin){'=0'}else{'=24'}) -or $t['X'] -ne $(if($admin){'=0'}else{'=40'})){throw "$screen title geometry"}
  if($t['Fill'] -ne '=ColorValue("#0303B8")'){throw "$screen title fill"}
  if($t['PaddingLeft'] -ne '=129'){throw "$screen title PaddingLeft (needs 15+99+15)"}
  if($order.IndexOf($logo) -ne $order.IndexOf($title)+1){throw "$screen logo must directly follow the title in Children (above it)"}

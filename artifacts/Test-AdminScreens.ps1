@@ -1,4 +1,4 @@
-# Static checks for the admin screens (ADMIN_PLAN.md par. 6). Build 1: Contractors (scrContractors, list Employers).
+# Static checks for the admin screens (ADMIN_PLAN.md par. 6). Build 1: Contractors (scrContractors, list Employers); build 2: Projects (scrProjects, list Projects, section at the end).
 # Proves source structure only: no Studio import, Canvas binding, delegation (Monitor) or functional result.
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Check-WeeklySource.ps1')
@@ -836,3 +836,560 @@ foreach ($W in 320, 480, 768, 1280) {
 $kids = @($doc['Screens'][$screenName]['Children'] | ForEach-Object { @($_.Keys)[0] })
 Assert-True ($kids[0] -eq 'lblEmpTitle' -and $kids[1] -eq 'imgLogoContractors' -and $kids[2] -eq 'imgEmpSpinner') 'Children order: title, logo directly after, spinner after the logo'
 Write-Output 'PASS Test-AdminScreens (Contractors): static structure only. Studio import, binding, delegation (Monitor), SharePoint case-sensitivity of Title = and functional tests NOT verified.'
+# =====================================================================================================================
+# Build 2 (30-10-2026): Projects (scrProjects, list Projects). Same admin pattern as Contractors; only fields and rules differ.
+# Fields: Project Name (Title), Project Number ('Project Number', internal ProjectName), Project Reference, Customer Name,
+# Status (choice), Street, House Number, Postal Code, City, Country (choice), Project Leader / Site Managers (read-only),
+# ProjectHomeSite URL. Proves source structure only: no Studio import, binding, delegation (Monitor) or functional result.
+# =====================================================================================================================
+$pScreen = 'scrProjects'
+$pDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir "$pScreen.pa.yaml")))
+$script:formulas = 0; $script:failures = 0
+Check-Node $pDoc $pScreen
+if ($script:failures -gt 0) { throw 'FAIL Power Fx syntax in scrProjects' }
+Assert-True $true "Projects: Power Fx syntax: $script:formulas formulas in scrProjects parsed"
+# Check-Node counts in $script:formulas (= $formulas at script scope): restore the App.Formulas text used below.
+$formulas = [string]$appDoc['App']['Properties']['Formulas']
+$script:names = @{}; $script:controlCount = 0
+foreach ($entry in $pDoc['Screens'][$pScreen]['Children']) { Check-Control $entry }
+Assert-True ($script:controlCount -gt 0) "Projects: control templates/properties valid ($script:controlCount controls)"
+$pIdx = @{}; Index-Controls $pDoc['Screens'][$pScreen]['Children'] $pIdx
+$pScreenProps = $pDoc['Screens'][$pScreen]['Properties']
+function PGet([string]$ctl, [string]$prop) { $v = $pIdx[$ctl]['Properties'][$prop]; if ($null -eq $v) { throw "FAIL missing $ctl.$prop" }; return ([string]$v).Trim() }
+$pAll = @{}
+foreach ($n in $pIdx.Keys) { foreach ($p in $pIdx[$n]['Properties'].Keys) { $pAll["$n.$p"] = ([string]$pIdx[$n]['Properties'][$p]) } }
+foreach ($p in $pScreenProps.Keys) { $pAll["$pScreen.$p"] = [string]$pScreenProps[$p] }
+$pText = ($pAll.Values) -join "`n"
+$pTextFields = [ordered]@{ txtPrjName = 'Name'; txtPrjNumber = 'Number'; txtPrjReference = 'Reference'; txtPrjCustomer = 'Customer'; txtPrjStreet = 'Street'; txtPrjHouseNumber = 'HouseNumber'; txtPrjPostalCode = 'PostalCode'; txtPrjCity = 'City'; txtPrjUrl = 'Url' }
+$pDropFields = [ordered]@{ ddPrjStatus = 'Status'; ddPrjCountry = 'Country' }
+$pWritten = @('Name', 'Number', 'Reference', 'Customer', 'Status', 'Street', 'HouseNumber', 'PostalCode', 'City', 'Country', 'Url')
+function PInputOf([string]$f) { foreach ($k in $pTextFields.Keys) { if ($pTextFields[$k] -eq $f) { return "$k.Text" } }; foreach ($k in $pDropFields.Keys) { if ($pDropFields[$k] -eq $f) { return "$k.Selected.Value" } }; throw "no input for $f" }
+
+# (P1) Identical fail-closed guard in DisplayMode and as first OnSelect condition ---------------------------------------
+$pGuards = @{}
+foreach ($ctl in @('btnPrjSave', 'btnPrjHome', 'btnPrjNew', 'btnPrjRefresh', 'btnPrjDiscard', 'galPrjList')) {
+    $dm = PGet $ctl 'DisplayMode'; $os = PGet $ctl 'OnSelect'
+    $suffix = ',DisplayMode.Edit,DisplayMode.Disabled)'
+    Assert-True ($dm.StartsWith('=If(') -and $dm.EndsWith($suffix)) "Projects: $ctl DisplayMode has shape If(<guard>,Edit,Disabled)"
+    $g = $dm.Substring(4, $dm.Length - 4 - $suffix.Length)
+    Assert-True ($os.StartsWith('=If(' + $g + ',')) "Projects: $ctl OnSelect starts with the same guard text as DisplayMode"
+    $pGuards[$ctl] = $g
+}
+$pDirtyStart = $pGuards.btnPrjSave.IndexOf('(Coalesce(varPrjMode,"") in ["New","Edit"]')
+Assert-True ($pDirtyStart -ge 0) 'Projects: Save guard contains the dirty expression'
+$pDirty = Get-Balanced $pGuards.btnPrjSave $pDirtyStart
+foreach ($f in $pWritten) { Assert-True ($pDirty.Contains("Trim($(PInputOf $f) & """")<>Trim(varPrjEdit.$f & """")")) "Projects: dirty compares $(PInputOf $f) directly with varPrjEdit.$f, both sides Trim(x & """")" }
+Assert-True (([regex]::Matches($pDirty, '<>')).Count -eq $pWritten.Count -and $pDirty -notmatch 'Leader|SiteManager|txtPrjSearch|Modified') 'Projects: dirty covers exactly the 11 app-written fields (not the read-only person fields, search or Modified)'
+Assert-True ($pGuards.btnPrjSave.EndsWith('&& ' + $pDirty)) 'Projects: Save requires dirty'
+foreach ($ctl in @('btnPrjHome', 'btnPrjNew', 'galPrjList')) { Assert-True ($pGuards[$ctl].EndsWith('!' + $pDirty)) "Projects: $ctl blocked while dirty (same dirty text)" }
+Assert-True ($pGuards.btnPrjRefresh -ceq ('!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !' + $pDirty + ')')) 'Projects: Refresh blocked while loading/saving; allowed when clean or after a failed save (H15)'
+Assert-True ($pGuards.btnPrjDiscard -ceq ('!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || ' + $pDirty + ')')) 'Projects: Discard requires dirty or SaveFailed'
+Assert-True ($pGuards.btnPrjHome -ceq ('!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !' + $pDirty) -and $pGuards.btnPrjNew -ceq $pGuards.galPrjList) 'Projects: Home = not busy/saving/dirty; New = gallery-selection guard'
+foreach ($k in @('varPrjLoadState="Loaded"', 'IsEmpty(colPrjLoadErrors)', '!Coalesce(varPrjBusy,false)', '!Coalesce(varPrjSaving,false)', '!Coalesce(varPrjSaveFailed,false)')) { Assert-True ($pGuards.btnPrjSave.Contains($k) -and $pGuards.btnPrjNew.Contains($k)) "Projects: Save and New guards contain $k" }
+Assert-True ($pGuards.btnPrjSave.Contains('(varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID)))')) 'Projects: Save guard: New, or Edit with an ID'
+Assert-True ((PGet 'btnPrjHome' 'OnSelect') -ceq ('=If(' + $pGuards.btnPrjHome + ',Navigate(scrHome))')) 'Projects: Home navigates only to scrHome, inside the guard'
+function PIn([string]$name, [string]$num, [string]$city, [string]$status, [string]$country, [string]$empty) {
+    return "txtPrjName:{Text:$name},txtPrjNumber:{Text:$num},txtPrjReference:{Text:$empty},txtPrjCustomer:{Text:$empty},ddPrjStatus:{Selected:{Value:$status}},txtPrjStreet:{Text:$empty},txtPrjHouseNumber:{Text:$empty},txtPrjPostalCode:{Text:$empty},txtPrjCity:{Text:$city},ddPrjCountry:{Selected:{Value:$country}},txtPrjUrl:{Text:$empty}"
+}
+$pSnap = '{ID:5,Name:"A",Number:"TEST-002",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""}'
+$pBase = 'varPrjLoadState:"Loaded",colPrjLoadErrors:Filter(Table({Message:""}),false),varPrjBusy:false,varPrjSaving:false,varPrjSaveFailed:false,varPrjMode:"Edit",varPrjSelectedID:5,varPrjEdit:' + $pSnap + ','
+$pFix = $pBase + (PIn '"B"' '"TEST-002"' '""' '"Active"' '"Netherlands"' '""')
+$pClean = $pBase + (PIn '"A"' '"TEST-002"' '""' '"Active"' '"Netherlands"' '""')
+function PG($name, $fixture) { return 'With({' + $fixture + '},' + $pGuards[$name] + ')' }
+Assert-Eval (PG 'btnPrjSave' $pFix) $true 'Projects: Save allowed: Loaded, Edit with ID, dirty'
+Assert-Eval (PG 'btnPrjSave' $pClean) $false 'Projects: Save blocked: not dirty'
+Assert-Eval (PG 'btnPrjSave' $pClean.Replace('ddPrjStatus:{Selected:{Value:"Active"}}', 'ddPrjStatus:{Selected:{Value:"Closed"}}')) $true 'Projects: Save allowed: only Status changed (dirty)'
+Assert-Eval (PG 'btnPrjSave' $pClean.Replace('ddPrjCountry:{Selected:{Value:"Netherlands"}}', 'ddPrjCountry:{Selected:{Value:"Germany"}}')) $true 'Projects: Save allowed: only Country changed (dirty)'
+foreach ($s in @('NotLoaded', 'Loading', 'Failed')) { Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjLoadState:"Loaded"', "varPrjLoadState:""$s""")) $false "Projects: Save blocked: $s" }
+Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjLoadState:"Loaded"', 'varPrjLoadState:Blank()')) $false 'Projects: Save blocked: cold start'
+Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjBusy:false', 'varPrjBusy:true')) $false 'Projects: Save blocked: loading busy'
+Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjSaving:false', 'varPrjSaving:true')) $false 'Projects: Save blocked: saving'
+Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjSaveFailed:false', 'varPrjSaveFailed:true')) $false 'Projects: Save blocked: after a failed save'
+Assert-Eval (PG 'btnPrjSave' $pFix.Replace('Filter(Table({Message:""}),false)', 'Table({Message:"x"})')) $false 'Projects: Save blocked: load errors present'
+Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjSelectedID:5', 'varPrjSelectedID:Blank()')) $false 'Projects: Save blocked: Edit without ID'
+Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjMode:"Edit"', 'varPrjMode:""')) $false 'Projects: Save blocked: no item in the form'
+$pNewSnap = '{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""}'
+$pNewBase = $pBase.Replace('varPrjMode:"Edit"', 'varPrjMode:"New"').Replace('varPrjSelectedID:5', 'varPrjSelectedID:Blank()').Replace($pSnap, $pNewSnap)
+Assert-Eval (PG 'btnPrjSave' ($pNewBase + (PIn 'If(false,"x")' 'If(false,"x")' 'If(false,"x")' '"Active"' '"Netherlands"' 'If(false,"x")'))) $false 'Projects: New form untouched (defaults Active / Netherlands, inputs Blank) is not dirty: Save blocked'
+Assert-Eval (PG 'btnPrjSave' ($pNewBase + (PIn '""' '"TEST-003"' '""' '"Active"' '"Netherlands"' '""'))) $true 'Projects: Save allowed: New with a typed Project Number'
+Assert-Eval (PG 'btnPrjHome' $pClean) $true 'Projects: Home allowed: clean'
+Assert-Eval (PG 'btnPrjHome' $pFix) $false 'Projects: Home blocked: dirty'
+Assert-Eval (PG 'btnPrjHome' $pClean.Replace('varPrjSaving:false', 'varPrjSaving:true')) $false 'Projects: Home blocked: saving'
+Assert-Eval (PG 'btnPrjRefresh' $pClean.Replace('varPrjLoadState:"Loaded"', 'varPrjLoadState:"Failed"')) $true 'Projects: Refresh allowed after a failed load (not dirty)'
+Assert-Eval (PG 'btnPrjRefresh' $pFix) $false 'Projects: Refresh blocked: dirty (no failed save)'
+$pFailed = $pFix.Replace('varPrjSaveFailed:false', 'varPrjSaveFailed:true').Replace('varPrjLoadState:"Loaded"', 'varPrjLoadState:"Failed"')
+Assert-Eval (PG 'btnPrjRefresh' $pFailed) $true 'Projects: Refresh allowed after a failed save (= Discard, H15)'
+Assert-Eval (PG 'btnPrjDiscard' $pFailed) $true 'Projects: Discard allowed after a failed save'
+Assert-Eval (PG 'btnPrjSave' $pFailed) $false 'Projects: Save blocked after a failed save'
+Assert-Eval (PG 'btnPrjNew' $pFailed) $false 'Projects: New blocked after a failed save'
+Assert-Eval (PG 'galPrjList' $pFailed) $false 'Projects: gallery selection blocked after a failed save'
+Assert-Eval (PG 'btnPrjNew' $pFix) $false 'Projects: New blocked: dirty'
+Assert-Eval (PG 'galPrjList' $pClean) $true 'Projects: gallery selection allowed: Loaded and clean'
+Assert-Eval (PG 'btnPrjDiscard' $pClean) $false 'Projects: Discard disabled: clean'
+Assert-Eval (PG 'btnPrjDiscard' $pFix.Replace('varPrjSaving:false', 'varPrjSaving:true')) $false 'Projects: Discard blocked: saving'
+# A loaded project with an empty Status/Country: dropdowns allow an empty selection, so the form is not falsely dirty
+$pEmptyChoice = $pBase.Replace('Status:"Active"', 'Status:""').Replace('Country:"Netherlands"', 'Country:""') + (PIn '"A"' '"TEST-002"' '""' 'If(false,"x")' 'If(false,"x")' '""')
+Assert-Eval (PG 'btnPrjHome' $pEmptyChoice) $true 'Projects: empty Status/Country in SharePoint and empty dropdown selection: not dirty'
+foreach ($d in $pDropFields.Keys) { Assert-True ((PGet $d 'AllowEmptySelection') -eq '=true') "Projects: $d.AllowEmptySelection = true (blank SharePoint value stays blank, no false dirty)" }
+
+# Form bound to varPrjEdit, never to the gallery selection
+foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) { $f = if ($pTextFields.Contains($k)) { $pTextFields[$k] } else { $pDropFields[$k] }; Assert-True ((PGet $k 'Default') -ceq "=varPrjEdit.$f") "Projects: $k.Default = varPrjEdit.$f" }
+foreach ($k in @('txtPrjLeader', 'txtPrjSiteManager')) { $f = @{ txtPrjLeader = 'Leader'; txtPrjSiteManager = 'SiteManager' }[$k]; Assert-True ((PGet $k 'Default') -ceq "=varPrjEdit.$f" -and (PGet $k 'DisplayMode') -eq '=DisplayMode.Disabled' -and $pIdx[$k]['Control'] -eq 'Classic/TextInput@2.3.2') "Projects: $k read-only (Classic/TextInput, always Disabled) showing varPrjEdit.$f (DisplayName)" }
+$pSelUses = @($pAll.Keys | Where-Object { $pAll[$_] -match 'galPrjList\.Selected' })
+Assert-True ($pSelUses.Count -eq 1 -and $pSelUses[0] -eq 'galPrjList.OnSelect') 'Projects: galPrjList.Selected only read in the guarded gallery OnSelect'
+Assert-True (@($pIdx.Keys | Where-Object { $pIdx[$_]['Control'] -like 'Classic/CheckBox@*' -or $pIdx[$_]['Control'] -like '*ComboBox*' }).Count -eq 0) 'Projects: no CheckBox/ComboBox (Status replaces Active; person fields read-only)'
+Assert-True ($pText -notmatch '\bvarPrjActiveDraft\b|btnPrjActiveSwitch') 'Projects: no Active switch (Status replaces Active)'
+
+# (P2) Loader: staging, reuse, dirty block, no mutations, H16 Refresh first -----------------------------------------------
+$pLoad = PGet 'btnPrjLoad' 'OnSelect'; $pLoadN = Norm $pLoad
+$pVis = [string]$pScreenProps['OnVisible']
+foreach ($k in @('btnPrjLoad.OnSelect', "$pScreen.OnVisible", 'btnPrjFormReset.OnSelect')) {
+    $fx = $pAll[$k]
+    Assert-True ($fx -notmatch '\b(Patch|Update|UpdateIf|Remove|RemoveIf|SubmitForm|Defaults)\s*\(' -and $fx -notmatch '\.Run\(') "Projects: $k has no Patch/Update/Remove/SubmitForm/Defaults/flow"
+    Assert-True ($fx -notmatch "\b(?:Collect|ClearCollect)\(\s*(?:Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\b") "Projects: $k does not Collect into a SharePoint list"
+}
+Assert-True ($pLoad.Contains('If(' + $pDirty + ' && !Coalesce(varPrjSaveFailed,false),')) 'Projects: loader refuses to reload over unsaved input (except after a failed save)'
+Assert-True ($pLoad.Contains('If(!Coalesce(varPrjForceRefresh,false) && varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjSaveFailed,false),')) 'Projects: loader reuses a valid Loaded list unless forced (cache hit)'
+$iPRefresh = $pLoadN.IndexOf((Norm 'IfError(Refresh(Projects),Collect(colPrjLoadErrors,'))
+$iPRead = $pLoadN.IndexOf((Norm 'ClearCollect(colPendingPrjRaw,Sort(Projects,Title,SortOrder.Ascending))'))
+Assert-True ($iPRefresh -gt 0 -and $iPRead -gt $iPRefresh -and $pLoad -notmatch 'If\(Coalesce\(varPrjForceRefresh,false\),') 'Projects: every load refreshes Projects first (H16), then reads raw Projects (not only when forced)'
+Assert-True ($pLoad.Contains('ClearCollect(colPendingAdminProjects,ForAll(colPendingPrjRaw As prj,')) 'Projects: projection is local, from the raw staging collection'
+$pRefreshOs = PGet 'btnPrjRefresh' 'OnSelect'
+Assert-True ($pRefreshOs.Contains('Set(varPrjForceRefresh,true); Select(btnPrjLoad)') -and $pRefreshOs.Contains('If(Coalesce(varPrjSaveFailed,false),Clear(colPrjSaveErrors));') -and $pRefreshOs -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Reset)\(') 'Projects: Refresh forces the staged loader; after a failed save it works as Discard (no mutation)'
+Assert-True ($pLoad.Contains('varPrjMode="New" && !Coalesce(varPrjSaveFailed,false),') -and $pLoad.Contains('Set(varPrjSaveFailed,false); Clear(colPrjSaveErrors); Set(varPrjLoadState,"Loaded");')) 'Projects: forced reload after a failed save discards local input; SaveFailed cleared only after a successful load'
+$pClearAt = $pLoad.IndexOf('Set(varPrjSaveFailed,false); Clear(colPrjSaveErrors); Set(varPrjLoadState,"Loaded");')
+$pBranchAt = $pLoad.LastIndexOf('If(IsEmpty(colPrjLoadErrors),', $pClearAt)
+Assert-True ($pBranchAt -ge 0 -and $pLoad.Substring($pBranchAt, $pClearAt - $pBranchAt).IndexOf('Set(varPrjLoadState,"Failed")') -lt 0) 'Projects: SaveFailed cleared only inside the successful-load branch'
+Assert-True ($pVis.Contains('If(varPrjLoadState<>"Loaded" && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !' + $pDirty + ',Select(btnPrjLoad))')) 'Projects: OnVisible loads only when not Loaded, idle and not dirty'
+$iPLimit = $pLoadN.IndexOf('If(CountRows(colPendingPrjRaw)>=500,Collect(colPrjLoadErrors,')
+$iPGate = $pLoadN.IndexOf('If(IsEmpty(colPrjLoadErrors),ClearCollect(colAdminProjects,colPendingAdminProjects);ClearCollect(colPrjModified,colPendingPrjModified);')
+Assert-True ($iPLimit -gt $iPRead -and $iPGate -gt $iPLimit) 'Projects: 500 guard on the raw read applied before the staged list replaces colAdminProjects (fail-closed)'
+Assert-True (([regex]::Matches($pText, 'ClearCollect\(colAdminProjects,')).Count -eq 1) 'Projects: colAdminProjects only replaced by the loader staging step'
+Assert-True ($pLoadN.IndexOf('Set(varPrjLoadState,"Loaded")') -gt $iPGate -and $pLoadN.Contains('Set(varPrjLoadState,"Failed");')) 'Projects: Loaded only inside the no-error branch, else Failed'
+Assert-True ($pLoad -notmatch '\bConcurrent\(' -and $pLoad -notmatch '\bChoices\(') 'Projects: loader reads only Projects (no Concurrent, no Choices)'
+Assert-True ($pLoad.Contains('ClearCollect(colPendingPrjModified,ForAll(colPendingPrjRaw As prj,{ID:prj.ID,Modified:prj.Modified}));') -and $pLoadN.IndexOf((Norm 'ClearCollect(colPrjModified,colPendingPrjModified);')) -gt $iPGate) 'Projects: Modified staged from the same read, published only after a successful load'
+Assert-True ($pText -notmatch '\.Run\(') 'Projects: no flow calls'
+
+# (P4) 500 guard after every collection read from a SharePoint list ---------------------------------------------------------
+$pReads = 0
+foreach ($k in $pAll.Keys) {
+    $fx = $pAll[$k]
+    foreach ($m in [regex]::Matches($fx, '\b(?:ClearCollect|Collect)\(\s*(\w+)\s*,')) {
+        $call = Get-Balanced $fx ($m.Index + $m.Value.IndexOf('('))
+        $arg = $call.Substring($m.Value.Length - $m.Value.IndexOf('('))
+        if ($arg -notmatch "(?<![\w.'@\[])(?:Employers|Workers|Projects|Hours)\b(?!\.)|'(?:Project Workers|Assignment Periods)'") { continue }
+        if ($arg.TrimStart().StartsWith('Patch(')) { continue }
+        $pReads++
+        $col = $m.Groups[1].Value; $after = $fx.Substring($m.Index)
+        Assert-True ($after.Contains("CountRows($col)>=500") -or $after.Contains("CountRows($col)<>1") -or $after.Contains("CountRows($col)=1")) "Projects: $k : SharePoint read into $col is followed by a 500 guard (or exact-one check for an ID read)"
+    }
+}
+Assert-True ($pReads -eq 5) "Projects: SharePoint reads into collections: $pReads (load, pre-read, number check, open periods, verify)"
+
+# (P5) Delegable predicates: column = global variable only; Choices only on the dropdown Items and once in Save ---------------
+$pPreds = @()
+foreach ($k in $pAll.Keys) {
+    $fx = $pAll[$k]
+    foreach ($m in [regex]::Matches($fx, "\b(Filter|LookUp|Search)\(\s*(Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\s*,")) {
+        Assert-True ($m.Groups[1].Value -eq 'Filter') "Projects: $k : no remote LookUp/Search on $($m.Groups[2].Value)"
+        $call = Get-Balanced $fx ($m.Index + $m.Groups[1].Value.Length)
+        $pPreds += "$($m.Groups[2].Value)|" + (Split-Args $call.Substring(1, $call.Length - 2))[1].Trim()
+    }
+}
+$pPredExp = @('Projects|ID=varPrjSaveID', "Projects|'Project Number'=varPrjSaveNumber", 'Projects|ID=varPrjPatchedID', "'Assignment Periods'|ProjectKey=varPrjSaveKey")
+Assert-True ((($pPreds | Sort-Object) -join ';') -ceq (($pPredExp | Sort-Object) -join ';')) "Projects: server predicates are exactly column = global variable ($($pPreds -join '; '))"
+Assert-True ($pText -notmatch "\bProjectName\b" -and $pText -notmatch "'Project Name'") "Projects: no bare ProjectName and no 'Project Name' column (Project Name = Title; Project Number = 'Project Number')"
+$pSave = PGet 'btnPrjSave' 'OnSelect'; $pSaveN = Norm $pSave
+foreach ($v in @(@('Set(varPrjSaveNumber,varPrjSaveRec.Number)', "Filter(Projects,'Project Number'=varPrjSaveNumber)"), @('Set(varPrjSaveKey,If(varPrjSaveMode="Edit",Text(varPrjSaveID),""))', "Filter('Assignment Periods',ProjectKey=varPrjSaveKey)"), @('Set(varPrjSaveID,', 'Filter(Projects,ID=varPrjSaveID)'), @('Set(varPrjPatchedID,', 'Filter(Projects,ID=varPrjPatchedID)'))) {
+    Assert-True ($pSave.IndexOf($v[0]) -gt 0 -and $pSave.IndexOf($v[0]) -lt $pSave.IndexOf($v[1])) "Projects: global predicate variable set before its read: $($v[1])"
+}
+$pChoices = @($pAll.Keys | Where-Object { $pAll[$_] -match '\bChoices\(' } | Sort-Object)
+Assert-True (($pChoices -join ',') -ceq 'btnPrjSave.OnSelect,ddPrjCountry.Items,ddPrjStatus.Items') "Projects: Choices() only on the two dropdown Items and in Save ($($pChoices -join ', '))"
+Assert-True ((PGet 'ddPrjStatus' 'Items') -ceq '=Choices([@Projects].Status)' -and (PGet 'ddPrjCountry' 'Items') -ceq '=Choices([@Projects].Country)' -and (PGet 'ddPrjStatus' 'Items.Value') -eq '=Value') 'Projects: Status/Country dropdown Items = Choices([@Projects].<column>) once (SharePoint values, not translated)'
+Assert-True (([regex]::Matches($pSave, '\bChoices\(')).Count -eq 1 -and $pSave.Contains('If(IsBlank(varPrjSaveRec.Status) || CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0,Collect(colPrjSaveErrors,{Field:"Status"')) 'Projects: Save validates Status once against Choices (not inside ForAll)'
+Assert-True (@($pAll.Values | Where-Object { $_ -match 'ForAll\([^;]*\bChoices\(' }).Count -eq 0 -and $pText -notmatch '\bSearch\(') 'Projects: no Choices() inside ForAll, no Search()'
+Assert-True ($pText -notmatch "ForAll\([^)]*\bProjects\b[^)]*\)[^;]*\b(?:LookUp|Filter)\(\s*Projects") 'Projects: no remote LookUp/Filter inside ForAll'
+
+# (P6)-(P8) Save: validation, duplicate block, conflict check, one Patch, verify read, local update after verify ------------
+Assert-True (([regex]::Matches($srcAll, '\bPatch\(\s*Projects\b')).Count -eq 1 -and $pSave -match '\bPatch\(\s*Projects\b') 'Projects: exactly one Patch(Projects) in Src, in btnPrjSave.OnSelect'
+foreach ($k in $pAll.Keys) { if ($k -ne 'btnPrjSave.OnSelect') { Assert-True ($pAll[$k] -notmatch '\bPatch\(') "Projects: $k has no Patch" } }
+Assert-True ($pText -notmatch "\bPatch\(\s*(?:'Assignment Periods'|'Project Workers'|Hours|Workers|Employers)\b" -and $pText -notmatch "\b(?:Remove|RemoveIf|Update|UpdateIf)\(\s*(?:Projects|'Assignment Periods')\b") 'Projects: no write to other lists; periods are never closed or removed by this screen'
+$pm = [regex]::Match($pSave, '\bPatch\(\s*Projects\s*,')
+$pPatch = Get-Balanced $pSave ($pm.Index + 5)
+$pPargs = Split-Args $pPatch.Substring(1, $pPatch.Length - 2)
+Assert-True ($pPargs.Count -eq 3 -and $pPargs[1].Trim() -ceq 'If(varPrjSaveMode="New",Defaults(Projects),First(colPrjPreRaw))') 'Projects: Patch base: Defaults(Projects) for New, the pre-read record for Edit'
+$pRec = $pPargs[2].Trim()
+$pRecArgs = Split-Args $pRec.Substring(1, $pRec.Length - 2)
+$pKeys = @($pRecArgs | ForEach-Object { ($_ -split ':', 2)[0].Trim() })
+$pAllowed = @('Title', "'Project Number'", "'Project Reference'", "'Customer Name'", 'Status', 'Street', "'House Number'", "'Postal Code'", 'City', 'Country', "'ProjectHomeSite URL'")
+Assert-True (@($pKeys | Where-Object { $_ -cnotin $pAllowed }).Count -eq 0 -and $pKeys.Count -eq $pAllowed.Count) "Projects: Patch writes exactly the app fields: $($pKeys -join ', ')"
+Assert-True ($pPatch -notmatch "Project Leader|Site Managers|ProjectLeader1|SiteManagers|Modified|\bID\s*:") 'Projects: Patch never writes Project Leader / Site Managers (person fields stay untouched), Modified or ID'
+$pRecMap = @{}; foreach ($a in $pRecArgs) { $kv = $a -split ':', 2; $pRecMap[$kv[0].Trim()] = $kv[1].Trim() }
+Assert-True ($pRecMap['Status'] -ceq '{Value:varPrjSaveRec.Status}') 'Projects: Status patched as {Value: ...} (choice record, no Choices() lookup)'
+Assert-True ($pRecMap['Country'] -ceq 'If(IsBlank(varPrjSaveRec.Country),Blank(),{Value:varPrjSaveRec.Country})') 'Projects: Country patched as {Value: ...} (blank selection = Blank())'
+Assert-True ($pRecMap["'ProjectHomeSite URL'"] -ceq 'If(IsBlank(varPrjSaveRec.Url),Blank(),varPrjSaveRec.Url)' -and $pRecMap['Title'] -ceq 'varPrjSaveRec.Name' -and $pRecMap["'Project Number'"] -ceq 'varPrjSaveRec.Number') 'Projects: Title = Name, Project Number = Number, URL text (blank = Blank())'
+foreach ($f in $pWritten) { Assert-True ($pSave -match "$f\s*:\s*Trim\($([regex]::Escape((PInputOf $f))) & """"\)") "Projects: save record trims $f (Trim(x & """"))" }
+foreach ($f in @('Name', 'Number', 'Reference', 'Customer', 'Street', 'HouseNumber', 'PostalCode', 'City', 'Url')) { Assert-True ($pSaveN.Contains("If(Len(varPrjSaveRec.$f)>255,Collect(colPrjSaveErrors,{Field:`"$f`"")) "Projects: length check <= 255 for $f" }
+Assert-True ($pSaveN.Contains('If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name"') -and $pSaveN.Contains('If(IsBlank(varPrjSaveRec.Number),Collect(colPrjSaveErrors,{Field:"Number"')) 'Projects: Project Name and Project Number required (after Trim)'
+Assert-True ($pSaveN.Contains('If(!IsBlank(varPrjSaveRec.Url)&&!StartsWith(varPrjSaveRec.Url,"https://"),Collect(colPrjSaveErrors,{Field:"Url"')) 'Projects: URL empty or starting with https://'
+$pUrlFx = [regex]::Match($pSave, 'If\(!IsBlank\(varPrjSaveRec\.Url\) && !StartsWith\(varPrjSaveRec\.Url,"https://"\)').Value.Substring(3)
+foreach ($c in @(@('""', $false), @('"https://geacloud.sharepoint.com/sites/TEST"', $false), @('"HTTPS://x"', $false), @('"http://x"', $true), @('"www.x.nl"', $true))) { Assert-Eval "With({varPrjSaveRec:{Url:$($c[0])}},$pUrlFx)" $c[1] "Projects: URL $($c[0]) invalid = $($c[1])" }
+$pDupCmp = 'Lower(Trim(Number))=varPrjDupKey&&(varPrjSaveMode="New"||ID<>varPrjSaveID)'
+Assert-True (([regex]::Matches($pSaveN, [regex]::Escape($pDupCmp))).Count -eq 2 -and $pSaveN.Contains('CountIf(colAdminProjects,' + $pDupCmp) -and $pSaveN.Contains('CountIf(colPrjDup,' + $pDupCmp)) 'Projects: duplicate Project Number blocked: loaded list and server read, trim + case-insensitive, own ID excluded'
+Assert-True ($pSaveN.Contains((Norm 'Set(varPrjSaveNumber,varPrjSaveRec.Number); Set(varPrjDupKey,Lower(varPrjSaveRec.Number));'))) 'Projects: duplicate predicate variables set from the trimmed number'
+Assert-True ($pSaveN -notmatch 'Filter\(Projects,Title=') 'Projects: no duplicate check on Title (only Project Number)'
+$pDupFx = (Get-Balanced $pSave ($pSave.IndexOf('CountIf(colPrjDup,') + 7))
+foreach ($c in @(@('"New"', 'Blank()', '"TEST-002"', 1), @('"Edit"', '5', '"TEST-002"', 0), @('"Edit"', '6', '" test-002 "', 1))) { Assert-Eval "With({colPrjDup:Table({ID:5,Number:$($c[2])}),varPrjSaveMode:$($c[0]),varPrjSaveID:$($c[1]),varPrjDupKey:Lower(`"TEST-002`")},CountIf$pDupFx)" $c[3] "Projects: duplicate count (mode $($c[0]), own ID $($c[1]), found $($c[2])) = $($c[3])" }
+$pProj = [regex]::Match($pLoad, 'As prj,(\{ID:prj\.ID,[^}]*\})').Groups[1].Value
+Assert-True ($pProj.Length -gt 0 -and ([regex]::Matches($pText, [regex]::Escape($pProj))).Count -eq 4) 'Projects: one projection text for load, pre-read, number check and verify read'
+foreach ($c in @('Title', "'Project Number'", "'Project Reference'", "'Customer Name'", 'Status.Value', 'Street', "'House Number'", "'Postal Code'", 'City', 'Country.Value', "'Project Leader'.DisplayName", "'Site Managers'.DisplayName", "'ProjectHomeSite URL'")) { Assert-True ($pProj.Contains("Trim(prj.$c & `"`")")) "Projects: projection normalizes $c with Trim(x & `"`")" }
+Assert-True ($pProj -notmatch 'Modified|Coalesce\(') 'Projects: projection has no Modified and no Coalesce(x,"")'
+$pModDisp = Norm 'RemoveIf(colPrjModified,ID=varPrjPatchedID); Collect(colPrjModified,{ID:varPrjPatchedID,Modified:First(colPrjVerifyRaw).Modified});'
+Assert-True (([regex]::Matches($pSaveN, [regex]::Escape($pModDisp))).Count -eq 1) 'Projects: Save updates the display-only Modified copy from the verify read, once'
+$pI = [ordered]@{
+    Val = $pSaveN.IndexOf('If(IsBlank(varPrjSaveRec.Name)'); DupLocal = $pSaveN.IndexOf('CountIf(colAdminProjects,'); GateRead = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),')
+    Pre = $pSaveN.IndexOf('ClearCollect(colPrjPreRaw,Filter(Projects,ID=varPrjSaveID))'); Dup = $pSaveN.IndexOf('ClearCollect(colPrjDup,'); Conf = $pSaveN.IndexOf('Set(varPrjSaveConflict,true)')
+    Periods = $pSaveN.IndexOf("ClearCollect(colPrjPeriods,"); WriteGate = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),Set(varPrjSaveWrites,1);IfError(CountRows(ClearCollect(colPrjPatched,Patch(Projects,')
+    Patch = $pSaveN.IndexOf('Patch(Projects,'); Verify = $pSaveN.IndexOf('ClearCollect(colPrjVerifyRaw,Filter(Projects,ID=varPrjPatchedID))'); Ok = $pSaveN.IndexOf('Set(varPrjSaveVerified,true)')
+    Local = $pSaveN.IndexOf('If(varPrjSaveVerified&&IsEmpty(colPrjSaveErrors),RemoveIf(colAdminProjects,ID=varPrjPatchedID);Collect(colAdminProjects,First(colPrjVerify));')
+}
+$pOrder = @($pI.Values); $pOrdered = $true; for ($i = 1; $i -lt $pOrder.Count; $i++) { if ($pOrder[$i - 1] -le 0 -or $pOrder[$i] -le $pOrder[$i - 1]) { $pOrdered = $false } }
+Assert-True $pOrdered "Projects: order validation -> local duplicate -> (no errors) Refresh + pre-read -> number check -> conflict -> open-period check -> (no errors) one Patch -> Refresh + verify read -> local update ($(($pI.Keys | ForEach-Object { "$_=$($pI[$_])" }) -join ' '))"
+Assert-True (([regex]::Matches($pText, '(?<!Clear)Collect\(colAdminProjects,')).Count -eq 1 -and ([regex]::Matches($pText, 'RemoveIf\(colAdminProjects,')).Count -eq 1 -and $pSaveN.Contains('Set(varPrjEdit,First(colPrjVerify))')) 'Projects: colAdminProjects and the snapshot changed only by the loader and after a verified save (from the verify read)'
+Assert-True ($pSaveN.Contains('varPrjSaveWrites=0,Set(varAdmMsgKind,"Error");') -and $pSaveN.Contains('Set(varPrjSaveFailed,true);Set(varPrjLoadState,"Failed");Set(varAdmMsgKind,"Error");') -and ([regex]::Matches($pSaveN, 'Set\(varPrjSaveFailed,true\)')).Count -eq 1) 'Projects: zero writes + error stays Loaded; write + error -> Failed and SaveFailed (set once; input kept, save blocked)'
+# SharePoint unique constraint (MS-022) refusal reported as duplicate Project Number (field Number), other Patch errors as "not confirmed" + reason
+$pPatchErr = Get-Balanced $pSave ($pSave.IndexOf('Collect(colPrjSaveErrors,{Field:If("duplicate" in Lower(FirstError.Message)') + 7)
+$pPatchErrRec = (Split-Args $pPatchErr.Substring(1, $pPatchErr.Length - 2))[1].Replace('FirstError.Message', 'fe')
+Assert-Eval "With({LangNl:false,T:$tRec,fe:`"The list item could not be added or updated because duplicate values were found in the following field(s) in the list: [Project Number].`"},$pPatchErrRec.Field & `"|`" & $pPatchErrRec.Message)" 'Number|Fix: Project Number already exists (refused by SharePoint).' 'Projects: SharePoint uniqueness refusal -> duplicate Project Number (red Number field)'
+Assert-Eval "With({LangNl:false,T:$tRec,fe:`"Access denied.`"},$pPatchErrRec.Field & `"|`" & $pPatchErrRec.Message)" '|Save not confirmed by SharePoint. Access denied.' 'Projects: other Patch error -> not confirmed + SharePoint reason'
+Assert-True ($pSaveN.Contains('If(CountIf(colPrjSaveErrors,Field="Number")>0,Set(varPrjSaveDupFound,true));')) 'Projects: a refused duplicate is counted in the SaveEnd trace (DupFound)'
+
+# Conflict check and verify read: exactly the app-written fields, both sides normalized
+$iPTab = $pSave.IndexOf('With({d:Filter(Table(')
+$pTableFx = 'Table' + (Get-Balanced $pSave ($iPTab + 'With({d:Filter(Table'.Length))
+$pMcf = [regex]::Match($pSave, 'With\(\{p:First\(colPrjPre\)\},\s*If\(')
+$pCfCall = Get-Balanced $pSave ($pMcf.Index + $pMcf.Length - 1)
+$pConflictFx = (Split-Args $pCfCall.Substring(1, $pCfCall.Length - 2))[0]
+Assert-True ((@([regex]::Matches($pTableFx, '\{F:"(\w+)"') | ForEach-Object { $_.Groups[1].Value }) -join ',') -ceq ($pWritten -join ',')) "Projects: verify compares exactly the app-written fields ($($pWritten -join ','))"
+foreach ($f in $pWritten) {
+    Assert-True ($pConflictFx.Contains("Trim(p.$f & `"`")<>Trim(varPrjEdit.$f & `"`")")) "Projects: conflict check compares $f (pre-read vs loaded snapshot)"
+    Assert-True ($pTableFx.Contains("D:Trim(v.$f & `"`")<>Trim(varPrjSaveRec.$f & `"`")")) "Projects: verify compares $f with the written value"
+}
+Assert-True ($pTableFx -notmatch 'Leader|SiteManager|Modified' -and $pConflictFx -notmatch 'Leader|SiteManager|Modified') 'Projects: verify and conflict ignore the person fields (not written by the app) and Modified'
+function PRaw([string]$name, [string]$num, [string]$city, [string]$status, [string]$country, [string]$empty, [string]$person) {
+    return "{ID:7,Title:$name,'Project Number':$num,'Project Reference':$empty,'Customer Name':$empty,Status:$status,Street:$empty,'House Number':$empty,'Postal Code':$empty,City:$city,Country:$country,'Project Leader':$person,'Site Managers':$person,'ProjectHomeSite URL':$empty,Modified:DateTime(2026,10,30,9,0,0)}"
+}
+function PProj([string]$raw) { return "With({prj:$raw},$pProj)" }
+$pSrFx = Get-Balanced $pSave ($pSave.IndexOf('Set(varPrjSaveRec,') + 3); $pSrFx = $pSrFx.Substring('(varPrjSaveRec,'.Length, $pSrFx.Length - '(varPrjSaveRec,'.Length - 1)
+function PVerify([string]$raw, [string]$inputs, [string]$col) { return "With({LangNl:false,T:$tRec},With({v:$(PProj $raw),varPrjSaveRec:With({$inputs},$pSrFx)},Concat(Filter($pTableFx,D),$col,`",`")))" }
+$bT = 'If(false,"x")'; $bC = 'If(false,{Value:"x"})'; $bP = 'If(false,{DisplayName:"x"})'
+$pRawBlank = PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"Active"}' $bC $bT $bP
+$pRawEmpty = PRaw '"TEST Project 2"' '"TEST-002"' '""' '{Value:"Active"}' $bC '""' '{DisplayName:""}'
+$pInEmpty = PIn '"TEST Project 2"' '"TEST-002"' '""' '"Active"' 'If(false,"x")' '""'
+$pInBlank = PIn '"TEST Project 2"' '"TEST-002"' $bT '"Active"' $bT $bT
+Assert-Eval (PVerify $pRawBlank $pInEmpty 'F') '' 'Projects: verify passes: SharePoint Blank fields / blank Country, inputs ""'
+Assert-Eval (PVerify $pRawEmpty $pInBlank 'F') '' 'Projects: verify passes: SharePoint "" fields, inputs Blank'
+Assert-Eval (PVerify $pRawBlank (PIn '" TEST Project 2 "' '" TEST-002"' '"  "' '"Active"' $bT '" "') 'F') '' 'Projects: verify passes: inputs with surrounding spaces are trimmed before writing'
+Assert-Eval (PVerify (PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"Active"}' $bC $bT '{DisplayName:"Someone"}') $pInEmpty 'F') '' 'Projects: verify passes when only the person fields differ (not written by the app)'
+Assert-Eval (PVerify (PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"On hold"}' $bC $bT $bP) $pInEmpty 'F') 'Status' 'Projects: verify fails on Status and names only that field'
+Assert-Eval (PVerify (PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"Active"}' '{Value:"Netherlands"}' $bT $bP) $pInEmpty 'L') 'Country' 'Projects: verify fails on Country (label in the message)'
+Assert-Eval (PVerify (PRaw '"TEST Project 2"' '"TEST-020"' $bT '{Value:"Active"}' $bC $bT $bP) $pInEmpty 'F') 'Number' 'Projects: verify fails on Project Number'
+function PConflict([string]$preRaw, [string]$snapRaw) { return "With({p:$(PProj $preRaw),varPrjEdit:$(PProj $snapRaw),varPrjSaveID:7},$pConflictFx)" }
+Assert-Eval (PConflict $pRawBlank $pRawBlank) $false 'Projects: conflict does not fire: unchanged row'
+Assert-Eval (PConflict $pRawEmpty $pRawBlank) $false 'Projects: conflict does not fire: "" versus Blank in SharePoint'
+Assert-Eval (PConflict (PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"Active"}' $bC $bT '{DisplayName:"Someone"}') $pRawBlank) $false 'Projects: conflict does not fire when only a person field changed'
+Assert-Eval (PConflict (PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"Closed"}' $bC $bT $bP) $pRawBlank) $true 'Projects: conflict fires: another user closed the project'
+Assert-Eval (PConflict (PRaw '"TEST Project 2"' '"TEST-002"' '"Rotterdam"' '{Value:"Active"}' $bC $bT $bP) $pRawBlank) $true 'Projects: conflict fires: another user changed City'
+function PDirty([string]$snapRaw, [string]$inputs) { return "With({varPrjMode:`"Edit`",varPrjEdit:$(PProj $snapRaw),$inputs},$pDirty)" }
+Assert-Eval (PDirty $pRawBlank $pInEmpty) $false 'Projects: not dirty: snapshot from Blank fields, inputs ""'
+Assert-Eval (PDirty $pRawEmpty $pInBlank) $false 'Projects: not dirty: snapshot from "" fields, inputs Blank'
+Assert-Eval (PDirty $pRawBlank (PIn '"TEST Project 2"' '"TEST-002"' '""' '"On hold"' $bT '""')) $true 'Projects: dirty: Status changed'
+Assert-Eval (PDirty (PRaw '"TEST Project 2"' '"TEST-002"' $bT $bC $bC $bT $bP) (PIn '"TEST Project 2"' '"TEST-002"' '""' $bT $bT '""')) $false 'Projects: not dirty: blank Status in SharePoint and blank dropdown selection'
+
+# Closing a project: open assignment periods -> amber warning after the save; never blocks, never closes periods
+$pChkFx = Get-Balanced $pSave ($pSave.IndexOf('Set(varPrjSaveCheckPeriods,') + 3); $pChkFx = $pChkFx.Substring('(varPrjSaveCheckPeriods,'.Length, $pChkFx.Length - '(varPrjSaveCheckPeriods,'.Length - 1)
+foreach ($c in @(@('"Edit"', '5', '"Active"', '"Closed"', $true), @('"Edit"', '5', '"On hold"', '"Closed"', $true), @('"Edit"', '5', '"Closed"', '"Closed"', $false), @('"Edit"', '5', '"Active"', '"On hold"', $false), @('"New"', 'Blank()', '"Active"', '"Closed"', $false), @('"Edit"', 'Blank()', '"Active"', '"Closed"', $false))) {
+    Assert-Eval "With({varPrjSaveMode:$($c[0]),varPrjSaveID:$($c[1]),varPrjEdit:{Status:$($c[2])},varPrjSaveRec:{Status:$($c[3])}},$pChkFx)" $c[4] "Projects: open-period check when $($c[0]) $($c[2]) -> $($c[3]): $($c[4])"
+}
+$pPerStart = $pSave.IndexOf('If(IsEmpty(colPrjSaveErrors) && varPrjSaveCheckPeriods,')
+Assert-True ($pPerStart -gt 0) 'Projects: open-period read only when no errors and the status changes to Closed'
+$pPer = Get-Balanced $pSave ($pPerStart + 2)
+Assert-True ($pPer.Contains("IfError(Refresh('Assignment Periods'),Set(varPrjSavePeriodsUnchecked,true);false);") -and $pPer.IndexOf("Refresh('Assignment Periods')") -lt $pPer.IndexOf("Filter('Assignment Periods'")) 'Projects: Assignment Periods refreshed before the period read (H16)'
+Assert-True ($pPer.Contains("ClearCollect(colPrjPeriods,ForAll(Filter('Assignment Periods',ProjectKey=varPrjSaveKey) As ap,{ID:ap.ID,ProjectKey:ap.ProjectKey,Until:ap.Until}))") -and $pPer.Contains('If(CountRows(colPrjPeriods)>=500,Set(varPrjSavePeriodsUnchecked,true));')) 'Projects: delegable period read (ProjectKey = global var) with 500 guard -> "could not be checked" (fail-closed warning)'
+Assert-True (([regex]::Matches($pPer, 'Set\(varPrjSavePeriodsUnchecked,true\)')).Count -eq 3 -and ([regex]::Matches($pPer, 'colPrjSaveErrors')).Count -eq 1 -and $pPer -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf)\(') 'Projects: Refresh error, read error and >= 500 rows only mark "not checked"; the period check never adds a save error and never writes periods'
+$pOpenFx = Get-Balanced $pPer ($pPer.IndexOf('Set(varPrjSaveOpenPeriods,') + 3); $pOpenFx = $pOpenFx.Substring('(varPrjSaveOpenPeriods,'.Length, $pOpenFx.Length - '(varPrjSaveOpenPeriods,'.Length - 1)
+Assert-Eval "With({varPrjSaveKey:`"5`",colPrjPeriods:Table({ID:1,ProjectKey:`"5`",Until:If(false,Date(2000,1,1))},{ID:2,ProjectKey:`"5`",Until:Date(2026,10,25)},{ID:3,ProjectKey:`"6`",Until:If(false,Date(2000,1,1))},{ID:4,ProjectKey:`"5`",Until:If(false,Date(2000,1,1))})},$pOpenFx)" 2 'Projects: open periods = this ProjectKey with empty Until (closed periods and other projects not counted)'
+Assert-Eval 'With({varPrjSaveMode:"Edit",varPrjSaveID:12},If(varPrjSaveMode="Edit",Text(varPrjSaveID),""))' '12' 'Projects: ProjectKey for the period read = Text(project ID) (same as Screen1 ProjectKey)'
+Assert-True ($pSave.Contains('Set(varPrjSaveKey,If(varPrjSaveMode="Edit",Text(varPrjSaveID),""))')) 'Projects: varPrjSaveKey formula as evaluated'
+
+# (P9) Cache invalidation after a verified save
+$pOkBranch = $pSaveN.Substring($pI.Local)
+foreach ($k in @('Set(varProjectsCacheReady,false)', 'Set(varMastersReady,false)', 'Set(varReportReady,false)', 'Set(varReportValid,false)')) { Assert-True ($pOkBranch.Contains($k) -and $pOkBranch.IndexOf($k) -lt $pOkBranch.IndexOf('varPrjSaveWrites=0,')) "Projects: verified save invalidates $k (success branch only)" }
+Assert-True ($pSaveN.Contains('If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl&&!IsBlank(T.prjErrVerify.nl)')) 'Projects: Projects connector refreshed before the verify read (cache invalidation incl. Refresh)'
+
+# (P10) Traces: no names, values or FirstError.Message
+$pTraces = 0
+foreach ($k in $pAll.Keys) {
+    foreach ($m in [regex]::Matches($pAll[$k], '\bTrace\(')) {
+        $pTraces++
+        $t = Get-Balanced $pAll[$k] ($m.Index + 5)
+        Assert-True ($t.StartsWith('("DIAG|Projects|')) "Projects: $k : trace name DIAG|Projects|..."
+        Assert-True ($t -notmatch 'FirstError|txtPrj|ddPrj|varPrjSaveRec|varPrjSaveNumber|varPrjDupKey|varPrjEdit\.|\.Name\b|\.Number\b|Title|Message|varAdmMsg') "Projects: $k : trace has no names, numbers, values, messages or FirstError.Message"
+    }
+}
+Assert-True ($pTraces -ge 10) "Projects: traces checked: $pTraces"
+Assert-True ($pSaveN.Contains((Norm 'Trace("DIAG|Projects|SaveEnd",TraceSeverity.Information,{Screen:"Projects",Mode:varPrjSaveMode,ItemID:Coalesce(varPrjPatchedID,varPrjSaveID,0),ElapsedMs:DateDiff(varPrjDiagT0,Now(),TimeUnit.Milliseconds),Reads:varPrjSaveReads,Writes:varPrjSaveWrites,Verified:varPrjSaveVerified,DupFound:varPrjSaveDupFound,Conflict:varPrjSaveConflict,OpenPeriods:varPrjSaveOpenPeriods,PeriodsUnchecked:varPrjSavePeriodsUnchecked,Errors:CountRows(colPrjSaveErrors)})'))) 'Projects: SaveEnd trace with Mode/ItemID/ElapsedMs/Reads/Writes/Verified/DupFound/Conflict/OpenPeriods/Errors'
+Assert-True ($pSaveN.Contains((Norm 'Trace("DIAG|Projects|VerifyMismatch",TraceSeverity.Warning,{Screen:"Projects",ItemID:Coalesce(varPrjPatchedID,0),Rows:CountRows(colPrjVerifyRaw),Fields:varPrjVerifyDiff})'))) 'Projects: VerifyMismatch trace with field names only'
+$pFe = @([regex]::Matches($pText, 'FirstError\.Message'))
+$pFeOk = @($pFe | Where-Object { $pText.Substring([Math]::Max(0, $_.Index - 400), [Math]::Min(400, $_.Index)) -match 'Collect\(col\w*Errors,\{[^{}]*$' })
+Assert-True ($pFe.Count -eq 5 -and $pFeOk.Count -eq $pFe.Count) "Projects: FirstError.Message only inside the shown error collections ($($pFe.Count) uses: 2 x load, 3 x Patch error record)"
+
+# (P11) User texts via T
+$pUsedT = @([regex]::Matches($pText, '\bT\.(\w+)\.(?:en|nl)\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+Assert-True (@($pUsedT | Where-Object { $_ -notmatch '^(prj|adm)' }).Count -eq 0) "Projects: only prj* and shared adm* T keys used ($($pUsedT.Count))"
+$pPrjKeys = @($tKeys | Where-Object { $_ -like 'prj*' })
+Assert-True ($pPrjKeys.Count -ge 50 -and @($pPrjKeys | Where-Object { $_ -cnotin $pUsedT }).Count -eq 0) "Projects: all $($pPrjKeys.Count) prj* T keys exist with English text and are used on scrProjects (nl empty)"
+$pPrjOk = @([regex]::Matches($formulas, '(?m)^\s*prj\w+:\s*\{en:\s*"[^"]+",\s*nl:\s*""\}')).Count
+Assert-True ($pPrjOk -eq $pPrjKeys.Count) "Projects: every prj* key has an English text and an empty nl text ($pPrjOk of $($pPrjKeys.Count))"
+$pHard = @()
+foreach ($k in $pAll.Keys) {
+    $fx = $pAll[$k]
+    if ($k -like '*.Font' -or $k -eq 'imgPrjSpinner.Image') { continue }
+    if ($k -like '*.OnVisible' -or $k -like '*.OnSelect') { $fx = [regex]::Replace($fx, 'Trace\("[^"]*"', 'Trace(') }
+    foreach ($lit in [regex]::Matches($fx, '"([^"]*)"')) { if ($lit.Groups[1].Value -match '[A-Za-z]{2,}\s+[A-Za-z]') { $pHard += "$k : `"$($lit.Groups[1].Value)`"" } }
+}
+Assert-True ($pHard.Count -eq 0) "Projects: no hard-coded sentences (all user texts via T) $($pHard -join '; ')"
+$pLit = @()
+foreach ($n in $pIdx.Keys) {
+    $props = $pIdx[$n]['Properties']; if (([string]$props['Visible']).Trim() -eq '=false') { continue }
+    foreach ($p in @('Text', 'HintText', 'AccessibleLabel', 'Tooltip')) {
+        if (!$props.ContainsKey($p) -or ($n -like 'imgLogo*' -and $p -eq 'AccessibleLabel')) { continue }
+        if (([string]$props[$p]).Trim() -match '^="[^"]*[A-Za-z][^"]*"$') { $pLit += "$n.$p" }
+    }
+}
+Assert-True ($pLit.Count -eq 0) "Projects: visible captions use T, no literal text $($pLit -join ', ')"
+$pTexts = [ordered]@{ prjTitle = 'Projects'; prjSearchHint = 'Search number, name or city'; prjCount = '{0} projects'; prjShowInactive = 'Show inactive'; prjNewProject = 'New project'; prjSecGeneral = 'GENERAL'; prjSecAddress = 'ADDRESS'; prjSecPeople = 'PEOPLE'; prjSecLinks = 'LINKS'; prjLastChanged = 'Last changed in SharePoint: {0}'; prjErrConflict = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'; prjErrDuplicate = 'Fix: Project Number already exists' }
+foreach ($k in $pTexts.Keys) { Assert-True ($formulas.Contains("$($k): {en: ""$($pTexts[$k])"", nl: """"}")) "Projects: T.$k = '$($pTexts[$k])'" }
+
+# (P14) Refresh before every SharePoint read (H16), form reset, Modified display -----------------------------------------
+$pBeh = @{}
+foreach ($p in $pScreenProps.Keys) { if ($p -like 'On*') { $pBeh["$pScreen.$p"] = [string]$pScreenProps[$p] } }
+Get-BehaviourFormulas $pDoc['Screens'][$pScreen]['Children'] $pScreen $pBeh
+$pSp = @()
+foreach ($k in ($pBeh.Keys | Sort-Object)) { foreach ($r in (Test-RefreshBeforeReads $pBeh[$k])) { $pSp += $r; Assert-True ($r.Status -eq 'Refreshed') "Projects: $k : read of $($r.Source) (formula line $($r.Line)) preceded by Refresh($($r.Source)) in the same branch [$($r.Status)]" } }
+Assert-True (@($pSp | Where-Object Source -eq 'Projects').Count -eq 4 -and @($pSp | Where-Object Source -eq "'Assignment Periods'").Count -eq 1 -and $pSp.Count -eq 5) "Projects: SharePoint reads: 4 x Projects (load, pre-read, number check, verify), 1 x Assignment Periods (closing check)"
+$pFr = PGet 'btnPrjFormReset' 'OnSelect'
+$pReset = 'Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl)'
+Assert-True ($pIdx['btnPrjFormReset']['Control'] -eq 'Classic/Button@2.2.0' -and (PGet 'btnPrjFormReset' 'Visible') -eq '=false' -and $pFr.StartsWith('=If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false),') -and $pFr.Contains($pReset)) 'Projects: hidden btnPrjFormReset resets all 11 inputs only when Loaded/idle/no failed save'
+Assert-True ($pFr -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate)\(') 'Projects: form reset is local only (no mutation, no variable change, no further Select)'
+Assert-True (([regex]::Matches($pText, 'Select\(btnPrjFormReset\)')).Count -eq 2 -and $pLoad.IndexOf('If(varPrjLoadState="Loaded",Select(btnPrjFormReset))') -gt $pLoad.LastIndexOf('Set(varPrjForceRefresh,false); Set(varPrjBusy,false);')) 'Projects: form reset selected at the end of the loader (after busy off) and after a verified save'
+foreach ($k in @('btnPrjLoad.OnSelect', 'btnPrjSave.OnSelect', 'btnPrjNew.OnSelect', 'btnPrjDiscard.OnSelect', 'galPrjList.OnSelect')) { Assert-True ($pAll[$k].Contains($pReset)) "Projects: $k resets all form inputs (incl. both dropdowns)" }
+foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) { Assert-True (!$pIdx[$k]['Properties'].ContainsKey('Reset')) "Projects: $k has no Reset property (Reset() calls only)" }
+$pModFx = (PGet 'lblPrjModified' 'Text').TrimStart('=')
+Assert-True ($pModFx.Contains('LookUp(colPrjModified,ID=varPrjSelectedID).Modified') -and $pModFx -notmatch '\b(Projects|Filter)\b') 'Projects: lblPrjModified reads the local Modified copy only'
+$pModUses = @($pAll.Keys | Where-Object { $pAll[$_] -match 'Modified' } | Sort-Object)
+Assert-True (($pModUses -join ',') -ceq 'btnPrjLoad.OnSelect,btnPrjSave.OnSelect,lblPrjMetrics.Y,lblPrjModified.Text') "Projects: Modified used only in loader, save display update, lblPrjModified and its height carrier ($($pModUses -join ', '))"
+$pModFix = 'LangNl:false,T:' + $tRec + ',colPrjModified:Table({ID:7,Modified:DateTime(2026,10,30,8,5,0)})'
+Assert-Eval ('With({' + $pModFix + ',varPrjMode:"Edit",varPrjSelectedID:7},' + $pModFx + ')') 'Last changed in SharePoint: 30-10-2026 08:05' 'Projects: Last changed line (Edit): dd-mm-yyyy hh:mm'
+Assert-Eval ('With({' + $pModFix + ',varPrjMode:"New",varPrjSelectedID:Blank()},' + $pModFx + ')') '' 'Projects: Last changed line empty for New'
+Assert-True ($pLoad.Contains('Set(varPrjLoadedAt,Now());') -and $pLoad.IndexOf('Set(varPrjLoadedAt,Now());') -gt $pLoad.IndexOf('If(IsEmpty(colPrjLoadErrors),') -and ([regex]::Matches($pText, 'Set\(varPrjLoadedAt,')).Count -eq 1) 'Projects: load time set only in the successful-load branch'
+
+# (P15) Messages only via the shared admin message bar (varAdmMsgKind/Head/Body), same head mapping as Contractors ---------
+Assert-True ($pText -notmatch '\bNotify\(' -and $pText -notmatch 'NotificationType\.') 'Projects: no Notify(), no NotificationType'
+Assert-True (!$pIdx.ContainsKey('lblPrjStatus') -and !$pIdx.ContainsKey('lblPrjErrors')) 'Projects: no status line or error list (messages only in the bar)'
+$pMsgs = @()
+foreach ($k in ($pAll.Keys | Sort-Object)) {
+    $fx = $pAll[$k]
+    foreach ($m in [regex]::Matches($fx, '\bSet\(varAdmMsgKind,')) {
+        $kc = Get-SetArg $fx ($m.Index + 3) 'varAdmMsgKind'
+        $rest = $fx.Substring($m.Index + 3 + $kc[0].Length)
+        $mh = [regex]::Match($rest, '^;\s*Set\(varAdmMsgHead,')
+        Assert-True ($k -match '\.On\w+$' -and $mh.Success) "Projects: $k : Set(varAdmMsgKind,$($kc[1])) in a behaviour formula, directly followed by Set(varAdmMsgHead,...)"
+        $hc = Get-SetArg $rest ($mh.Index + $mh.Length - 'varAdmMsgHead,'.Length - 1) 'varAdmMsgHead'
+        $rest2 = $rest.Substring($mh.Index + $mh.Length - 'varAdmMsgHead,'.Length - 1 + $hc[0].Length)
+        $mb = [regex]::Match($rest2, '^;\s*Set\(varAdmMsgBody,')
+        Assert-True $mb.Success "Projects: $k : Set(varAdmMsgHead,...) directly followed by Set(varAdmMsgBody,...)"
+        $bc = Get-SetArg $rest2 ($mb.Index + $mb.Length - 'varAdmMsgBody,'.Length - 1) 'varAdmMsgBody'
+        $pMsgs += [pscustomobject]@{ Key = $k; Pos = $m.Index; Kind = $kc[1].Trim(); Head = $hc[1].Trim(); Body = $bc[1].Trim() }
+    }
+}
+foreach ($v in @('varAdmMsgKind', 'varAdmMsgHead', 'varAdmMsgBody')) { Assert-True (([regex]::Matches($pText, "\bSet\($v,")).Count -eq $pMsgs.Count) "Projects: Set($v,...) only inside a kind/head/body triple ($($pMsgs.Count) triples)" }
+$pWarnKeys = @('prjWarnOpenPeriods', 'prjWarnPeriodsUnchecked'); $pSuccessKeys = @('prjMsgLoaded', 'prjMsgSavedRenumber', 'prjMsgDiscarded')
+$pKinds = @{}
+foreach ($c in $pMsgs) {
+    $pKinds[$c.Kind] = 1 + [int]$pKinds[$c.Kind]
+    if ($c.Kind -eq '""') { Assert-True ($c.Head -eq '""' -and $c.Body -eq '""' -and $c.Key -in @('icoPrjMsgClose.OnSelect', 'scrProjects.OnVisible')) "Projects: $($c.Key) : clear only in Close and OnVisible"; continue }
+    Assert-True ($headsByKind.ContainsKey($c.Kind)) "Projects: $($c.Key) : kind $($c.Kind) is Error, Warning or Success"
+    $hm = [regex]::Match($c.Head, '^If\(LangNl && !IsBlank\(T\.(admHead\w+)\.nl\),T\.\1\.nl,T\.\1\.en\)$')
+    Assert-True ($hm.Success -and $hm.Groups[1].Value -in $headsByKind[$c.Kind]) "Projects: $($c.Key) : $($c.Kind) head from T ($($hm.Groups[1].Value)) is one of $($headsByKind[$c.Kind] -join '/') (same mapping as Contractors)"
+    $head = $hm.Groups[1].Value
+    $bk = @([regex]::Matches($c.Body, '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    $lbl = "Projects: $($c.Key) : $($c.Kind)/$head body (T: $($bk -join ','))"
+    switch ($c.Kind) {
+        '"Error"' { Assert-True (@($bk | Where-Object { $_ -in $pWarnKeys -or $_ -in $pSuccessKeys }).Count -eq 0) "$lbl has no warning or success text" }
+        '"Warning"' { Assert-True (@($bk | Where-Object { $_ -in $pWarnKeys }).Count -eq 2 -and @($bk | Where-Object { $_ -notin ($pWarnKeys + 'prjMsgSavedRenumber') }).Count -eq 0) "$lbl carries the period warnings, nothing else except the renumber note" }
+        '"Success"' { Assert-True (@($bk | Where-Object { $_ -notin $pSuccessKeys }).Count -eq 0) "$lbl has only success texts" }
+    }
+    switch ($head) {
+        'admHeadBlocked' { Assert-True ($c.Body -ceq (TT 'prjMsgActionBlocked') -or $c.Body -ceq (TT 'prjMsgReloadBlocked')) "$lbl = action / reload blocked" }
+        'admHeadNotLoaded' { Assert-True ($bk -contains 'prjMsgLoadFailed' -and $c.Body.Contains('First(colPrjLoadErrors).Message')) "$lbl = load failed + first load error" }
+        'admHeadLoaded' { Assert-True ($bk -contains 'prjMsgLoaded') "$lbl = loaded count/time" }
+        'admHeadDiscarded' { Assert-True ($c.Body -ceq (TT 'prjMsgDiscarded')) "$lbl = changes discarded" }
+        'admHeadNotSaved' { Assert-True ($c.Body.Contains('First(colPrjSaveErrors).Message')) "$lbl = first save error (+n more)" }
+        'admHeadSaved' { Assert-True ($c.Key -eq 'btnPrjSave.OnSelect') "$lbl only after a verified save" }
+        'admHeadAttention' { throw "FAIL Projects: no live Attention message expected ($($c.Key))" }
+    }
+}
+Assert-True ($pKinds['"Error"'] -eq 9 -and $pKinds['"Warning"'] -eq 1 -and $pKinds['"Success"'] -eq 3 -and $pKinds['""'] -eq 2) "Projects: message kinds 9 x Error, 1 x Warning (save with open periods), 3 x Success, 2 x clear ($(($pKinds.Keys | Sort-Object | ForEach-Object { "$_=$($pKinds[$_])" }) -join ' '))"
+$pExpMsg = [ordered]@{ 'btnPrjDiscard.OnSelect' = 2; 'btnPrjLoad.OnSelect' = 3; 'btnPrjNew.OnSelect' = 1; 'btnPrjRefresh.OnSelect' = 1; 'btnPrjSave.OnSelect' = 5; 'galPrjList.OnSelect' = 1; 'icoPrjMsgClose.OnSelect' = 1; 'scrProjects.OnVisible' = 1 }
+$pGotMsg = (($pMsgs | Group-Object Key | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ';')
+Assert-True ($pGotMsg -ceq (($pExpMsg.Keys | Sort-Object | ForEach-Object { "$_=$($pExpMsg[$_])" }) -join ';')) "Projects: messages per formula as expected: $pGotMsg"
+$pBlockedN = Norm (',' + 'Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,' + (TT 'admHeadBlocked') + '); Set(varAdmMsgBody,' + (TT 'prjMsgActionBlocked') + '))')
+foreach ($ctl in @('btnPrjSave', 'btnPrjNew', 'btnPrjRefresh', 'btnPrjDiscard', 'galPrjList')) { Assert-True ((Norm (PGet $ctl 'OnSelect')).EndsWith($pBlockedN)) "Projects: $ctl : the guard's else branch shows Blocked. (error, no mutation)" }
+$pSaveMsg = @($pMsgs | Where-Object Key -eq 'btnPrjSave.OnSelect' | Sort-Object Pos)
+Assert-True ((($pSaveMsg | ForEach-Object { $_.Kind }) -join ',') -ceq '"Warning","Success","Error","Error","Error"') 'Projects: save messages in order: warning, success, zero-write error, failed-save error, blocked'
+$pOutHead = 'If(varPrjSaveOpenPeriods>0 || varPrjSavePeriodsUnchecked,'
+Assert-True (([regex]::Matches($pSave, [regex]::Escape($pOutHead))).Count -eq 1 -and $pSaveN.IndexOf((Norm $pOutHead)) -gt $pI.Local -and $pSaveN.IndexOf((Norm $pOutHead)) -lt $pSaveN.IndexOf('varPrjSaveWrites=0,')) 'Projects: verified save shows one message: amber when periods are open or unchecked, else green; head "Saved." in both'
+function PMsg([string]$fixture, [string]$fx) { return "With({LangNl:false,T:$tRec},With({$fixture},$fx))" }
+Assert-Eval (PMsg 'x:0' $pSaveMsg[0].Head) 'Saved.' 'Projects: amber save message head = Saved.'
+Assert-Eval (PMsg 'varPrjSaveRenumbered:false,varPrjSaveOpenPeriods:2,varPrjSavePeriodsUnchecked:false' $pSaveMsg[0].Body) 'Status Closed: 2 open assignment period(s) remain; they are not closed automatically.' 'Projects: Saved. + open-period warning (amber)'
+Assert-Eval (PMsg 'varPrjSaveRenumbered:false,varPrjSaveOpenPeriods:0,varPrjSavePeriodsUnchecked:true' $pSaveMsg[0].Body) 'Status Closed: open assignment periods could not be checked; check Project / team.' 'Projects: Saved. + "could not be checked" warning (read error or >= 500 rows)'
+Assert-Eval (PMsg 'varPrjSaveRenumbered:true,varPrjSaveOpenPeriods:1,varPrjSavePeriodsUnchecked:false' $pSaveMsg[0].Body) 'The new number also shows in Hours Summary. Status Closed: 1 open assignment period(s) remain; they are not closed automatically.' 'Projects: renumber note + period warning in one amber message'
+Assert-Eval (PMsg 'varPrjSaveRenumbered:false' $pSaveMsg[1].Body) '' 'Projects: green message: only the head "Saved."'
+Assert-Eval (PMsg 'colPrjSaveErrors:Table({Field:"Number",Message:T.prjErrDuplicate.en},{Field:"",Message:"y"})' $pSaveMsg[2].Body) 'Fix: Project Number already exists (+1 more)' 'Projects: zero-write error: first error (+n more)'
+Assert-Eval (PMsg 'varPrjSaveMode:"New",colPrjSaveErrors:Table({Field:"",Message:T.prjErrPatch.en})' $pSaveMsg[3].Body) 'Save not confirmed by SharePoint. Maybe created: click Discard, then search the number before retrying.' 'Projects: failed-save error (New)'
+$pLoadMsg = @($pMsgs | Where-Object Key -eq 'btnPrjLoad.OnSelect' | Sort-Object Pos)
+Assert-True ((($pLoadMsg | ForEach-Object { $_.Kind }) -join ',') -ceq '"Error","Success","Error"') 'Projects: loader messages in order: reload blocked, loaded, load failed'
+Assert-Eval (PMsg 'colAdminProjects:Table({ID:1},{ID:2}),varPrjLoadedAt:DateTime(2026,10,30,8,5,7)' $pLoadMsg[1].Body) '2 projects loaded at 08:05:07' 'Projects: load success message: count and time'
+Assert-Eval (PMsg 'colPrjLoadErrors:Table({Message:T.prjErrLoadProjects.en & " " & "Network error"},{Message:T.prjErrLimitProjects.en})' $pLoadMsg[2].Body) 'Loading failed. Click Refresh. Projects not read: Network error (+1 more)' 'Projects: load failure message'
+$pBarExp = [ordered]@{ X = '=lblPrjTitle.X'; Y = '=lblPrjTitle.Y+lblPrjTitle.Height'; Width = '=lblPrjTitle.Width'; Height = '=If(!IsBlank(varAdmMsgKind),40,0)'; Visible = '=!IsBlank(varAdmMsgKind)'; Fill = '=Switch(varAdmMsgKind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)' }
+foreach ($k in $pBarExp.Keys) { Assert-True ((PGet 'conPrjMsgBar' $k) -ceq $pBarExp[$k]) "Projects: conPrjMsgBar.$k = $($pBarExp[$k]) (same as Contractors)" }
+foreach ($c in @('lblPrjMsgHead', 'lblPrjMsgBody', 'icoPrjMsgClose')) { Assert-True ((PGet $c 'Color') -ceq $textColFx) "Projects: $c.Color white on red, #000F41 on amber/green" }
+Assert-True ((PGet 'lblPrjMsgHead' 'Text') -ceq '=varAdmMsgHead' -and (PGet 'lblPrjMsgBody' 'Text') -ceq '=varAdmMsgBody' -and (PGet 'icoPrjMsgClose' 'OnSelect') -ceq '=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")' -and $pVis.StartsWith('=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");')) 'Projects: bar shows the shared variables; Close and OnVisible clear them first'
+$pBarReaders = @($pAll.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $pAll[$_] -match '\bvarAdmMsg(Kind|Head|Body)\b' } | ForEach-Object { ($_ -split '\.')[0] } | Sort-Object -Unique)
+Assert-True (($pBarReaders -join ',') -ceq 'conPrjMsgBar,icoPrjMsgClose,lblPrjMsgBody,lblPrjMsgHead') "Projects: message variables only displayed by the bar controls ($($pBarReaders -join ', '))"
+
+# (P16) List card: search on number/name/city, Show inactive = show Closed (default off), On hold counts as active --------
+Assert-True ((PGet 'txtPrjSearch' 'HintText') -eq (TT 'prjSearchHint').Insert(0, '=') -and (PGet 'txtPrjSearch' 'AccessibleLabel') -eq (PGet 'txtPrjSearch' 'HintText')) 'Projects: search hint/label from T ("Search number, name or city")'
+Assert-True ((PGet 'lblPrjCount' 'Text') -ceq ('=Substitute(' + (TT 'prjCount') + ',"{0}",Text(CountRows(galPrjList.AllItems)))')) 'Projects: count "{0} projects" = visible gallery rows'
+Assert-True ((PGet 'btnPrjShowInactiveSwitch' 'OnSelect') -ceq '=Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false))' -and (PGet 'btnPrjShowInactiveSwitch' 'DisplayMode') -ceq '=DisplayMode.Edit' -and (PGet 'btnPrjShowInactiveKnob' 'OnSelect') -ceq '=Select(btnPrjShowInactiveSwitch)' -and (PGet 'btnPrjShowInactiveKnob' 'DisplayMode') -ceq '=btnPrjShowInactiveSwitch.DisplayMode') 'Projects: Show inactive switch toggles a local filter only (knob forwards to the track)'
+$pSi = @($pAll.Keys | Where-Object { $pAll[$_] -match 'Set\(varPrjShowInactive,' } | Sort-Object)
+Assert-True (($pSi -join ',') -ceq 'btnPrjShowInactiveSwitch.OnSelect,scrProjects.OnVisible' -and $pVis.Contains('Set(varPrjShowInactive,false)')) 'Projects: varPrjShowInactive only set by its switch and the first-visit init (false = Closed hidden)'
+$pItems = (PGet 'galPrjList' 'Items').TrimStart('=')
+$pItemFix = 'colAdminProjects:Table({ID:1,Name:"Alpha",Number:"TEST-002",Customer:"Cust",City:"Delft",Status:"Active"},{ID:2,Name:"Beta",Number:"TEST-001",Customer:"",City:"Ede",Status:"On hold"},{ID:3,Name:"Gamma",Number:"P-9",Customer:"",City:"Venlo",Status:"Closed"},{ID:4,Name:"Delta",Number:"A-1",Customer:"",City:"",Status:""})'
+function PItems([string]$show, [string]$search, [string]$col) { return "With({$pItemFix,varPrjShowInactive:$show,txtPrjSearch:{Text:$search}},Concat($pItems,$col,`",`"))" }
+Assert-Eval (PItems 'false' '""' 'Number') 'A-1,TEST-001,TEST-002' 'Projects: default list hides Closed, shows On hold and blank Status; sorted by Project Number'
+Assert-Eval (PItems 'true' '""' 'Number') 'A-1,P-9,TEST-001,TEST-002' 'Projects: Show inactive on: Closed projects shown too'
+Assert-Eval (PItems 'If(false,true)' '""' 'Number') 'A-1,TEST-001,TEST-002' 'Projects: blank switch state = Closed hidden'
+Assert-Eval (PItems 'true' '" test-00 "' 'Number') 'TEST-001,TEST-002' 'Projects: search on Project Number (trim, case-insensitive)'
+Assert-Eval (PItems 'true' '"gam"' 'Number') 'P-9' 'Projects: search on Project Name'
+Assert-Eval (PItems 'true' '"ede"' 'Number') 'TEST-001' 'Projects: search on City'
+Assert-Eval (PItems 'true' '"cust"' 'Number') '' 'Projects: Customer is not a search field'
+$pRowName = (PGet 'lblPrjRowName' 'Text').TrimStart('='); $pRowSub = (PGet 'lblPrjRowSub' 'Text').TrimStart('=')
+$nd = [string][char]0x2013; $md = [string][char]0x00B7
+Assert-Eval "With({ThisItem:{Number:`"TEST-002`",Name:`"Alpha`"}},$pRowName)" "TEST-002 $nd Alpha" 'Projects: row name line "Project Number - Project Name"'
+Assert-Eval "With({ThisItem:{Number:`"TEST-002`",Name:`"`"}},$pRowName)" 'TEST-002' 'Projects: row name line without a name shows only the number'
+Assert-Eval "With({ThisItem:{Customer:`"Cust`",City:`"Delft`"}},$pRowSub)" "Cust $md Delft" 'Projects: row subline "Customer <middle dot> City"'
+Assert-Eval "With({ThisItem:{Customer:`"`",City:`"Delft`"}},$pRowSub)" 'Delft' 'Projects: row subline without customer: only City (no dangling separator)'
+$pChipVis = (PGet 'btnPrjRowStatus' 'Visible').TrimStart('=')
+foreach ($c in @(@('"Active"', $false), @('"On hold"', $true), @('"Closed"', $true), @('""', $false))) { Assert-Eval "With({ThisItem:{Status:$($c[0])}},$pChipVis)" $c[1] "Projects: row status chip visible for Status $($c[0]) = $($c[1])" }
+Assert-True ((PGet 'btnPrjRowStatus' 'Text') -ceq '=ThisItem.Status' -and (PGet 'lblPrjRowName' 'Width') -ceq "=Parent.TemplateWidth-If($pChipVis,88,0)") 'Projects: row chip shows the SharePoint Status text (not colour only); name line leaves room for the chip'
+Assert-True ((PGet 'lblPrjRowName' 'Size') -eq '=15' -and (PGet 'lblPrjRowName' 'FontWeight') -eq '=FontWeight.Semibold' -and (PGet 'lblPrjRowSub' 'Size') -eq '=13' -and (PGet 'galPrjList' 'TemplateSize') -eq '=64') 'Projects: row name 15 Semibold, subline 13, row height 64'
+
+# (P17) Form card: header, status chip, sections GENERAL/ADDRESS/PEOPLE/LINKS on the 1-3 column grid, Last changed bottom right ----
+$pTitleFx = (PGet 'lblPrjFormTitle' 'Text').TrimStart('=')
+Assert-Eval "With({LangNl:false,T:$tRec,varPrjMode:`"New`",varPrjEdit:{Number:`"`",Name:`"`"}},$pTitleFx)" 'New project' 'Projects: header for New = "New project"'
+Assert-Eval "With({LangNl:false,T:$tRec,varPrjMode:`"Edit`",varPrjEdit:{Number:`"TEST-002`",Name:`"Alpha`"}},$pTitleFx)" "TEST-002 $nd Alpha" 'Projects: header = Project Number + Project Name'
+$pFormChipText = (PGet 'btnPrjFormChip' 'Text')
+Assert-True ($pFormChipText -ceq '=ddPrjStatus.Selected.Value' -and (PGet 'btnPrjFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled' -and !$pIdx['btnPrjFormChip']['Properties'].ContainsKey('OnSelect') -and (PGet 'btnPrjFormChip' 'Visible') -ceq '=Coalesce(varPrjMode,"") in ["New","Edit"] && !IsBlank(ddPrjStatus.Selected.Value)') 'Projects: status chip shows the Status draft as text, static, only in New/Edit with a Status'
+$pLay = [ordered]@{ X = '=If(Parent.Width>=1000,1,0)'; Y = '=If(Self.X=1,408,24)'; Width = '=If(Self.X=1,Max(0,Parent.Width-432),Parent.Width-48)'; Height = '=If(Self.X=1,24,500)' }
+foreach ($k in $pLay.Keys) { Assert-True ((PGet 'lblPrjLayout' $k) -ceq $pLay[$k]) "Projects: layout carrier lblPrjLayout.$k as Contractors" }
+Assert-True ((PGet 'lblPrjMetrics' 'X') -ceq '=If(lblPrjLayout.Width-48>=572,3,If(lblPrjLayout.Width-48>=376,2,1))' -and (PGet 'lblPrjMetrics' 'Y') -ceq '=lblPrjModified.Y+lblPrjModified.Height+24' -and (PGet 'lblPrjMetrics' 'Width') -ceq '=If(lblPrjLayout.X=1,Self.Height-48,452)' -and (PGet 'lblPrjMetrics' 'Height') -ceq '=If(lblPrjLayout.X=1,Max(conPrjBody.Height,Self.Y+48,568),lblPrjLayout.Height+Self.Y+24)' -and (PGet 'lblPrjGrid' 'Width') -ceq '=(lblPrjLayout.Width-48-16*(lblPrjMetrics.X-1))/lblPrjMetrics.X') 'Projects: grid carriers (columns 3/2/1 at content 572/376, gap 16; content height) as Contractors'
+$pSecExp = [ordered]@{ lblPrjSecGeneral = '=lblPrjFormDivider.Y+1+20'; lblPrjSecAddress = '=lblPrjSecGeneral.Y+38+RoundUp(5/lblPrjMetrics.X,0)*74'; lblPrjSecPeople = '=lblPrjSecAddress.Y+38+RoundUp(5/lblPrjMetrics.X,0)*74'; lblPrjSecLinks = '=lblPrjSecPeople.Y+38+RoundUp(2/lblPrjMetrics.X,0)*74' }
+foreach ($k in $pSecExp.Keys) { Assert-True ((PGet $k 'Y') -ceq $pSecExp[$k] -and (PGet $k 'Size') -eq '=12' -and (PGet $k 'FontWeight') -eq '=FontWeight.Bold' -and (PGet $k 'Height') -eq '=18') "Projects: section $k 12 Bold, top $($pSecExp[$k])" }
+Assert-True ((PGet 'lblPrjModified' 'Y') -ceq '=lblPrjSecLinks.Y+38+74' -and (PGet 'lblPrjModified' 'Align') -eq '=Align.Right' -and (PGet 'lblPrjModified' 'X') -eq '=24' -and (PGet 'lblPrjModified' 'Width') -eq '=lblPrjLayout.Width-48' -and (PGet 'lblPrjModified' 'Size') -eq '=12') 'Projects: "Last changed in SharePoint" bottom right, under LINKS (no Active switch row)'
+$pGrid = [ordered]@{ General = @('Name', 'Number', 'Reference', 'Customer', 'Status'); Address = @('Street', 'HouseNumber', 'PostalCode', 'City', 'Country'); People = @('Leader', 'SiteManager'); Links = @('Url') }
+$pCtlOf = @{ Name = 'txtPrjName'; Number = 'txtPrjNumber'; Reference = 'txtPrjReference'; Customer = 'txtPrjCustomer'; Status = 'ddPrjStatus'; Street = 'txtPrjStreet'; HouseNumber = 'txtPrjHouseNumber'; PostalCode = 'txtPrjPostalCode'; City = 'txtPrjCity'; Country = 'ddPrjCountry'; Leader = 'txtPrjLeader'; SiteManager = 'txtPrjSiteManager'; Url = 'txtPrjUrl' }
+foreach ($s in $pGrid.Keys) {
+    for ($n = 0; $n -lt $pGrid[$s].Count; $n++) {
+        $f = $pGrid[$s][$n]; $lb = "lblPrj${f}Label"; $ct = $pCtlOf[$f]; $sec = "lblPrjSec$s"
+        $xx = if ($n -eq 0) { '=24' } else { "=24+Mod($n,lblPrjMetrics.X)*(lblPrjGrid.Width+16)" }
+        $yy = if ($n -eq 0) { "=$sec.Y+30" } else { "=$sec.Y+30+RoundDown($n/lblPrjMetrics.X,0)*74" }
+        $ww = if ($f -eq 'Url') { '=lblPrjLayout.Width-48' } else { '=lblPrjGrid.Width' }
+        Assert-True ((PGet $lb 'X') -ceq $xx -and (PGet $ct 'X') -ceq $xx -and (PGet $lb 'Y') -ceq $yy -and (PGet $ct 'Y') -ceq "=$lb.Y+22" -and (PGet $lb 'Width') -ceq $ww -and (PGet $ct 'Width') -ceq $ww -and (PGet $ct 'Height') -eq '=36') "Projects: $s field $n ($f): grid cell, input 22 px under the label, h36$(if ($f -eq 'Url') { ', full content width' })"
+        Assert-True ((PGet $lb 'Size') -eq '=13' -and (PGet $lb 'FontWeight') -eq '=FontWeight.Semibold' -and (PGet $lb 'Height') -eq '=18' -and (PGet $lb 'Text') -match 'T\.prjField') "Projects: $lb : 13 Semibold, h18, text from T"
+    }
+}
+foreach ($r in @('Name', 'Number', 'Status')) { Assert-True ((PGet "lblPrj${r}Required" 'Text') -eq '="*"' -and (PGet "lblPrj${r}Required" 'Y') -eq "=lblPrj${r}Label.Y") "Projects: red required star after $r" }
+Assert-True (@($pIdx.Keys | Where-Object { $_ -like 'lblPrj*Required' }).Count -eq 3) 'Projects: exactly 3 required stars (Project Name, Project Number, Status)'
+foreach ($k in $pTextFields.Keys) {
+    $f = $pTextFields[$k]; $er = "CountIf(colPrjSaveErrors,Field=""$f"")>0"
+    foreach ($pv in @(@('BorderColor', '#9B9B9B'), @('HoverBorderColor', '#5A5A5A'), @('FocusedBorderColor', '#0303B8'), @('PressedBorderColor', '#0303B8'))) { Assert-True ((PGet $k $pv[0]) -ceq "=If($er,ColorValue(""#DB1E28""),ColorValue(""$($pv[1])""))") "Projects: $k.$($pv[0]) red when colPrjSaveErrors has Field=$f" }
+    Assert-True ((PGet $k 'BorderThickness') -ceq "=If($er,2,1)" -and (PGet $k 'DisplayMode') -ceq (PGet 'txtPrjName' 'DisplayMode') -and (PGet $k 'MaxLength') -eq '=255') "Projects: $k border 1/2 px, same form DisplayMode, MaxLength 255"
+}
+foreach ($k in $pDropFields.Keys) { $f = $pDropFields[$k]; Assert-True ((PGet $k 'BorderColor') -ceq "=If(CountIf(colPrjSaveErrors,Field=""$f"")>0,ColorValue(""#DB1E28""),ColorValue(""#DCDCDC""))" -and (PGet $k 'DisplayMode') -ceq (PGet 'txtPrjName' 'DisplayMode')) "Projects: $k red border on Field=$f, same form DisplayMode" }
+$pFields = @([regex]::Matches($pSave, 'Collect\(colPrjSaveErrors,\{Field:"(\w*)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+Assert-True (@($pFields | Where-Object { $_ -ne '' -and $_ -cnotin $pWritten }).Count -eq 0) "Projects: every collected error Field is an input field or '' ($($pFields -join ','))"
+Assert-True ((PGet 'txtPrjName' 'DisplayMode') -ceq '=If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.View)') 'Projects: inputs editable only when Loaded, idle, no failed save, New/Edit'
+$pFormKids = @($pIdx['conPrjFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
+$pExpKids = 'lblPrjFormTitle,btnPrjFormChip,lblPrjFormDivider,lblPrjSecGeneral,lblPrjNameLabel,lblPrjNameRequired,txtPrjName,lblPrjNumberLabel,lblPrjNumberRequired,txtPrjNumber,lblPrjReferenceLabel,txtPrjReference,lblPrjCustomerLabel,txtPrjCustomer,lblPrjStatusLabel,lblPrjStatusRequired,ddPrjStatus,lblPrjSecAddress,lblPrjStreetLabel,txtPrjStreet,lblPrjHouseNumberLabel,txtPrjHouseNumber,lblPrjPostalCodeLabel,txtPrjPostalCode,lblPrjCityLabel,txtPrjCity,lblPrjCountryLabel,ddPrjCountry,lblPrjSecPeople,lblPrjLeaderLabel,txtPrjLeader,lblPrjSiteManagerLabel,txtPrjSiteManager,lblPrjSecLinks,lblPrjUrlLabel,txtPrjUrl,lblPrjModified'
+Assert-True (($pFormKids -join ',') -ceq $pExpKids) "Projects: conPrjFormCard children: $($pFormKids -join ',')"
+Assert-True ((@($pIdx['conPrjListCard']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'txtPrjSearch,icoPrjSearch,lblPrjCount,lblPrjShowInactive,btnPrjShowInactiveSwitch,btnPrjShowInactiveKnob,galPrjList' -and (@($pIdx['conPrjCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'conPrjListCard,conPrjFormCard') 'Projects: list card and canvas children as Contractors'
+foreach ($cp in @(@('conPrjListCard', 'X', '=24'), @('conPrjListCard', 'Y', '=24'), @('conPrjListCard', 'Width', '=If(lblPrjLayout.X=1,360,Parent.Width-48)'), @('conPrjListCard', 'Height', '=lblPrjMetrics.Width'), @('conPrjFormCard', 'X', '=lblPrjLayout.Y'), @('conPrjFormCard', 'Y', '=lblPrjLayout.Height'), @('conPrjFormCard', 'Width', '=lblPrjLayout.Width'), @('conPrjFormCard', 'Height', '=If(lblPrjLayout.X=1,lblPrjMetrics.Height-48,lblPrjMetrics.Y)'), @('conPrjFormCard', 'DropShadow', '=DropShadow.Light'), @('conPrjListCard', 'Fill', '=Color.White'), @('conPrjBody', 'Y', '=conPrjMsgBar.Y+conPrjMsgBar.Height'), @('conPrjBody', 'Height', '=Max(0,navPrj.Y-Self.Y)'), @('galPrjList', 'Y', '=lblPrjCount.Y+lblPrjCount.Height+12'), @('galPrjList', 'Height', '=Parent.Height-Self.Y-12'))) {
+    Assert-True ((PGet $cp[0] $cp[1]) -ceq $cp[2]) "Projects: $($cp[0]).$($cp[1]) = $($cp[2])"
+}
+# Numeric mirror of the pinned formulas: no overlap of labels/inputs/section headers, inside the 24 px padding, cards side by side or stacked
+function Get-PrjGeom([int]$layW) {
+    $cw = $layW - 48; $c = if ($cw -ge 572) { 3 } elseif ($cw -ge 376) { 2 } else { 1 }
+    $colW = ($cw - 16 * ($c - 1)) / $c
+    $gen = 24 + 30 + 16 + 1 + 20; $adr = $gen + 38 + [Math]::Ceiling(5 / $c) * 74; $ppl = $adr + 38 + [Math]::Ceiling(5 / $c) * 74; $lnk = $ppl + 38 + [Math]::Ceiling(2 / $c) * 74
+    $mod = $lnk + 38 + 74
+    return @{ Cols = $c; ColW = $colW; CW = $cw; Sec = [ordered]@{ General = $gen; Address = $adr; People = $ppl; Links = $lnk }; Mod = $mod; MetY = $mod + 24 + 24 }
+}
+foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
+    $wide = $W -ge 1000; $layW = if ($wide) { [Math]::Max(0, $W - 432) } else { $W - 48 }
+    $g = Get-PrjGeom $layW
+    $rects = @()
+    foreach ($s in $pGrid.Keys) {
+        $rects += @{ N = "sec$s"; X = 24; Y = $g.Sec[$s]; W = $g.CW; H = 18 }
+        for ($n = 0; $n -lt $pGrid[$s].Count; $n++) {
+            $f = $pGrid[$s][$n]; $wd = if ($f -eq 'Url') { $g.CW } else { $g.ColW }
+            $x = if ($f -eq 'Url') { 24 } else { 24 + ($n % $g.Cols) * ($g.ColW + 16) }
+            $ly = $g.Sec[$s] + 30 + [Math]::Floor($n / $g.Cols) * 74
+            $rects += @{ N = "lbl$f"; X = $x; Y = $ly; W = $wd; H = 18 }; $rects += @{ N = "in$f"; X = $x; Y = $ly + 22; W = $wd; H = 36 }
+        }
+    }
+    $rects += @{ N = 'modified'; X = 24; Y = $g.Mod; W = $g.CW; H = 24 }
+    $ov = @()
+    for ($i = 0; $i -lt $rects.Count; $i++) {
+        $a = $rects[$i]
+        if ($a.X -lt 24 -or $a.X + $a.W -gt 24 + $g.CW + 0.01) { $ov += "$($a.N) outside" }
+        for ($j = $i + 1; $j -lt $rects.Count; $j++) { $b = $rects[$j]; if ($a.X -lt $b.X + $b.W -and $b.X -lt $a.X + $a.W -and $a.Y -lt $b.Y + $b.H -and $b.Y -lt $a.Y + $a.H) { $ov += "$($a.N)/$($b.N)" } }
+    }
+    Assert-True ($ov.Count -eq 0) "Projects W=$W (card $layW, $($g.Cols) col of $([Math]::Round($g.ColW,1))): no overlap and inside the padding ($($ov -join ', '))"
+    if ($g.Cols -ge 2) { Assert-True ($g.ColW -ge 180) "Projects W=$W : columns >= 180 px" }
+    Assert-True ($g.MetY -eq $g.Mod + 48 -and $g.Mod -ge $g.Sec.Links + 30 + 22 + 36 + 16) "Projects W=$W : Last changed under the URL field, content height $($g.MetY)"
+    foreach ($bodyH in 300, 700) {
+        $metH = if ($wide) { [Math]::Max($bodyH, [Math]::Max($g.MetY + 48, 568)) } else { 500 + $g.MetY + 24 }
+        $listH = if ($wide) { $metH - 48 } else { 452 }; $formH = if ($wide) { $metH - 48 } else { $g.MetY }
+        $layY = if ($wide) { 408 } else { 24 }; $layH = if ($wide) { 24 } else { 500 }
+        Assert-True ($formH -ge $g.MetY -and ($layY + $layW + 24 -le $W -or $layW -le 0) -and $listH - (24 + 36 + 12 + 24 + 12) - 12 -ge 200) "Projects W=$W body=$bodyH : form card holds its content, 24 px right margin, gallery >= 200 px"
+        if ($wide) { Assert-True ($layH -eq 24 -and 24 + 360 + 24 -eq $layY -and $listH -eq $formH) "Projects W=$W body=$bodyH : wide: cards side by side, tops equal, equal heights" }
+        else { Assert-True ($layH -ge 24 + $listH + 24 -and $layH + $formH + 24 -eq $metH) "Projects W=$W body=$bodyH : narrow: form card stacked under the list card, no overlap" }
+    }
+}
+
+# (P18) Title bar, spinner, footer, Home tile -----------------------------------------------------------------------------
+$pKids = @($pDoc['Screens'][$pScreen]['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True (($pKids[0..3] -join ',') -ceq 'lblPrjTitle,imgLogoProjects,imgPrjSpinner,conPrjMsgBar' -and $pKids[-2] -eq 'navPrj' -and $pKids[-1] -eq 'recPrjFooterLine') 'Projects: children order title, logo, spinner, message bar ... footer, footer line (as Contractors)'
+Assert-True ((PGet 'lblPrjTitle' 'Height') -eq '=60' -and (PGet 'lblPrjTitle' 'Text') -ceq ('=' + (TT 'prjTitle'))) 'Projects: title bar 60 px, title "Projects" from T'
+Assert-True ([string]$pScreenProps['Fill'] -eq '=ColorValue("#F5F6F8")') 'Projects: page background #F5F6F8'
+Assert-True ((PGet 'imgPrjSpinner' 'Image') -ceq (Get-Prop 'imgEmpSpinner' 'Image') -and (PGet 'imgPrjSpinner' 'Visible') -ceq '=Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"' -and (PGet 'imgPrjSpinner' 'X') -ceq '=lblPrjTitle.X+lblPrjTitle.Width-24-Self.Width') 'Projects: same white SVG spinner as Contractors, right in the title bar while loading/saving'
+$pFoot = [ordered]@{ btnPrjHome = '110'; btnPrjNew = '90'; btnPrjRefresh = '110'; btnPrjDiscard = '188'; btnPrjSave = '140' }
+foreach ($b in $pFoot.Keys) { $e = 'btnEmp' + $b.Substring(6); Assert-True ((PGet $b 'Width') -eq "=$($pFoot[$b])" -and (PGet $b 'Text') -match 'T\.prj' -and (PGet $b 'Fill') -ceq (Get-Prop $e 'Fill') -and (PGet $b 'X') -ceq (Get-Prop $e 'X').Replace('btnEmp', 'btnPrj')) "Projects: footer $b width $($pFoot[$b]), text from T, same role/position formula as $e" }
+Assert-True ((@($pIdx['conPrjButtonRow']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'btnPrjHome,icoPrjHome,btnPrjNew,btnPrjRefresh,btnPrjDiscard,btnPrjSave' -and (PGet 'conPrjButtonRow' 'Width') -ceq (Get-Prop 'conEmpButtonRow' 'Width').Replace('btnEmp', 'btnPrj')) 'Projects: one footer row: Home (+ icon) left; New, Refresh, Discard changes, Save right'
+$homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrHome.pa.yaml'))); $homeIdx2 = @{}; Index-Controls $homeDoc['Screens']['scrHome']['Children'] $homeIdx2
+Assert-True ($homeIdx2['btnTileProjects']['Properties']['OnSelect'] -eq '=Navigate(scrProjects)' -and !$homeIdx2['btnTileProjects']['Properties'].ContainsKey('DisplayMode') -and $homeIdx2['icoTileProjects']['Properties']['Icon'] -eq '=Icon.Folder' -and $homeIdx2['icoTileProjects']['Properties']['OnSelect'] -eq '=Select(btnTileProjects)' -and !$homeIdx2.ContainsKey('lblTileSubProjects')) 'Home: Projects tile active (Navigate(scrProjects), Icon.Folder, no "Coming soon")'
+$edState = [IO.File]::ReadAllText((Join-Path $srcDir '_EditorState.pa.yaml'))
+Assert-True ($edState -match '(?m)^\s+- scrProjects\s*$') 'Projects: scrProjects listed in _EditorState ScreensOrder'
+Write-Output 'PASS Test-AdminScreens (Projects): static structure only. Studio import, binding (Choices/[@Projects], Hyperlink URL, person DisplayName), delegation (Monitor), SharePoint case-sensitivity of ''Project Number'' = and functional tests NOT verified.'
