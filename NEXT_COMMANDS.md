@@ -11,6 +11,28 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 Done: Contractors approved (tag approved-20261029-contractors); AGENTS.md section "Admin screen pattern" written (30-10-2026; DECISIONS.md H19); Projects built (ADMIN_PLAN.md par. 4).
 
+**Long-term approach (Eddy 30-10-2026), replaces the hand-built layout fixes 1, 2, 3, 6, 7 below** (the logic fixes 4, 5, a, d, e, f below stay valid and are being built first, 30-10-2026):
+
+```bash
+claude << 'EOF'
+Long-term approach (Eddy 30-10): reusable canvas components, then Workers built on them.
+Input: Studio save in Incoming\ with scrTemplates (HtmlText classic, modern Toggle, Spinner, Badge, Text input, Dropdown) = MS-023. Merge templates only; remove scrTemplates from app afterwards (keep templates in metadata). App Id stays 88e53928.
+Step 1 — test modern controls (report only): do Toggle, Spinner, Badge accept GEA colors (#0303B8 on, #B4B4B4 off, chip #1AFF80/#E6E6E6), font Inter, size? pac pack ok? Recommend use or keep own build per control.
+Step 2 — canvas components (App components, not component library), binding for all admin screens + later others:
+- cmpField: label + required star (HtmlText) + input type (text/dropdown/readonly) + invalid red border + helper props (Value, Items, Required, Invalid, ReadOnly, OnChange). Label never overlaps, no measured widths.
+- cmpMessageBar: Type red/amber/green, bold word + text (HtmlText), close X, one line ellipsis.
+- cmpListCard: search box w/ icon, count, Show inactive toggle, rows (line1 name ellipsis, line2 grey), hover, selected bar, inactive chip.
+- cmpFooter: Home left; New, Refresh, Discard, Save right; Disabled states.
+- cmpTitleBar: logo, title, spinner.
+Step 3 — migrate Contractors + Projects to components, no logic change. Regression TP-CONTRACTORS-01 + TP-PROJECTS-01 + Test-Layout.
+Step 4 — Workers screen built on components (ADMIN_PLAN + H18 Save week fix). Separate build after step 3 approved.
+Update AGENTS Admin screen pattern: components mandatory, no hand-built field/bar/list/footer.
+Flow per step: powerfx-ui + powerfx-logic -> verifier -> reviewer -> pack + SHA. Commit + push. Report per step, wait my OK between step 3 and 4.
+EOF
+```
+
+Blocked on MS-023 (MANUAL_STEPS.md). Notes: canvas components in SourceCode layout must use a schema Microsoft documents (component definitions in Src, check pa.yaml docs and pac 2.11.2 support before building; Studio import is the first check); component input/output/behavior properties must be documented property kinds. Items 1, 2, 3, 6, 7 and the layout rules of the command below are delivered through the components in steps 2-3 (Test-Layout is built in step 3).
+
 Studio test 30-10-2026 (Eddy): TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (build adminpattern-20261030_071949). Next command (queued by Eddy 30-10-2026, NOT started; a first attempt was stopped before any change, HEAD 15f845c):
 
 ```bash

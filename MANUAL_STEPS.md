@@ -182,3 +182,11 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 ## MS-022 — Projects: Project Number unique
 
 - **Added/Done:** 27-10-2026 (reported by Eddy). Projects.'Project Number' (internal name ProjectName): Enforce unique values = Yes. Backstop for the duplicate block on the Projects screen (ADMIN_PLAN.md).
+
+## MS-023 — Control templates for canvas components (Studio save with scrTemplates)
+
+- **Added:** 30-10-2026. **Status:** Open (checked 30-10-2026: no such save in `Incoming\` yet; newest there is 27-10).
+- **Where:** Power Apps Studio, the app test file (App Id 88e53928-0a0b-49fe-ac52-05833b5ca1e0 must stay; a Studio copy with another App Id is only used as template source).
+- **Reason:** the .msapr Templates.json has no HTML text, modern Toggle, Spinner, Badge, modern Text input or modern Dropdown template; AGENTS allows a new control type only once its template is in the .msapr. Needed for the canvas components (cmpField, cmpMessageBar, cmpListCard, cmpFooter, cmpTitleBar; NEXT_COMMANDS.md section 1).
+- **Steps (Eddy):** add a screen `scrTemplates`, insert one of each: HTML text (classic), Toggle (modern), Spinner (modern), Badge (modern), Text input (modern), Dropdown (modern). File > Save as > This computer, save the .msapp into `Incoming\` (name e.g. `20261030-Site Managment_templates.msapp`).
+- **Then (Claude):** merge only the templates (Templates.json and the matching template files) into the .msapr; do not take Src, Properties.json (App Id), Resources.json (SAS), DataSources or Studio state; remove scrTemplates from the app (templates stay in the metadata); report SHA-256 of the source file; then step 1 (test the modern controls with GEA colours/Inter, report only).
