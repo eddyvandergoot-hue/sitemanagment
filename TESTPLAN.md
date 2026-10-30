@@ -23,7 +23,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-STYLE-01 | Admin screen pattern: Contractors visueel + kort regressie | OPEN (build adminpattern-20261030_071949) | - | Eddy |
 | TP-PROJECTS-01 | Projects-scherm (beheer) + Home-tegels | OPEN (build adminpattern-20261030_071949) | - | Eddy |
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
-| TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | FAIL import 132104 (PA2231) en 135641 (ErrOpeningDocument_UnknownError); diagnose D1-D3 OPEN | 30-10-2026 | Eddy |
+| TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | FAIL import 132104 (PA2231) en 135641 (ErrOpeningDocument_UnknownError); diagnose: cmpListCard (D7) gerepareerd; D8 + volledige build 150632 OPEN | 30-10-2026 | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -294,6 +294,9 @@ Diagnose (alle op commit c28bde2, App Id 88e53928, map artifacts\diag-20261030_1
 - D1 = zonder Src\Component (logicafixes + ModernDatePicker 1.0.2): SiteManagement_DIAG_D1_20261030_140429.msapp, 152250 bytes, SHA-256 6BF135D1F310DCBD2823B6C81F6864D4AF1666D6F545BDC39CB0035798216C6B.
 - D2 = D1 + alleen cmpMessageBar: SiteManagement_DIAG_D2_20261030_140429.msapp, 153812 bytes, SHA-256 3D1FB864B6B803DDEA24E499C7BD48EAB2D099E65ED5747C680CEDBC53587E22.
 - D3 = D1 + alle vijf componenten, cmpTitleBar zonder Logo-property en zonder logo-image: SiteManagement_DIAG_D3_20261030_140429.msapp, 163398 bytes, SHA-256 454107419CFDDDDC5FF80E8EE915DDF47C783C7BF74ADCF1FB68111CDD541991.
+Diagnose 30-10-2026 (Eddy): D1, D2 open; D3 faalt. Daarna D4 (+cmpTitleBar zonder Logo), D5 (+cmpFooter), D6 (+cmpField) openen; D7 (+cmpListCard) faalt -> oorzaak cmpListCard (event-parameter OnSelectRow(RowID), Filter-truc als Items-default, Blank() als Number-default, OnReset). Fix in commit 514aba3: geen parameters (Output SelectedRowID), gewone getypte Items-default, SelectedID 0, geen OnReset.
+- D8 = D2 + gerepareerde cmpListCard: artifacts\diag-20261030_150401\SiteManagement_DIAG_D8_20261030_150401.msapp, 157542 bytes, SHA-256 8AF079C2746FBB4B3E4B5C927DFEAA00C41966208B680328BFB97143CBEC6C5F.
+- Volledige build (alle 5 componenten, Logo terug in cmpTitleBar): artifacts\components-20261030_150632\SiteManagement_Components_20261030_150632.msapp, 163658 bytes, SHA-256 F6907AFAB106F5E2683CA58E223E78AC8200B4DC3F3B5B047F569045901AEE2C. Opent D8 maar de volledige build niet: oorzaak = Logo-input (Image, Default =SampleImage).
 
 Doel: bevestigen dat Studio de handgeschreven componenten accepteert vóór de migratie (stap 3), en de logicafixes op Contractors/Projects. Alleen TEST-records. De layout van Contractors/Projects is nog die van adminpattern (layoutfixes komen in stap 3).
 
