@@ -5,9 +5,30 @@ function Flat-Children($entries){foreach($e in $entries){$e;Flat-Children $e[@($
 $svgText=[IO.File]::ReadAllText((Join-Path $projectRoot 'Assets\GEA_logo_white.svg'))
 if($svgText -notmatch 'viewBox="0 0 ([0-9.]+) ([0-9.]+)"'){throw 'SVG viewBox not found'}
 $svgAspect=[double]::Parse($Matches[1],[Globalization.CultureInfo]::InvariantCulture)/[double]::Parse($Matches[2],[Globalization.CultureInfo]::InvariantCulture)
-$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'),@('scrContractors','lblEmpTitle','imgLogoContractors'),@('scrProjects','lblPrjTitle','imgLogoProjects'))
+$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'),@('scrContractors','cmpEmpTitle',''),@('scrProjects','lblPrjTitle','imgLogoProjects'))
 foreach($c in $cfg){
  $screen,$title,$logo=$c
+ if($screen -eq 'scrContractors'){
+  # Step 3a (30-10-2026): the title bar is a cmpTitleBar instance; the logo is the Image@2.2.3 inside the component, fed by the Logo input.
+  $ci=$indexes[$screen][$title]; $ip=$ci['Properties']
+  if($ci['Control'] -ne 'CanvasComponent' -or $ci['ComponentName'] -ne 'cmpTitleBar'){throw "$screen $title must be a cmpTitleBar instance"}
+  if($ip['Logo'] -ne '=GEA_logo_white'){throw "$screen cmpTitleBar.Logo must be the media resource GEA_logo_white unchanged"}
+  if($ip['Height'] -ne '=60' -or $ip['Y'] -ne '=0' -or $ip['X'] -ne '=0'){throw "$screen title instance geometry"}
+  $cd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Component/cmpTitleBar.pa.yaml')))['ComponentDefinitions']['cmpTitleBar']
+  $cidx=@{}; foreach($e in $cd['Children']){$cidx[@($e.Keys)[0]]=$e[@($e.Keys)[0]]}
+  $cimgs=@($cidx.Keys | Where-Object {$cidx[$_]['Control'] -like 'Image@*'})
+  if($cimgs.Count -ne 1 -or $cimgs[0] -ne 'imgCmpTitleLogo'){throw 'cmpTitleBar: expected exactly one Image (imgCmpTitleLogo)'}
+  $cp=$cidx['imgCmpTitleLogo']['Properties']; $ct=$cidx['lblCmpTitleText']['Properties']
+  if($cidx['imgCmpTitleLogo']['Control'] -ne 'Image@2.2.3' -or $cp['Image'] -ne '=cmpTitleBar.Logo' -or $cp['ImagePosition'] -ne '=ImagePosition.Fit' -or $cp['Height'] -ne '=30' -or $cp['Width'] -ne '=99'){throw 'cmpTitleBar logo control/size/fit'}
+  if([Math]::Abs(99/30-$svgAspect) -gt 0.02){throw 'cmpTitleBar logo aspect differs from the SVG viewBox'}
+  foreach($bad in 'Fill','OnSelect'){if($cp.ContainsKey($bad)){throw "cmpTitleBar logo has $bad"}}
+  if($cp['X'] -ne '=lblCmpTitleText.X+15' -or $cp['Y'] -ne '=lblCmpTitleText.Y+(lblCmpTitleText.Height-Self.Height)/2'){throw 'cmpTitleBar logo X/Y formula'}
+  if($ct['PaddingLeft'] -ne '=129' -or $ct['Fill'] -ne '=ColorValue("#0303B8")' -or $cd['Properties']['Height'] -ne '=60'){throw 'cmpTitleBar title PaddingLeft/Fill/Height'}
+  $corder=@($cd['Children'] | ForEach-Object {@($_.Keys)[0]}); if($corder.IndexOf('imgCmpTitleLogo') -ne $corder.IndexOf('lblCmpTitleText')+1){throw 'cmpTitleBar logo must directly follow the title'}
+  Write-Output "PASS $screen : $title = cmpTitleBar instance, Logo = GEA_logo_white unchanged; component logo Image@2.2.3 99x30 Fit, X=title+15, centred in the 60 px bar, title PaddingLeft 129, directly after title; no other Image on the screen."
+  $oimgs=@($indexes[$screen].Keys | Where-Object {$indexes[$screen][$_]['Control'] -like 'Image@*'}); if($oimgs.Count -ne 0){throw "$screen : hand-built Image left ($($oimgs -join ','))"}
+  continue
+ }
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  $order=@(Flat-Children $doc['Screens'][$screen]['Children'] | ForEach-Object {@($_.Keys)[0]})
  $imgs=@($indexes[$screen].Keys | Where-Object {$indexes[$screen][$_]['Control'] -like 'Image@*' -and !(($screen -eq 'scrContractors' -and $_ -eq 'imgEmpSpinner') -or ($screen -eq 'scrProjects' -and $_ -eq 'imgPrjSpinner'))})  # imgEmpSpinner/imgPrjSpinner on the admin screens only: explicit exception (title-bar spinner, checked in Test-AdminScreens)

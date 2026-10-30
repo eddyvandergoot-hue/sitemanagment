@@ -60,6 +60,31 @@ foreach ($n in $idx.Keys) { foreach ($p in $idx[$n]['Properties'].Keys) { $all["
 foreach ($p in $screenProps.Keys) { $all["$screenName.$p"] = [string]$screenProps[$p] }
 $screenText = ($all.Values) -join "`n"
 $srcAll = (Get-ChildItem $srcDir -Filter *.pa.yaml | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join "`n"
+# --- Step 3a (30-10-2026): footer, list card, title bar, message bar and form fields are component instances. -----------------------------
+# (1a) Guard parity per instance, checked on the real properties: <Xxx>Enabled is textually the first If-condition of On<Xxx>.
+# (1b) Compatibility layer: the behavioural checks below keep their historical control names (btnEmpSave.OnSelect, btnEmpSave.DisplayMode,
+#      galEmpList.OnSelect/DisplayMode, ...). They now read the same formula text from the instance properties, so every check still tests
+#      the formula that the screen really contains (DisplayMode is synthesized as If(<Enabled>,Edit,Disabled) from the Boolean input).
+$cmpFooterMap = [ordered]@{ btnEmpHome = 'Home'; btnEmpNew = 'New'; btnEmpRefresh = 'Refresh'; btnEmpDiscard = 'Discard'; btnEmpSave = 'Save' }
+$inst = $doc['Screens'][$screenName]['Children'] | Where-Object { @($_.Keys)[0] -eq 'cmpEmpFooter' }
+Assert-True ($null -ne $inst -and $idx['cmpEmpFooter']['Control'] -eq 'CanvasComponent' -and $idx['cmpEmpFooter']['ComponentName'] -eq 'cmpFooter') 'Footer = cmpFooter instance (cmpEmpFooter)'
+foreach ($k in $cmpFooterMap.Keys) {
+    $v = $cmpFooterMap[$k]; $en = ([string]$all["cmpEmpFooter.${v}Enabled"]).Trim(); $os = ([string]$all["cmpEmpFooter.On$v"]).Trim()
+    Assert-True ($en.StartsWith('=') -and $en.Length -gt 3) "cmpEmpFooter.${v}Enabled is a Boolean expression"
+    $g = $en.Substring(1)
+    Assert-True ($os.StartsWith('=If(' + $g + ',')) "cmpEmpFooter.On$v starts with the same guard text as ${v}Enabled (fail-closed: guard in the input and as first condition in the handler)"
+    $all["$k.OnSelect"] = $all["cmpEmpFooter.On$v"]; $all["$k.DisplayMode"] = '=If(' + $g + ',DisplayMode.Edit,DisplayMode.Disabled)'
+    $all.Remove("cmpEmpFooter.On$v"); $all.Remove("cmpEmpFooter.${v}Enabled")
+}
+$lcEn = ([string]$all['cmpEmpList.Enabled']).Trim(); $lcOs = ([string]$all['cmpEmpList.OnSelectRow']).Trim(); $lcTg = ([string]$all['cmpEmpList.OnToggleShowInactive']).Trim()
+Assert-True ($idx['cmpEmpList']['Control'] -eq 'CanvasComponent' -and $idx['cmpEmpList']['ComponentName'] -eq 'cmpListCard') 'List card = cmpListCard instance (cmpEmpList)'
+Assert-True ($lcOs.StartsWith('=If(' + $lcEn.Substring(1) + ',') -and $lcTg.StartsWith('=If(' + $lcEn.Substring(1) + ',')) 'cmpEmpList: Enabled is the first If-condition of OnSelectRow and of OnToggleShowInactive (same guard text)'
+$all['galEmpList.OnSelect'] = $all['cmpEmpList.OnSelectRow']; $all['galEmpList.DisplayMode'] = '=If(' + $lcEn.Substring(1) + ',DisplayMode.Edit,DisplayMode.Disabled)'
+$all['galEmpList.Items'] = $all['cmpEmpList.Items']; $all['btnEmpShowInactiveSwitch.OnSelect'] = $all['cmpEmpList.OnToggleShowInactive']
+$all['icoEmpMsgClose.OnSelect'] = $all['cmpEmpMsgBar.OnClose']; $all.Remove('cmpEmpMsgBar.OnClose')
+$all.Remove('cmpEmpList.OnSelectRow'); $all.Remove('cmpEmpList.Enabled'); $all.Remove('cmpEmpList.Items'); $all.Remove('cmpEmpList.OnToggleShowInactive')
+$screenText = ($all.Values) -join "`n"
+function Get-Prop([string]$ctl, [string]$prop) { $v = $all["$ctl.$prop"]; if ($null -eq $v) { throw "FAIL missing $ctl.$prop" }; return ([string]$v).Trim() }
 
 # (1) Identical fail-closed guard in DisplayMode and as first OnSelect condition --------------------------
 $guards = @{}
@@ -75,7 +100,7 @@ $dirtyStart = $guards.btnEmpSave.IndexOf('(Coalesce(varEmpMode,"") in ["New","Ed
 Assert-True ($dirtyStart -ge 0) 'Save guard contains the dirty expression'
 $dirty = Get-Balanced $guards.btnEmpSave $dirtyStart
 foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
-    Assert-True ($dirty.Contains("Trim(txtEmp$f.Text & """")<>Trim(varEmpEdit.$f & """")")) "Dirty compares txtEmp$f.Text directly with varEmpEdit, both sides Trim(x & """") (no OnChange dependency, blank = empty)"
+    Assert-True ($dirty.Contains("Trim(cmpEmp$f.CurrentValue & """")<>Trim(varEmpEdit.$f & """")")) "Dirty compares cmpEmp$f.CurrentValue directly with varEmpEdit, both sides Trim(x & """") (no OnChange dependency, blank = empty)"
 }
 Assert-True ($dirty.Contains('Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true)')) 'Dirty compares the Active switch draft varEmpActiveDraft with varEmpEdit.Active, both sides Coalesce(x,true) (blank Active = active)'
 Assert-True ($guards.btnEmpSave.EndsWith('&& ' + $dirty)) 'Save requires dirty'
@@ -92,8 +117,8 @@ Assert-True ((Get-Prop 'btnEmpHome' 'OnSelect') -match 'Navigate\(scrHome\)' -an
 # Evaluate the guards with fixtures (interpreter; controls supplied as records)
 $fix = 'varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpMode:"Edit",varEmpSelectedID:5,' +
 'varEmpEdit:{ID:5,Name:"A",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true},' +
-'txtEmpName:{Text:"B"},txtEmpAddress:{Text:""},txtEmpPostalcode:{Text:""},txtEmpCity:{Text:""},txtEmpCountry:{Text:""},txtEmpContactName:{Text:""},txtEmpContactEmail:{Text:""},txtEmpContactPhone:{Text:""},varEmpActiveDraft:true'
-$clean = $fix.Replace('txtEmpName:{Text:"B"}', 'txtEmpName:{Text:"A"}')
+'cmpEmpName:{CurrentValue:"B"},cmpEmpAddress:{CurrentValue:""},cmpEmpPostalcode:{CurrentValue:""},cmpEmpCity:{CurrentValue:""},cmpEmpCountry:{CurrentValue:""},cmpEmpContactName:{CurrentValue:""},cmpEmpContactEmail:{CurrentValue:""},cmpEmpContactPhone:{CurrentValue:""},varEmpActiveDraft:true'
+$clean = $fix.Replace('cmpEmpName:{CurrentValue:"B"}', 'cmpEmpName:{CurrentValue:"A"}')
 function Get-GuardFx($name, $fixture) { return 'With({' + $fixture + '},' + $guards[$name] + ')' }
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix) $true 'Save allowed: Loaded, Edit with ID, dirty'
 Assert-Eval (Get-GuardFx 'btnEmpSave' $clean) $false 'Save blocked: not dirty'
@@ -108,7 +133,7 @@ Assert-Eval (Get-GuardFx 'btnEmpSave' $fix.Replace('varEmpSelectedID:5', 'varEmp
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix.Replace('varEmpMode:"Edit"', 'varEmpMode:""')) $false 'Save blocked: no item in the form'
 $newFix = $fix.Replace('varEmpMode:"Edit"', 'varEmpMode:"New"').Replace('varEmpSelectedID:5', 'varEmpSelectedID:Blank()').Replace('varEmpEdit:{ID:5,Name:"A"', 'varEmpEdit:{ID:Blank(),Name:""')
 Assert-Eval (Get-GuardFx 'btnEmpSave' $newFix) $true 'Save allowed: New with a typed name'
-Assert-Eval (Get-GuardFx 'btnEmpSave' $newFix.Replace('txtEmpName:{Text:"B"}', 'txtEmpName:{Text:""}')) $false 'Save blocked: New without input'
+Assert-Eval (Get-GuardFx 'btnEmpSave' $newFix.Replace('cmpEmpName:{CurrentValue:"B"}', 'cmpEmpName:{CurrentValue:""}')) $false 'Save blocked: New without input'
 Assert-Eval (Get-GuardFx 'btnEmpHome' $clean) $true 'Home allowed: clean'
 Assert-Eval (Get-GuardFx 'btnEmpHome' $fix) $false 'Home blocked: dirty'
 Assert-Eval (Get-GuardFx 'btnEmpHome' $clean.Replace('varEmpSaving:false', 'varEmpSaving:true')) $false 'Home blocked: saving'
@@ -133,10 +158,27 @@ Assert-Eval (Get-GuardFx 'btnEmpDiscard' $clean) $false 'Discard disabled: clean
 Assert-Eval (Get-GuardFx 'btnEmpDiscard' $clean.Replace('varEmpSaveFailed:false', 'varEmpSaveFailed:true')) $true 'Discard allowed after a failed save (reloads)'
 Assert-Eval (Get-GuardFx 'btnEmpDiscard' $fix.Replace('varEmpSaving:false', 'varEmpSaving:true')) $false 'Discard blocked: saving'
 
-# Form is bound to varEmpEdit, never to the gallery selection
-$inputMap = [ordered]@{ txtEmpName = 'Name'; txtEmpAddress = 'Address'; txtEmpPostalcode = 'Postalcode'; txtEmpCity = 'City'; txtEmpCountry = 'Country'; txtEmpContactName = 'ContactName'; txtEmpContactEmail = 'ContactEmail'; txtEmpContactPhone = 'ContactPhone' }
-foreach ($k in $inputMap.Keys) { Assert-True ((Get-Prop $k 'Default') -ceq "=varEmpEdit.$($inputMap[$k])") "$k.Default = varEmpEdit.$($inputMap[$k])" }
-# A1 (30-10-2026): Classic/CheckBox chkEmpActive/chkEmpShowInactive replaced by emulated switches with draft variables.
+function TT0([string]$k) { return "If(LangNl && !IsBlank(T.$k.nl),T.$k.nl,T.$k.en)" }
+# Form is bound to varEmpEdit (cmpField.Value), never to the list selection. Step 3a: cmpField instances replace txtEmp* + labels + star.
+$inputMap = [ordered]@{ cmpEmpName = 'Name'; cmpEmpAddress = 'Address'; cmpEmpPostalcode = 'Postalcode'; cmpEmpCity = 'City'; cmpEmpCountry = 'Country'; cmpEmpContactName = 'ContactName'; cmpEmpContactEmail = 'ContactEmail'; cmpEmpContactPhone = 'ContactPhone' }
+$fieldEnabled = '=varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"]'
+$fieldLabels = @{ cmpEmpName = 'empFieldName'; cmpEmpCode = 'empFieldCode'; cmpEmpAddress = 'empFieldAddress'; cmpEmpPostalcode = 'empFieldPostalcode'; cmpEmpCity = 'empFieldCity'; cmpEmpCountry = 'empFieldCountry'; cmpEmpContactName = 'empFieldContactName'; cmpEmpContactEmail = 'empFieldContactEmail'; cmpEmpContactPhone = 'empFieldContactPhone' }
+foreach ($k in $inputMap.Keys) {
+    Assert-True ($idx[$k]['Control'] -eq 'CanvasComponent' -and $idx[$k]['ComponentName'] -eq 'cmpField') "${k} is a cmpField instance"
+    $ip = $idx[$k]['Properties']
+    Assert-True (([string]$ip['Value']).Trim() -ceq "=varEmpEdit.$($inputMap[$k])") "${k}.Value = varEmpEdit.$($inputMap[$k])"
+    Assert-True (([string]$ip['Enabled']).Trim() -ceq $fieldEnabled) "${k}.Enabled = the edit guard (Loaded, no load error, not busy/saving/failed, Mode New or Edit), as Boolean"
+    Assert-True ($ip['Invalid'] -ceq ('=CountIf(colEmpSaveErrors,Field="' + $inputMap[$k] + '")>0')) "${k}.Invalid = CountIf(colEmpSaveErrors,Field=""$($inputMap[$k])"")>0 (red border rule)"
+    Assert-True ($ip['InputType'] -ceq '="text"' -and $ip['MaxLength'] -ceq '=255' -and $ip['HintText'] -ceq '=""' -and -not $ip.ContainsKey('OnChange')) "${k}: InputType text, MaxLength 255, HintText, no OnChange logic"
+    Assert-True ($ip['Label'] -ceq ('=' + (TT0 $fieldLabels[$k]))) "${k}.Label from T.$($fieldLabels[$k])"
+    Assert-True (($ip.ContainsKey('Required') -and $ip['Required'] -eq '=true') -eq ($k -eq 'cmpEmpName')) "${k}.Required only on Contractor Name"
+    Assert-True ($ip['Height'] -ceq '=58' -and $ip['Width'] -ceq '=lblEmpGrid.Width') "${k}: height 58 (label 18 + 4 + field 36), grid cell width"
+}
+$cp = $idx['cmpEmpCode']['Properties']
+Assert-True ($idx['cmpEmpCode']['ComponentName'] -eq 'cmpField' -and $cp['InputType'] -ceq '="readonly"' -and $cp['Enabled'] -ceq '=false' -and -not $cp.ContainsKey('Required') -and -not $cp.ContainsKey('Invalid')) 'cmpEmpCode: read-only, never enabled, no star, never written (not in the dirty check or Save record)'
+Assert-True ($cp['Label'] -ceq ('=' + (TT0 $fieldLabels['cmpEmpCode'])) -and ([string]$cp['Value']).Contains('varEmpEdit.Code') -and ([string]$cp['Value']).Contains((TT0 'empCodeAuto'))) 'cmpEmpCode.Value = saved code, or the automatic text in New/Edit without code'
+Assert-True ($srcAll -notmatch '\btxtEmp\w*\b|\bgalEmpList\b|\blblEmp\w*Label\b|\blblEmpNameRequired\b|\bconEmpMsgBar\b|\bnavEmp\b|\bconEmpListCard\b|\bimgEmpSpinner\b|\bimgLogoContractors\b|\blblEmpTitle\b') 'No replaced hand-built control (txtEmp*, galEmpList, field labels/star, conEmpMsgBar, navEmp, spinner, logo) is left in Src'
+foreach ($n in @('cmpEmpTitle', 'cmpEmpMsgBar', 'cmpEmpList', 'cmpEmpFooter') + @($inputMap.Keys) + 'cmpEmpCode') { Assert-True ($idx[$n]['Control'] -eq 'CanvasComponent') "${n} is a component instance" }
 Assert-True ($srcAll -notmatch '\bchkEmpActive\b|\bchkEmpShowInactive\b') 'chkEmpActive and chkEmpShowInactive no longer exist in Src'
 Assert-True (@($idx.Keys | Where-Object { $idx[$_]['Control'] -like 'Classic/CheckBox@*' }).Count -eq 0) 'No Classic/CheckBox left on scrContractors'
 $draftSet = 'Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))'
@@ -151,8 +193,8 @@ $draftCmp = 'Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true)'
 $draftOther = @($draftReaders | Where-Object { $_ -notmatch '^(btnEmpActiveSwitch|btnEmpActiveKnob|lblEmpActiveState|btnEmpFormChip)\.' -and ([regex]::Matches($all[$_], '\bvarEmpActiveDraft\b')).Count -ne ([regex]::Matches($all[$_], [regex]::Escape($draftCmp))).Count })
 Assert-True ($draftOther.Count -eq 0) "Outside the switch controls varEmpActiveDraft is only read in the dirty comparison ($($draftOther -join ', '))"
 foreach ($k in @('btnEmpSave.DisplayMode', 'btnEmpHome.DisplayMode', 'btnEmpNew.DisplayMode', 'btnEmpRefresh.DisplayMode', 'btnEmpDiscard.DisplayMode', 'galEmpList.DisplayMode')) { Assert-True ($all[$k].Contains($draftCmp)) "$k dirty check reads the switch draft ($draftCmp)" }
-$selUses = @($all.Keys | Where-Object { $all[$_] -match 'galEmpList\.Selected' })
-Assert-True ($selUses.Count -eq 1 -and $selUses[0] -eq 'galEmpList.OnSelect') 'galEmpList.Selected only read in the guarded gallery OnSelect'
+$selUses = @($all.Keys | Where-Object { $all[$_] -match 'cmpEmpList\.SelectedRowID' })
+Assert-True ($selUses.Count -eq 1 -and $selUses[0] -eq 'galEmpList.OnSelect') 'cmpEmpList.SelectedRowID only read in the guarded OnSelectRow handler'
 
 # (2) Loader: staging, reuse, dirty block, no mutations ---------------------------------------------------
 $load = Get-Prop 'btnEmpLoad' 'OnSelect'; $loadN = Norm $load
@@ -239,7 +281,7 @@ $allowedKeys = @('Title', 'Address', 'Postalcode', 'City', 'Country', "'Contact 
 Assert-True (@($keys | Where-Object { $_ -cnotin $allowedKeys }).Count -eq 0 -and $keys.Count -eq $allowedKeys.Count) "Patch writes exactly the app fields: $($keys -join ', ')"
 Assert-True ($patch -notmatch "Employer Code|EmployerCode1|'Employer Code'") 'Patch never writes Contractor Code (Employer Code / EmployerCode1)'
 foreach ($f in @('Name', 'Address', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
-    Assert-True ($save -match "$f\s*:\s*Trim\(txtEmp$f\.Text & """"\)") "Save record trims $f (Trim(x & """"): blank input = empty text)"
+    Assert-True ($save -match "$f\s*:\s*Trim\(cmpEmp$f\.CurrentValue & """"\)") "Save record trims $f (Trim(x & """"): blank input = empty text)"
     Assert-True ($saveN.Contains("If(Len(varEmpSaveRec.$f)>255,Collect(colEmpSaveErrors,")) "Length check <= 255 for $f"
 }
 Assert-True ($saveN.Contains('If(IsBlank(varEmpSaveRec.Name),Collect(colEmpSaveErrors,{Field:"Name"')) 'Name required (after Trim)'
@@ -278,7 +320,7 @@ Assert-True (([regex]::Matches($saveN, 'Set\(varEmpSaveFailed,true\)')).Count -e
 Assert-True ($saveN.Contains('Set(varEmpSaveWarnWorkers,If(varEmpSaveMode="Edit"&&Coalesce(varEmpEdit.Active,true)&&!varEmpSaveRec.Active,CountIf(colEmpWorkers,EmployerID=varEmpSaveID')) 'Deactivation with active workers is counted (warning)'
 Assert-True ($screenText -notmatch 'Collect\(colEmpSaveErrors,\{[^}]*empWarnActiveWorkers') 'Active-worker warning never blocks the save'
 Assert-True ($load.Contains('ClearCollect(colPendingEmpWorkers,ForAll(Workers As wrk,{ID:wrk.ID,EmployerID:wrk.Employer.Id,WorkerActive:wrk.Active}))')) 'Workers read for the warning: explicit projection (lookup ID filtered locally)'
-$reset = 'Reset(txtEmpName); Reset(txtEmpAddress); Reset(txtEmpPostalcode); Reset(txtEmpCity); Reset(txtEmpCountry); Reset(txtEmpContactName); Reset(txtEmpContactEmail); Reset(txtEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))'
+$reset = 'Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))'
 foreach ($k in @('btnEmpLoad.OnSelect', 'btnEmpSave.OnSelect', 'btnEmpNew.OnSelect', 'btnEmpDiscard.OnSelect', 'galEmpList.OnSelect')) { Assert-True ($all[$k].Contains($reset)) "$k resets all form inputs" }
 $disc = Get-Prop 'btnEmpDiscard' 'OnSelect'
 Assert-True ($disc -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf)\(' -and $disc.Contains('If(Coalesce(varEmpSaveFailed,false),') -and $disc.Contains('Set(varEmpForceRefresh,true); Select(btnEmpLoad)')) 'Discard is local; after a failed save it reloads through the staged loader'
@@ -299,7 +341,7 @@ foreach ($k in $all.Keys) {
         $traces++
         $t = Get-Balanced $fx ($m.Index + 5)
         Assert-True ($t.StartsWith('("DIAG|Contractors|')) "$k : trace name DIAG|Contractors|..."
-        Assert-True ($t -notmatch 'FirstError|txtEmp|varEmpSaveRec|varEmpDupName|varEmpDupKey|varEmpEdit\.|\.Name\b|Title|Message') "$k : trace has no names, values or FirstError.Message"
+        Assert-True ($t -notmatch 'FirstError|cmpEmp|varEmpSaveRec|varEmpDupName|varEmpDupKey|varEmpEdit\.|\.Name\b|Title|Message') "$k : trace has no names, values or FirstError.Message"
     }
 }
 Assert-True ($traces -ge 7) "Traces checked: $traces"
@@ -352,7 +394,7 @@ Assert-Eval 'Trim(If(false,"x") & "")=""' $true 'Fix: Trim(<blank text> & "") = 
 Assert-Eval 'Coalesce(If(false,true),true)=true' $true 'Fix: Coalesce(<blank boolean>,true) = true (blank Active = active)'
 Assert-Eval '"Test"="test"' $false 'Text comparison is case-sensitive (Name verify is exact after Trim)'
 # Static: no Coalesce(<Employers field / input / snapshot>,"") left in projections or compare expressions
-$badCoalesce = @([regex]::Matches($screenText, 'Coalesce\(\s*(?:emp|p|v|varEmpEdit|varEmpSaveRec|txtEmp\w+)\.[^,()]+,\s*""\s*\)') | ForEach-Object { $_.Value })
+$badCoalesce = @([regex]::Matches($screenText, 'Coalesce\(\s*(?:emp|p|v|varEmpEdit|varEmpSaveRec|cmpEmp\w+)\.[^,()]+,\s*""\s*\)') | ForEach-Object { $_.Value })
 Assert-True ($badCoalesce.Count -eq 0) "No Coalesce(<field>,`"`") on Employers projections, inputs or compare expressions $($badCoalesce -join '; ')"
 Assert-True ($proj -notmatch 'Coalesce\([^)]*,""\)' -and $proj.Contains('Name:Trim(emp.Title & "")') -and $proj.Contains('Active:Coalesce(emp.Active,true)')) 'Projection: text = Trim(x & ""), Active = Coalesce(x,true)'
 foreach ($c in @("'Employer Code'", 'Address', 'Postalcode', 'City', 'Country', "'Contact Name'", "'Contact Email'", "'Contact Phone'")) { Assert-True ($proj.Contains("Trim(emp.$c & `"`")")) "Projection normalizes $c with Trim(x & `"`")" }
@@ -377,7 +419,7 @@ function Raw([string]$name, [string]$city, [string]$code, [string]$active, [stri
     return "{ID:7,Title:$name,'Employer Code':$code,Address:$empty,Postalcode:$empty,City:$city,Country:$empty,'Contact Name':$empty,'Contact Email':$empty,'Contact Phone':$empty,Active:$active,Modified:DateTime(2026,10,28,9,0,0)}"
 }
 function Inputs([string]$name, [string]$city, [string]$empty, [string]$active) {
-    return "txtEmpName:{Text:$name},txtEmpAddress:{Text:$empty},txtEmpPostalcode:{Text:$empty},txtEmpCity:{Text:$city},txtEmpCountry:{Text:$empty},txtEmpContactName:{Text:$empty},txtEmpContactEmail:{Text:$empty},txtEmpContactPhone:{Text:$empty},varEmpActiveDraft:$active"
+    return "cmpEmpName:{CurrentValue:$name},cmpEmpAddress:{CurrentValue:$empty},cmpEmpPostalcode:{CurrentValue:$empty},cmpEmpCity:{CurrentValue:$city},cmpEmpCountry:{CurrentValue:$empty},cmpEmpContactName:{CurrentValue:$empty},cmpEmpContactEmail:{CurrentValue:$empty},cmpEmpContactPhone:{CurrentValue:$empty},varEmpActiveDraft:$active"
 }
 function Proj([string]$raw) { return "With({emp:$raw},$proj)" }
 function SaveRec([string]$inputs) { return "With({$inputs},$saveRecFx)" }
@@ -556,7 +598,7 @@ Assert-True ($formulas -notmatch '\bempMsgSaved:' -and $formulas -notmatch 'en: 
 $conflictMsg = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'
 Assert-True ($formulas.Contains("empErrConflict: {en: ""$conflictMsg"", nl: """"}")) 'T.empErrConflict exact text'
 # Keys delivered by powerfx-logic for the form header that powerfx-ui builds next (30-10-2026); remove a key from this list once the header uses it.
-$pendingUiT = @('empNoSelection', 'prjNoSelection')
+$pendingUiT = @('prjNoSelection')
 foreach ($k in $pendingUiT) { Assert-True ($tKeys -ccontains $k) "T.$k exists (header 'no record selected')"; if ($used -cnotcontains $k) { Write-Output "WARN T.$k not yet used in Src (pending powerfx-ui header)" } }
 $unusedT = @($tKeys | Where-Object { $_ -cnotin $used -and $_ -cnotin $pendingUiT })
 Assert-True ($unusedT.Count -eq 0) "No unused T keys ($($unusedT -join ', '))"
@@ -597,32 +639,33 @@ $newMsg = @($msgs | Where-Object Key -eq 'btnEmpNew.OnSelect')
 Assert-True ($newMsg.Count -eq 1 -and $newMsg[0].Kind -eq '"Error"' -and $newMsg[0].Body -ceq (TT 'empMsgActionBlocked')) 'btnEmpNew: no message in the success path (only the blocked error)'
 Assert-True ($srcAll -notmatch '\bempMsgNew\b') 'T.empMsgNew removed (no instruction message)'
 
-# Message bar (conEmpMsgBar) directly under the title bar: full title width, 40 px, hidden (height 0) without a message
-Assert-True ($idx['conEmpMsgBar']['Control'] -eq 'GroupContainer@1.5.0' -and $idx['conEmpMsgBar']['Variant'] -eq 'ManualLayout') 'conEmpMsgBar is a manual GroupContainer@1.5.0'
-$barExp = [ordered]@{ X = '=lblEmpTitle.X'; Y = '=lblEmpTitle.Y+lblEmpTitle.Height'; Width = '=lblEmpTitle.Width'; Height = '=If(!IsBlank(varAdmMsgKind),40,0)'; Visible = '=!IsBlank(varAdmMsgKind)'
-    Fill = '=Switch(varAdmMsgKind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)' }
-foreach ($k in $barExp.Keys) { Assert-True ((Get-Prop 'conEmpMsgBar' $k) -ceq $barExp[$k]) "conEmpMsgBar.$k = $($barExp[$k])" }
+# Message bar (step 3a): cmpEmpMsgBar = cmpMessageBar instance directly under the title bar at full title width; Height = BarHeight output (40 with a message, else 0).
+$mbi = $idx['cmpEmpMsgBar']
+Assert-True ($mbi['Control'] -eq 'CanvasComponent' -and $mbi['ComponentName'] -eq 'cmpMessageBar') 'cmpEmpMsgBar is a cmpMessageBar instance'
+$cmpBarExp = [ordered]@{ X = '=cmpEmpTitle.X'; Y = '=cmpEmpTitle.Y+cmpEmpTitle.Height'; Width = '=cmpEmpTitle.Width'; Height = '=cmpEmpMsgBar.BarHeight'; Kind = '=varAdmMsgKind'; Head = '=varAdmMsgHead'; Body = '=varAdmMsgBody'; CloseLabel = ('=' + (TT 'admMsgClose')) }
+foreach ($k in $cmpBarExp.Keys) { Assert-True ([string]$mbi['Properties'][$k] -ceq $cmpBarExp[$k]) "cmpEmpMsgBar.$k = $($cmpBarExp[$k])" }
 $kids3 = @($doc['Screens'][$screenName]['Children'] | ForEach-Object { @($_.Keys)[0] })
-Assert-True ($kids3[3] -eq 'conEmpMsgBar' -and (@($idx['conEmpMsgBar']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'lblEmpMsgHead,lblEmpMsgBody,icoEmpMsgClose') 'Children: conEmpMsgBar after title, logo and spinner; bar holds head, body and close icon'
-Assert-Eval 'IsBlank("")' $true 'Interpreter: IsBlank("") = true (cleared message hides the bar)'
-$barFillFx = (Get-Prop 'conEmpMsgBar' 'Fill').TrimStart('=') -replace 'ColorValue\("(#[0-9A-F]{6})"\)', '"$1"' -replace 'Color\.Transparent', '"none"'
-$textColFx = '=If(varAdmMsgKind="Error",Color.White,ColorValue("#000F41"))'
-foreach ($case in @(@('"Error"', '#DB1E28', 'white', $true), @('"Warning"', '#F29400', '#000F41', $true), @('"Success"', '#1AFF80', '#000F41', $true), @('""', 'none', '#000F41', $false), @('If(false,"x")', 'none', '#000F41', $false))) {
-    Assert-Eval "With({varAdmMsgKind:$($case[0])},$barFillFx)" $case[1] "Bar fill for kind $($case[0]) = $($case[1])"
-    Assert-Eval "With({varAdmMsgKind:$($case[0])},$((Get-Prop 'conEmpMsgBar' 'Visible').TrimStart('=')))" $case[3] "Bar visible for kind $($case[0]) = $($case[3])"
-    Assert-Eval "With({varAdmMsgKind:$($case[0])},$((Get-Prop 'conEmpMsgBar' 'Height').TrimStart('=')))" $(if ($case[3]) { 40 } else { 0 }) "Bar height for kind $($case[0])"
-    Assert-Eval "With({varAdmMsgKind:$($case[0])},$($textColFx.TrimStart('=').Replace('Color.White', '"white"').Replace('ColorValue("#000F41")', '"#000F41"')))" $case[2] "Bar text colour for kind $($case[0]) = $($case[2])"
+Assert-True ($kids3[0] -eq 'cmpEmpTitle' -and $kids3[1] -eq 'cmpEmpMsgBar') 'Children: cmpEmpTitle, then cmpEmpMsgBar directly under it'
+$mbDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'Component/cmpMessageBar.pa.yaml')))['ComponentDefinitions']['cmpMessageBar']
+$mbIdx = @{}; Index-Controls $mbDef['Children'] $mbIdx
+$barHeightFx = ([string]$mbDef['Properties']['BarHeight']).TrimStart('=')
+$cmpBarFillFx = ([string]$mbIdx['recCmpMsgFill']['Properties']['Fill']).TrimStart('=') -replace 'ColorValue\("(#[0-9A-F]{6})"\)', '"$1"' -replace 'Color\.Transparent', '"none"' -replace 'cmpMessageBar\.Kind', 'varAdmMsgKind'
+$textColFx = '=If(varAdmMsgKind="Error",Color.White,ColorValue("#000F41"))'  # shared with the Projects section (hand-built message bar)
+$cmpTextColFx = '=If(cmpMessageBar.Kind="Error",Color.White,ColorValue("#000F41"))'
+foreach ($case in @(@('"Error"', '#DB1E28', 'white', $true), @('"Warning"', '#F29400', '#000F41', $true), @('"Success"', '#1AFF80', '#000F41', $true), @('""', 'none', '#000F41', $false), @('If(false,"x")', 'none', '#000F41', $false), @('"Other"', 'none', '#000F41', $false))) {
+    Assert-Eval "With({varAdmMsgKind:$($case[0])},$cmpBarFillFx)" $case[1] "Bar fill for kind $($case[0]) = $($case[1])"
+    Assert-Eval "With({cmpMessageBar:{Kind:$($case[0])}},$barHeightFx)" $(if ($case[3]) { 40 } else { 0 }) "BarHeight for kind $($case[0])"
+    Assert-Eval "With({cmpMessageBar:{Kind:$($case[0])}},$($cmpTextColFx.TrimStart('=').Replace('Color.White', '"white"').Replace('ColorValue("#000F41")', '"#000F41"')))" $case[2] "Bar text colour for kind $($case[0]) = $($case[2])"
 }
-foreach ($c in @('lblEmpMsgHead', 'lblEmpMsgBody', 'icoEmpMsgClose')) { Assert-True ((Get-Prop $c 'Color') -ceq $textColFx) "$c.Color: white on red, #000F41 on amber/green" }
-Assert-True ((Get-Prop 'lblEmpMsgHead' 'Text') -ceq '=varAdmMsgHead' -and (Get-Prop 'lblEmpMsgHead' 'FontWeight') -ceq '=FontWeight.Bold' -and (Get-Prop 'lblEmpMsgBody' 'Text') -ceq '=varAdmMsgBody' -and (Get-Prop 'lblEmpMsgBody' 'FontWeight') -ceq '=FontWeight.Normal') 'Head label Bold = varAdmMsgHead; body label Normal = varAdmMsgBody'
-Assert-True ($idx['icoEmpMsgClose']['Control'] -eq 'Classic/Icon@2.5.0' -and (Get-Prop 'icoEmpMsgClose' 'Icon') -ceq '=Icon.Cancel' -and (Get-Prop 'icoEmpMsgClose' 'OnSelect') -ceq '=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")' -and (Get-Prop 'icoEmpMsgClose' 'AccessibleLabel') -ceq ('=' + (TT 'admMsgClose'))) 'Close icon (Classic/Icon Icon.Cancel, label from T) clears kind, head and body'
+Assert-True ((Get-Prop 'icoEmpMsgClose' 'OnSelect') -ceq '=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")') 'cmpEmpMsgBar.OnClose clears kind, head and body'
+Assert-True ($mbIdx['icoCmpMsgClose']['Properties']['Icon'] -ceq '=Icon.Cancel' -and $mbIdx['icoCmpMsgClose']['Properties']['OnSelect'] -ceq '=cmpMessageBar.OnClose()' -and $mbIdx['icoCmpMsgClose']['Properties']['Color'] -ceq $cmpTextColFx) 'Component close icon: Icon.Cancel, raises OnClose, white on red / #000F41 on amber and green'
 Assert-True ($vis.StartsWith('=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");') -and $vis.IndexOf('Set(varAdmMsgKind,"")') -lt $vis.IndexOf('Select(btnEmpLoad)')) 'OnVisible clears the message first, before the load'
-$barReaders = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_] -match '\bvarAdmMsg(Kind|Head|Body)\b' } | ForEach-Object { ($_ -split '\.')[0] } | Sort-Object -Unique)
-Assert-True (($barReaders -join ',') -ceq 'conEmpMsgBar,icoEmpMsgClose,lblEmpMsgBody,lblEmpMsgHead') "Message variables are only displayed by the bar controls ($($barReaders -join ', '))"
+$cmpBarReaders = @($all.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $all[$_] -match '\bvarAdmMsg(Kind|Head|Body)\b' } | ForEach-Object { ($_ -split '\.')[0] } | Sort-Object -Unique)
+Assert-True (($cmpBarReaders -join ',') -ceq 'cmpEmpMsgBar') "Message variables are only displayed by the bar instance ($($cmpBarReaders -join ', '))"
 
 # Active switch (btnEmpActiveSwitch): same guard as the former checkbox, toggles varEmpActiveDraft, live amber warning only on -> off
 $swDm = Get-Prop 'btnEmpActiveSwitch' 'DisplayMode'; $swSuffix = ',DisplayMode.Edit,DisplayMode.Disabled)'
-Assert-True ($swDm -ceq (Get-Prop 'txtEmpName' 'DisplayMode') -and $swDm.StartsWith('=If(') -and $swDm.EndsWith($swSuffix)) 'Switch DisplayMode = the form-input guard of the former checkbox (Loaded, no load errors, not busy/saving/SaveFailed, New/Edit; else Disabled)'
+Assert-True ($swDm -ceq ('=If(' + $fieldEnabled.Substring(1) + ',DisplayMode.Edit,DisplayMode.Disabled)') -and $swDm.StartsWith('=If(') -and $swDm.EndsWith($swSuffix)) 'Switch DisplayMode = the form-input guard of the former checkbox (Loaded, no load errors, not busy/saving/SaveFailed, New/Edit; else Disabled)'
 $swGuard = $swDm.Substring(4, $swDm.Length - 4 - $swSuffix.Length)
 $sw = Get-Prop 'btnEmpActiveSwitch' 'OnSelect'
 Assert-True ($sw.StartsWith('=If(' + $swGuard + ',')) 'Switch OnSelect starts with the same guard as its DisplayMode (fail-closed)'
@@ -669,8 +712,7 @@ $gCases = @(
 foreach ($g in $gCases) { Assert-Eval ('With({' + $g[0] + '},' + $swGuard + ')') $g[1] "Switch guard: $($g[2]) -> $($g[1])" }
 # Switch controls: track (Classic/Button) + knob (Classic/Button on top of the track, same DisplayMode, click forwards to the track) + state text
 $swCfg = @(
-    @{ Track = 'btnEmpActiveSwitch'; Knob = 'btnEmpActiveKnob'; State = 'Coalesce(varEmpActiveDraft,true)'; Parent = 'conEmpFormCard' },
-    @{ Track = 'btnEmpShowInactiveSwitch'; Knob = 'btnEmpShowInactiveKnob'; State = 'Coalesce(varEmpShowInactive,false)'; Parent = 'conEmpListCard' })
+    @{ Track = 'btnEmpActiveSwitch'; Knob = 'btnEmpActiveKnob'; State = 'Coalesce(varEmpActiveDraft,true)'; Parent = 'conEmpFormCard' })
 foreach ($s in $swCfg) {
     $t = $s.Track; $kn = $s.Knob
     Assert-True ($idx[$t]['Control'] -eq 'Classic/Button@2.2.0' -and $idx[$kn]['Control'] -eq 'Classic/Button@2.2.0') "$t / $kn are Classic/Button@2.2.0 (no new control types)"
@@ -682,33 +724,28 @@ foreach ($s in $swCfg) {
     $sib = @($idx[$s.Parent]['Children'] | ForEach-Object { @($_.Keys)[0] })
     Assert-True ($sib.IndexOf($kn) -eq $sib.IndexOf($t) + 1) "$kn directly after $t in $($s.Parent).Children (drawn on top)"
 }
-Assert-True ((Get-Prop 'btnEmpShowInactiveSwitch' 'OnSelect') -ceq '=Set(varEmpShowInactive,!Coalesce(varEmpShowInactive,false))' -and (Get-Prop 'btnEmpShowInactiveSwitch' 'DisplayMode') -ceq '=DisplayMode.Edit') 'Show inactive switch: local filter toggle only, always available (as the former checkbox)'
+Assert-True ((Get-Prop 'btnEmpShowInactiveSwitch' 'OnSelect') -ceq ('=If(' + $lcEn.Substring(1) + ',Set(varEmpShowInactive,!Coalesce(varEmpShowInactive,false)))') -and (Get-Prop 'cmpEmpList' 'ShowInactive') -ceq '=Coalesce(varEmpShowInactive,false)') 'Show inactive switch (cmpListCard): OnToggleShowInactive = guard, then flip the local filter variable; the component never flips the state itself'
 $siSets = @($all.Keys | Where-Object { $all[$_] -match 'Set\(varEmpShowInactive,' } | Sort-Object)
 Assert-True (($siSets -join ',') -ceq 'btnEmpShowInactiveSwitch.OnSelect,scrContractors.OnVisible') "varEmpShowInactive set only by its switch and the OnVisible init ($($siSets -join ', '))"
 $items = (Get-Prop 'galEmpList' 'Items').TrimStart('=')
-Assert-True ($items.Contains('(Coalesce(varEmpShowInactive,false) || Active)')) 'Gallery filter reads varEmpShowInactive (blank = hide inactive)'
-$itemFix = 'colAdminEmployers:Table({ID:1,Name:"A",Code:"",City:"",Active:true},{ID:2,Name:"B",Code:"",City:"",Active:false},{ID:3,Name:"C",Code:"",City:"",Active:If(false,true)}),txtEmpSearch:{Text:""}'
-foreach ($c in @(@('false', 2), @('true', 3), @('If(false,true)', 2))) { Assert-Eval "With({$itemFix,varEmpShowInactive:$($c[0])},CountRows($items))" ($c[1]) "Gallery rows with varEmpShowInactive = $($c[0]): $($c[1])" }
+Assert-True ($items.Contains('(Coalesce(varEmpShowInactive,false) || Active)') -and $items.Contains('cmpEmpList.SearchText') -and $items -notmatch 'txtEmpSearch') 'List filter reads varEmpShowInactive (blank = hide inactive) and the cmpListCard SearchText output'
+$itemFix = 'colAdminEmployers:Table({ID:1,Name:"A",Code:"",City:"",Active:true},{ID:2,Name:"B",Code:"",City:"",Active:false},{ID:3,Name:"C",Code:"",City:"",Active:If(false,true)}),cmpEmpList:{SearchText:""},LangNl:false,T:' + $tRec
+foreach ($c in @(@('false', 2), @('true', 3), @('If(false,true)', 2))) { Assert-Eval "With({$itemFix,varEmpShowInactive:$($c[0])},CountRows($items))" ($c[1]) "List rows with varEmpShowInactive = $($c[0]): $($c[1])" }
+# Items projection for cmpListCard: ID, Title (name), Subtitle (code and city, no duplicate text), Inactive, ChipText (Inactive or empty)
+Assert-Eval "With({$itemFix,varEmpShowInactive:true},Concat($items,Title & ""|"" & Subtitle & ""|"" & Text(Inactive) & ""|"" & ChipText & ""/""))" 'A||false|/B||true|Inactive/C||false|/' 'Items projection: Title, empty Subtitle without code and city, Inactive flag and ChipText Inactive'
+Assert-Eval "With({colAdminEmployers:Table({ID:1,Name:""A"",Code:""C1"",City:""X"",Active:true},{ID:2,Name:""B"",Code:""C2"",City:"""",Active:true},{ID:3,Name:""D"",Code:"""",City:""Y"",Active:true}),cmpEmpList:{SearchText:""""},LangNl:false,T:$tRec,varEmpShowInactive:false},Concat($items,Subtitle & ""/""))" ('C1 ' + [char]0x00B7 + ' X/C2/Y/') 'Subtitle = code and city joined once (middle dot), no dangling separator'
 $stateFx = (Get-Prop 'lblEmpActiveState' 'Text').TrimStart('=')
 foreach ($c in @(@('true', 'Active'), @('false', 'Inactive'), @('If(false,true)', 'Active'))) { Assert-Eval "With({LangNl:false,T:$tRec,varEmpActiveDraft:$($c[0])},$stateFx)" $c[1] "lblEmpActiveState shows the state as text ($($c[0]) -> $($c[1])), not only colour" }
 Assert-True ((Get-Prop 'btnEmpActiveSwitch' 'Tooltip') -ceq (Get-Prop 'lblEmpActiveState' 'Text')) 'Active switch tooltip = state text'
-# Red border per field, bound to colEmpSaveErrors.Field
+# Red border per field: cmpField.Invalid is bound to colEmpSaveErrors.Field (the component draws the 2 px #DB1E28 border, pinned in Test-GeaColors)
 $fieldsCollected = @([regex]::Matches($save, 'Collect\(colEmpSaveErrors,\{Field:"(\w*)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
 Assert-True (@($fieldsCollected | Where-Object { $_ -ne '' -and $_ -cnotin @($inputMap.Values) }).Count -eq 0) "Every collected error Field is one of the 8 inputs or '' ($($fieldsCollected -join ','))"
 foreach ($k in $inputMap.Keys) {
-    $f = $inputMap[$k]
-    foreach ($pv in @(@('BorderColor', '#9B9B9B'), @('HoverBorderColor', '#5A5A5A'), @('FocusedBorderColor', '#0303B8'), @('PressedBorderColor', '#0303B8'))) {
-        $exp = '=If(CountIf(colEmpSaveErrors,Field="' + $f + '")>0,ColorValue("#DB1E28"),ColorValue("' + $pv[1] + '"))'
-        Assert-True ((Get-Prop $k $pv[0]) -ceq $exp) "$k.$($pv[0]) red #DB1E28 when colEmpSaveErrors has Field=$f, else $($pv[1])"
-    }
-    $bc = (Get-Prop $k 'BorderColor').TrimStart('=').Replace('ColorValue("#DB1E28")', '"red"').Replace('ColorValue("#9B9B9B")', '"grey"')
-    Assert-Eval "With({colEmpSaveErrors:Table({Field:`"City`",Message:`"x`"},{Field:`"`",Message:`"y`"})},$bc)" $(if ($f -eq 'City') { 'red' } else { 'grey' }) "$k border with a City error"
-    Assert-Eval "With({colEmpSaveErrors:Filter(Table({Field:`"$f`",Message:`"x`"}),false)},$bc)" 'grey' "$k border without errors"
-    # A2 (30-10-2026): editable field = white, 1px #9B9B9B (2px red when invalid), radius 4, h36, focus 2px
-    Assert-True ((Get-Prop $k 'BorderThickness') -ceq ('=If(CountIf(colEmpSaveErrors,Field="' + $f + '")>0,2,1)') -and (Get-Prop $k 'FocusedBorderThickness') -ceq '=2') "$k : border 1px (2px when invalid), focus 2px"
-    foreach ($kv in @(@('Fill', '=Color.White'), @('HoverFill', '=Color.White'), @('PressedFill', '=Color.White'), @('Height', '=36'), @('RadiusTopLeft', '=4'), @('RadiusTopRight', '=4'), @('RadiusBottomLeft', '=4'), @('RadiusBottomRight', '=4'), @('Width', '=lblEmpGrid.Width'), @('Size', '=14'))) { Assert-True ((Get-Prop $k $kv[0]) -ceq $kv[1]) "$k.$($kv[0]) = $($kv[1])" }
+    $f = $inputMap[$k]; $inv = ([string]$idx[$k]['Properties']['Invalid']).TrimStart('=')
+    Assert-Eval "With({colEmpSaveErrors:Table({Field:`"City`",Message:`"x`"},{Field:`"`",Message:`"y`"})},$inv)" ($f -eq 'City') "$k.Invalid with a City error"
+    Assert-Eval "With({colEmpSaveErrors:Filter(Table({Field:`"$f`",Message:`"x`"}),false)},$inv)" $false "$k.Invalid without errors"
 }
-Assert-True ((Get-Prop 'txtEmpSearch' 'BorderColor') -ceq '=ColorValue("#9B9B9B")') 'Search box has its own admin-pattern border (#9B9B9B, no error binding)'
+Assert-True ((Get-Prop 'cmpEmpList' 'SearchHint') -ceq ('=' + (TT 'empSearchHint'))) 'List card search hint from T (the search box and its border live in cmpListCard)'
 
 
 function Get-FormGeom([int]$layW) {
@@ -724,24 +761,34 @@ function Get-FormGeom([int]$layW) {
 $expLay = @{ X='=If(Parent.Width>=1000,1,0)'; Y='=If(Self.X=1,408,24)'; Width='=If(Self.X=1,Max(0,Parent.Width-432),Parent.Width-48)'; Height='=If(Self.X=1,24,500)' }
 foreach ($k in $expLay.Keys) { Assert-True ((Get-Prop 'lblEmpLayout' $k) -eq $expLay[$k]) "Layout carrier lblEmpLayout.$k formula as mirrored" }
 Assert-True ((Get-Prop 'lblEmpMetrics' 'Width') -eq '=If(lblEmpLayout.X=1,Self.Height-48,452)' -and (Get-Prop 'lblEmpMetrics' 'Height') -eq '=If(lblEmpLayout.X=1,Max(conEmpBody.Height,Self.Y+48,568),lblEmpLayout.Height+Self.Y+24)') 'Layout carrier lblEmpMetrics Width/Height formulas as mirrored (X = columns, Y = content height: see grid tests)'
-foreach ($card in @(@('conEmpListCard', 'Fill', '=Color.White'), @('conEmpListCard', 'DropShadow', '=DropShadow.Light'), @('conEmpListCard', 'RadiusTopLeft', '=8'), @('conEmpListCard', 'X', '=24'), @('conEmpListCard', 'Y', '=24'), @('conEmpListCard', 'Width', '=If(lblEmpLayout.X=1,360,Parent.Width-48)'), @('conEmpListCard', 'Height', '=lblEmpMetrics.Width'),
+$li = $idx['cmpEmpList']
+Assert-True ($li['Control'] -eq 'CanvasComponent' -and $li['ComponentName'] -eq 'cmpListCard') 'List card = cmpListCard instance (replaces conEmpListCard, search, count, Show inactive switch and gallery)'
+foreach ($card in @(@('cmpEmpList', 'X', '=24'), @('cmpEmpList', 'Y', '=24'), @('cmpEmpList', 'Width', '=If(lblEmpLayout.X=1,360,Parent.Width-48)'), @('cmpEmpList', 'Height', '=lblEmpMetrics.Width'),
+        @('cmpEmpList', 'SelectedID', '=Coalesce(varEmpSelectedID,0)'), @('cmpEmpList', 'ShowInactive', '=Coalesce(varEmpShowInactive,false)'),
+        @('cmpEmpList', 'SearchHint', ('=' + (TT 'empSearchHint'))), @('cmpEmpList', 'ShowInactiveText', ('=' + (TT 'empShowInactive'))), @('cmpEmpList', 'OnText', ('=' + (TT 'admOn'))), @('cmpEmpList', 'OffText', ('=' + (TT 'admOff'))),
+        @('cmpEmpList', 'CountText', ('=Substitute(' + (TT 'empCount') + ',"{0}",Text(CountRows(cmpEmpList.Items)))')),
         @('conEmpFormCard', 'Fill', '=Color.White'), @('conEmpFormCard', 'DropShadow', '=DropShadow.Light'), @('conEmpFormCard', 'RadiusTopLeft', '=8'), @('conEmpFormCard', 'X', '=lblEmpLayout.Y'), @('conEmpFormCard', 'Y', '=lblEmpLayout.Height'), @('conEmpFormCard', 'Width', '=lblEmpLayout.Width'), @('conEmpFormCard', 'Height', '=If(lblEmpLayout.X=1,lblEmpMetrics.Height-48,lblEmpMetrics.Y)'))) {
     Assert-True ((Get-Prop $card[0] $card[1]) -ceq $card[2]) "$($card[0]).$($card[1]) = $($card[2])"
 }
+Assert-True ($srcAll -match 'empSearchHint: \{en: "Search name, code or city"' -and $srcAll -match 'empCount: \{en: "\{0\} contractors"') 'T: search hint "Search name, code or city", count "{0} contractors"'
 $canvKids = @($idx['conEmpCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] })
-Assert-True (($canvKids -join ',') -ceq 'conEmpListCard,conEmpFormCard') 'conEmpCanvas holds exactly the list card and the form card'
-$listKids = @($idx['conEmpListCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
-Assert-True (($listKids -join ',') -ceq 'txtEmpSearch,icoEmpSearch,lblEmpCount,lblEmpShowInactive,btnEmpShowInactiveSwitch,btnEmpShowInactiveKnob,galEmpList') "List card children: $($listKids -join ',')"
-$sY = [int](Get-Prop 'txtEmpSearch' 'Y').TrimStart('='); $sH = [int](Get-Prop 'txtEmpSearch' 'Height').TrimStart('=')
-Assert-True ($sY -eq 24 -and $sH -eq 36 -and (Get-Prop 'txtEmpSearch' 'Width') -eq '=Parent.Width-48' -and (Get-Prop 'txtEmpSearch' 'PaddingLeft') -eq '=40' -and (Get-Prop 'txtEmpSearch' 'RadiusTopLeft') -eq '=4' -and (Get-Prop 'txtEmpSearch' 'Fill') -eq '=Color.White' -and (Get-Prop 'txtEmpSearch' 'BorderColor') -eq '=ColorValue("#9B9B9B")' -and (Get-Prop 'txtEmpSearch' 'HoverBorderColor') -eq '=ColorValue("#5A5A5A")') 'Search field: white, 1px #9B9B9B (hover #5A5A5A), radius 4, h36, PaddingLeft 40 (room for the magnifier)'
-Assert-True ((Get-Prop 'icoEmpSearch' 'Icon') -eq '=Icon.Search' -and $idx['icoEmpSearch']['Control'] -eq 'Classic/Icon@2.5.0' -and (Get-Prop 'icoEmpSearch' 'X') -eq '=txtEmpSearch.X+12' -and (Get-Prop 'icoEmpSearch' 'Width') -eq '=18') 'Magnifier = Classic/Icon Icon.Search inside the search field (X+12, 18 wide, ends before the text at 40)'
-Assert-True ((Get-Prop 'txtEmpSearch' 'HintText') -eq (Get-Prop 'txtEmpSearch' 'AccessibleLabel') -and (Get-Prop 'txtEmpSearch' 'HintText') -eq '=If(LangNl && !IsBlank(T.empSearchHint.nl),T.empSearchHint.nl,T.empSearchHint.en)' -and $srcAll -match 'empSearchHint: \{en: "Search name, code or city"') 'Search hint from T: "Search name, code or city"'
-Assert-True ((Get-Prop 'lblEmpCount' 'Text') -ceq '=Substitute(If(LangNl && !IsBlank(T.empCount.nl),T.empCount.nl,T.empCount.en),"{0}",Text(CountRows(galEmpList.AllItems)))' -and $srcAll -match 'empCount: \{en: "\{0\} contractors"') 'Count label: T.empCount with {0} = CountRows(galEmpList.AllItems) (visible gallery rows, no new data logic)'
-$cH = 24
-Assert-True ((Get-Prop 'lblEmpCount' 'Y') -eq '=txtEmpSearch.Y+txtEmpSearch.Height+12' -and (Get-Prop 'lblEmpShowInactive' 'Y') -eq '=lblEmpCount.Y' -and (Get-Prop 'btnEmpShowInactiveSwitch' 'Y') -eq '=lblEmpCount.Y' -and (Get-Prop 'btnEmpShowInactiveSwitch' 'X') -eq '=Parent.Width-24-Self.Width' -and (Get-Prop 'lblEmpShowInactive' 'X') -eq '=btnEmpShowInactiveSwitch.X-8-Self.Width' -and (Get-Prop 'lblEmpCount' 'X') -eq '=24') 'Row under the search: count left, Show inactive label + switch right (same Y)'
-Assert-True ((Get-Prop 'galEmpList' 'Y') -eq '=lblEmpCount.Y+lblEmpCount.Height+12' -and (Get-Prop 'galEmpList' 'X') -eq '=0' -and (Get-Prop 'galEmpList' 'Width') -eq '=Parent.Width' -and (Get-Prop 'galEmpList' 'Height') -eq '=Parent.Height-Self.Y-12' -and (Get-Prop 'galEmpList' 'TemplateSize') -eq '=64') 'Gallery below the count row, full card width, row height 64 (padding 12/16)'
+Assert-True (($canvKids -join ',') -ceq 'cmpEmpList,conEmpFormCard') 'conEmpCanvas holds exactly the list card instance and the form card'
+# cmpListCard internals that fix the list geometry (white card, radius 8, shadow, search 24/36, info row 24, gallery rows 64)
+$lcDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'Component/cmpListCard.pa.yaml')))['ComponentDefinitions']['cmpListCard']
+$lci = @{}; Index-Controls $lcDef['Children'] $lci
+function GetLcProp([string]$c, [string]$p) { return ([string]$lci[$c]['Properties'][$p]).Trim() }
+Assert-True (((GetLcProp 'conCmpListCard' 'Fill') -ceq '=Color.White') -and ((GetLcProp 'conCmpListCard' 'DropShadow') -ceq '=DropShadow.Light') -and ((GetLcProp 'conCmpListCard' 'RadiusTopLeft') -ceq '=8') -and ((GetLcProp 'conCmpListCard' 'Height') -ceq '=Parent.Height')) 'cmpListCard: white card, DropShadow.Light, radius 8, full component height'
+$lcKids = @($lci['conCmpListCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True (($lcKids -join ',') -ceq 'txtCmpListSearch,icoCmpListSearch,htmlCmpListInfo,btnCmpListSwitch,btnCmpListKnob,galCmpList') "cmpListCard children: $($lcKids -join ',')"
+$sY = [int](GetLcProp 'txtCmpListSearch' 'Y').TrimStart('='); $sH = [int](GetLcProp 'txtCmpListSearch' 'Height').TrimStart('='); $cH = [int](GetLcProp 'htmlCmpListInfo' 'Height').TrimStart('=')
+Assert-True (($sY -eq 24) -and ($sH -eq 36) -and ((GetLcProp 'txtCmpListSearch' 'Width') -eq '=Parent.Width-48') -and ((GetLcProp 'txtCmpListSearch' 'PaddingLeft') -eq '=40') -and ((GetLcProp 'txtCmpListSearch' 'RadiusTopLeft') -eq '=4') -and ((GetLcProp 'txtCmpListSearch' 'Fill') -eq '=Color.White')) 'Search field (cmpListCard): white, radius 4, h36 at Y 24, PaddingLeft 40 (room for the magnifier)'
+Assert-True (((GetLcProp 'icoCmpListSearch' 'Icon') -eq '=Icon.Search') -and ($lci['icoCmpListSearch']['Control'] -eq 'Classic/Icon@2.5.0') -and ((GetLcProp 'icoCmpListSearch' 'X') -eq '=txtCmpListSearch.X+12') -and ((GetLcProp 'icoCmpListSearch' 'Width') -eq '=18')) 'Magnifier = Classic/Icon Icon.Search inside the search field (X+12, 18 wide)'
+Assert-True (((GetLcProp 'htmlCmpListInfo' 'Y') -eq '=txtCmpListSearch.Y+txtCmpListSearch.Height+12') -and ($cH -eq 24) -and ((GetLcProp 'btnCmpListSwitch' 'Y') -eq '=htmlCmpListInfo.Y') -and ((GetLcProp 'btnCmpListSwitch' 'X') -eq '=Parent.Width-24-Self.Width') -and ((GetLcProp 'htmlCmpListInfo' 'X') -eq '=24')) 'One info row under the search (item 1): count left, Show inactive text + switch right on the same line (one HtmlViewer row, switch at the same Y)'
+Assert-True (((GetLcProp 'galCmpList' 'Y') -eq '=htmlCmpListInfo.Y+htmlCmpListInfo.Height+12') -and ((GetLcProp 'galCmpList' 'X') -eq '=0') -and ((GetLcProp 'galCmpList' 'Width') -eq '=Parent.Width') -and ((GetLcProp 'galCmpList' 'Height') -eq '=Max(0,Parent.Height-Self.Y-12)') -and ((GetLcProp 'galCmpList' 'TemplateSize') -eq '=64')) 'Gallery below the info row, full card width, fixed row height 64'
+$rowT = GetLcProp 'htmlCmpRowTitle' 'HtmlText'; $rowS = GetLcProp 'htmlCmpRowSub' 'HtmlText'
+Assert-True ((($rowT -match 'white-space:nowrap') -and ($rowT -match 'text-overflow:ellipsis') -and ($rowS -match 'white-space:nowrap') -and ($rowS -match 'text-overflow:ellipsis')) -and ((GetLcProp 'htmlCmpRowTitle' 'Height') -eq '=22') -and ((GetLcProp 'htmlCmpRowSub' 'Height') -eq '=18') -and ((GetLcProp 'htmlCmpRowSub' 'Y') -eq '=34')) 'List row (item 6): name on line 1 and subtitle on line 2, each one line with ellipsis, fixed positions in the 64 px row'
 $gY = $sY + $sH + 12 + $cH + 12
-Assert-True ((Get-Prop 'conEmpBody' 'Y') -eq '=conEmpMsgBar.Y+conEmpMsgBar.Height' -and (Get-Prop 'conEmpBody' 'Height') -eq '=Max(0,navEmp.Y-Self.Y)') 'Body starts directly under the message bar (bar directly under the title bar, height 0 when no message) and ends at the footer'
+Assert-True (((Get-Prop 'conEmpBody' 'Y') -eq '=cmpEmpMsgBar.Y+cmpEmpMsgBar.Height') -and ((Get-Prop 'conEmpBody' 'Height') -eq '=Max(0,cmpEmpFooter.Y-Self.Y)')) 'Body starts directly under the message bar (bar directly under the title bar, height 0 when no message) and ends at the footer'
 foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
     $wide = $W -ge 1000
     $layX = [int]$wide; $layY = if ($wide) { 408 } else { 24 }
@@ -770,12 +817,8 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
     }
 }
 # 29-10-2026: Contractor Code = read-only TextInput (txtEmpCode, always Disabled). A2 (30-10-2026): form card = header (name + status chip + divider), sections GENERAL/ADDRESS/CONTACT on a 1-3 column grid, bottom row switch + "Last changed".
-Assert-True ($null -eq $idx['lblEmpCodeValue'] -and $idx['txtEmpCode']['Control'] -eq 'Classic/TextInput@2.3.2') 'Contractor Code value is a Classic/TextInput@2.3.2 (txtEmpCode); lblEmpCodeValue is gone'
-Assert-True ((Get-Prop 'txtEmpCode' 'DisplayMode') -eq '=DisplayMode.Disabled') 'txtEmpCode is always DisplayMode.Disabled (never editable)'
-$codeDefault = 'If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpEdit.Code),varEmpEdit.Code,Coalesce(varEmpMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.empCodeAuto.nl),T.empCodeAuto.nl,T.empCodeAuto.en),"")'
-Assert-True ((Norm (Get-Prop 'txtEmpCode' 'Default').TrimStart('=')) -eq (Norm $codeDefault)) 'txtEmpCode Default = the former lblEmpCodeValue Text formula'
-foreach ($kv in @(@('Fill','=ColorValue("#F0F0F0")'),@('DisabledFill','=ColorValue("#F0F0F0")'),@('BorderColor','=Color.Transparent'),@('DisabledBorderColor','=Color.Transparent'),@('Color','=ColorValue("#000000")'),@('DisabledColor','=ColorValue("#000000")'),@('BorderThickness','=0'),@('RadiusTopLeft','=4'),@('RadiusBottomRight','=4'),@('PaddingLeft','=12'),@('PaddingRight','=12'),@('Size','=14'),@('FontWeight','=FontWeight.Normal'),@('Height','=36'),@('Width','=lblEmpGrid.Width'),@('AccessibleLabel','=If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)'))) { Assert-True ((Get-Prop 'txtEmpCode' $kv[0]) -eq $kv[1]) "txtEmpCode.$($kv[0]) (read-only: grey fill, no border)" }
-Assert-True ($dirty -notmatch 'txtEmpCode' -and $saveN -notmatch 'txtEmpCode') 'txtEmpCode is not part of dirty/Save (the app never writes Employer Code)'
+Assert-True (($null -eq $idx['lblEmpCodeValue']) -and ($idx['cmpEmpCode']['ComponentName'] -eq 'cmpField')) 'Contractor Code value is a read-only cmpField (cmpEmpCode); lblEmpCodeValue is gone'
+Assert-True (($dirty -notmatch 'cmpEmpCode') -and ($saveN -notmatch 'cmpEmpCode') -and ($load -notmatch 'cmpEmpCode')) 'cmpEmpCode is not part of dirty/Save/Load logic (the app never writes Employer Code)'
 # Grid carriers (pinned) and numeric mirror
 Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=572,3,If(lblEmpLayout.Width-48>=376,2,1))' -and (Get-Prop 'lblEmpGrid' 'Width') -eq '=(lblEmpLayout.Width-48-16*(lblEmpMetrics.X-1))/lblEmpMetrics.X' -and (Get-Prop 'lblEmpGrid' 'Visible') -eq '=false') 'Grid: columns = 3 (content >= 572), 2 (>= 376), else 1; column width = (content - 16*(cols-1))/cols (gap 16, min ~180 per column); lblEmpGrid is a hidden label'
 Assert-True ((Get-Prop 'lblEmpMetrics' 'Y') -eq '=lblEmpModified.Y+lblEmpModified.Height+24') 'lblEmpMetrics.Y = bottom of the last row (lblEmpModified) + 24 padding'
@@ -785,24 +828,26 @@ $secCtl = @{ GENERAL = 'lblEmpSecGeneral'; ADDRESS = 'lblEmpSecAddress'; CONTACT
 foreach ($s in $grid.Keys) {
     Assert-True ($idx[$secCtl[$s]]['Control'] -eq 'Label@2.5.1' -and (Get-Prop $secCtl[$s] 'Size') -eq '=12' -and (Get-Prop $secCtl[$s] 'FontWeight') -eq '=FontWeight.Bold' -and (Get-Prop $secCtl[$s] 'Color') -eq '=ColorValue("#0303B8")' -and (Get-Prop $secCtl[$s] 'Text') -match 'T\.emp' -and (Get-Prop $secCtl[$s] 'Height') -eq '=18') "$($secCtl[$s]): section header 12 Bold #0303B8 from T, h18"
     for ($n = 0; $n -lt $grid[$s].Count; $n++) {
-        $f = $grid[$s][$n]; $lb = "lblEmp${f}Label"; $tx = "txtEmp$f"
+        $f = $grid[$s][$n]; $tx = "cmpEmp$f"
         $xx = if ($n -eq 0) { '=24' } else { "=24+Mod($n,lblEmpMetrics.X)*(lblEmpGrid.Width+16)" }
         $yy = if ($n -eq 0) { "=$($secCtl[$s]).Y+30" } else { "=$($secCtl[$s]).Y+30+RoundDown($n/lblEmpMetrics.X,0)*74" }
-        Assert-True ((Get-Prop $lb 'X') -ceq $xx -and (Get-Prop $tx 'X') -ceq $xx -and (Get-Prop $lb 'Y') -ceq $yy -and (Get-Prop $tx 'Y') -ceq "=$lb.Y+22" -and (Get-Prop $lb 'Width') -eq '=lblEmpGrid.Width') "$s field $n ($f): grid cell X/Y by column/row, input 22 px under the label top (label 18 + 4)"
-        Assert-True ((Get-Prop $lb 'Size') -eq '=13' -and (Get-Prop $lb 'FontWeight') -eq '=FontWeight.Semibold' -and (Get-Prop $lb 'Color') -eq '=ColorValue("#000000")' -and (Get-Prop $lb 'Height') -eq '=18') "$lb : 13 Semibold black, h18"
+        Assert-True (((Get-Prop $tx 'X') -ceq $xx) -and ((Get-Prop $tx 'Y') -ceq $yy) -and ((Get-Prop $tx 'Width') -eq '=lblEmpGrid.Width') -and ((Get-Prop $tx 'Height') -eq '=58')) "$s field $n ($f): cmpField grid cell X/Y by column/row, 58 high (label 18 + 4 + field 36), grid column width"
     }
 }
-Assert-True ((Get-Prop 'lblEmpNameRequired' 'Text') -eq '="*"' -and (Get-Prop 'lblEmpNameRequired' 'Color') -eq '=ColorValue("#DB1E28")' -and (Get-Prop 'lblEmpNameRequired' 'Y') -eq '=lblEmpNameLabel.Y' -and (Get-Prop 'lblEmpNameRequired' 'X').StartsWith('=lblEmpNameLabel.X+Round(Len(lblEmpNameLabel.Text)') -and !$idx.ContainsKey('lblEmpCodeRequired')) 'Required marker: red "*" label right after Contractor Name only'
-# header
-Assert-True ((Get-Prop 'lblEmpFormTitle' 'Size') -eq '=22' -and (Get-Prop 'lblEmpFormTitle' 'FontWeight') -eq '=FontWeight.Semibold' -and (Get-Prop 'lblEmpFormTitle' 'Color') -eq '=ColorValue("#000F41")' -and (Get-Prop 'lblEmpFormTitle' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]' -and (Get-Prop 'lblEmpFormTitle' 'Text').Contains('T.empNewContractor') -and (Get-Prop 'lblEmpFormTitle' 'Text').Contains('varEmpEdit.Name')) 'Header: record name 22 Semibold #000F41 (Edit: varEmpEdit.Name; New: T.empNewContractor), only visible in New/Edit'
-$chipFill = 'If(Coalesce(varEmpActiveDraft,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $chipCol = 'If(Coalesce(varEmpActiveDraft,true),ColorValue("#000F41"),ColorValue("#000000"))'
-Assert-True ($idx['btnEmpFormChip']['Control'] -eq 'Classic/Button@2.2.0' -and (Get-Prop 'btnEmpFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled' -and !$idx['btnEmpFormChip']['Properties'].ContainsKey('OnSelect') -and (Get-Prop 'btnEmpFormChip' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]') 'Status chip btnEmpFormChip: Classic/Button, static (Disabled with identical disabled colours), no OnSelect, New/Edit only'
-foreach ($p in 'Fill', 'HoverFill', 'PressedFill', 'DisabledFill') { Assert-True ((Get-Prop 'btnEmpFormChip' $p) -ceq "=$chipFill") "btnEmpFormChip.$p = green #1AFF80 when Active, grey #E6E6E6 when Inactive (varEmpActiveDraft)" }
+# header (item 2, 30-10-2026): fixed text "Contractor details" (New: "New contractor"; no selection: T.empNoSelection), no name in the header (it stood twice); status chip right-aligned on the card padding, SAVED status
+$ftx = (Get-Prop 'lblEmpFormTitle' 'Text')
+Assert-True (((Get-Prop 'lblEmpFormTitle' 'Size') -eq '=22') -and ((Get-Prop 'lblEmpFormTitle' 'FontWeight') -eq '=FontWeight.Semibold') -and ((Get-Prop 'lblEmpFormTitle' 'Color') -eq '=ColorValue("#000F41")') -and (-not $idx['lblEmpFormTitle']['Properties'].ContainsKey('Visible')) -and $ftx.Contains('T.empNewContractor') -and $ftx.Contains('T.empFormDetails') -and $ftx.Contains('T.empNoSelection') -and ($ftx -notmatch 'varEmpEdit\.Name')) 'Header: 22 Semibold #000F41, always visible; New = T.empNewContractor, Edit = T.empFormDetails, no selection = T.empNoSelection; the record name is not repeated'
+foreach ($c in @(@('"New"', 'New contractor'), @('"Edit"', 'Contractor details'), @('""', 'No contractor selected'), @('If(false,"x")', 'No contractor selected'))) { Assert-Eval "With({LangNl:false,T:$tRec,varEmpMode:$($c[0])},$($ftx.TrimStart('=')))" $c[1] "Header text for Mode $($c[0]) = $($c[1])" }
+Assert-True ($formulas.Contains('empFormDetails: {en: "Contractor details", nl: ""}')) 'T.empFormDetails = Contractor details'
+$chipFill = 'If(Coalesce(varEmpEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $chipCol = 'If(Coalesce(varEmpEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))'
+Assert-True (($idx['btnEmpFormChip']['Control'] -eq 'Classic/Button@2.2.0') -and ((Get-Prop 'btnEmpFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled') -and (-not $idx['btnEmpFormChip']['Properties'].ContainsKey('OnSelect')) -and ((Get-Prop 'btnEmpFormChip' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]')) 'Status chip btnEmpFormChip: hand-built Classic/Button, static (Disabled with identical disabled colours), no OnSelect, hidden when Mode is empty'
+foreach ($p in 'Fill', 'HoverFill', 'PressedFill', 'DisabledFill') { Assert-True ((Get-Prop 'btnEmpFormChip' $p) -ceq "=$chipFill") "btnEmpFormChip.$p = green #1AFF80 when the SAVED status is Active (varEmpEdit.Active), grey #E6E6E6 when Inactive (not the switch draft)" }
 foreach ($p in 'Color', 'HoverColor', 'PressedColor', 'DisabledColor') { Assert-True ((Get-Prop 'btnEmpFormChip' $p) -ceq "=$chipCol") "btnEmpFormChip.$p = #000F41 on green, #000000 on grey" }
-Assert-True ((Get-Prop 'btnEmpFormChip' 'Text').Contains('T.empFieldActive') -and (Get-Prop 'btnEmpFormChip' 'Text').Contains('T.empInactive') -and (Get-Prop 'btnEmpFormChip' 'X') -eq '=lblEmpFormTitle.X+lblEmpFormTitle.Width+12' -and (Get-Prop 'btnEmpFormChip' 'Height') -eq '=24' -and (Get-Prop 'btnEmpFormChip' 'RadiusTopLeft') -eq '=12' -and (Get-Prop 'btnEmpFormChip' 'Size') -eq '=12') 'Chip text is the state (not colour only), right of the name (12 px), h24, radius 12'
-Assert-True ((Get-Prop 'lblEmpFormDivider' 'Fill') -eq '=ColorValue("#EDEDED")' -and (Get-Prop 'lblEmpFormDivider' 'Height') -eq '=1' -and (Get-Prop 'lblEmpFormDivider' 'Width') -eq '=lblEmpLayout.Width-48' -and (Get-Prop 'lblEmpFormDivider' 'Y') -eq '=lblEmpFormTitle.Y+lblEmpFormTitle.Height+16' -and (Get-Prop 'lblEmpFormDivider' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]') 'Divider: 1 px #EDEDED under the header, full content width, New/Edit only'
+Assert-True (((Get-Prop 'btnEmpFormChip' 'Text').Contains('T.empFieldActive')) -and ((Get-Prop 'btnEmpFormChip' 'Text').Contains('T.empInactive')) -and ((Get-Prop 'btnEmpFormChip' 'Text') -notmatch 'varEmpActiveDraft') -and ((Get-Prop 'btnEmpFormChip' 'X') -eq '=Parent.Width-24-Self.Width') -and ((Get-Prop 'btnEmpFormChip' 'Height') -eq '=24') -and ((Get-Prop 'btnEmpFormChip' 'RadiusTopLeft') -eq '=12') -and ((Get-Prop 'btnEmpFormChip' 'Size') -eq '=12')) 'Chip text is the saved state (not colour only), right-aligned on the card padding (24), h24, radius 12'
+Assert-True (((Get-Prop 'lblEmpFormTitle' 'Width') -eq '=Max(0,Parent.Width-48-84)') -and ((Get-Prop 'lblEmpFormTitle' 'X') -eq '=24')) 'Header title leaves room for the chip (72 + 12) and never overlaps it'
+Assert-True (((Get-Prop 'lblEmpFormDivider' 'Fill') -eq '=ColorValue("#EDEDED")') -and ((Get-Prop 'lblEmpFormDivider' 'Height') -eq '=1') -and ((Get-Prop 'lblEmpFormDivider' 'Width') -eq '=lblEmpLayout.Width-48') -and ((Get-Prop 'lblEmpFormDivider' 'Y') -eq '=lblEmpFormTitle.Y+lblEmpFormTitle.Height+16')) 'Divider: 1 px #EDEDED under the header, full content width'
 $formKids = @($idx['conEmpFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
-$expKids = 'lblEmpFormTitle,btnEmpFormChip,lblEmpFormDivider,lblEmpSecGeneral,lblEmpNameLabel,lblEmpNameRequired,txtEmpName,lblEmpCodeLabel,txtEmpCode,lblEmpSecAddress,lblEmpAddressLabel,txtEmpAddress,lblEmpPostalcodeLabel,txtEmpPostalcode,lblEmpCityLabel,txtEmpCity,lblEmpCountryLabel,txtEmpCountry,lblEmpSecContact,lblEmpContactNameLabel,txtEmpContactName,lblEmpContactEmailLabel,txtEmpContactEmail,lblEmpContactPhoneLabel,txtEmpContactPhone,btnEmpActiveSwitch,btnEmpActiveKnob,lblEmpActiveState,lblEmpModified'
+$expKids = 'lblEmpFormTitle,btnEmpFormChip,lblEmpFormDivider,lblEmpSecGeneral,cmpEmpName,cmpEmpCode,lblEmpSecAddress,cmpEmpAddress,cmpEmpPostalcode,cmpEmpCity,cmpEmpCountry,lblEmpSecContact,cmpEmpContactName,cmpEmpContactEmail,cmpEmpContactPhone,btnEmpActiveSwitch,btnEmpActiveKnob,lblEmpActiveState,lblEmpModified'
 Assert-True (($formKids -join ',') -ceq $expKids) "conEmpFormCard children (final structure): $($formKids -join ',')"
 # numeric mirror of the grid
 foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
@@ -823,24 +868,18 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
 $mdCols = [ordered]@{ Align = '=If(lblEmpLayout.Width-48>=480,Align.Right,Align.Left)'; Width = '=If(lblEmpLayout.Width-48>=480,lblEmpLayout.Width-48-152,lblEmpLayout.Width-48)'; X = '=If(lblEmpLayout.Width-48>=480,24+lblEmpLayout.Width-48-Self.Width,24)'; Y = '=If(lblEmpLayout.Width-48>=480,btnEmpActiveSwitch.Y,btnEmpActiveSwitch.Y+32)'; Size = '=12'; FontWeight = '=FontWeight.Normal'; Color = '=ColorValue("#787878")'; Height = '=24' }
 foreach ($k in $mdCols.Keys) { Assert-True ((Get-Prop 'lblEmpModified' $k) -ceq $mdCols[$k]) "lblEmpModified.$k = $($mdCols[$k]) (same row as the switch, right aligned, 12 #787878)" }
 Assert-True ((Get-Prop 'lblEmpActiveState' 'Y') -eq '=btnEmpActiveSwitch.Y' -and (Get-Prop 'lblEmpActiveState' 'Height') -eq '=24' -and (Get-Prop 'lblEmpActiveState' 'Width') -eq '=80' -and (Get-Prop 'btnEmpActiveSwitch' 'X') -eq '=24') 'Switch row: switch X 24, state label on the same Y (h24, 80 wide)'
-# (16) Load/save spinner in the title bar (imgEmpSpinner) ---------------------------------------------------------------
-Assert-True ($idx.ContainsKey('imgEmpSpinner') -and $idx['imgEmpSpinner']['Control'] -eq 'Image@2.2.3') 'imgEmpSpinner exists as Image@2.2.3'
-$spImg = Get-Prop 'imgEmpSpinner' 'Image'
-Assert-True ($spImg.StartsWith('="data:image/svg+xml;utf8," & EncodeUrl("<svg') -and $spImg.EndsWith('</svg>")') -and $spImg -notmatch "`n") 'Spinner Image: single-line data-URI SVG via EncodeUrl'
-Assert-True ($spImg -match "<animateTransform[^>]*attributeName='transform'[^>]*type='rotate'[^>]*from='0 12 12'[^>]*to='360 12 12'[^>]*repeatCount='indefinite'" -and $spImg -match "viewBox='0 0 24 24'") 'Spinner SVG: 24x24 viewBox with animateTransform rotate 0..360 around 12 12, indefinite'
-$spCols = @([regex]::Matches($spImg, '#[0-9A-Fa-f]{3,8}\b') | ForEach-Object { $_.Value.ToUpper() } | Sort-Object -Unique)
-Assert-True ($spCols.Count -eq 1 -and $spCols[0] -eq '#FFFFFF') "Spinner SVG uses only #FFFFFF ($($spCols -join ','))"
-Assert-True ($spImg -notmatch 'opacity|rgba?\(|hsla?\(' -and $spImg -notmatch "(?:stroke|fill)='(?!none'|#)") 'Spinner SVG: no opacity, rgb()/hsl() or named colours (only solid white on #0303B8)'
-Assert-True ((Get-Prop 'imgEmpSpinner' 'Visible') -eq '=Coalesce(varEmpBusy,false) || Coalesce(varEmpSaving,false) || varEmpLoadState="Loading"') 'Spinner Visible = busy || saving || LoadState="Loading"'
-Assert-True ((Get-Prop 'imgEmpSpinner' 'Width') -eq '=24' -and (Get-Prop 'imgEmpSpinner' 'Height') -eq '=24' -and (Get-Prop 'imgEmpSpinner' 'ImagePosition') -eq '=ImagePosition.Fit' -and (Get-Prop 'imgEmpSpinner' 'AccessibleLabel') -eq '=If(LangNl && !IsBlank(T.empBusy.nl),T.empBusy.nl,T.empBusy.en)') 'Spinner: 24x24, ImagePosition Fit, AccessibleLabel from T (empBusy)'
-Assert-True (!$idx['imgEmpSpinner']['Properties'].ContainsKey('Fill') -and !$idx['imgEmpSpinner']['Properties'].ContainsKey('OnSelect')) 'Spinner has no Fill/OnSelect'
-Assert-True ((Get-Prop 'imgEmpSpinner' 'X') -eq '=lblEmpTitle.X+lblEmpTitle.Width-24-Self.Width' -and (Get-Prop 'imgEmpSpinner' 'Y') -eq '=lblEmpTitle.Y+(lblEmpTitle.Height-Self.Height)/2') 'Spinner at the right of the title bar (24 px margin), vertically centred in the 60 px bar'
+# (16) Load/save spinner in the title bar: cmpTitleBar (modern Spinner inside the component, D4 confirmed) ---------------------------------------------------------------
+Assert-True (((Get-Prop 'cmpEmpTitle' 'Busy') -eq '=Coalesce(varEmpBusy,false) || Coalesce(varEmpSaving,false) || varEmpLoadState="Loading"') -and ((Get-Prop 'cmpEmpTitle' 'BusyLabel') -eq ('=' + (TT 'empBusy'))) -and ((Get-Prop 'cmpEmpTitle' 'Title') -eq ('=' + (TT 'empTitle')))) 'cmpEmpTitle: Busy = busy || saving || LoadState="Loading" (the former spinner Visible), BusyLabel from T.empBusy, Title from T.empTitle'
+$tbDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'Component/cmpTitleBar.pa.yaml')))['ComponentDefinitions']['cmpTitleBar']
+$tbi = @{}; Index-Controls $tbDef['Children'] $tbi
+$sp = $tbi['spnCmpTitleBusy']['Properties']
+Assert-True (($tbi['spnCmpTitleBusy']['Control'] -eq 'ModernSpinner@1.1.0') -and ($sp['Visible'] -eq '=cmpTitleBar.Busy') -and ($sp['Width'] -eq '=24') -and ($sp['Height'] -eq '=24') -and ($sp['SpinnerColor'] -eq '=Color.White') -and ($sp['AccessibleLabel'] -eq '=cmpTitleBar.BusyLabel') -and ($sp['X'] -eq '=Parent.Width-24-Self.Width') -and ($sp['Y'] -eq '=(Parent.Height-Self.Height)/2')) 'Component spinner: Visible = Busy, 24x24, white on #0303B8, AccessibleLabel = BusyLabel, 24 px right margin, centred in the 60 px bar'
 foreach ($W in 320, 480, 768, 1280) {
-    $tX = 0; $tW = $W; $sX = $tX + $tW - 48; $lX = $tX + 15
-    Assert-True ($sX -ge $lX + 99 -and $sX + 24 -le $tX + $tW) "W=$W : spinner (X $sX..$($sX + 24)) inside the title bar and clear of the logo (ends $($lX + 99))"
+    $sX = $W - 48; $lX = 15
+    Assert-True (($sX -ge $lX + 99) -and ($sX + 24 -le $W)) "W=$W : spinner (X $sX..$($sX + 24)) inside the title bar and clear of the logo (ends $($lX + 99))"
 }
 $kids = @($doc['Screens'][$screenName]['Children'] | ForEach-Object { @($_.Keys)[0] })
-Assert-True ($kids[0] -eq 'lblEmpTitle' -and $kids[1] -eq 'imgLogoContractors' -and $kids[2] -eq 'imgEmpSpinner') 'Children order: title, logo directly after, spinner after the logo'
+Assert-True (($kids[0] -eq 'cmpEmpTitle') -and ($kids[1] -eq 'cmpEmpMsgBar')) 'Children order: title bar instance (logo and spinner inside the component), message bar directly after'
 
 # (17) Studio FAIL build adminpattern-20261030_071949 (Eddy 30-10-2026): items 4, 5 and d (shared helpers, reused for Projects) --
 # Item 4 cause: the form inputs fell back to DisplayMode.View when no record was in the form (Mode ""). A Classic/TextInput in
@@ -874,7 +913,7 @@ function Test-AutoSelect([string]$load, [string]$itemsFx, [string]$defaultFx, [s
     $iDirty = $lN.IndexOf((Norm ('If(' + $dirtyFx + " && !Coalesce(var${p}SaveFailed,false),"))); $iGate = $lN.IndexOf((Norm "If(IsEmpty(col${p}LoadErrors),ClearCollect("))
     $iNew = $lN.IndexOf((Norm "var${p}Mode=`"New`" && !Coalesce(var${p}SaveFailed,false),")); $iSel = $lN.IndexOf((Norm $sel)); $iOk = $lN.IndexOf((Norm "Set(var${p}SaveFailed,false); Clear(col${p}SaveErrors); Set(var${p}LoadState,`"Loaded`");"))
     Assert-True ($iDirty -ge 0 -and $iGate -gt $iDirty -and $iNew -gt $iGate -and $iSel -gt $iNew -and $iOk -gt $iSel) "$scr : auto-selection only after the dirty block, in the successful-load branch, as the last branch (Mode empty or the selected ID no longer exists), before Loaded + form reset"
-    Assert-True ($defaultFx -ceq "=LookUp($itemsFx,ID=var${p}SelectedID)") "$scr : gallery Default = the selected record within the visible list"
+    if ($defaultFx -ne '') { Assert-True ($defaultFx -ceq "=LookUp($itemsFx,ID=var${p}SelectedID)") "$scr : gallery Default = the selected record within the visible list" }
 }
 # Item d: "nothing written" (SharePoint refused: Patch error AND no record with ID) -> Not saved., state stays Loaded, input kept,
 # retry possible; a returned ID with an error, no ID without an error (uncertain), an ID mismatch or a verify read/mismatch
@@ -902,19 +941,30 @@ function Test-WriteCounter([string]$save, [string]$p, [string]$list, [string]$sc
         Assert-Eval "With({var${p}PatchError:$($c[0]),var${p}PatchedID:$($c[1])},With({var${p}SaveWrites:$wFx},With({col${p}SaveErrors:$($c[2]),var${p}SaveVerified:$($c[3])},$out)))" $c[4] "$scr : $($c[5]) -> $($c[4])"
     }
 }
-$empEditable = @('txtEmpName', 'txtEmpAddress', 'txtEmpPostalcode', 'txtEmpCity', 'txtEmpCountry', 'txtEmpContactName', 'txtEmpContactEmail', 'txtEmpContactPhone')
-Test-FormInputsRender $idx $empEditable @('txtEmpCode') 'conEmpFormCard' 'varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpMode:"Edit"' 'Contractors'
-Assert-True ((Get-Prop 'btnEmpActiveSwitch' 'DisplayMode') -ceq (Get-Prop 'txtEmpName' 'DisplayMode') -and !$idx['btnEmpActiveSwitch']['Properties'].ContainsKey('Visible') -and !$idx['btnEmpActiveKnob']['Properties'].ContainsKey('Visible')) 'Contractors: Active switch always rendered, Disabled like the inputs when no record is in the form'
+$empEditable = @($inputMap.Keys)
+$kidsOfForm = @($idx['conEmpFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
+foreach ($c in @($empEditable) + 'cmpEmpCode') {
+    $fp = $idx[$c]['Properties']
+    Assert-True ((-not $fp.ContainsKey('Visible')) -and ($kidsOfForm -ccontains $c) -and ($fp['Height'] -eq '=58')) "Contractors : $c is always rendered (no Visible formula), a direct child of conEmpFormCard, height 58 (item 4: fields always visible)"
+}
+$empFieldGuard = $fieldEnabled.Substring(1)
+$empFieldFix = 'varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpMode:"Edit"'
+Assert-Eval "With({$empFieldFix},$empFieldGuard)" $true 'Contractors : cmpField.Enabled true: Loaded, idle, Edit'
+foreach ($m in @('""', 'If(false,"x")')) { Assert-Eval "With({$($empFieldFix -replace 'Mode:"Edit"', "Mode:$m")},$empFieldGuard)" $false "Contractors : no record in the form (Mode $m, e.g. empty list): all fields Disabled (rendered, not editable)" }
+Assert-True ((Get-Prop 'btnEmpActiveSwitch' 'DisplayMode') -ceq ('=If(' + $fieldEnabled.Substring(1) + ',DisplayMode.Edit,DisplayMode.Disabled)') -and !$idx['btnEmpActiveSwitch']['Properties'].ContainsKey('Visible') -and !$idx['btnEmpActiveKnob']['Properties'].ContainsKey('Visible')) 'Contractors: Active switch always rendered, Disabled like the inputs when no record is in the form'
 Assert-True ($screenText -notmatch 'DisplayMode\.View') 'Contractors: no DisplayMode.View on the screen'
-$empItems = (Get-Prop 'galEmpList' 'Items').TrimStart('=')
+$empItemsAll = (Get-Prop 'galEmpList' 'Items').TrimStart('=')
+$empItems = 'Sort' + (Get-Balanced $empItemsAll ($empItemsAll.IndexOf('Sort(Filter(') + 4))
+Assert-True ($empItemsAll.StartsWith('ForAll(' + $empItems + ' As r,{ID:r.ID,Title:r.Name,Subtitle:')) 'cmpListCard Items = the filtered, sorted list (same text as the loader auto-select) projected to ID, Title, Subtitle, Inactive, ChipText'
 $empEmpty = '{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
-Test-AutoSelect $load $empItems (Get-Prop 'galEmpList' 'Default') (Get-Prop 'galEmpList' 'OnSelect') 'Emp' 'colAdminEmployers' $empEmpty $dirty 'Contractors'
+Test-AutoSelect $load $empItems $null (Get-Prop 'galEmpList' 'OnSelect') 'Emp' 'colAdminEmployers' $empEmpty $dirty 'Contractors'
+Assert-True ((Get-Prop 'cmpEmpList' 'SelectedID') -ceq '=Coalesce(varEmpSelectedID,0)') 'Contractors auto-select: the selected ID goes to cmpListCard.SelectedID (row highlight), Coalesce to 0 without selection'
 $empSelFix = 'colAdminEmployers:Table({ID:1,Name:"Zeta",Code:"EMP-001",City:"Ede",Active:true},{ID:2,Name:"alpha",Code:"EMP-002",City:"",Active:false},{ID:3,Name:"Beta",Code:"",City:"Delft",Active:If(false,true)})'
 foreach ($c in @(@('false', '""', '3', 'first active row by name (inactive alpha hidden; blank Active = active)'), @('true', '""', '2', 'Show inactive on: alpha first'), @('false', '" ZET "', '1', 'search filter applied'))) {
-    Assert-Eval "With({$empSelFix,varEmpShowInactive:$($c[0]),txtEmpSearch:{Text:$($c[1])}},Text(First($empItems).ID))" $c[2] "Contractors auto-select: $($c[3]) -> ID $($c[2])"
+    Assert-Eval "With({$empSelFix,varEmpShowInactive:$($c[0]),cmpEmpList:{SearchText:$($c[1])}},Text(First($empItems).ID))" $c[2] "Contractors auto-select: $($c[3]) -> ID $($c[2])"
 }
-Assert-Eval "With({$empSelFix,varEmpShowInactive:false,txtEmpSearch:{Text:`"nomatch`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty visible list -> no ID -> Mode "" (no selection)'
-Assert-Eval "With({colAdminEmployers:Filter(Table({ID:1,Name:`"`",Code:`"`",City:`"`",Active:true}),false),varEmpShowInactive:false,txtEmpSearch:{Text:`"`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty list -> no selection'
+Assert-Eval "With({$empSelFix,varEmpShowInactive:false,cmpEmpList:{SearchText:`"nomatch`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty visible list -> no ID -> Mode "" (no selection)'
+Assert-Eval "With({colAdminEmployers:Filter(Table({ID:1,Name:`"`",Code:`"`",City:`"`",Active:true}),false),varEmpShowInactive:false,cmpEmpList:{SearchText:`"`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty list -> no selection'
 Test-WriteCounter $save 'Emp' 'Employers' 'Contractors'
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix) $true 'Contractors: after a refused save (Loaded, SaveFailed false, input kept) Save is allowed again (retry)'
 $empPatchErr = Get-Balanced $save ($save.IndexOf('Set(varEmpPatchError,true); Collect(colEmpSaveErrors,') + 'Set(varEmpPatchError,true); Collect'.Length)
@@ -1474,10 +1524,13 @@ $pKids = @($pDoc['Screens'][$pScreen]['Children'] | ForEach-Object { @($_.Keys)[
 Assert-True (($pKids[0..3] -join ',') -ceq 'lblPrjTitle,imgLogoProjects,imgPrjSpinner,conPrjMsgBar' -and $pKids[-2] -eq 'navPrj' -and $pKids[-1] -eq 'recPrjFooterLine') 'Projects: children order title, logo, spinner, message bar ... footer, footer line (as Contractors)'
 Assert-True ((PGet 'lblPrjTitle' 'Height') -eq '=60' -and (PGet 'lblPrjTitle' 'Text') -ceq ('=' + (TT 'prjTitle'))) 'Projects: title bar 60 px, title "Projects" from T'
 Assert-True ([string]$pScreenProps['Fill'] -eq '=ColorValue("#F5F6F8")') 'Projects: page background #F5F6F8'
-Assert-True ((PGet 'imgPrjSpinner' 'Image') -ceq (Get-Prop 'imgEmpSpinner' 'Image') -and (PGet 'imgPrjSpinner' 'Visible') -ceq '=Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"' -and (PGet 'imgPrjSpinner' 'X') -ceq '=lblPrjTitle.X+lblPrjTitle.Width-24-Self.Width') 'Projects: same white SVG spinner as Contractors, right in the title bar while loading/saving'
+$pSpImg = PGet 'imgPrjSpinner' 'Image'
+Assert-True ($pSpImg.StartsWith('="data:image/svg+xml;utf8," & EncodeUrl("<svg') -and $pSpImg.Contains('#FFFFFF') -and $pSpImg.Contains('animateTransform') -and (PGet 'imgPrjSpinner' 'Visible') -ceq '=Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"' -and (PGet 'imgPrjSpinner' 'X') -ceq '=lblPrjTitle.X+lblPrjTitle.Width-24-Self.Width') 'Projects: white SVG spinner (hand-built; Contractors moved to cmpTitleBar), right in the title bar while loading/saving'
 $pFoot = [ordered]@{ btnPrjHome = '110'; btnPrjNew = '90'; btnPrjRefresh = '110'; btnPrjDiscard = '188'; btnPrjSave = '140' }
-foreach ($b in $pFoot.Keys) { $e = 'btnEmp' + $b.Substring(6); Assert-True ((PGet $b 'Width') -eq "=$($pFoot[$b])" -and (PGet $b 'Text') -match 'T\.prj' -and (PGet $b 'Fill') -ceq (Get-Prop $e 'Fill') -and (PGet $b 'X') -ceq (Get-Prop $e 'X').Replace('btnEmp', 'btnPrj')) "Projects: footer $b width $($pFoot[$b]), text from T, same role/position formula as $e" }
-Assert-True ((@($pIdx['conPrjButtonRow']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'btnPrjHome,icoPrjHome,btnPrjNew,btnPrjRefresh,btnPrjDiscard,btnPrjSave' -and (PGet 'conPrjButtonRow' 'Width') -ceq (Get-Prop 'conEmpButtonRow' 'Width').Replace('btnEmp', 'btnPrj')) 'Projects: one footer row: Home (+ icon) left; New, Refresh, Discard changes, Save right'
+$cfDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'Component/cmpFooter.pa.yaml')))['ComponentDefinitions']['cmpFooter']; $cfIdx = @{}; Index-Controls $cfDef['Children'] $cfIdx
+function CfProp([string]$c, [string]$p) { return ([string]$cfIdx[$c]['Properties'][$p]).Trim() }
+foreach ($b in $pFoot.Keys) { $e = 'btnCmp' + $b.Substring(6); Assert-True ((PGet $b 'Width') -eq "=$($pFoot[$b])" -and (PGet $b 'Text') -match 'T\.prj' -and (PGet $b 'Fill') -ceq (CfProp $e 'Fill') -and (PGet $b 'X') -ceq (CfProp $e 'X').Replace('btnCmp', 'btnPrj').Replace('lblCmpFooterMetrics', 'lblFooterButtonMetrics')) "Projects: footer $b width $($pFoot[$b]), text from T, same role/position formula as the cmpFooter button $e" }
+Assert-True ((@($pIdx['conPrjButtonRow']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'btnPrjHome,icoPrjHome,btnPrjNew,btnPrjRefresh,btnPrjDiscard,btnPrjSave' -and (PGet 'conPrjButtonRow' 'Width') -ceq (CfProp 'conCmpFooterRow' 'Width').Replace('btnCmp', 'btnPrj').Replace('lblCmpFooterMetrics', 'lblFooterButtonMetrics')) 'Projects: one footer row: Home (+ icon) left; New, Refresh, Discard changes, Save right'
 $homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrHome.pa.yaml'))); $homeIdx2 = @{}; Index-Controls $homeDoc['Screens']['scrHome']['Children'] $homeIdx2
 Assert-True ($homeIdx2['btnTileProjects']['Properties']['OnSelect'] -eq '=Navigate(scrProjects)' -and !$homeIdx2['btnTileProjects']['Properties'].ContainsKey('DisplayMode') -and $homeIdx2['icoTileProjects']['Properties']['Icon'] -eq '=Icon.Folder' -and $homeIdx2['icoTileProjects']['Properties']['OnSelect'] -eq '=Select(btnTileProjects)' -and !$homeIdx2.ContainsKey('lblTileSubProjects')) 'Home: Projects tile active (Navigate(scrProjects), Icon.Folder, no "Coming soon")'
 # Home layout: 4 columns from 896 px (margin 24, column gap 16, tile min 200, tile gap 12); static formula check plus mirrored geometry.

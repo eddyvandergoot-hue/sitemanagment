@@ -40,6 +40,7 @@ App:
         empSecContact: {en: "CONTACT", nl: ""},
         empNewContractor: {en: "New contractor", nl: ""},
         empNoSelection: {en: "No contractor selected", nl: ""},
+        empFormDetails: {en: "Contractor details", nl: ""},
         empMsgLoaded: {en: "{0} contractors loaded at {1}", nl: ""},
         empLastChanged: {en: "Last changed in SharePoint: {0}", nl: ""},
         empBusy: {en: "Working…", nl: ""},
