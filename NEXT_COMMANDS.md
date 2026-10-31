@@ -6,40 +6,20 @@ Rules live in AGENTS.md (auto-loaded by Claude Code, no need to tell it to read)
 Agents: subagents in .claude/agents/ are picked automatically by task; commands below also name them explicitly.
 Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load logic: `/effort high`. Pure layout/docs: `/model sonnet`.
 
+## 1. Admin screens (plan: ADMIN_PLAN.md; Contractors approved 29-10-2026; canvas components steps 1-3 built)
 
-## 1. Admin screens (plan: ADMIN_PLAN.md; Contractors approved 29-10-2026, Admin screen pattern written, Projects built)
+Done: Contractors approved (tag approved-20261029-contractors); AGENTS.md "Admin screen pattern" (components mandatory, H19, H20); MS-023 templates merged (30-10-2026); logic fixes 4, 5, a, d, e (commit f500822); step 1 report (below); step 2 components (TP-COMP-01 PASS 30-10-2026); step 3 built 31-10-2026 (Contractors cceb635, Projects 34bbe2b; build components-20261031_074310, PROJECT_STATUS.md; layout items 1-7 delivered by the components).
 
-Done: Contractors approved (tag approved-20261029-contractors); AGENTS.md section "Admin screen pattern" written (30-10-2026; DECISIONS.md H19); Projects built (ADMIN_PLAN.md par. 4).
+**Now: waiting for Eddy's Studio test TESTPLAN.md TP-STEP3-01** (also the retest of TP-STYLE-01 and TP-PROJECTS-01). Do not start the next steps before Eddy's OK. After OK (approval and tag per AGENTS.md): (1) Home build (cmpTile, Assets/Icons, ADMIN_PLAN.md par. 11; block below), (2) Workers build (step 4, with H18 and the N3 fix; item 1 at the end). Open from the reviewer: N1 (control read after a Patch error before assuming zero writes), N3 (an unchanged Status/Country outside the list is re-patched; logic task).
 
-**Long-term approach (Eddy 30-10-2026), replaces the hand-built layout fixes 1, 2, 3, 6, 7 below** (the logic fixes 4, 5, a, d, e, f below stay valid and are being built first, 30-10-2026):
-
-```bash
-claude << 'EOF'
-Long-term approach (Eddy 30-10): reusable canvas components, then Workers built on them.
-Input: Studio save in Incoming\ with scrTemplates (HtmlText classic, modern Toggle, Spinner, Badge, Text input, Dropdown) = MS-023. Merge templates only; remove scrTemplates from app afterwards (keep templates in metadata). App Id stays 88e53928.
-Step 1 — test modern controls (report only): do Toggle, Spinner, Badge accept GEA colors (#0303B8 on, #B4B4B4 off, chip #1AFF80/#E6E6E6), font Inter, size? pac pack ok? Recommend use or keep own build per control.
-Step 2 — canvas components (App components, not component library), binding for all admin screens + later others:
-- cmpField: label + required star (HtmlText) + input type (text/dropdown/readonly) + invalid red border + helper props (Value, Items, Required, Invalid, ReadOnly, OnChange). Label never overlaps, no measured widths.
-- cmpMessageBar: Type red/amber/green, bold word + text (HtmlText), close X, one line ellipsis.
-- cmpListCard: search box w/ icon, count, Show inactive toggle, rows (line1 name ellipsis, line2 grey), hover, selected bar, inactive chip.
-- cmpFooter: Home left; New, Refresh, Discard, Save right; Disabled states.
-- cmpTitleBar: logo, title, spinner.
-Step 3 — migrate Contractors + Projects to components, no logic change. Regression TP-CONTRACTORS-01 + TP-PROJECTS-01 + Test-Layout.
-Step 4 — Workers screen built on components (ADMIN_PLAN + H18 Save week fix). Separate build after step 3 approved.
-Update AGENTS Admin screen pattern: components mandatory, no hand-built field/bar/list/footer.
-Flow per step: powerfx-ui + powerfx-logic -> verifier -> reviewer -> pack + SHA. Commit + push. Report per step, wait my OK between step 3 and 4.
-EOF
-```
-
-MS-023 done 30-10-2026 (templates merged). Logic fixes 4, 5, a, d, e built (commit f500822; reviewer: no blocking findings; open N1 control-read after a Patch error before assuming zero writes, N2 status chip bound to saved status, N3 do not re-write an unchanged choice value outside the list: take into step 2/3).
 Step 1 result (30-10-2026, report only; source: template definitions + Studio-assigned rules in the MS-023 save; pac pack of a throwaway test screen in a scratch worktree): pac pack also accepts NON-existing properties (Fill on ModernToggle packed fine), so pack proves nothing; Check-WeeklySource (template property check) and Studio import are the real checks.
 - ModernToggle 1.0.1: only Checked/Default/Label/LabelPosition/ToggleSize/OnCheck/OnUncheck; no colour or font property (theme-driven) -> #0303B8/#B4B4B4 and Inter not settable per control. Recommendation: keep own switch (or change the app modern theme later, affects all modern controls).
 - ModernSpinner 1.1.0: SpinnerColor + TrackColor + Width/Height -> white on #0303B8 possible. Recommendation: USE (replaces the animated SVG image).
 - ModernBadge 1.0.0: Appearance/Intent/Shape only, no Fill/Color -> #1AFF80/#E6E6E6 not possible. Recommendation: keep own chip (Classic/Button).
 - HtmlViewer 2.1.0 (HTML text): HtmlText, Font, Size, Color, Fill, AutoHeight, borders -> inline CSS (Inter, #DB1E28 star, bold head). Recommendation: USE for label+star and message bar.
-- ModernTextInput 1.1.2 / ModernDropdown 1.0.3: theme-driven like Toggle. Recommendation: keep Classic/TextInput and Classic/DropDown (GEA styling already done). Notes: canvas components in SourceCode layout must use a schema Microsoft documents (component definitions in Src, check pa.yaml docs and pac 2.11.2 support before building; Studio import is the first check); component input/output/behavior properties must be documented property kinds. Items 1, 2, 3, 6, 7 and the layout rules of the command below are delivered through the components in steps 2-3 (Test-Layout is built in step 3).
+- ModernTextInput 1.1.2 / ModernDropdown 1.0.3: theme-driven like Toggle. Recommendation: keep Classic/TextInput and Classic/DropDown (GEA styling already done). Notes: canvas components in SourceCode layout must use a schema Microsoft documents (component definitions in Src, check pa.yaml docs and pac 2.11.2 support before building; Studio import is the first check); component input/output/behavior properties must be documented property kinds. Layout items 1-7 were delivered through the components in step 3 (Test-Layout built).
 
-**Queued by Eddy 30-10-2026, after step 3** (orchestrator decision: separate small build after step 3 is approved, before the Workers build of step 4, so Home and Workers are tested and approved separately):
+**Queued by Eddy 30-10-2026, after step 3 is approved** (orchestrator decision: separate small build after step 3 is approved, before the Workers build of step 4, so Home and Workers are tested and approved separately):
 
 ```bash
 claude << 'EOF'
@@ -84,39 +64,8 @@ EOF
 
 Decided after the spec (Eddy 30-10-2026): icons = Assets/Icons set v1 (README mapping; white for active, grey for Soon; icon-arrow.svg), no built-in icons on tiles; hover FINAL = fill #000F41, icon + arrow stay white. Embedding: named formula per icon with a data-URI (orchestrator choice; see ADMIN_PLAN.md par. 11). Build notes (orchestrator): Screen1 keeps its internal name (AGENTS: internal screen names stay; "scrTeam" is not a rename). Weekly hours tile keeps the existing guard (project/team loaded, else Navigate(Screen1) + message). Icons: Classic/Icon 2.5.0 has a fixed enum (no hard hat, warehouse, valve, cube?) and no stroke control; "thin line, same stroke" may need inline SVG images (one style, white/#9B9B9B/#1AFF80 variants via data-URI with a colour parameter) — check the enum first and report per tile. Hover icon colour: an icon/image inside the tile cannot read the button's hover state; feasible only if the tile is a component with its own hover tracking (no hover event exists in canvas) -> likely "else white" (report). Wrapping tile row: use a horizontal AutoLayout GroupContainer with LayoutWrap or a flexible-height gallery (WrapCount) — no manual X estimates. "18 medium": Inter has no Medium in Power Apps (use Semibold, or HtmlViewer font-weight:500 if the label is HTML). Existing Home tests (tiles, 4-column layout) must be rewritten. Tile hover icon colour change needs an icon control whose Color follows hover state of the tile button (check feasibility).
 
-Studio test 30-10-2026 (Eddy): TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (build adminpattern-20261030_071949). Next command (queued by Eddy 30-10-2026, NOT started; a first attempt was stopped before any change, HEAD 15f845c):
-
-```bash
-claude << 'EOF'
-TP-STYLE-01 + TP-PROJECTS-01 FAIL on layout (adminpattern-20261030_071949). Fix layout before anything else.
-Contractors:
-1 "Show inactive" wraps + clipped. One line, Wrap=false, width fits text, switch right of it, vertically centered with count label.
-2 Form header: name wraps + clipped, and duplicates name field. Header = fixed text "Contractor details" (New: "New contractor"), status chip right-aligned at card right padding. Same on Projects ("Project details" / "New project").
-3 Required star overlaps label text. Use HtmlText label "Name <span style='color:#DB1E28'>*</span>" or star placed directly after text, 4 px gap. No overlap any label.
-Projects:
-4 Text inputs invisible for Project Name, Project Number, Customer Name, Street, House Number, City (only Status + Country dropdowns visible). All fields must always render (white, border #9B9B9B), also with no record selected.
-5 No record selected on load -> auto-select first row (same on Contractors). Empty list -> header "No project selected", fields disabled.
-6 List row title wraps over subline. Row: line 1 Project Name, one line, ellipsis; line 2 "Number · City" grey. No "Test-000 – Test-000" duplication. Fixed row height.
-Both:
-7 Message bar "Loaded." breaks at dot. Bold word + text in one HtmlText (or bold label AutoWidth), one line, ellipsis if too long.
-Layout rules -> AGENTS Admin screen pattern:
-- No estimated text widths. Labels Wrap=false + Overflow hidden/ellipsis, or AutoHeight with container that grows. Nothing may overlap or clip at 1366, 1000, 700 px.
-- Mixed formatting (bold word, red star) = HtmlText.
-- Add Test-Layout check: every label/input inside parent bounds, no two controls overlap in same container, all form inputs Visible=true.
-Also decided (ADMIN_PLAN par. 8): a choice value not in list never counts as change, show as-is. c dropdowns white + border #9B9B9B like other fields. d SharePoint reject (nothing written) -> keep input, red reason, allow retry; only partial/verify fail locks (Contractors + Projects). e Project Name required. f status chip = SAVED status, not unsaved choice.
-Home redesign NOT in this build (next).
-Flow: powerfx-ui + powerfx-logic -> verifier (incl Test-Layout) -> reviewer -> full + pack + SHA. Commit + push. Report path + SHA + per item 1-7 what changed.
-EOF
-```
-
-Notes for whoever runs it (orchestrator, 30-10-2026):
-- HtmlText: Templates.json in the .msapr has NO html-text template (only button, label, image, groupContainer, dropdown, gallery, icon, checkbox, rectangle, modernDatePicker, text); AGENTS requires the template before a new control type. Either Eddy first inserts one "HTML text" control in Studio, saves and downloads the .msapr into artifacts\ (template is then merged), or use the command's alternative: star 4 px after the label text and a bold head label with MEASURED widths (artifacts/Measure-FontFit.ps1 -InterDir C:\Windows\Fonts, worst case Inter/Arial; Test-Layout re-measures) instead of estimates. Classic Label@2.5.1 has no AutoWidth.
-- Order: powerfx-logic first (4, 5, a, d, e; f = provide saved-status source), then powerfx-ui (1, 2, 3, 6, 7, c, f chip + new artifacts/Test-Layout.ps1), because both edit scrContractors/scrProjects. Work in small steps with WIP commits; agents have hung before: use a no-change watchdog. Src uses LF (.gitattributes * -text). The untracked folder 3D/ is Eddy's: do not add it.
-
-After that build is approved: Eddy's open points ADMIN_PLAN.md par. 8 punt 8 (b, g remain Studio checks; a, c, d, e, f decided above), approval and tag.
-
-After that, in this order:
-1. Workers build (powerfx-logic, reviewer, powerfx-ui, verifier) on the Admin screen pattern (AGENTS.md; only fields and rules differ; ADMIN_PLAN.md par. 5), including the Weekly Hours stale-cache fix (DECISIONS.md H18, approved 29-10-2026, status "approved, not built"): in Save week, before the first write, Refresh(Workers) + re-read colWorkersCache (<=500, staging) and Refresh('Project Workers') + Filter on ProjectKey; compare Employer.Id/Trade/Team/Active of the involved workers with the loaded values; difference = zero writes + message "Worker or team changed in SharePoint; Refresh on Project / team". Save team and Confirm migration need no fix. Decision pending: ADMIN_PLAN.md 4.5 (hide Closed projects on Screen1) and 5.5 (inactive workers).
+After the Home build, in this order:
+1. Workers build (step 4; powerfx-logic, reviewer, powerfx-ui, verifier; after step 3 and the Home build are approved) on the Admin screen pattern with the five components (AGENTS.md; only fields and rules differ; ADMIN_PLAN.md par. 5), including the Weekly Hours stale-cache fix (DECISIONS.md H18, approved 29-10-2026, status "approved, not built"): in Save week, before the first write, Refresh(Workers) + re-read colWorkersCache (<=500, staging) and Refresh('Project Workers') + Filter on ProjectKey; compare Employer.Id/Trade/Team/Active of the involved workers with the loaded values; difference = zero writes + message "Worker or team changed in SharePoint; Refresh on Project / team". Save team and Confirm migration need no fix. Decision pending: ADMIN_PLAN.md 4.5 (hide Closed projects on Screen1) and 5.5 (inactive workers).
 
 ## 2b. ModernDatePicker 1.0.2
 

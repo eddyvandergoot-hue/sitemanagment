@@ -20,10 +20,11 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-PERIOD-01 | Inzetperiodes (Screen1, Weekly Hours, Hours Summary) | PASS | 27-10-2026 | Eddy |
 | TP-MIGR-01 | Migratieactie per project (Screen1) | PASS op TEST-000 en Friesland Campina | 27-10-2026 | Eddy |
 | TP-CONTRACTORS-01 | Contractors-scherm (beheer) | PASS (build 232612, I-S allemaal ok; kort hertest op de Admin pattern-build in TP-STYLE-01) | 29-10-2026 | Eddy |
-| TP-STYLE-01 | Admin screen pattern: Contractors visueel + kort regressie | OPEN (build adminpattern-20261030_071949) | - | Eddy |
-| TP-PROJECTS-01 | Projects-scherm (beheer) + Home-tegels | OPEN (build adminpattern-20261030_071949) | - | Eddy |
+| TP-STYLE-01 | Admin screen pattern: Contractors visueel + kort regressie | FAIL op layout 30-10-2026 (build adminpattern-20261030_071949); hertest = TP-STEP3-01 | - | Eddy |
+| TP-PROJECTS-01 | Projects-scherm (beheer) + Home-tegels | FAIL op layout 30-10-2026 (build adminpattern-20261030_071949); hertest = TP-STEP3-01 | - | Eddy |
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
 | TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | PASS op build components-20261030_150632 (eerder FAIL 132104 PA2231, 135641 cmpListCard) | 30-10-2026 | Eddy |
+| TP-STEP3-01 | Stap 3: Contractors en Projects op componenten (layout 1-7, Reset, regressie) | OPEN (build components-20261031_074310) | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -245,7 +246,7 @@ Extra controles hertest (A-E sinds build 222247, F-H nieuw op build 174723):
 | 2 | Medewerker met Trade Unknown | geen chip "Trade onbekend" op Weekly Hours; wel de badge op Screen1 |
 | 3 | Blokkerende waarschuwing (bv. ontbrekende Employer) | blijft rood op Weekly Hours |
 
-## TP-STYLE-01 Admin screen pattern, Contractors visueel + kort regressie (OPEN; build adminpattern-20261030_071949, PROJECT_STATUS.md)
+## TP-STYLE-01 Admin screen pattern, Contractors visueel + kort regressie (FAIL op layout 30-10-2026, build adminpattern-20261030_071949; hertest: TP-STEP3-01)
 
 Voorwaarde: Studio-import van de build; alleen TEST-records (TEST Contractor 2, TEST Employer). Regels: AGENTS.md "Admin screen pattern", ADMIN_PLAN.md par. 10.
 
@@ -262,7 +263,7 @@ Voorwaarde: Studio-import van de build; alleen TEST-records (TEST Contractor 2, 
 | 9 | Regressie TP-CONTRACTORS-01 kort | laden; TEST Contractor 2 bewerken + Save (groene balk, verify); conflict (in SharePoint wijzigen tijdens bewerken) rode balk; Active uitvinken bij TEST Employer: direct amber balk; Save met waarschuwing: amber "Attention. Saved. ..." |
 | 10 | Guards | onopgeslagen wijziging blokkeert Home/New/gallery; Discard herstelt |
 
-## TP-PROJECTS-01 Projects-scherm en Home (OPEN; build adminpattern-20261030_071949)
+## TP-PROJECTS-01 Projects-scherm en Home (FAIL op layout 30-10-2026, build adminpattern-20261030_071949; layout hertest: TP-STEP3-01, Home-stappen blijven open)
 
 Alleen TEST-projecten (TEST-000, TEST-001, nieuw TEST-002); echte projecten alleen lezen, nooit wijzigen. Nooit verwijderen, alleen Status.
 
@@ -315,3 +316,43 @@ Doel: bevestigen dat Studio de handgeschreven componenten accepteert vóór de m
 | 9 | Datumkiezers (nu ModernDatePicker 1.0.2): Project / team "Week", Weekly Hours "Week", Hours Summary From/Till; kies een dag midden in een week en 01-01-2027 | gekozen dag blijft zichtbaar (geen sprong), labels "YYYY KWxx" kloppen (01-01-2027 = 2026 KW53), From/Till-bereik en Till-voor-From-blokkade werken als voorheen; geen PA2105-waarschuwing meer bij import |
 
 Mislukt: noteer stap, foutmelding (exact) en scherm.
+
+## TP-STEP3-01 Stap 3: Contractors en Projects op componenten (OPEN; build components-20261031_074310, PROJECT_STATUS.md)
+
+Alleen TEST-records (TEST Contractor 2 / TEST Employer; TEST-000, TEST-001, TEST-002); echte records alleen lezen. Hertest voor de FAIL op layout van TP-STYLE-01 en TP-PROJECTS-01 (30-10-2026). Regels: AGENTS.md "Admin screen pattern", DECISIONS.md H20.
+
+A. Layout per item (Contractors en Projects, bij ~1366, ~1000 en ~700 px):
+
+| # | Item | Verwacht |
+|---|---|---|
+| 1 | Show inactive | één regel met de switch, uitgelijnd met de telling, niet afgeknipt |
+| 2 | Formulierkop | vast "Contractor details" / "Project details"; New: "New contractor" / "New project"; zonder selectie "No contractor/project selected"; statuschip rechts op de kaartpadding = opgeslagen status (Projects: On hold/Closed grijs); geen dubbele naam |
+| 3 | Verplichte velden | rood sterretje direct na de labeltekst, geen overlap (Contractor Name; Project Name, Project Number, Status) |
+| 4 | Velden | alle invoer altijd zichtbaar: wit met grijze rand, ook zonder record en uitgeschakeld |
+| 5 | Eerste rij | na laden automatisch geselecteerd |
+| 6 | Lijstrij | regel 1 naam (ellipsis), regel 2 grijs "code · stad" / "nummer · stad", geen duplicatie, vaste hoogte |
+| 7 | Meldingsbalk | één regel, vet kopwoord, ellipsis bij te lang |
+| 8 | Footer | past in 766 px, geen overlap |
+
+B. Alleen in Studio te zien (componentgedrag):
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 9 | Typ tekst in een veld, Discard (ook in New) | getypte tekst terug naar de opgeslagen waarde (Reset van de instantie) |
+| 10 | Rij A en daarna rij B klikken | formulier toont B; rijen klikbaar op titel, subregel en chip |
+| 11 | New | velden leeg; na Save tonen de velden de opgeslagen waarden |
+| 12 | Dropdown Status/Country (Projects) | waarde buiten de lijst zichtbaar en niet dirty; lege Status = lege selectie |
+| 13 | Hele sessie | geen circulaire-referentiefout, geen formulefout in de componenten |
+
+C. Korte regressie (TP-CONTRACTORS-01 / TP-PROJECTS-01 kern):
+
+| # | Stap | Verwacht |
+|---|---|---|
+| 14 | Wijzig en Save (TEST-record) | groene balk, verify |
+| 15 | Validatie: lege naam / Project Number, Save | rode rand op het veld + rode balk met reden; nul writes |
+| 16 | Conflict: in SharePoint wijzigen tijdens bewerken, dan Save | rode balk met exacte tekst "Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh." |
+| 17 | Discard, Refresh | Discard herstelt; Refresh werkt |
+| 18 | Contractors: Active uitvinken bij TEST Employer | live amber balk; Save met waarschuwing amber "Attention. Saved. ..." |
+| 19 | Projects: Status Closed op TEST-000 (open periodes) | amber waarschuwing; opslaan toegestaan |
+
+Bewuste afwijkingen (niet als fout melden): zoekveld en Show inactive uitgeschakeld tijdens laden/opslaan/Failed/dirty; uitgeschakelde velden wit; statuschip in New toont "Active"; Projects-lijst sorteert op nummer. Mislukt: noteer stap, foutmelding (exact) en scherm.
