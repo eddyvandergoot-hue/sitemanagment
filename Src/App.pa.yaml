@@ -101,6 +101,7 @@ App:
         prjSecLinks: {en: "LINKS", nl: ""},
         prjNewProject: {en: "New project", nl: ""},
         prjNoSelection: {en: "No project selected", nl: ""},
+        prjFormDetails: {en: "Project details", nl: ""},
         prjMsgLoaded: {en: "{0} projects loaded at {1}", nl: ""},
         prjLastChanged: {en: "Last changed in SharePoint: {0}", nl: ""},
         prjBusy: {en: "Working…", nl: ""},

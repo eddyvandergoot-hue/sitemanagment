@@ -5,10 +5,10 @@ function Flat-Children($entries){foreach($e in $entries){$e;Flat-Children $e[@($
 $svgText=[IO.File]::ReadAllText((Join-Path $projectRoot 'Assets\GEA_logo_white.svg'))
 if($svgText -notmatch 'viewBox="0 0 ([0-9.]+) ([0-9.]+)"'){throw 'SVG viewBox not found'}
 $svgAspect=[double]::Parse($Matches[1],[Globalization.CultureInfo]::InvariantCulture)/[double]::Parse($Matches[2],[Globalization.CultureInfo]::InvariantCulture)
-$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'),@('scrContractors','cmpEmpTitle',''),@('scrProjects','lblPrjTitle','imgLogoProjects'))
+$cfg=@(@('Screen1','lblProjectTeamTitle','imgLogoScreen1'),@('scrHours','lblWeeklyHoursEntryTitle','imgLogoHours'),@('scrWeeklyHours','lblWeeklyHoursTitle','imgLogoSummary'),@('scrHome','lblHomeTitle','imgLogoHome'),@('scrContractors','cmpEmpTitle',''),@('scrProjects','cmpPrjTitle',''))
 foreach($c in $cfg){
  $screen,$title,$logo=$c
- if($screen -eq 'scrContractors'){
+ if($screen -in @('scrContractors','scrProjects')){
   # Step 3a (30-10-2026): the title bar is a cmpTitleBar instance; the logo is the Image@2.2.3 inside the component, fed by the Logo input.
   $ci=$indexes[$screen][$title]; $ip=$ci['Properties']
   if($ci['Control'] -ne 'CanvasComponent' -or $ci['ComponentName'] -ne 'cmpTitleBar'){throw "$screen $title must be a cmpTitleBar instance"}

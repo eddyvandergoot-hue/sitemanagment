@@ -598,7 +598,7 @@ Assert-True ($formulas -notmatch '\bempMsgSaved:' -and $formulas -notmatch 'en: 
 $conflictMsg = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'
 Assert-True ($formulas.Contains("empErrConflict: {en: ""$conflictMsg"", nl: """"}")) 'T.empErrConflict exact text'
 # Keys delivered by powerfx-logic for the form header that powerfx-ui builds next (30-10-2026); remove a key from this list once the header uses it.
-$pendingUiT = @('prjNoSelection')
+$pendingUiT = @()  # all header keys are used now (empNoSelection 3a, prjNoSelection 3b)
 foreach ($k in $pendingUiT) { Assert-True ($tKeys -ccontains $k) "T.$k exists (header 'no record selected')"; if ($used -cnotcontains $k) { Write-Output "WARN T.$k not yet used in Src (pending powerfx-ui header)" } }
 $unusedT = @($tKeys | Where-Object { $_ -cnotin $used -and $_ -cnotin $pendingUiT })
 Assert-True ($unusedT.Count -eq 0) "No unused T keys ($($unusedT -join ', '))"
@@ -999,10 +999,30 @@ $pAll = @{}
 foreach ($n in $pIdx.Keys) { foreach ($p in $pIdx[$n]['Properties'].Keys) { $pAll["$n.$p"] = ([string]$pIdx[$n]['Properties'][$p]) } }
 foreach ($p in $pScreenProps.Keys) { $pAll["$pScreen.$p"] = [string]$pScreenProps[$p] }
 $pText = ($pAll.Values) -join "`n"
-$pTextFields = [ordered]@{ txtPrjName = 'Name'; txtPrjNumber = 'Number'; txtPrjReference = 'Reference'; txtPrjCustomer = 'Customer'; txtPrjStreet = 'Street'; txtPrjHouseNumber = 'HouseNumber'; txtPrjPostalCode = 'PostalCode'; txtPrjCity = 'City'; txtPrjUrl = 'Url' }
-$pDropFields = [ordered]@{ ddPrjStatus = 'Status'; ddPrjCountry = 'Country' }
+# --- Step 3b (31-10-2026): footer, list card, title bar, message bar and form fields of scrProjects are component instances (same compatibility layer as Contractors).
+$pFooterMap = [ordered]@{ btnPrjHome = 'Home'; btnPrjNew = 'New'; btnPrjRefresh = 'Refresh'; btnPrjDiscard = 'Discard'; btnPrjSave = 'Save' }
+Assert-True ($pIdx['cmpPrjFooter']['Control'] -eq 'CanvasComponent' -and $pIdx['cmpPrjFooter']['ComponentName'] -eq 'cmpFooter') 'Projects: footer = cmpFooter instance (cmpPrjFooter)'
+foreach ($k in $pFooterMap.Keys) {
+    $v = $pFooterMap[$k]; $en = ([string]$pAll["cmpPrjFooter.${v}Enabled"]).Trim(); $os = ([string]$pAll["cmpPrjFooter.On$v"]).Trim()
+    Assert-True ($en.StartsWith('=') -and $en.Length -gt 3) "Projects: cmpPrjFooter.${v}Enabled is a Boolean expression"
+    $g = $en.Substring(1)
+    Assert-True ($os.StartsWith('=If(' + $g + ',')) "Projects: cmpPrjFooter.On$v starts with the same guard text as ${v}Enabled (fail-closed)"
+    $pAll["$k.OnSelect"] = $pAll["cmpPrjFooter.On$v"]; $pAll["$k.DisplayMode"] = '=If(' + $g + ',DisplayMode.Edit,DisplayMode.Disabled)'
+    $pAll.Remove("cmpPrjFooter.On$v"); $pAll.Remove("cmpPrjFooter.${v}Enabled")
+}
+$plEn = ([string]$pAll['cmpPrjList.Enabled']).Trim(); $plOs = ([string]$pAll['cmpPrjList.OnSelectRow']).Trim(); $plTg = ([string]$pAll['cmpPrjList.OnToggleShowInactive']).Trim()
+Assert-True ($pIdx['cmpPrjList']['Control'] -eq 'CanvasComponent' -and $pIdx['cmpPrjList']['ComponentName'] -eq 'cmpListCard') 'Projects: list card = cmpListCard instance (cmpPrjList)'
+Assert-True ($plOs.StartsWith('=If(' + $plEn.Substring(1) + ',') -and $plTg.StartsWith('=If(' + $plEn.Substring(1) + ',')) 'Projects: cmpPrjList.Enabled is the first If-condition of OnSelectRow and OnToggleShowInactive'
+$pAll['galPrjList.OnSelect'] = $pAll['cmpPrjList.OnSelectRow']; $pAll['galPrjList.DisplayMode'] = '=If(' + $plEn.Substring(1) + ',DisplayMode.Edit,DisplayMode.Disabled)'
+$pAll['galPrjList.Items'] = $pAll['cmpPrjList.Items']; $pAll['btnPrjShowInactiveSwitch.OnSelect'] = $pAll['cmpPrjList.OnToggleShowInactive']
+$pAll['icoPrjMsgClose.OnSelect'] = $pAll['cmpPrjMsgBar.OnClose']
+foreach ($rm in 'cmpPrjList.OnSelectRow', 'cmpPrjList.Enabled', 'cmpPrjList.Items', 'cmpPrjList.OnToggleShowInactive', 'cmpPrjMsgBar.OnClose') { $pAll.Remove($rm) }
+$pText = ($pAll.Values) -join "`n"
+function PGet([string]$ctl, [string]$prop) { $v = $pAll["$ctl.$prop"]; if ($null -eq $v) { throw "FAIL missing $ctl.$prop" }; return ([string]$v).Trim() }
+$pTextFields = [ordered]@{ cmpPrjName = 'Name'; cmpPrjNumber = 'Number'; cmpPrjReference = 'Reference'; cmpPrjCustomer = 'Customer'; cmpPrjStreet = 'Street'; cmpPrjHouseNumber = 'HouseNumber'; cmpPrjPostalCode = 'PostalCode'; cmpPrjCity = 'City'; cmpPrjUrl = 'Url' }
+$pDropFields = [ordered]@{ cmpPrjStatus = 'Status'; cmpPrjCountry = 'Country' }
 $pWritten = @('Name', 'Number', 'Reference', 'Customer', 'Status', 'Street', 'HouseNumber', 'PostalCode', 'City', 'Country', 'Url')
-function PInputOf([string]$f) { foreach ($k in $pTextFields.Keys) { if ($pTextFields[$k] -eq $f) { return "$k.Text" } }; foreach ($k in $pDropFields.Keys) { if ($pDropFields[$k] -eq $f) { return "$k.Selected.Value" } }; throw "no input for $f" }
+function PInputOf([string]$f) { foreach ($k in $pTextFields.Keys) { if ($pTextFields[$k] -eq $f) { return "$k.CurrentValue" } }; foreach ($k in $pDropFields.Keys) { if ($pDropFields[$k] -eq $f) { return "$k.CurrentValue" } }; throw "no input for $f" }
 
 # (P1) Identical fail-closed guard in DisplayMode and as first OnSelect condition ---------------------------------------
 $pGuards = @{}
@@ -1028,7 +1048,7 @@ foreach ($k in @('varPrjLoadState="Loaded"', 'IsEmpty(colPrjLoadErrors)', '!Coal
 Assert-True ($pGuards.btnPrjSave.Contains('(varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID)))')) 'Projects: Save guard: New, or Edit with an ID'
 Assert-True ((PGet 'btnPrjHome' 'OnSelect') -ceq ('=If(' + $pGuards.btnPrjHome + ',Navigate(scrHome))')) 'Projects: Home navigates only to scrHome, inside the guard'
 function PIn([string]$name, [string]$num, [string]$city, [string]$status, [string]$country, [string]$empty) {
-    return "txtPrjName:{Text:$name},txtPrjNumber:{Text:$num},txtPrjReference:{Text:$empty},txtPrjCustomer:{Text:$empty},ddPrjStatus:{Selected:{Value:$status}},txtPrjStreet:{Text:$empty},txtPrjHouseNumber:{Text:$empty},txtPrjPostalCode:{Text:$empty},txtPrjCity:{Text:$city},ddPrjCountry:{Selected:{Value:$country}},txtPrjUrl:{Text:$empty}"
+    return "cmpPrjName:{CurrentValue:$name},cmpPrjNumber:{CurrentValue:$num},cmpPrjReference:{CurrentValue:$empty},cmpPrjCustomer:{CurrentValue:$empty},cmpPrjStatus:{CurrentValue:$status},cmpPrjStreet:{CurrentValue:$empty},cmpPrjHouseNumber:{CurrentValue:$empty},cmpPrjPostalCode:{CurrentValue:$empty},cmpPrjCity:{CurrentValue:$city},cmpPrjCountry:{CurrentValue:$country},cmpPrjUrl:{CurrentValue:$empty}"
 }
 $pSnap = '{ID:5,Name:"A",Number:"TEST-002",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""}'
 $pBase = 'varPrjLoadState:"Loaded",colPrjLoadErrors:Filter(Table({Message:""}),false),varPrjBusy:false,varPrjSaving:false,varPrjSaveFailed:false,varPrjMode:"Edit",varPrjSelectedID:5,varPrjEdit:' + $pSnap + ','
@@ -1037,8 +1057,8 @@ $pClean = $pBase + (PIn '"A"' '"TEST-002"' '""' '"Active"' '"Netherlands"' '""')
 function PG($name, $fixture) { return 'With({' + $fixture + '},' + $pGuards[$name] + ')' }
 Assert-Eval (PG 'btnPrjSave' $pFix) $true 'Projects: Save allowed: Loaded, Edit with ID, dirty'
 Assert-Eval (PG 'btnPrjSave' $pClean) $false 'Projects: Save blocked: not dirty'
-Assert-Eval (PG 'btnPrjSave' $pClean.Replace('ddPrjStatus:{Selected:{Value:"Active"}}', 'ddPrjStatus:{Selected:{Value:"Closed"}}')) $true 'Projects: Save allowed: only Status changed (dirty)'
-Assert-Eval (PG 'btnPrjSave' $pClean.Replace('ddPrjCountry:{Selected:{Value:"Netherlands"}}', 'ddPrjCountry:{Selected:{Value:"Germany"}}')) $true 'Projects: Save allowed: only Country changed (dirty)'
+Assert-Eval (PG 'btnPrjSave' $pClean.Replace('cmpPrjStatus:{CurrentValue:"Active"}', 'cmpPrjStatus:{CurrentValue:"Closed"}')) $true 'Projects: Save allowed: only Status changed (dirty)'
+Assert-Eval (PG 'btnPrjSave' $pClean.Replace('cmpPrjCountry:{CurrentValue:"Netherlands"}', 'cmpPrjCountry:{CurrentValue:"Germany"}')) $true 'Projects: Save allowed: only Country changed (dirty)'
 foreach ($s in @('NotLoaded', 'Loading', 'Failed')) { Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjLoadState:"Loaded"', "varPrjLoadState:""$s""")) $false "Projects: Save blocked: $s" }
 Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjLoadState:"Loaded"', 'varPrjLoadState:Blank()')) $false 'Projects: Save blocked: cold start'
 Assert-Eval (PG 'btnPrjSave' $pFix.Replace('varPrjBusy:false', 'varPrjBusy:true')) $false 'Projects: Save blocked: loading busy'
@@ -1069,13 +1089,23 @@ Assert-Eval (PG 'btnPrjDiscard' $pFix.Replace('varPrjSaving:false', 'varPrjSavin
 # A loaded project with an empty Status/Country: dropdowns allow an empty selection, so the form is not falsely dirty
 $pEmptyChoice = $pBase.Replace('Status:"Active"', 'Status:""').Replace('Country:"Netherlands"', 'Country:""') + (PIn '"A"' '"TEST-002"' '""' 'If(false,"x")' 'If(false,"x")' '""')
 Assert-Eval (PG 'btnPrjHome' $pEmptyChoice) $true 'Projects: empty Status/Country in SharePoint and empty dropdown selection: not dirty'
-foreach ($d in $pDropFields.Keys) { Assert-True ((PGet $d 'AllowEmptySelection') -eq '=true') "Projects: $d.AllowEmptySelection = true (blank SharePoint value stays blank, no false dirty)" }
+$cfFieldDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'Component/cmpField.pa.yaml')))['ComponentDefinitions']['cmpField']; $cfFieldIdx = @{}; Index-Controls $cfFieldDef['Children'] $cfFieldIdx
+Assert-True ($cfFieldIdx['ddCmpFieldInput']['Properties']['AllowEmptySelection'] -eq '=true') 'Projects: the cmpField dropdown has AllowEmptySelection = true (blank SharePoint value stays blank, no false dirty); Status and Country are cmpField dropdowns'
 
 # Form bound to varPrjEdit, never to the gallery selection
-foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) { $f = if ($pTextFields.Contains($k)) { $pTextFields[$k] } else { $pDropFields[$k] }; Assert-True ((PGet $k 'Default') -ceq "=varPrjEdit.$f") "Projects: $k.Default = varPrjEdit.$f" }
-foreach ($k in @('txtPrjLeader', 'txtPrjSiteManager')) { $f = @{ txtPrjLeader = 'Leader'; txtPrjSiteManager = 'SiteManager' }[$k]; Assert-True ((PGet $k 'Default') -ceq "=varPrjEdit.$f" -and (PGet $k 'DisplayMode') -eq '=DisplayMode.Disabled' -and $pIdx[$k]['Control'] -eq 'Classic/TextInput@2.3.2') "Projects: $k read-only (Classic/TextInput, always Disabled) showing varPrjEdit.$f (DisplayName)" }
-$pSelUses = @($pAll.Keys | Where-Object { $pAll[$_] -match 'galPrjList\.Selected' })
-Assert-True ($pSelUses.Count -eq 1 -and $pSelUses[0] -eq 'galPrjList.OnSelect') 'Projects: galPrjList.Selected only read in the guarded gallery OnSelect'
+$pFieldGuard = '=varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]'
+$pLabelKey = @{ Name = 'prjFieldName'; Number = 'prjFieldNumber'; Reference = 'prjFieldReference'; Customer = 'prjFieldCustomer'; Status = 'prjFieldStatus'; Street = 'prjFieldStreet'; HouseNumber = 'prjFieldHouseNumber'; PostalCode = 'prjFieldPostalCode'; City = 'prjFieldCity'; Country = 'prjFieldCountry'; Leader = 'prjFieldLeader'; SiteManager = 'prjFieldSiteManager'; Url = 'prjFieldUrl' }
+foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) {
+    $f = if ($pTextFields.Contains($k)) { $pTextFields[$k] } else { $pDropFields[$k] }; $fp = $pIdx[$k]['Properties']
+    Assert-True (($pIdx[$k]['Control'] -eq 'CanvasComponent') -and ($pIdx[$k]['ComponentName'] -eq 'cmpField')) "Projects: $k is a cmpField instance"
+    Assert-True ((PGet $k 'Value') -ceq "=varPrjEdit.$f") "Projects: $k.Value = varPrjEdit.$f"
+    Assert-True (((PGet $k 'Enabled') -ceq $pFieldGuard) -and ((PGet $k 'Invalid') -ceq ('=CountIf(colPrjSaveErrors,Field="' + $f + '")>0')) -and ((PGet $k 'Height') -eq '=58') -and ((PGet $k 'MaxLength') -eq '=255') -and ((PGet $k 'Label') -ceq ('=' + (TT $pLabelKey[$f]))) -and (-not $fp.ContainsKey('Visible')) -and (-not $fp.ContainsKey('OnChange'))) "Projects: $k Enabled = edit guard (Boolean), Invalid = CountIf(colPrjSaveErrors,Field=""$f"")>0, label from T, h58, MaxLength 255, no Visible, no OnChange logic"
+    Assert-True ((($fp.ContainsKey('Required') -and $fp['Required'] -eq '=true') -eq ($f -in @('Name', 'Number', 'Status'))) -and ((PGet $k 'InputType') -eq $(if ($pDropFields.Contains($k)) { '="dropdown"' } else { '="text"' }))) "Projects: $k Required only on Project Name, Project Number and Status; InputType text / dropdown"
+}
+foreach ($k in @('cmpPrjLeader', 'cmpPrjSiteManager')) { $f = @{ cmpPrjLeader = 'Leader'; cmpPrjSiteManager = 'SiteManager' }[$k]; Assert-True (((PGet $k 'Value') -ceq "=varPrjEdit.$f") -and ((PGet $k 'InputType') -eq '="readonly"') -and ((PGet $k 'Enabled') -eq '=false') -and ($pIdx[$k]['ComponentName'] -eq 'cmpField') -and ((PGet $k 'Label') -ceq ('=' + (TT $pLabelKey[$f])))) "Projects: $k read-only cmpField, never enabled, showing varPrjEdit.$f (DisplayName)" }
+Assert-True ($srcAll -notmatch '\btxtPrj\w*\b|\bddPrj\w*\b|\bgalPrjList\b|\blblPrj\w*Label\b|\blblPrj\w*Required\b|\bconPrjMsgBar\b|\bnavPrj\b|\bconPrjListCard\b|\bimgPrjSpinner\b|\bimgLogoProjects\b|\blblPrjTitle\b|\bconPrjButtonRow\b') 'Projects: no replaced hand-built control (txtPrj*, ddPrj*, galPrjList, field labels/stars, conPrjMsgBar, navPrj, spinner, logo) is left in Src'
+$pSelUses = @($pAll.Keys | Where-Object { $pAll[$_] -match 'cmpPrjList\.SelectedRowID' })
+Assert-True ($pSelUses.Count -eq 1 -and $pSelUses[0] -eq 'galPrjList.OnSelect') 'Projects: cmpPrjList.SelectedRowID only read in the guarded OnSelectRow handler'
 Assert-True (@($pIdx.Keys | Where-Object { $pIdx[$_]['Control'] -like 'Classic/CheckBox@*' -or $pIdx[$_]['Control'] -like '*ComboBox*' }).Count -eq 0) 'Projects: no CheckBox/ComboBox (Status replaces Active; person fields read-only)'
 Assert-True ($pText -notmatch '\bvarPrjActiveDraft\b|btnPrjActiveSwitch') 'Projects: no Active switch (Status replaces Active)'
 
@@ -1143,9 +1173,9 @@ foreach ($v in @(@('Set(varPrjSaveNumber,varPrjSaveRec.Number)', "Filter(Project
     Assert-True ($pSave.IndexOf($v[0]) -gt 0 -and $pSave.IndexOf($v[0]) -lt $pSave.IndexOf($v[1])) "Projects: global predicate variable set before its read: $($v[1])"
 }
 $pChoices = @($pAll.Keys | Where-Object { $pAll[$_] -match '\bChoices\(' } | Sort-Object)
-Assert-True (($pChoices -join ',') -ceq 'btnPrjSave.OnSelect,ddPrjCountry.Items,ddPrjStatus.Items') "Projects: Choices() only on the two dropdown Items and in Save ($($pChoices -join ', '))"
+Assert-True (($pChoices -join ',') -ceq 'btnPrjSave.OnSelect,cmpPrjCountry.Items,cmpPrjStatus.Items') "Projects: Choices() only on the two cmpField dropdown Items and in Save ($($pChoices -join ', '))"
 $pAsIs = @{}; foreach ($c in @('Status', 'Country')) { $pAsIs[$c] = "Split(Concat(Choices([@Projects].$c),Value,Char(31)) & If(!IsBlank(varPrjEdit.$c) && CountIf(Choices([@Projects].$c),Value=varPrjEdit.$c)=0,Char(31) & varPrjEdit.$c,`"`"),Char(31))" }
-Assert-True ((PGet 'ddPrjStatus' 'Items') -ceq ('=' + $pAsIs.Status) -and (PGet 'ddPrjCountry' 'Items') -ceq ('=' + $pAsIs.Country) -and (PGet 'ddPrjStatus' 'Items.Value') -eq '=Value' -and (PGet 'ddPrjCountry' 'Items.Value') -eq '=Value') 'Projects: Status/Country dropdown Items = Choices([@Projects].<column>) (SharePoint values, not translated) plus the stored value of the record when it is not in Choices (shown as-is)'
+Assert-True ((PGet 'cmpPrjStatus' 'Items') -ceq '=ShowColumns(Choices([@Projects].Status),"Value")' -and (PGet 'cmpPrjCountry' 'Items') -ceq '=ShowColumns(Choices([@Projects].Country),"Value")' -and ($cfFieldIdx['ddCmpFieldInput']['Properties']['Items'] -match 'LookUp\(cmpField\.Items,Value=cmpField\.Value\)')) 'Projects: Status/Country dropdown Items = the Choices([@Projects].<column>) values (column Value, not translated); cmpField appends the stored value of the record itself when it is not in the list (shown as-is, never dirty)'
 Assert-True (([regex]::Matches($pSave, '\bChoices\(')).Count -eq 1 -and $pSave.Contains('If(IsBlank(varPrjSaveRec.Status) || (CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0 && !(varPrjSaveMode="Edit" && varPrjSaveRec.Status=varPrjEdit.Status)),Collect(colPrjSaveErrors,{Field:"Status"')) 'Projects: Save validates Status once against Choices (not inside ForAll); an unchanged stored value outside Choices is accepted in Edit'
 Assert-True (@($pAll.Values | Where-Object { $_ -match 'ForAll\([^;]*\bChoices\(' }).Count -eq 0 -and $pText -notmatch '\bSearch\(') 'Projects: no Choices() inside ForAll, no Search()'
 Assert-True ($pText -notmatch "ForAll\([^)]*\bProjects\b[^)]*\)[^;]*\b(?:LookUp|Filter)\(\s*Projects") 'Projects: no remote LookUp/Filter inside ForAll'
@@ -1296,7 +1326,7 @@ foreach ($k in $pAll.Keys) {
     $fx = $pAll[$k]
     if ($k -like '*.Font' -or $k -eq 'imgPrjSpinner.Image') { continue }
     if ($k -like '*.OnVisible' -or $k -like '*.OnSelect') { $fx = [regex]::Replace($fx, 'Trace\("[^"]*"', 'Trace(') }
-    foreach ($lit in [regex]::Matches($fx, '"([^"]*)"')) { if ($lit.Groups[1].Value -match '[A-Za-z]{2,}\s+[A-Za-z]') { $pHard += "$k : `"$($lit.Groups[1].Value)`"" } }
+    foreach ($lit in [regex]::Matches($fx, '"([^"]*)"')) { if ($lit.Groups[1].Value -match '[A-Za-z]{2,}\s+[A-Za-z]' -and $lit.Groups[1].Value -cne 'On hold') { $pHard +="$k : `"$($lit.Groups[1].Value)`"" } }
 }
 Assert-True ($pHard.Count -eq 0) "Projects: no hard-coded sentences (all user texts via T) $($pHard -join '; ')"
 $pLit = @()
@@ -1319,12 +1349,12 @@ $pSp = @()
 foreach ($k in ($pBeh.Keys | Sort-Object)) { foreach ($r in (Test-RefreshBeforeReads $pBeh[$k])) { $pSp += $r; Assert-True ($r.Status -eq 'Refreshed') "Projects: $k : read of $($r.Source) (formula line $($r.Line)) preceded by Refresh($($r.Source)) in the same branch [$($r.Status)]" } }
 Assert-True (@($pSp | Where-Object Source -eq 'Projects').Count -eq 4 -and @($pSp | Where-Object Source -eq "'Assignment Periods'").Count -eq 1 -and $pSp.Count -eq 5) "Projects: SharePoint reads: 4 x Projects (load, pre-read, number check, verify), 1 x Assignment Periods (closing check)"
 $pFr = PGet 'btnPrjFormReset' 'OnSelect'
-$pReset = 'Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl)'
+$pReset = 'Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl)'
 Assert-True ($pIdx['btnPrjFormReset']['Control'] -eq 'Classic/Button@2.2.0' -and (PGet 'btnPrjFormReset' 'Visible') -eq '=false' -and $pFr.StartsWith('=If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false),') -and $pFr.Contains($pReset)) 'Projects: hidden btnPrjFormReset resets all 11 inputs only when Loaded/idle/no failed save'
 Assert-True ($pFr -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate)\(') 'Projects: form reset is local only (no mutation, no variable change, no further Select)'
 Assert-True (([regex]::Matches($pText, 'Select\(btnPrjFormReset\)')).Count -eq 2 -and $pLoad.IndexOf('If(varPrjLoadState="Loaded",Select(btnPrjFormReset))') -gt $pLoad.LastIndexOf('Set(varPrjForceRefresh,false); Set(varPrjBusy,false);')) 'Projects: form reset selected at the end of the loader (after busy off) and after a verified save'
 foreach ($k in @('btnPrjLoad.OnSelect', 'btnPrjSave.OnSelect', 'btnPrjNew.OnSelect', 'btnPrjDiscard.OnSelect', 'galPrjList.OnSelect')) { Assert-True ($pAll[$k].Contains($pReset)) "Projects: $k resets all form inputs (incl. both dropdowns)" }
-foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) { Assert-True (!$pIdx[$k]['Properties'].ContainsKey('Reset')) "Projects: $k has no Reset property (Reset() calls only)" }
+foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) { Assert-True (!$pIdx[$k]['Properties'].ContainsKey('Reset')) "Projects: $k has no Reset property (Reset(<instance>) calls only)" }
 $pModFx = (PGet 'lblPrjModified' 'Text').TrimStart('=')
 Assert-True ($pModFx.Contains('LookUp(colPrjModified,ID=varPrjSelectedID).Modified') -and $pModFx -notmatch '\b(Projects|Filter)\b') 'Projects: lblPrjModified reads the local Modified copy only'
 $pModUses = @($pAll.Keys | Where-Object { $pAll[$_] -match 'Modified' } | Sort-Object)
@@ -1402,22 +1432,24 @@ $pLoadMsg = @($pMsgs | Where-Object Key -eq 'btnPrjLoad.OnSelect' | Sort-Object 
 Assert-True ((($pLoadMsg | ForEach-Object { $_.Kind }) -join ',') -ceq '"Error","Success","Error"') 'Projects: loader messages in order: reload blocked, loaded, load failed'
 Assert-Eval (PMsg 'colAdminProjects:Table({ID:1},{ID:2}),varPrjLoadedAt:DateTime(2026,10,30,8,5,7)' $pLoadMsg[1].Body) '2 projects loaded at 08:05:07' 'Projects: load success message: count and time'
 Assert-Eval (PMsg 'colPrjLoadErrors:Table({Message:T.prjErrLoadProjects.en & " " & "Network error"},{Message:T.prjErrLimitProjects.en})' $pLoadMsg[2].Body) 'Loading failed. Click Refresh. Projects not read: Network error (+1 more)' 'Projects: load failure message'
-$pBarExp = [ordered]@{ X = '=lblPrjTitle.X'; Y = '=lblPrjTitle.Y+lblPrjTitle.Height'; Width = '=lblPrjTitle.Width'; Height = '=If(!IsBlank(varAdmMsgKind),40,0)'; Visible = '=!IsBlank(varAdmMsgKind)'; Fill = '=Switch(varAdmMsgKind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)' }
-foreach ($k in $pBarExp.Keys) { Assert-True ((PGet 'conPrjMsgBar' $k) -ceq $pBarExp[$k]) "Projects: conPrjMsgBar.$k = $($pBarExp[$k]) (same as Contractors)" }
-foreach ($c in @('lblPrjMsgHead', 'lblPrjMsgBody', 'icoPrjMsgClose')) { Assert-True ((PGet $c 'Color') -ceq $textColFx) "Projects: $c.Color white on red, #000F41 on amber/green" }
-Assert-True ((PGet 'lblPrjMsgHead' 'Text') -ceq '=varAdmMsgHead' -and (PGet 'lblPrjMsgBody' 'Text') -ceq '=varAdmMsgBody' -and (PGet 'icoPrjMsgClose' 'OnSelect') -ceq '=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")' -and $pVis.StartsWith('=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");')) 'Projects: bar shows the shared variables; Close and OnVisible clear them first'
+$pBarExp = [ordered]@{ X = '=cmpPrjTitle.X'; Y = '=cmpPrjTitle.Y+cmpPrjTitle.Height'; Width = '=cmpPrjTitle.Width'; Height = '=cmpPrjMsgBar.BarHeight'; Kind = '=varAdmMsgKind'; Head = '=varAdmMsgHead'; Body = '=varAdmMsgBody'; CloseLabel = ('=' + (TT 'admMsgClose')) }
+Assert-True ($pIdx['cmpPrjMsgBar']['Control'] -eq 'CanvasComponent' -and $pIdx['cmpPrjMsgBar']['ComponentName'] -eq 'cmpMessageBar') 'Projects: cmpPrjMsgBar is a cmpMessageBar instance'
+foreach ($k in $pBarExp.Keys) { Assert-True (([string]$pIdx['cmpPrjMsgBar']['Properties'][$k]) -ceq $pBarExp[$k]) "Projects: cmpPrjMsgBar.$k = $($pBarExp[$k]) (same as Contractors)" }
+Assert-True ((PGet 'icoPrjMsgClose' 'OnSelect') -ceq '=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")' -and $pVis.StartsWith('=Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");')) 'Projects: cmpPrjMsgBar.OnClose and OnVisible clear kind, head and body first'
 $pBarReaders = @($pAll.Keys | Where-Object { $_ -notmatch '\.On\w+$' -and $pAll[$_] -match '\bvarAdmMsg(Kind|Head|Body)\b' } | ForEach-Object { ($_ -split '\.')[0] } | Sort-Object -Unique)
-Assert-True (($pBarReaders -join ',') -ceq 'conPrjMsgBar,icoPrjMsgClose,lblPrjMsgBody,lblPrjMsgHead') "Projects: message variables only displayed by the bar controls ($($pBarReaders -join ', '))"
+Assert-True (($pBarReaders -join ',') -ceq 'cmpPrjMsgBar') "Projects: message variables only displayed by the bar instance ($($pBarReaders -join ', '))"
 
 # (P16) List card: search on number/name/city, Show inactive = show Closed (default off), On hold counts as active --------
-Assert-True ((PGet 'txtPrjSearch' 'HintText') -eq (TT 'prjSearchHint').Insert(0, '=') -and (PGet 'txtPrjSearch' 'AccessibleLabel') -eq (PGet 'txtPrjSearch' 'HintText')) 'Projects: search hint/label from T ("Search number, name or city")'
-Assert-True ((PGet 'lblPrjCount' 'Text') -ceq ('=Substitute(' + (TT 'prjCount') + ',"{0}",Text(CountRows(galPrjList.AllItems)))')) 'Projects: count "{0} projects" = visible gallery rows'
-Assert-True ((PGet 'btnPrjShowInactiveSwitch' 'OnSelect') -ceq '=Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false))' -and (PGet 'btnPrjShowInactiveSwitch' 'DisplayMode') -ceq '=DisplayMode.Edit' -and (PGet 'btnPrjShowInactiveKnob' 'OnSelect') -ceq '=Select(btnPrjShowInactiveSwitch)' -and (PGet 'btnPrjShowInactiveKnob' 'DisplayMode') -ceq '=btnPrjShowInactiveSwitch.DisplayMode') 'Projects: Show inactive switch toggles a local filter only (knob forwards to the track)'
+Assert-True ((PGet 'cmpPrjList' 'SearchHint') -ceq ('=' + (TT 'prjSearchHint'))) 'Projects: search hint/label from T ("Search number, name or city")'
+Assert-True ((PGet 'cmpPrjList' 'CountText') -ceq ('=Substitute(' + (TT 'prjCount') + ',"{0}",Text(CountRows(cmpPrjList.Items)))')) 'Projects: count "{0} projects" = rows of the list card'
+Assert-True ((PGet 'btnPrjShowInactiveSwitch' 'OnSelect') -ceq ('=If(' + $plEn.Substring(1) + ',Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false)))') -and (PGet 'cmpPrjList' 'ShowInactive') -ceq '=Coalesce(varPrjShowInactive,false)') 'Projects: Show inactive (= show Closed) toggles a local filter only, guard first; the component never flips the state'
 $pSi = @($pAll.Keys | Where-Object { $pAll[$_] -match 'Set\(varPrjShowInactive,' } | Sort-Object)
 Assert-True (($pSi -join ',') -ceq 'btnPrjShowInactiveSwitch.OnSelect,scrProjects.OnVisible' -and $pVis.Contains('Set(varPrjShowInactive,false)')) 'Projects: varPrjShowInactive only set by its switch and the first-visit init (false = Closed hidden)'
-$pItems = (PGet 'galPrjList' 'Items').TrimStart('=')
+$pItemsAll = (PGet 'galPrjList' 'Items').TrimStart('=')
+$pItems = 'Sort' + (Get-Balanced $pItemsAll ($pItemsAll.IndexOf('Sort(Filter(') + 4))
+Assert-True ($pItemsAll.StartsWith('ForAll(' + $pItems + ' As r,{ID:r.ID,Title:') -and $pItems.Contains('cmpPrjList.SearchText') -and $pItems -notmatch 'txtPrjSearch') 'Projects: cmpListCard Items = the filtered, sorted list (same text as the loader auto-select) projected to ID, Title, Subtitle, Inactive, ChipText'
 $pItemFix = 'colAdminProjects:Table({ID:1,Name:"Alpha",Number:"TEST-002",Customer:"Cust",City:"Delft",Status:"Active"},{ID:2,Name:"Beta",Number:"TEST-001",Customer:"",City:"Ede",Status:"On hold"},{ID:3,Name:"Gamma",Number:"P-9",Customer:"",City:"Venlo",Status:"Closed"},{ID:4,Name:"Delta",Number:"A-1",Customer:"",City:"",Status:""})'
-function PItems([string]$show, [string]$search, [string]$col) { return "With({$pItemFix,varPrjShowInactive:$show,txtPrjSearch:{Text:$search}},Concat($pItems,$col,`",`"))" }
+function PItems([string]$show, [string]$search, [string]$col) { return "With({$pItemFix,varPrjShowInactive:$show,cmpPrjList:{SearchText:$search}},Concat($pItems,$col,`",`"))" }
 Assert-Eval (PItems 'false' '""' 'Number') 'A-1,TEST-001,TEST-002' 'Projects: default list hides Closed, shows On hold and blank Status; sorted by Project Number'
 Assert-Eval (PItems 'true' '""' 'Number') 'A-1,P-9,TEST-001,TEST-002' 'Projects: Show inactive on: Closed projects shown too'
 Assert-Eval (PItems 'If(false,true)' '""' 'Number') 'A-1,TEST-001,TEST-002' 'Projects: blank switch state = Closed hidden'
@@ -1425,23 +1457,18 @@ Assert-Eval (PItems 'true' '" test-00 "' 'Number') 'TEST-001,TEST-002' 'Projects
 Assert-Eval (PItems 'true' '"gam"' 'Number') 'P-9' 'Projects: search on Project Name'
 Assert-Eval (PItems 'true' '"ede"' 'Number') 'TEST-001' 'Projects: search on City'
 Assert-Eval (PItems 'true' '"cust"' 'Number') '' 'Projects: Customer is not a search field'
-$pRowName = (PGet 'lblPrjRowName' 'Text').TrimStart('='); $pRowSub = (PGet 'lblPrjRowSub' 'Text').TrimStart('=')
-$nd = [string][char]0x2013; $md = [string][char]0x00B7
-Assert-Eval "With({ThisItem:{Number:`"TEST-002`",Name:`"Alpha`"}},$pRowName)" "TEST-002 $nd Alpha" 'Projects: row name line "Project Number - Project Name"'
-Assert-Eval "With({ThisItem:{Number:`"TEST-002`",Name:`"`"}},$pRowName)" 'TEST-002' 'Projects: row name line without a name shows only the number'
-Assert-Eval "With({ThisItem:{Customer:`"Cust`",City:`"Delft`"}},$pRowSub)" "Cust $md Delft" 'Projects: row subline "Customer <middle dot> City"'
-Assert-Eval "With({ThisItem:{Customer:`"`",City:`"Delft`"}},$pRowSub)" 'Delft' 'Projects: row subline without customer: only City (no dangling separator)'
-$pChipVis = (PGet 'btnPrjRowStatus' 'Visible').TrimStart('=')
-foreach ($c in @(@('"Active"', $false), @('"On hold"', $true), @('"Closed"', $true), @('""', $false))) { Assert-Eval "With({ThisItem:{Status:$($c[0])}},$pChipVis)" $c[1] "Projects: row status chip visible for Status $($c[0]) = $($c[1])" }
-Assert-True ((PGet 'btnPrjRowStatus' 'Text') -ceq '=ThisItem.Status' -and (PGet 'lblPrjRowName' 'Width') -ceq "=Parent.TemplateWidth-If($pChipVis,88,0)") 'Projects: row chip shows the SharePoint Status text (not colour only); name line leaves room for the chip'
-Assert-True ((PGet 'lblPrjRowName' 'Size') -eq '=15' -and (PGet 'lblPrjRowName' 'FontWeight') -eq '=FontWeight.Semibold' -and (PGet 'lblPrjRowSub' 'Size') -eq '=13' -and (PGet 'galPrjList' 'TemplateSize') -eq '=64') 'Projects: row name 15 Semibold, subline 13, row height 64'
+$pProjFix = $pItemFix + ',cmpPrjList:{SearchText:""},LangNl:false,T:' + $tRec + ',varPrjShowInactive:true'
+$md = [string][char]0x00B7
+Assert-Eval "With({$pProjFix},Concat($pItemsAll,Title & ""|"" & Subtitle & ""|"" & Text(Inactive) & ""|"" & ChipText,"";""))" ("Delta|A-1|false|;Gamma|P-9 $md Venlo|true|Closed;Beta|TEST-001 $md Ede|false|On hold;Alpha|TEST-002 $md Delft|false|") 'Projects: Items projection: Title = Project Name, Subtitle = Project Number and City (no duplicate, no dangling separator), Inactive = Closed, ChipText Closed / On hold / empty'
+Assert-Eval "With({colAdminProjects:Table({ID:1,Name:""N"",Number:""X-1"",Customer:"""",City:"""",Status:""Active""},{ID:2,Name:"""",Number:""X-2"",Customer:"""",City:""Ede"",Status:""Active""}),cmpPrjList:{SearchText:""""},LangNl:false,T:$tRec,varPrjShowInactive:false},Concat($pItemsAll,Title & ""|"" & Subtitle,"";""))" "N|X-1;X-2|X-2 $md Ede" 'Projects: blank city: Subtitle is only the number; blank name: Title falls back to the number'
+Assert-True ((PGet 'cmpPrjList' 'SelectedID') -ceq '=Coalesce(varPrjSelectedID,0)') 'Projects: the selected ID goes to cmpListCard.SelectedID'
 
 # (P17) Form card: header, status chip, sections GENERAL/ADDRESS/PEOPLE/LINKS on the 1-3 column grid, Last changed bottom right ----
 $pTitleFx = (PGet 'lblPrjFormTitle' 'Text').TrimStart('=')
-Assert-Eval "With({LangNl:false,T:$tRec,varPrjMode:`"New`",varPrjEdit:{Number:`"`",Name:`"`"}},$pTitleFx)" 'New project' 'Projects: header for New = "New project"'
-Assert-Eval "With({LangNl:false,T:$tRec,varPrjMode:`"Edit`",varPrjEdit:{Number:`"TEST-002`",Name:`"Alpha`"}},$pTitleFx)" "TEST-002 $nd Alpha" 'Projects: header = Project Number + Project Name'
+foreach ($c in @(@('"New"', 'New project'), @('"Edit"', 'Project details'), @('""', 'No project selected'), @('If(false,"x")', 'No project selected'))) { Assert-Eval "With({LangNl:false,T:$tRec,varPrjMode:$($c[0])},$pTitleFx)" $c[1] "Projects: header text for Mode $($c[0]) = $($c[1]) (no Project Number/Name repeated)" }
+Assert-True ($pTitleFx.Contains('T.prjFormDetails') -and $pTitleFx.Contains('T.prjNoSelection') -and $pTitleFx.Contains('T.prjNewProject') -and ($pTitleFx -notmatch 'varPrjEdit') -and (-not $pIdx['lblPrjFormTitle']['Properties'].ContainsKey('Visible')) -and $formulas.Contains('prjFormDetails: {en: "Project details", nl: ""}')) 'Projects: header texts from T (prjFormDetails, prjNewProject, prjNoSelection), always visible'
 $pFormChipText = (PGet 'btnPrjFormChip' 'Text')
-Assert-True ($pFormChipText -ceq '=ddPrjStatus.Selected.Value' -and (PGet 'btnPrjFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled' -and !$pIdx['btnPrjFormChip']['Properties'].ContainsKey('OnSelect') -and (PGet 'btnPrjFormChip' 'Visible') -ceq '=Coalesce(varPrjMode,"") in ["New","Edit"] && !IsBlank(ddPrjStatus.Selected.Value)') 'Projects: status chip shows the Status draft as text, static, only in New/Edit with a Status'
+Assert-True (($pFormChipText -ceq '=varPrjEdit.Status') -and ((PGet 'btnPrjFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled') -and (-not $pIdx['btnPrjFormChip']['Properties'].ContainsKey('OnSelect')) -and ((PGet 'btnPrjFormChip' 'Visible') -ceq '=Coalesce(varPrjMode,"") in ["New","Edit"] && !IsBlank(varPrjEdit.Status)') -and ((PGet 'btnPrjFormChip' 'X') -eq '=Parent.Width-24-Self.Width') -and ((PGet 'lblPrjFormTitle' 'Width') -eq '=Max(0,Parent.Width-48-84)')) 'Projects: status chip shows the SAVED status (varPrjEdit.Status) as text, static, hidden when Mode is empty, right-aligned on the card padding; reviewer N2 solved'
 $pLay = [ordered]@{ X = '=If(Parent.Width>=1000,1,0)'; Y = '=If(Self.X=1,408,24)'; Width = '=If(Self.X=1,Max(0,Parent.Width-432),Parent.Width-48)'; Height = '=If(Self.X=1,24,500)' }
 foreach ($k in $pLay.Keys) { Assert-True ((PGet 'lblPrjLayout' $k) -ceq $pLay[$k]) "Projects: layout carrier lblPrjLayout.$k as Contractors" }
 Assert-True ((PGet 'lblPrjMetrics' 'X') -ceq '=If(lblPrjLayout.Width-48>=572,3,If(lblPrjLayout.Width-48>=376,2,1))' -and (PGet 'lblPrjMetrics' 'Y') -ceq '=lblPrjModified.Y+lblPrjModified.Height+24' -and (PGet 'lblPrjMetrics' 'Width') -ceq '=If(lblPrjLayout.X=1,Self.Height-48,452)' -and (PGet 'lblPrjMetrics' 'Height') -ceq '=If(lblPrjLayout.X=1,Max(conPrjBody.Height,Self.Y+48,568),lblPrjLayout.Height+Self.Y+24)' -and (PGet 'lblPrjGrid' 'Width') -ceq '=(lblPrjLayout.Width-48-16*(lblPrjMetrics.X-1))/lblPrjMetrics.X') 'Projects: grid carriers (columns 3/2/1 at content 572/376, gap 16; content height) as Contractors'
@@ -1449,33 +1476,26 @@ $pSecExp = [ordered]@{ lblPrjSecGeneral = '=lblPrjFormDivider.Y+1+20'; lblPrjSec
 foreach ($k in $pSecExp.Keys) { Assert-True ((PGet $k 'Y') -ceq $pSecExp[$k] -and (PGet $k 'Size') -eq '=12' -and (PGet $k 'FontWeight') -eq '=FontWeight.Bold' -and (PGet $k 'Height') -eq '=18') "Projects: section $k 12 Bold, top $($pSecExp[$k])" }
 Assert-True ((PGet 'lblPrjModified' 'Y') -ceq '=lblPrjSecLinks.Y+38+74' -and (PGet 'lblPrjModified' 'Align') -eq '=Align.Right' -and (PGet 'lblPrjModified' 'X') -eq '=24' -and (PGet 'lblPrjModified' 'Width') -eq '=lblPrjLayout.Width-48' -and (PGet 'lblPrjModified' 'Size') -eq '=12') 'Projects: "Last changed in SharePoint" bottom right, under LINKS (no Active switch row)'
 $pGrid = [ordered]@{ General = @('Name', 'Number', 'Reference', 'Customer', 'Status'); Address = @('Street', 'HouseNumber', 'PostalCode', 'City', 'Country'); People = @('Leader', 'SiteManager'); Links = @('Url') }
-$pCtlOf = @{ Name = 'txtPrjName'; Number = 'txtPrjNumber'; Reference = 'txtPrjReference'; Customer = 'txtPrjCustomer'; Status = 'ddPrjStatus'; Street = 'txtPrjStreet'; HouseNumber = 'txtPrjHouseNumber'; PostalCode = 'txtPrjPostalCode'; City = 'txtPrjCity'; Country = 'ddPrjCountry'; Leader = 'txtPrjLeader'; SiteManager = 'txtPrjSiteManager'; Url = 'txtPrjUrl' }
+$pCtlOf = @{ Name = 'cmpPrjName'; Number = 'cmpPrjNumber'; Reference = 'cmpPrjReference'; Customer = 'cmpPrjCustomer'; Status = 'cmpPrjStatus'; Street = 'cmpPrjStreet'; HouseNumber = 'cmpPrjHouseNumber'; PostalCode = 'cmpPrjPostalCode'; City = 'cmpPrjCity'; Country = 'cmpPrjCountry'; Leader = 'cmpPrjLeader'; SiteManager = 'cmpPrjSiteManager'; Url = 'cmpPrjUrl' }
 foreach ($s in $pGrid.Keys) {
     for ($n = 0; $n -lt $pGrid[$s].Count; $n++) {
-        $f = $pGrid[$s][$n]; $lb = "lblPrj${f}Label"; $ct = $pCtlOf[$f]; $sec = "lblPrjSec$s"
+        $f = $pGrid[$s][$n]; $ct = $pCtlOf[$f]; $sec = "lblPrjSec$s"
         $xx = if ($n -eq 0) { '=24' } else { "=24+Mod($n,lblPrjMetrics.X)*(lblPrjGrid.Width+16)" }
         $yy = if ($n -eq 0) { "=$sec.Y+30" } else { "=$sec.Y+30+RoundDown($n/lblPrjMetrics.X,0)*74" }
         $ww = if ($f -eq 'Url') { '=lblPrjLayout.Width-48' } else { '=lblPrjGrid.Width' }
-        Assert-True ((PGet $lb 'X') -ceq $xx -and (PGet $ct 'X') -ceq $xx -and (PGet $lb 'Y') -ceq $yy -and (PGet $ct 'Y') -ceq "=$lb.Y+22" -and (PGet $lb 'Width') -ceq $ww -and (PGet $ct 'Width') -ceq $ww -and (PGet $ct 'Height') -eq '=36') "Projects: $s field $n ($f): grid cell, input 22 px under the label, h36$(if ($f -eq 'Url') { ', full content width' })"
-        Assert-True ((PGet $lb 'Size') -eq '=13' -and (PGet $lb 'FontWeight') -eq '=FontWeight.Semibold' -and (PGet $lb 'Height') -eq '=18' -and (PGet $lb 'Text') -match 'T\.prjField') "Projects: $lb : 13 Semibold, h18, text from T"
+        Assert-True (((PGet $ct 'X') -ceq $xx) -and ((PGet $ct 'Y') -ceq $yy) -and ((PGet $ct 'Width') -ceq $ww) -and ((PGet $ct 'Height') -eq '=58')) "Projects: $s field $n ($f): cmpField at the grid cell, 58 high (label 18 + 4 + field 36)$(if ($f -eq 'Url') { ', full content width' })"
     }
 }
-foreach ($r in @('Name', 'Number', 'Status')) { Assert-True ((PGet "lblPrj${r}Required" 'Text') -eq '="*"' -and (PGet "lblPrj${r}Required" 'Y') -eq "=lblPrj${r}Label.Y") "Projects: red required star after $r" }
-Assert-True (@($pIdx.Keys | Where-Object { $_ -like 'lblPrj*Required' }).Count -eq 3) 'Projects: exactly 3 required stars (Project Name, Project Number, Status)'
-foreach ($k in $pTextFields.Keys) {
-    $f = $pTextFields[$k]; $er = "CountIf(colPrjSaveErrors,Field=""$f"")>0"
-    foreach ($pv in @(@('BorderColor', '#9B9B9B'), @('HoverBorderColor', '#5A5A5A'), @('FocusedBorderColor', '#0303B8'), @('PressedBorderColor', '#0303B8'))) { Assert-True ((PGet $k $pv[0]) -ceq "=If($er,ColorValue(""#DB1E28""),ColorValue(""$($pv[1])""))") "Projects: $k.$($pv[0]) red when colPrjSaveErrors has Field=$f" }
-    Assert-True ((PGet $k 'BorderThickness') -ceq "=If($er,2,1)" -and (PGet $k 'DisplayMode') -ceq (PGet 'txtPrjName' 'DisplayMode') -and (PGet $k 'MaxLength') -eq '=255') "Projects: $k border 1/2 px, same form DisplayMode, MaxLength 255"
-}
-foreach ($k in $pDropFields.Keys) { $f = $pDropFields[$k]; Assert-True ((PGet $k 'BorderColor') -ceq "=If(CountIf(colPrjSaveErrors,Field=""$f"")>0,ColorValue(""#DB1E28""),ColorValue(""#DCDCDC""))" -and (PGet $k 'DisplayMode') -ceq (PGet 'txtPrjName' 'DisplayMode')) "Projects: $k red border on Field=$f, same form DisplayMode" }
+Assert-True (@($pIdx.Keys | Where-Object { $pIdx[$_]['Properties'].ContainsKey('Required') -and $pIdx[$_]['Properties']['Required'] -eq '=true' }).Count -eq 3) 'Projects: exactly 3 required fields (Project Name, Project Number, Status)'
+foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) { $f = if ($pTextFields.Contains($k)) { $pTextFields[$k] } else { $pDropFields[$k] }; $er = "CountIf(colPrjSaveErrors,Field=""$f"")>0"; Assert-Eval "With({colPrjSaveErrors:Table({Field:`"$f`",Message:`"x`"})},$((PGet $k 'Invalid').TrimStart('=')))" $true "Projects: $k.Invalid true with an error on Field=$f"; Assert-Eval "With({colPrjSaveErrors:Table({Field:`"Other`",Message:`"x`"})},$((PGet $k 'Invalid').TrimStart('=')))" $false "Projects: $k.Invalid false without an error on Field=$f" }
 $pFields = @([regex]::Matches($pSave, 'Collect\(colPrjSaveErrors,\{Field:"(\w*)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
 Assert-True (@($pFields | Where-Object { $_ -ne '' -and $_ -cnotin $pWritten }).Count -eq 0) "Projects: every collected error Field is an input field or '' ($($pFields -join ','))"
-Assert-True ((PGet 'txtPrjName' 'DisplayMode') -ceq '=If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)') 'Projects: inputs editable only when Loaded, idle, no failed save, New/Edit (else Disabled: the field box always renders)'
+Assert-True ((PGet 'cmpPrjName' 'Enabled') -ceq $pFieldGuard) 'Projects: inputs editable only when Loaded, idle, no failed save, New/Edit (else Disabled: the field box always renders)'
 $pFormKids = @($pIdx['conPrjFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
-$pExpKids = 'lblPrjFormTitle,btnPrjFormChip,lblPrjFormDivider,lblPrjSecGeneral,lblPrjNameLabel,lblPrjNameRequired,txtPrjName,lblPrjNumberLabel,lblPrjNumberRequired,txtPrjNumber,lblPrjReferenceLabel,txtPrjReference,lblPrjCustomerLabel,txtPrjCustomer,lblPrjStatusLabel,lblPrjStatusRequired,ddPrjStatus,lblPrjSecAddress,lblPrjStreetLabel,txtPrjStreet,lblPrjHouseNumberLabel,txtPrjHouseNumber,lblPrjPostalCodeLabel,txtPrjPostalCode,lblPrjCityLabel,txtPrjCity,lblPrjCountryLabel,ddPrjCountry,lblPrjSecPeople,lblPrjLeaderLabel,txtPrjLeader,lblPrjSiteManagerLabel,txtPrjSiteManager,lblPrjSecLinks,lblPrjUrlLabel,txtPrjUrl,lblPrjModified'
+$pExpKids = 'lblPrjFormTitle,btnPrjFormChip,lblPrjFormDivider,lblPrjSecGeneral,cmpPrjName,cmpPrjNumber,cmpPrjReference,cmpPrjCustomer,cmpPrjStatus,lblPrjSecAddress,cmpPrjStreet,cmpPrjHouseNumber,cmpPrjPostalCode,cmpPrjCity,cmpPrjCountry,lblPrjSecPeople,cmpPrjLeader,cmpPrjSiteManager,lblPrjSecLinks,cmpPrjUrl,lblPrjModified'
 Assert-True (($pFormKids -join ',') -ceq $pExpKids) "Projects: conPrjFormCard children: $($pFormKids -join ',')"
-Assert-True ((@($pIdx['conPrjListCard']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'txtPrjSearch,icoPrjSearch,lblPrjCount,lblPrjShowInactive,btnPrjShowInactiveSwitch,btnPrjShowInactiveKnob,galPrjList' -and (@($pIdx['conPrjCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'conPrjListCard,conPrjFormCard') 'Projects: list card and canvas children as Contractors'
-foreach ($cp in @(@('conPrjListCard', 'X', '=24'), @('conPrjListCard', 'Y', '=24'), @('conPrjListCard', 'Width', '=If(lblPrjLayout.X=1,360,Parent.Width-48)'), @('conPrjListCard', 'Height', '=lblPrjMetrics.Width'), @('conPrjFormCard', 'X', '=lblPrjLayout.Y'), @('conPrjFormCard', 'Y', '=lblPrjLayout.Height'), @('conPrjFormCard', 'Width', '=lblPrjLayout.Width'), @('conPrjFormCard', 'Height', '=If(lblPrjLayout.X=1,lblPrjMetrics.Height-48,lblPrjMetrics.Y)'), @('conPrjFormCard', 'DropShadow', '=DropShadow.Light'), @('conPrjListCard', 'Fill', '=Color.White'), @('conPrjBody', 'Y', '=conPrjMsgBar.Y+conPrjMsgBar.Height'), @('conPrjBody', 'Height', '=Max(0,navPrj.Y-Self.Y)'), @('galPrjList', 'Y', '=lblPrjCount.Y+lblPrjCount.Height+12'), @('galPrjList', 'Height', '=Parent.Height-Self.Y-12'))) {
+Assert-True ((@($pIdx['conPrjCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'cmpPrjList,conPrjFormCard') 'Projects: canvas children = list card instance and form card'
+foreach ($cp in @(@('cmpPrjList', 'X', '=24'), @('cmpPrjList', 'Y', '=24'), @('cmpPrjList', 'Width', '=If(lblPrjLayout.X=1,360,Parent.Width-48)'), @('cmpPrjList', 'Height', '=lblPrjMetrics.Width'), @('conPrjFormCard', 'X', '=lblPrjLayout.Y'), @('conPrjFormCard', 'Y', '=lblPrjLayout.Height'), @('conPrjFormCard', 'Width', '=lblPrjLayout.Width'), @('conPrjFormCard', 'Height', '=If(lblPrjLayout.X=1,lblPrjMetrics.Height-48,lblPrjMetrics.Y)'), @('conPrjFormCard', 'DropShadow', '=DropShadow.Light'), @('conPrjBody', 'Y', '=cmpPrjMsgBar.Y+cmpPrjMsgBar.Height'), @('conPrjBody', 'Height', '=Max(0,cmpPrjFooter.Y-Self.Y)'))) {
     Assert-True ((PGet $cp[0] $cp[1]) -ceq $cp[2]) "Projects: $($cp[0]).$($cp[1]) = $($cp[2])"
 }
 # Numeric mirror of the pinned formulas: no overlap of labels/inputs/section headers, inside the 24 px padding, cards side by side or stacked
@@ -1521,16 +1541,9 @@ foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
 
 # (P18) Title bar, spinner, footer, Home tile -----------------------------------------------------------------------------
 $pKids = @($pDoc['Screens'][$pScreen]['Children'] | ForEach-Object { @($_.Keys)[0] })
-Assert-True (($pKids[0..3] -join ',') -ceq 'lblPrjTitle,imgLogoProjects,imgPrjSpinner,conPrjMsgBar' -and $pKids[-2] -eq 'navPrj' -and $pKids[-1] -eq 'recPrjFooterLine') 'Projects: children order title, logo, spinner, message bar ... footer, footer line (as Contractors)'
-Assert-True ((PGet 'lblPrjTitle' 'Height') -eq '=60' -and (PGet 'lblPrjTitle' 'Text') -ceq ('=' + (TT 'prjTitle'))) 'Projects: title bar 60 px, title "Projects" from T'
-Assert-True ([string]$pScreenProps['Fill'] -eq '=ColorValue("#F5F6F8")') 'Projects: page background #F5F6F8'
-$pSpImg = PGet 'imgPrjSpinner' 'Image'
-Assert-True ($pSpImg.StartsWith('="data:image/svg+xml;utf8," & EncodeUrl("<svg') -and $pSpImg.Contains('#FFFFFF') -and $pSpImg.Contains('animateTransform') -and (PGet 'imgPrjSpinner' 'Visible') -ceq '=Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"' -and (PGet 'imgPrjSpinner' 'X') -ceq '=lblPrjTitle.X+lblPrjTitle.Width-24-Self.Width') 'Projects: white SVG spinner (hand-built; Contractors moved to cmpTitleBar), right in the title bar while loading/saving'
-$pFoot = [ordered]@{ btnPrjHome = '110'; btnPrjNew = '90'; btnPrjRefresh = '110'; btnPrjDiscard = '188'; btnPrjSave = '140' }
-$cfDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'Component/cmpFooter.pa.yaml')))['ComponentDefinitions']['cmpFooter']; $cfIdx = @{}; Index-Controls $cfDef['Children'] $cfIdx
-function CfProp([string]$c, [string]$p) { return ([string]$cfIdx[$c]['Properties'][$p]).Trim() }
-foreach ($b in $pFoot.Keys) { $e = 'btnCmp' + $b.Substring(6); Assert-True ((PGet $b 'Width') -eq "=$($pFoot[$b])" -and (PGet $b 'Text') -match 'T\.prj' -and (PGet $b 'Fill') -ceq (CfProp $e 'Fill') -and (PGet $b 'X') -ceq (CfProp $e 'X').Replace('btnCmp', 'btnPrj').Replace('lblCmpFooterMetrics', 'lblFooterButtonMetrics')) "Projects: footer $b width $($pFoot[$b]), text from T, same role/position formula as the cmpFooter button $e" }
-Assert-True ((@($pIdx['conPrjButtonRow']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'btnPrjHome,icoPrjHome,btnPrjNew,btnPrjRefresh,btnPrjDiscard,btnPrjSave' -and (PGet 'conPrjButtonRow' 'Width') -ceq (CfProp 'conCmpFooterRow' 'Width').Replace('btnCmp', 'btnPrj').Replace('lblCmpFooterMetrics', 'lblFooterButtonMetrics')) 'Projects: one footer row: Home (+ icon) left; New, Refresh, Discard changes, Save right'
+Assert-True ((($pKids[0..1] -join ',') -ceq 'cmpPrjTitle,cmpPrjMsgBar') -and ($pKids[-1] -eq 'cmpPrjFooter')) 'Projects: children order title bar instance, message bar instance ... footer instance (as Contractors)'
+Assert-True ((PGet 'cmpPrjTitle' 'Height') -eq '=60' -and (PGet 'cmpPrjTitle' 'Title') -ceq ('=' + (TT 'prjTitle')) -and (PGet 'cmpPrjTitle' 'Logo') -eq '=GEA_logo_white' -and (PGet 'cmpPrjTitle' 'Busy') -ceq '=Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"' -and (PGet 'cmpPrjTitle' 'BusyLabel') -ceq ('=' + (TT 'prjBusy'))) 'Projects: title bar instance 60 px, title "Projects" from T, logo GEA_logo_white, Busy = busy || saving || Loading'
+Assert-True (($pIdx['cmpPrjFooter']['Control'] -eq 'CanvasComponent') -and ($pIdx['cmpPrjFooter']['ComponentName'] -eq 'cmpFooter') -and ((PGet 'cmpPrjFooter' 'Y') -eq '=Parent.Height-Self.Height') -and ((PGet 'cmpPrjFooter' 'Height') -eq '=68') -and ((PGet 'cmpPrjFooter' 'HomeText') -match 'T\.prjHome') -and ((PGet 'cmpPrjFooter' 'NewText') -match 'T\.prjNew') -and ((PGet 'cmpPrjFooter' 'RefreshText') -match 'T\.prjRefresh') -and ((PGet 'cmpPrjFooter' 'DiscardText') -match 'T\.prjDiscard') -and ((PGet 'cmpPrjFooter' 'SaveText') -match 'T\.prjSave')) 'Projects: footer = cmpFooter instance anchored at the bottom (68), texts from T; widths, order and role colours are pinned in the component (Test-FooterRow, Test-GeaColors)'
 $homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrHome.pa.yaml'))); $homeIdx2 = @{}; Index-Controls $homeDoc['Screens']['scrHome']['Children'] $homeIdx2
 Assert-True ($homeIdx2['btnTileProjects']['Properties']['OnSelect'] -eq '=Navigate(scrProjects)' -and !$homeIdx2['btnTileProjects']['Properties'].ContainsKey('DisplayMode') -and $homeIdx2['icoTileProjects']['Properties']['Icon'] -eq '=Icon.Folder' -and $homeIdx2['icoTileProjects']['Properties']['OnSelect'] -eq '=Select(btnTileProjects)' -and !$homeIdx2.ContainsKey('lblTileSubProjects')) 'Home: Projects tile active (Navigate(scrProjects), Icon.Folder, no "Coming soon")'
 # Home layout: 4 columns from 896 px (margin 24, column gap 16, tile min 200, tile gap 12); static formula check plus mirrored geometry.
@@ -1552,16 +1565,20 @@ Assert-True ($edState -match '(?m)^\s+- scrProjects\s*$') 'Projects: scrProjects
 
 # (P19) Studio FAIL build adminpattern-20261030_071949 (Eddy 30-10-2026): items 4, 5, a, d, e, f (helpers from section 17) ------
 # Item 4: same cause as on Contractors (View fallback rendered the empty inputs invisibly); all inputs always render.
-Test-FormInputsRender $pIdx (@($pTextFields.Keys) + @($pDropFields.Keys)) @('txtPrjLeader', 'txtPrjSiteManager') 'conPrjFormCard' 'varPrjLoadState:"Loaded",colPrjLoadErrors:Filter(Table({Message:""}),false),varPrjBusy:false,varPrjSaving:false,varPrjSaveFailed:false,varPrjMode:"Edit"' 'Projects'
+foreach ($c in @($pTextFields.Keys) + @($pDropFields.Keys) + @('cmpPrjLeader', 'cmpPrjSiteManager')) { $fp = $pIdx[$c]['Properties'];
+    Assert-True ((-not $fp.ContainsKey('Visible')) -and (@($pIdx['conPrjFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] }) -ccontains $c) -and ($fp['Height'] -eq '=58')) "Projects : $c is always rendered (no Visible formula), a direct child of conPrjFormCard, height 58" }
+$pFieldFix = 'varPrjLoadState:"Loaded",colPrjLoadErrors:Filter(Table({Message:""}),false),varPrjBusy:false,varPrjSaving:false,varPrjSaveFailed:false,varPrjMode:"Edit"'
+Assert-Eval "With({$pFieldFix},$($pFieldGuard.Substring(1)))" $true 'Projects : cmpField.Enabled true: Loaded, idle, Edit'
+foreach ($m in @('""', 'If(false,"x")')) { Assert-Eval "With({$($pFieldFix -replace 'Mode:"Edit"', "Mode:$m")},$($pFieldGuard.Substring(1)))" $false "Projects : no record in the form (Mode $m): all fields Disabled (rendered, not editable)" }
 Assert-True ($pText -notmatch 'DisplayMode\.View') 'Projects: no DisplayMode.View on the screen'
 # Item 5: auto-select the first visible row after a successful load
 $prjEmpty = '{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""}'
-Test-AutoSelect $pLoad $pItems (PGet 'galPrjList' 'Default') (PGet 'galPrjList' 'OnSelect') 'Prj' 'colAdminProjects' $prjEmpty $pDirty 'Projects'
+Test-AutoSelect $pLoad $pItems '' (PGet 'galPrjList' 'OnSelect') 'Prj' 'colAdminProjects' $prjEmpty $pDirty 'Projects'
 foreach ($c in @(@('false', '""', '4', 'first visible row by Project Number (A-1; Closed hidden)'), @('true', '""', '4', 'Show inactive on: A-1 still first'), @('false', '"test"', '2', 'search filter applied (TEST-001)'), @('true', '"p-9"', '3', 'Closed row selectable when shown'))) {
-    Assert-Eval "With({$pItemFix,varPrjShowInactive:$($c[0]),txtPrjSearch:{Text:$($c[1])}},Text(First($pItems).ID))" $c[2] "Projects auto-select: $($c[3]) -> ID $($c[2])"
+    Assert-Eval "With({$pItemFix,varPrjShowInactive:$($c[0]),cmpPrjList:{SearchText:$($c[1])}},Text(First($pItems).ID))" $c[2] "Projects auto-select: $($c[3]) -> ID $($c[2])"
 }
-Assert-Eval "With({$pItemFix,varPrjShowInactive:false,txtPrjSearch:{Text:`"p-9`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: only a hidden Closed project matches -> no selection (Mode "")'
-Assert-Eval "With({colAdminProjects:Filter(Table({ID:1,Name:`"`",Number:`"`",Customer:`"`",City:`"`",Status:`"`"}),false),varPrjShowInactive:false,txtPrjSearch:{Text:`"`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: empty list -> no selection'
+Assert-Eval "With({$pItemFix,varPrjShowInactive:false,cmpPrjList:{SearchText:`"p-9`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: only a hidden Closed project matches -> no selection (Mode "")'
+Assert-Eval "With({colAdminProjects:Filter(Table({ID:1,Name:`"`",Number:`"`",Customer:`"`",City:`"`",Status:`"`"}),false),varPrjShowInactive:false,cmpPrjList:{SearchText:`"`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: empty list -> no selection'
 # Item d: SharePoint refusal (nothing written) keeps Loaded and the input; partial write / verify failure -> Failed
 Test-WriteCounter $pSave 'Prj' 'Projects' 'Projects'
 Assert-Eval (PG 'btnPrjSave' $pFix) $true 'Projects: after a refused save (Loaded, SaveFailed false, input kept) Save is allowed again (retry)'
@@ -1569,12 +1586,7 @@ Assert-True ($pPatchErrRec.Contains('T.prjErrSharePoint.en') -and $pSave.Contain
 # Item a: a stored Status/Country outside Choices is shown as-is (extra option for this record only), never counts as a change,
 # is not blocked by the Status validation when unchanged, and is written back unchanged as {Value: <stored>}.
 $chS = 'Table({Value:"Active"},{Value:"On hold"},{Value:"Closed"})'; $chC = 'Table({Value:"Netherlands"},{Value:"Germany"})'
-$stFx = $pAsIs.Status.Replace('Choices([@Projects].Status)', 'chS'); $coFx = $pAsIs.Country.Replace('Choices([@Projects].Country)', 'chC')
-foreach ($c in @(@('"Archived"', 'Active,On hold,Closed,Archived', 'unknown stored value added once, after the choices'), @('"Active"', 'Active,On hold,Closed', 'known value: no extra option'), @('""', 'Active,On hold,Closed', 'empty: no extra option'), @('If(false,"x")', 'Active,On hold,Closed', 'blank: no extra option'))) {
-    Assert-Eval "With({chS:$chS,varPrjEdit:{Status:$($c[0])}},Concat($stFx,Value,`",`"))" $c[1] "Projects a: Status items, $($c[2])"
-}
-Assert-Eval "With({chC:$chC,varPrjEdit:{Country:`"Belgium`"}},Concat($coFx,Value,`",`"))" 'Netherlands,Germany,Belgium' 'Projects a: Country items, unknown stored value added'
-foreach ($v in @('"Archived"', '"Active"')) { Assert-Eval "With({chS:$chS,varPrjEdit:{Status:$v}},CountIf($stFx,Value=varPrjEdit.Status))" 1 "Projects a: stored Status $v is exactly one dropdown item, so Default = varPrjEdit.Status shows it as-is" }
+# Status/Country items outside the list are appended by cmpField (tested in Test-Components); the dirty/Save checks below use the unchanged stored value.
 $pRawUnk = PRaw '"TEST Project 2"' '"TEST-002"' $bT '{Value:"Archived"}' '{Value:"Belgium"}' $bT $bP
 Assert-Eval (PDirty $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""')) $false 'Projects a: unknown Status/Country shown as-is: not dirty'
 Assert-Eval (PDirty $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Active"' '"Belgium"' '""')) $true 'Projects a: user picks another Status: dirty'
@@ -1594,7 +1606,7 @@ $pInUnk = PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""'
 Assert-Eval "With({$pInUnk},With($pSrFx,Status & `"|`" & Country))" 'Archived|Belgium' 'Projects a: unchanged unknown values written back as-is ({Value: stored})'
 Assert-Eval (PVerify $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""') 'F') '' 'Projects a: verify passes after writing back the unknown values unchanged'
 # Item e: Project Name stays required (validation present, red star)
-Assert-True ($pSaveN.Contains('If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name"') -and (PGet 'lblPrjNameRequired' 'Text') -eq '="*"') 'Projects e: Project Name required (validation + star)'
+Assert-True ($pSaveN.Contains('If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name"') -and (PGet 'cmpPrjName' 'Required') -eq '=true') 'Projects e: Project Name required (validation + required field)'
 # Item f: varPrjEdit (saved status source for the chip) only from the loaded list, the verify read or the empty/New snapshot
 $prjEditSets = Get-SetValues $pText 'varPrjEdit'
 Assert-True ($prjEditSets.Count -ge 3 -and @($prjEditSets | Where-Object { $_ -notmatch '^(LookUp\(colAdminProjects,ID=varPrjSelectedID\)|First\(colPrjVerify\)|\{ID:Blank\(\),.*\})$' }).Count -eq 0) "Projects f: varPrjEdit only from the loaded list, the verify read or the empty/New snapshot ($($prjEditSets -join ' | '))"

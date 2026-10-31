@@ -15,105 +15,33 @@ Screens:
         =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");
         If(IsBlank(varPrjLoadState),Set(varPrjLoadState,"NotLoaded"); Set(varPrjMode,""); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""}); Set(varPrjShowInactive,false); Set(varPrjSaveFailed,false));
         Trace("DIAG|Projects|OnVisible",TraceSeverity.Information,{Screen:"Projects",LoadState:Coalesce(varPrjLoadState,""),Mode:Coalesce(varPrjMode,"")});
-        If(varPrjLoadState<>"Loaded" && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),Select(btnPrjLoad))
+        If(varPrjLoadState<>"Loaded" && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))),Select(btnPrjLoad))
     Children:
-      - lblPrjTitle:
-          Control: Label@2.5.1
+      - cmpPrjTitle:
+          Control: CanvasComponent
+          ComponentName: cmpTitleBar
           Properties:
-            Text: =If(LangNl && !IsBlank(T.prjTitle.nl),T.prjTitle.nl,T.prjTitle.en)
+            Busy: =Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"
+            BusyLabel: =If(LangNl && !IsBlank(T.prjBusy.nl),T.prjBusy.nl,T.prjBusy.en)
+            Height: =60
+            Logo: =GEA_logo_white
+            Title: =If(LangNl && !IsBlank(T.prjTitle.nl),T.prjTitle.nl,T.prjTitle.en)
+            Width: =Parent.Width
             X: =0
             Y: =0
-            Width: =Parent.Width
-            Height: =60
-            Font: ="Inter, Arial, sans-serif"
-            FontWeight: =FontWeight.Semibold
-            Size: =22
-            Color: =Color.White
-            PaddingLeft: =129
-            Fill: =ColorValue("#0303B8")
-      - imgLogoProjects:
-          Control: Image@2.2.3
+      - cmpPrjMsgBar:
+          Control: CanvasComponent
+          ComponentName: cmpMessageBar
           Properties:
-            AccessibleLabel: ="GEA"
-            BorderColor: =Color.Transparent
-            BorderThickness: =0
-            Height: =30
-            Image: =GEA_logo_white
-            ImagePosition: =ImagePosition.Fit
-            Width: =99
-            X: =lblPrjTitle.X+15
-            Y: =lblPrjTitle.Y+(lblPrjTitle.Height-Self.Height)/2
-      - imgPrjSpinner:
-          Control: Image@2.2.3
-          Properties:
-            AccessibleLabel: =If(LangNl && !IsBlank(T.prjBusy.nl),T.prjBusy.nl,T.prjBusy.en)
-            BorderColor: =Color.Transparent
-            BorderThickness: =0
-            Height: =24
-            Image: ="data:image/svg+xml;utf8," & EncodeUrl("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'><path d='M12 3 A9 9 0 1 1 3 12' fill='none' stroke='#FFFFFF' stroke-width='3' stroke-linecap='round'><animateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='0.9s' repeatCount='indefinite'/></path></svg>")
-            ImagePosition: =ImagePosition.Fit
-            Visible: =Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"
-            Width: =24
-            X: =lblPrjTitle.X+lblPrjTitle.Width-24-Self.Width
-            Y: =lblPrjTitle.Y+(lblPrjTitle.Height-Self.Height)/2
-      - conPrjMsgBar:
-          Control: GroupContainer@1.5.0
-          Variant: ManualLayout
-          Properties:
-            X: =lblPrjTitle.X
-            Y: =lblPrjTitle.Y+lblPrjTitle.Height
-            Width: =lblPrjTitle.Width
-            Height: =If(!IsBlank(varAdmMsgKind),40,0)
-            Visible: =!IsBlank(varAdmMsgKind)
-            Fill: =Switch(varAdmMsgKind,"Error",ColorValue("#DB1E28"),"Warning",ColorValue("#F29400"),"Success",ColorValue("#1AFF80"),Color.Transparent)
-            BorderThickness: =0
-          Children:
-            - lblPrjMsgHead:
-                Control: Label@2.5.1
-                Properties:
-                  Color: =If(varAdmMsgKind="Error",Color.White,ColorValue("#000F41"))
-                  Font: ="Inter, Arial, sans-serif"
-                  FontWeight: =FontWeight.Bold
-                  Height: =Parent.Height
-                  PaddingLeft: =0
-                  PaddingRight: =0
-                  PaddingTop: =0
-                  PaddingBottom: =0
-                  Size: =14
-                  Text: =varAdmMsgHead
-                  VerticalAlign: =VerticalAlign.Middle
-                  Width: =Len(varAdmMsgHead)*9+6
-                  X: =24
-                  Y: =0
-            - lblPrjMsgBody:
-                Control: Label@2.5.1
-                Properties:
-                  Color: =If(varAdmMsgKind="Error",Color.White,ColorValue("#000F41"))
-                  Font: ="Inter, Arial, sans-serif"
-                  FontWeight: =FontWeight.Normal
-                  Height: =Parent.Height
-                  PaddingLeft: =0
-                  PaddingRight: =0
-                  PaddingTop: =0
-                  PaddingBottom: =0
-                  Size: =14
-                  Text: =varAdmMsgBody
-                  VerticalAlign: =VerticalAlign.Middle
-                  Width: =Max(0,Parent.Width-Self.X-56)
-                  X: =lblPrjMsgHead.X+lblPrjMsgHead.Width+8
-                  Y: =0
-            - icoPrjMsgClose:
-                Control: Classic/Icon@2.5.0
-                Properties:
-                  AccessibleLabel: =If(LangNl && !IsBlank(T.admMsgClose.nl),T.admMsgClose.nl,T.admMsgClose.en)
-                  Color: =If(varAdmMsgKind="Error",Color.White,ColorValue("#000F41"))
-                  Height: =24
-                  Icon: =Icon.Cancel
-                  OnSelect: =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")
-                  Tooltip: =If(LangNl && !IsBlank(T.admMsgClose.nl),T.admMsgClose.nl,T.admMsgClose.en)
-                  Width: =24
-                  X: =Parent.Width-Self.Width-16
-                  Y: =(Parent.Height-Self.Height)/2
+            Body: =varAdmMsgBody
+            CloseLabel: =If(LangNl && !IsBlank(T.admMsgClose.nl),T.admMsgClose.nl,T.admMsgClose.en)
+            Head: =varAdmMsgHead
+            Height: =cmpPrjMsgBar.BarHeight
+            Kind: =varAdmMsgKind
+            OnClose: =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")
+            Width: =cmpPrjTitle.Width
+            X: =cmpPrjTitle.X
+            Y: =cmpPrjTitle.Y+cmpPrjTitle.Height
       - lblPrjLayout:
           Control: Label@2.5.1
           Properties:
@@ -161,7 +89,7 @@ Screens:
             OnSelect: |-
               =If(Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false),
                Trace("DIAG|Projects|LoadSkipped",TraceSeverity.Information,{Screen:"Projects",Reason:"Busy"}),
-               If((Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))) && !Coalesce(varPrjSaveFailed,false),
+               If((Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))) && !Coalesce(varPrjSaveFailed,false),
                 Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgReloadBlocked.nl),T.prjMsgReloadBlocked.nl,T.prjMsgReloadBlocked.en)),
                 If(!Coalesce(varPrjForceRefresh,false) && varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjSaveFailed,false),
                  Trace("DIAG|Projects|CacheHit",TraceSeverity.Information,{Screen:"Projects",Rows:CountRows(colAdminProjects)}),
@@ -179,14 +107,14 @@ Screens:
                    Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)),
                    varPrjMode="New" && !Coalesce(varPrjSaveFailed,false),
                    Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""}),
-                   Set(varPrjSelectedID,First(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed") && (IsBlank(Trim(txtPrjSearch.Text)) || Lower(Trim(txtPrjSearch.Text)) in Lower(Number) || Lower(Trim(txtPrjSearch.Text)) in Lower(Name) || Lower(Trim(txtPrjSearch.Text)) in Lower(City))),Lower(Number),SortOrder.Ascending)).ID);
+                   Set(varPrjSelectedID,First(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed") && (IsBlank(Trim(cmpPrjList.SearchText)) || Lower(Trim(cmpPrjList.SearchText)) in Lower(Number) || Lower(Trim(cmpPrjList.SearchText)) in Lower(Name) || Lower(Trim(cmpPrjList.SearchText)) in Lower(City))),Lower(Number),SortOrder.Ascending)).ID);
                    If(!IsBlank(varPrjSelectedID) && !IsBlank(LookUp(colAdminProjects,ID=varPrjSelectedID).ID),
                     Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)); Set(varPrjMode,"Edit"),
                     Set(varPrjMode,""); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""})
                    )
                   );
                   Set(varPrjSaveFailed,false); Clear(colPrjSaveErrors); Set(varPrjLoadState,"Loaded");
-                  Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl);
+                  Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
                   Set(varPrjLoadedAt,Now());
                   Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadLoaded.nl),T.admHeadLoaded.nl,T.admHeadLoaded.en)); Set(varAdmMsgBody,Substitute(Substitute(If(LangNl && !IsBlank(T.prjMsgLoaded.nl),T.prjMsgLoaded.nl,T.prjMsgLoaded.en),"{0}",Text(CountRows(colAdminProjects))),"{1}",Text(varPrjLoadedAt,"hh:mm:ss"))),
                   Set(varPrjLoadState,"Failed");
@@ -211,7 +139,7 @@ Screens:
             Font: ="Inter, Arial, sans-serif"
             OnSelect: |-
               =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false),
-               Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl);
+               Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
                Trace("DIAG|Projects|FormReset",TraceSeverity.Information,{Screen:"Projects",Mode:Coalesce(varPrjMode,"")}),
                Trace("DIAG|Projects|FormResetSkipped",TraceSeverity.Information,{Screen:"Projects",State:Coalesce(varPrjLoadState,"")})
               )
@@ -220,9 +148,9 @@ Screens:
           Variant: AutoLayout
           Properties:
             X: =0
-            Y: =conPrjMsgBar.Y+conPrjMsgBar.Height
+            Y: =cmpPrjMsgBar.Y+cmpPrjMsgBar.Height
             Width: =Parent.Width
-            Height: =Max(0,navPrj.Y-Self.Y)
+            Height: =Max(0,cmpPrjFooter.Y-Self.Y)
             Fill: =Color.Transparent
             LayoutDirection: =LayoutDirection.Vertical
             LayoutAlignItems: =LayoutAlignItems.Start
@@ -245,305 +173,35 @@ Screens:
                   FillPortions: =0
                   Fill: =Color.Transparent
                 Children:
-                  - conPrjListCard:
-                      Control: GroupContainer@1.5.0
-                      Variant: ManualLayout
+                  - cmpPrjList:
+                      Control: CanvasComponent
+                      ComponentName: cmpListCard
                       Properties:
+                        CountText: =Substitute(If(LangNl && !IsBlank(T.prjCount.nl),T.prjCount.nl,T.prjCount.en),"{0}",Text(CountRows(cmpPrjList.Items)))
+                        Enabled: |-
+                          =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & "")))
+                        Height: =lblPrjMetrics.Width
+                        Items: |-
+                          =ForAll(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed") && (IsBlank(Trim(cmpPrjList.SearchText)) || Lower(Trim(cmpPrjList.SearchText)) in Lower(Number) || Lower(Trim(cmpPrjList.SearchText)) in Lower(Name) || Lower(Trim(cmpPrjList.SearchText)) in Lower(City))),Lower(Number),SortOrder.Ascending) As r,{ID:r.ID,Title:If(IsBlank(r.Name),r.Number,r.Name),Subtitle:If(IsBlank(r.Number),r.City,r.Number & If(IsBlank(r.City),""," · " & r.City)),Inactive:r.Status="Closed",ChipText:If(r.Status in ["Closed","On hold"],r.Status,"")})
+                        OffText: =If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en)
+                        OnText: =If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en)
+                        OnSelectRow: |-
+                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))),
+                           If(!IsBlank(cmpPrjList.SelectedRowID) && !IsBlank(LookUp(colAdminProjects,ID=cmpPrjList.SelectedRowID).ID),
+                            Set(varPrjSelectedID,cmpPrjList.SelectedRowID); Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)); Set(varPrjMode,"Edit");
+                            Clear(colPrjSaveErrors); Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl)
+                           ),
+                           Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
+                          )
+                        OnToggleShowInactive: |-
+                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))),Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false)))
+                        SearchHint: =If(LangNl && !IsBlank(T.prjSearchHint.nl),T.prjSearchHint.nl,T.prjSearchHint.en)
+                        SelectedID: =Coalesce(varPrjSelectedID,0)
+                        ShowInactive: =Coalesce(varPrjShowInactive,false)
+                        ShowInactiveText: =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en)
+                        Width: =If(lblPrjLayout.X=1,360,Parent.Width-48)
                         X: =24
                         Y: =24
-                        Width: =If(lblPrjLayout.X=1,360,Parent.Width-48)
-                        Height: =lblPrjMetrics.Width
-                        Fill: =Color.White
-                        BorderThickness: =0
-                        DropShadow: =DropShadow.Light
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
-                      Children:
-                        - txtPrjSearch:
-                            Control: Classic/TextInput@2.3.2
-                            Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjSearchHint.nl),T.prjSearchHint.nl,T.prjSearchHint.en)
-                              Align: =Align.Left
-                              BorderColor: =ColorValue("#9B9B9B")
-                              BorderThickness: =1
-                              Color: =ColorValue("#000000")
-                              Default: =""
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =DisplayMode.Edit
-                              Fill: =Color.White
-                              FocusedBorderColor: =ColorValue("#0303B8")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =36
-                              HintText: =If(LangNl && !IsBlank(T.prjSearchHint.nl),T.prjSearchHint.nl,T.prjSearchHint.en)
-                              HoverBorderColor: =ColorValue("#5A5A5A")
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
-                              MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =40
-                              PaddingRight: =8
-                              PressedBorderColor: =ColorValue("#0303B8")
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =Parent.Width-48
-                              X: =24
-                              Y: =24
-                        - icoPrjSearch:
-                            Control: Classic/Icon@2.5.0
-                            Properties:
-                              AccessibleLabel: =""
-                              Color: =ColorValue("#5A5A5A")
-                              Height: =18
-                              Icon: =Icon.Search
-                              Width: =18
-                              X: =txtPrjSearch.X+12
-                              Y: =txtPrjSearch.Y+(txtPrjSearch.Height-Self.Height)/2
-                        - lblPrjCount:
-                            Control: Label@2.5.1
-                            Properties:
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =24
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =Substitute(If(LangNl && !IsBlank(T.prjCount.nl),T.prjCount.nl,T.prjCount.en),"{0}",Text(CountRows(galPrjList.AllItems)))
-                              VerticalAlign: =VerticalAlign.Middle
-                              Width: =Max(0,lblPrjShowInactive.X-8-Self.X)
-                              X: =24
-                              Y: =txtPrjSearch.Y+txtPrjSearch.Height+12
-                        - lblPrjShowInactive:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Right
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =24
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en)
-                              VerticalAlign: =VerticalAlign.Middle
-                              Width: =110
-                              X: =btnPrjShowInactiveSwitch.X-8-Self.Width
-                              Y: =lblPrjCount.Y
-                        - btnPrjShowInactiveSwitch:
-                            Control: Classic/Button@2.2.0
-                            Properties:
-                              BorderColor: =Color.Transparent
-                              BorderThickness: =0
-                              Color: =Color.White
-                              DisabledBorderColor: =Color.Transparent
-                              DisabledColor: =Color.White
-                              DisabledFill: =If(Coalesce(varPrjShowInactive,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
-                              DisplayMode: =DisplayMode.Edit
-                              Fill: =If(Coalesce(varPrjShowInactive,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =24
-                              HoverBorderColor: =Color.Transparent
-                              HoverColor: =Color.White
-                              HoverFill: =If(Coalesce(varPrjShowInactive,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
-                              OnSelect: =Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false))
-                              PaddingBottom: =0
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PressedBorderColor: =Color.Transparent
-                              PressedColor: =Color.White
-                              PressedFill: =If(Coalesce(varPrjShowInactive,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
-                              RadiusBottomLeft: =12
-                              RadiusBottomRight: =12
-                              RadiusTopLeft: =12
-                              RadiusTopRight: =12
-                              Size: =12
-                              Text: =""
-                              Tooltip: |-
-                                =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en) & ": " & If(Coalesce(varPrjShowInactive,false),If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en),If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en))
-                              Width: =44
-                              X: =Parent.Width-24-Self.Width
-                              Y: =lblPrjCount.Y
-                        - btnPrjShowInactiveKnob:
-                            Control: Classic/Button@2.2.0
-                            Properties:
-                              BorderColor: =Color.Transparent
-                              BorderThickness: =0
-                              Color: =Color.White
-                              DisabledBorderColor: =Color.Transparent
-                              DisabledColor: =Color.White
-                              DisabledFill: =Color.White
-                              DisplayMode: =btnPrjShowInactiveSwitch.DisplayMode
-                              Fill: =Color.White
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              Height: =18
-                              HoverBorderColor: =Color.Transparent
-                              HoverColor: =Color.White
-                              HoverFill: =Color.White
-                              OnSelect: =Select(btnPrjShowInactiveSwitch)
-                              PaddingBottom: =0
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PressedBorderColor: =Color.Transparent
-                              PressedColor: =Color.White
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =9
-                              RadiusBottomRight: =9
-                              RadiusTopLeft: =9
-                              RadiusTopRight: =9
-                              Size: =12
-                              Text: =""
-                              Tooltip: |-
-                                =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en) & ": " & If(Coalesce(varPrjShowInactive,false),If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en),If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en))
-                              Width: =18
-                              X: =btnPrjShowInactiveSwitch.X+If(Coalesce(varPrjShowInactive,false),btnPrjShowInactiveSwitch.Width-Self.Width-3,3)
-                              Y: =btnPrjShowInactiveSwitch.Y+3
-                        - galPrjList:
-                            Control: Gallery@2.15.0
-                            Variant: BrowseLayout_Vertical_TwoTextVariant_ver5.0
-                            Properties:
-                              DisplayMode: |-
-                                =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),DisplayMode.Edit,DisplayMode.Disabled)
-                              BorderColor: =Color.Transparent
-                              BorderThickness: =0
-                              Default: |-
-                                =LookUp(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed") && (IsBlank(Trim(txtPrjSearch.Text)) || Lower(Trim(txtPrjSearch.Text)) in Lower(Number) || Lower(Trim(txtPrjSearch.Text)) in Lower(Name) || Lower(Trim(txtPrjSearch.Text)) in Lower(City))),Lower(Number),SortOrder.Ascending),ID=varPrjSelectedID)
-                              Fill: =Color.White
-                              Height: =Parent.Height-Self.Y-12
-                              Items: |-
-                                =Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed") && (IsBlank(Trim(txtPrjSearch.Text)) || Lower(Trim(txtPrjSearch.Text)) in Lower(Number) || Lower(Trim(txtPrjSearch.Text)) in Lower(Name) || Lower(Trim(txtPrjSearch.Text)) in Lower(City))),Lower(Number),SortOrder.Ascending)
-                              OnSelect: |-
-                                =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),
-                                 If(!IsBlank(galPrjList.Selected.ID) && !IsBlank(LookUp(colAdminProjects,ID=galPrjList.Selected.ID).ID),
-                                  Set(varPrjSelectedID,galPrjList.Selected.ID); Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)); Set(varPrjMode,"Edit");
-                                  Clear(colPrjSaveErrors); Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl)
-                                 ),
-                                 Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
-                                )
-                              TemplateFill: =Color.Transparent
-                              TemplatePadding: =0
-                              TemplateSize: =64
-                              Width: =Parent.Width
-                              X: =0
-                              Y: =lblPrjCount.Y+lblPrjCount.Height+12
-                            Children:
-                              - recPrjRowFill:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    BorderColor: =Color.Transparent
-                                    Fill: =If(ThisItem.ID=varPrjSelectedID,ColorValue("#D5EDFF"),Color.White)
-                                    Height: =Parent.TemplateHeight
-                                    HoverFill: =If(ThisItem.ID=varPrjSelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
-                                    OnSelect: =Select(Parent)
-                                    PressedFill: =If(ThisItem.ID=varPrjSelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
-                                    Width: =Parent.TemplateWidth
-                              - recPrjRowBar:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    BorderColor: =Color.Transparent
-                                    Fill: =ColorValue("#0303B8")
-                                    Height: =Parent.TemplateHeight
-                                    OnSelect: =Select(Parent)
-                                    Visible: =ThisItem.ID=varPrjSelectedID
-                                    Width: =3
-                              - recPrjRowLine:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    BorderColor: =Color.Transparent
-                                    Fill: =ColorValue("#EDEDED")
-                                    Height: =1
-                                    OnSelect: =Select(Parent)
-                                    Width: =Parent.TemplateWidth
-                                    Y: =Parent.TemplateHeight-1
-                              - lblPrjRowName:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =If(ThisItem.Status="Closed",ColorValue("#6B6B6B"),ColorValue("#000F41"))
-                                    Font: ="Inter, Arial, sans-serif"
-                                    FontWeight: =FontWeight.Semibold
-                                    Height: =22
-                                    OnSelect: =Select(Parent)
-                                    PaddingBottom: =0
-                                    PaddingLeft: =16
-                                    PaddingRight: =0
-                                    PaddingTop: =0
-                                    Size: =15
-                                    Text: =ThisItem.Number & If(IsBlank(ThisItem.Name),""," – " & ThisItem.Name)
-                                    VerticalAlign: =VerticalAlign.Middle
-                                    Width: =Parent.TemplateWidth-If(!IsBlank(ThisItem.Status) && ThisItem.Status<>"Active",88,0)
-                                    X: =0
-                                    Y: =12
-                              - lblPrjRowSub:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ColorValue("#5A5A5A")
-                                    Font: ="Inter, Arial, sans-serif"
-                                    FontWeight: =FontWeight.Normal
-                                    Height: =18
-                                    OnSelect: =Select(Parent)
-                                    PaddingBottom: =0
-                                    PaddingLeft: =16
-                                    PaddingRight: =16
-                                    PaddingTop: =0
-                                    Size: =13
-                                    Text: =ThisItem.Customer & If(!IsBlank(ThisItem.Customer) && !IsBlank(ThisItem.City)," · ","") & ThisItem.City
-                                    VerticalAlign: =VerticalAlign.Middle
-                                    Width: =Parent.TemplateWidth
-                                    X: =0
-                                    Y: =34
-                              - btnPrjRowStatus:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    Align: =Align.Center
-                                    BorderColor: =Color.Transparent
-                                    BorderThickness: =0
-                                    Color: =ColorValue("#000000")
-                                    DisabledBorderColor: =Color.Transparent
-                                    DisabledColor: =ColorValue("#000000")
-                                    DisabledFill: =ColorValue("#E6E6E6")
-                                    Fill: =ColorValue("#E6E6E6")
-                                    Font: ="Inter, Arial, sans-serif"
-                                    FontWeight: =FontWeight.Normal
-                                    Height: =20
-                                    HoverBorderColor: =Color.Transparent
-                                    HoverColor: =ColorValue("#000000")
-                                    HoverFill: =ColorValue("#E6E6E6")
-                                    OnSelect: =Select(Parent)
-                                    PaddingBottom: =0
-                                    PaddingLeft: =0
-                                    PaddingRight: =0
-                                    PaddingTop: =0
-                                    PressedBorderColor: =Color.Transparent
-                                    PressedColor: =ColorValue("#000000")
-                                    PressedFill: =ColorValue("#E6E6E6")
-                                    RadiusBottomLeft: =10
-                                    RadiusBottomRight: =10
-                                    RadiusTopLeft: =10
-                                    RadiusTopRight: =10
-                                    Size: =12
-                                    Text: =ThisItem.Status
-                                    VerticalAlign: =VerticalAlign.Middle
-                                    Visible: =!IsBlank(ThisItem.Status) && ThisItem.Status<>"Active"
-                                    Width: =72
-                                    X: =Parent.TemplateWidth-16-Self.Width
-                                    Y: =13
                   - conPrjFormCard:
                       Control: GroupContainer@1.5.0
                       Variant: ManualLayout
@@ -573,10 +231,9 @@ Screens:
                               PaddingTop: =0
                               PaddingBottom: =0
                               Size: =22
-                              Text: =If(Coalesce(varPrjMode,"")="New",If(LangNl && !IsBlank(T.prjNewProject.nl),T.prjNewProject.nl,T.prjNewProject.en),varPrjEdit.Number & If(IsBlank(varPrjEdit.Name),""," – " & varPrjEdit.Name))
+                              Text: =Switch(Coalesce(varPrjMode,""),"New",If(LangNl && !IsBlank(T.prjNewProject.nl),T.prjNewProject.nl,T.prjNewProject.en),"Edit",If(LangNl && !IsBlank(T.prjFormDetails.nl),T.prjFormDetails.nl,T.prjFormDetails.en),If(LangNl && !IsBlank(T.prjNoSelection.nl),T.prjNoSelection.nl,T.prjNoSelection.en))
                               VerticalAlign: =VerticalAlign.Middle
-                              Visible: =Coalesce(varPrjMode,"") in ["New","Edit"]
-                              Width: =Max(40,Min(lblPrjLayout.Width-48-84,Round(Len(Self.Text)*12.5,0)+8))
+                              Width: =Max(0,Parent.Width-48-84)
                               X: =24
                               Y: =24
                         - btnPrjFormChip:
@@ -585,35 +242,35 @@ Screens:
                               Align: =Align.Center
                               BorderColor: =Color.Transparent
                               BorderThickness: =0
-                              Color: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#000F41"),ColorValue("#000000"))
+                              Color: =If(varPrjEdit.Status="Active",ColorValue("#000F41"),ColorValue("#000000"))
                               DisabledBorderColor: =Color.Transparent
-                              DisabledColor: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#000F41"),ColorValue("#000000"))
-                              DisabledFill: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              DisabledColor: =If(varPrjEdit.Status="Active",ColorValue("#000F41"),ColorValue("#000000"))
+                              DisabledFill: =If(varPrjEdit.Status="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
                               DisplayMode: =DisplayMode.Disabled
-                              Fill: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              Fill: =If(varPrjEdit.Status="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
                               Font: ="Inter, Arial, sans-serif"
                               FontWeight: =FontWeight.Normal
                               Height: =24
                               HoverBorderColor: =Color.Transparent
-                              HoverColor: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#000F41"),ColorValue("#000000"))
-                              HoverFill: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              HoverColor: =If(varPrjEdit.Status="Active",ColorValue("#000F41"),ColorValue("#000000"))
+                              HoverFill: =If(varPrjEdit.Status="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
                               PaddingTop: =0
                               PressedBorderColor: =Color.Transparent
-                              PressedColor: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#000F41"),ColorValue("#000000"))
-                              PressedFill: =If(ddPrjStatus.Selected.Value="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              PressedColor: =If(varPrjEdit.Status="Active",ColorValue("#000F41"),ColorValue("#000000"))
+                              PressedFill: =If(varPrjEdit.Status="Active",ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
                               RadiusBottomLeft: =12
                               RadiusBottomRight: =12
                               RadiusTopLeft: =12
                               RadiusTopRight: =12
                               Size: =12
-                              Text: =ddPrjStatus.Selected.Value
+                              Text: =varPrjEdit.Status
                               VerticalAlign: =VerticalAlign.Middle
-                              Visible: =Coalesce(varPrjMode,"") in ["New","Edit"] && !IsBlank(ddPrjStatus.Selected.Value)
+                              Visible: =Coalesce(varPrjMode,"") in ["New","Edit"] && !IsBlank(varPrjEdit.Status)
                               Width: =72
-                              X: =lblPrjFormTitle.X+lblPrjFormTitle.Width+12
+                              X: =Parent.Width-24-Self.Width
                               Y: =lblPrjFormTitle.Y+(lblPrjFormTitle.Height-Self.Height)/2
                         - lblPrjFormDivider:
                             Control: Label@2.5.1
@@ -624,7 +281,6 @@ Screens:
                               Height: =1
                               Size: =12
                               Text: =""
-                              Visible: =Coalesce(varPrjMode,"") in ["New","Edit"]
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjFormTitle.Y+lblPrjFormTitle.Height+16
@@ -646,339 +302,91 @@ Screens:
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjFormDivider.Y+1+20
-                        - lblPrjNameLabel:
-                            Control: Label@2.5.1
+                        - cmpPrjName:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Name")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en)
+                              MaxLength: =255
+                              Required: =true
+                              Value: =varPrjEdit.Name
                               Width: =lblPrjGrid.Width
                               X: =24
                               Y: =lblPrjSecGeneral.Y+30
-                        - lblPrjNameRequired:
-                            Control: Label@2.5.1
+                        - cmpPrjNumber:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#DB1E28")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: ="*"
-                              VerticalAlign: =VerticalAlign.Middle
-                              Width: =10
-                              X: =lblPrjNameLabel.X+Round(Len(lblPrjNameLabel.Text)*7.2,0)+3
-                              Y: =lblPrjNameLabel.Y
-                        - txtPrjName:
-                            Control: Classic/TextInput@2.3.2
-                            Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Name")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Name
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Number")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Name")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24
-                              Y: =lblPrjNameLabel.Y+22
-                              Height: =36
-                        - lblPrjNumberLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Required: =true
+                              Value: =varPrjEdit.Number
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(1/lblPrjMetrics.X,0)*74
-                        - lblPrjNumberRequired:
-                            Control: Label@2.5.1
+                        - cmpPrjReference:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#DB1E28")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: ="*"
-                              VerticalAlign: =VerticalAlign.Middle
-                              Width: =10
-                              X: =lblPrjNumberLabel.X+Round(Len(lblPrjNumberLabel.Text)*7.2,0)+3
-                              Y: =lblPrjNumberLabel.Y
-                        - txtPrjNumber:
-                            Control: Classic/TextInput@2.3.2
-                            Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Number")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Number")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Number
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Number")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Number")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Reference")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Number")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjNumberLabel.Y+22
-                              Height: =36
-                        - lblPrjReferenceLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Value: =varPrjEdit.Reference
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(2,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(2/lblPrjMetrics.X,0)*74
-                        - txtPrjReference:
-                            Control: Classic/TextInput@2.3.2
+                        - cmpPrjCustomer:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Reference")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Reference")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Reference
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Reference")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Reference")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Customer")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Reference")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(2,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjReferenceLabel.Y+22
-                              Height: =36
-                        - lblPrjCustomerLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Value: =varPrjEdit.Customer
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(3,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(3/lblPrjMetrics.X,0)*74
-                        - txtPrjCustomer:
-                            Control: Classic/TextInput@2.3.2
+                        - cmpPrjStatus:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Customer")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Customer")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Customer
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Customer")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Customer")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Status")>0
+                              InputType: ="dropdown"
+                              Items: |-
+                                =ShowColumns(Choices([@Projects].Status),"Value")
+                              Label: =If(LangNl && !IsBlank(T.prjFieldStatus.nl),T.prjFieldStatus.nl,T.prjFieldStatus.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Customer")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(3,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjCustomerLabel.Y+22
-                              Height: =36
-                        - lblPrjStatusLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldStatus.nl),T.prjFieldStatus.nl,T.prjFieldStatus.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Required: =true
+                              Value: =varPrjEdit.Status
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(4,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(4/lblPrjMetrics.X,0)*74
-                        - lblPrjStatusRequired:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#DB1E28")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: ="*"
-                              VerticalAlign: =VerticalAlign.Middle
-                              Width: =10
-                              X: =lblPrjStatusLabel.X+Round(Len(lblPrjStatusLabel.Text)*7.2,0)+3
-                              Y: =lblPrjStatusLabel.Y
-                        - ddPrjStatus:
-                            Control: Classic/DropDown@2.3.1
-                            Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldStatus.nl),T.prjFieldStatus.nl,T.prjFieldStatus.en)
-                              AllowEmptySelection: =true
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Status")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Status")>0,2,1)
-                              ChevronBackground: =ColorValue("#F0F0F0")
-                              ChevronFill: =ColorValue("#0303B8")
-                              ChevronHoverBackground: =ColorValue("#D5EDFF")
-                              ChevronHoverFill: =ColorValue("#0303B8")
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Status
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Status")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Status")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              HoverColor: =ColorValue("#000F41")
-                              HoverFill: =ColorValue("#D5EDFF")
-                              Items: |-
-                                =Split(Concat(Choices([@Projects].Status),Value,Char(31)) & If(!IsBlank(varPrjEdit.Status) && CountIf(Choices([@Projects].Status),Value=varPrjEdit.Status)=0,Char(31) & varPrjEdit.Status,""),Char(31))
-                              Items.Value: =Value
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Status")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000F41")
-                              PressedFill: =ColorValue("#D5EDFF")
-                              SelectionColor: =Color.White
-                              SelectionFill: =ColorValue("#0303B8")
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(4,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjStatusLabel.Y+22
-                              Height: =36
                         - lblPrjSecAddress:
                             Control: Label@2.5.1
                             Properties:
@@ -997,285 +405,88 @@ Screens:
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjSecGeneral.Y+38+RoundUp(5/lblPrjMetrics.X,0)*74
-                        - lblPrjStreetLabel:
-                            Control: Label@2.5.1
+                        - cmpPrjStreet:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Street")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en)
+                              MaxLength: =255
+                              Value: =varPrjEdit.Street
                               Width: =lblPrjGrid.Width
                               X: =24
                               Y: =lblPrjSecAddress.Y+30
-                        - txtPrjStreet:
-                            Control: Classic/TextInput@2.3.2
+                        - cmpPrjHouseNumber:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Street")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Street")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Street
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Street")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Street")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="HouseNumber")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Street")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24
-                              Y: =lblPrjStreetLabel.Y+22
-                              Height: =36
-                        - lblPrjHouseNumberLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Value: =varPrjEdit.HouseNumber
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(1/lblPrjMetrics.X,0)*74
-                        - txtPrjHouseNumber:
-                            Control: Classic/TextInput@2.3.2
+                        - cmpPrjPostalCode:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="HouseNumber")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="HouseNumber")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.HouseNumber
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="HouseNumber")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="HouseNumber")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="PostalCode")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="HouseNumber")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjHouseNumberLabel.Y+22
-                              Height: =36
-                        - lblPrjPostalCodeLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Value: =varPrjEdit.PostalCode
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(2,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(2/lblPrjMetrics.X,0)*74
-                        - txtPrjPostalCode:
-                            Control: Classic/TextInput@2.3.2
+                        - cmpPrjCity:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="PostalCode")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="PostalCode")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.PostalCode
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="PostalCode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="PostalCode")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="City")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="PostalCode")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(2,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjPostalCodeLabel.Y+22
-                              Height: =36
-                        - lblPrjCityLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Value: =varPrjEdit.City
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(3,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(3/lblPrjMetrics.X,0)*74
-                        - txtPrjCity:
-                            Control: Classic/TextInput@2.3.2
+                        - cmpPrjCountry:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="City")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.City
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
                               HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Country")>0
+                              InputType: ="dropdown"
+                              Items: |-
+                                =ShowColumns(Choices([@Projects].Country),"Value")
+                              Label: =If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en)
                               MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="City")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(3,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjCityLabel.Y+22
-                              Height: =36
-                        - lblPrjCountryLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Value: =varPrjEdit.Country
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(4,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(4/lblPrjMetrics.X,0)*74
-                        - ddPrjCountry:
-                            Control: Classic/DropDown@2.3.1
-                            Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en)
-                              AllowEmptySelection: =true
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#DCDCDC"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Country")>0,2,1)
-                              ChevronBackground: =ColorValue("#F0F0F0")
-                              ChevronFill: =ColorValue("#0303B8")
-                              ChevronHoverBackground: =ColorValue("#D5EDFF")
-                              ChevronHoverFill: =ColorValue("#0303B8")
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Country
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =ColorValue("#F0F0F0")
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              HoverColor: =ColorValue("#000F41")
-                              HoverFill: =ColorValue("#D5EDFF")
-                              Items: |-
-                                =Split(Concat(Choices([@Projects].Country),Value,Char(31)) & If(!IsBlank(varPrjEdit.Country) && CountIf(Choices([@Projects].Country),Value=varPrjEdit.Country)=0,Char(31) & varPrjEdit.Country,""),Char(31))
-                              Items.Value: =Value
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Country")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000F41")
-                              PressedFill: =ColorValue("#D5EDFF")
-                              SelectionColor: =Color.White
-                              SelectionFill: =ColorValue("#0303B8")
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(4,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjCountryLabel.Y+22
-                              Height: =36
                         - lblPrjSecPeople:
                             Control: Label@2.5.1
                             Properties:
@@ -1294,100 +505,34 @@ Screens:
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjSecAddress.Y+38+RoundUp(5/lblPrjMetrics.X,0)*74
-                        - lblPrjLeaderLabel:
-                            Control: Label@2.5.1
+                        - cmpPrjLeader:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldLeader.nl),T.prjFieldLeader.nl,T.prjFieldLeader.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Enabled: =false
+                              Height: =58
+                              HintText: =If(Coalesce(varPrjMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.prjPersonHint.nl),T.prjPersonHint.nl,T.prjPersonHint.en),"")
+                              InputType: ="readonly"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldLeader.nl),T.prjFieldLeader.nl,T.prjFieldLeader.en)
+                              MaxLength: =255
+                              Value: =varPrjEdit.Leader
                               Width: =lblPrjGrid.Width
                               X: =24
                               Y: =lblPrjSecPeople.Y+30
-                        - txtPrjLeader:
-                            Control: Classic/TextInput@2.3.2
+                        - cmpPrjSiteManager:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldLeader.nl),T.prjFieldLeader.nl,T.prjFieldLeader.en)
-                              Align: =Align.Left
-                              BorderColor: =Color.Transparent
-                              BorderThickness: =0
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Leader
-                              DisabledBorderColor: =Color.Transparent
-                              DisabledColor: =ColorValue("#000000")
-                              DisabledFill: =ColorValue("#F0F0F0")
-                              DisplayMode: =DisplayMode.Disabled
-                              Fill: =ColorValue("#F0F0F0")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
+                              Enabled: =false
+                              Height: =58
                               HintText: =If(Coalesce(varPrjMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.prjPersonHint.nl),T.prjPersonHint.nl,T.prjPersonHint.en),"")
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24
-                              Y: =lblPrjLeaderLabel.Y+22
-                              Height: =36
-                        - lblPrjSiteManagerLabel:
-                            Control: Label@2.5.1
-                            Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldSiteManager.nl),T.prjFieldSiteManager.nl,T.prjFieldSiteManager.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              InputType: ="readonly"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldSiteManager.nl),T.prjFieldSiteManager.nl,T.prjFieldSiteManager.en)
+                              MaxLength: =255
+                              Value: =varPrjEdit.SiteManager
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecPeople.Y+30+RoundDown(1/lblPrjMetrics.X,0)*74
-                        - txtPrjSiteManager:
-                            Control: Classic/TextInput@2.3.2
-                            Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldSiteManager.nl),T.prjFieldSiteManager.nl,T.prjFieldSiteManager.en)
-                              Align: =Align.Left
-                              BorderColor: =Color.Transparent
-                              BorderThickness: =0
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.SiteManager
-                              DisabledBorderColor: =Color.Transparent
-                              DisabledColor: =ColorValue("#000000")
-                              DisabledFill: =ColorValue("#F0F0F0")
-                              DisplayMode: =DisplayMode.Disabled
-                              Fill: =ColorValue("#F0F0F0")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              HintText: =If(Coalesce(varPrjMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.prjPersonHint.nl),T.prjPersonHint.nl,T.prjPersonHint.en),"")
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjGrid.Width
-                              X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
-                              Y: =lblPrjSiteManagerLabel.Y+22
-                              Height: =36
                         - lblPrjSecLinks:
                             Control: Label@2.5.1
                             Properties:
@@ -1406,62 +551,22 @@ Screens:
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjSecPeople.Y+38+RoundUp(2/lblPrjMetrics.X,0)*74
-                        - lblPrjUrlLabel:
-                            Control: Label@2.5.1
+                        - cmpPrjUrl:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
                             Properties:
-                              Align: =Align.Left
-                              Color: =ColorValue("#000000")
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Semibold
-                              Height: =18
-                              PaddingLeft: =0
-                              PaddingRight: =0
-                              PaddingTop: =0
-                              PaddingBottom: =0
-                              Size: =13
-                              Text: =If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en)
-                              VerticalAlign: =VerticalAlign.Middle
+                              Enabled: |-
+                                =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colPrjSaveErrors,Field="Url")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en)
+                              MaxLength: =255
+                              Value: =varPrjEdit.Url
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjSecLinks.Y+30
-                        - txtPrjUrl:
-                            Control: Classic/TextInput@2.3.2
-                            Properties:
-                              AccessibleLabel: =If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en)
-                              Align: =Align.Left
-                              BorderColor: =If(CountIf(colPrjSaveErrors,Field="Url")>0,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
-                              BorderThickness: =If(CountIf(colPrjSaveErrors,Field="Url")>0,2,1)
-                              Color: =ColorValue("#000000")
-                              Default: =varPrjEdit.Url
-                              DisabledBorderColor: =ColorValue("#E6E6E6")
-                              DisabledColor: =ColorValue("#787878")
-                              DisabledFill: =ColorValue("#E6E6E6")
-                              DisplayMode: =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
-                              Fill: =Color.White
-                              FocusedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Url")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              FocusedBorderThickness: =2
-                              Font: ="Inter, Arial, sans-serif"
-                              FontWeight: =FontWeight.Normal
-                              HintText: =""
-                              HoverBorderColor: =If(CountIf(colPrjSaveErrors,Field="Url")>0,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
-                              HoverColor: =ColorValue("#000000")
-                              HoverFill: =Color.White
-                              MaxLength: =255
-                              OnChange: =false
-                              PaddingLeft: =12
-                              PaddingRight: =12
-                              PressedBorderColor: =If(CountIf(colPrjSaveErrors,Field="Url")>0,ColorValue("#DB1E28"),ColorValue("#0303B8"))
-                              PressedColor: =ColorValue("#000000")
-                              PressedFill: =Color.White
-                              RadiusBottomLeft: =4
-                              RadiusBottomRight: =4
-                              RadiusTopLeft: =4
-                              RadiusTopRight: =4
-                              Size: =14
-                              Width: =lblPrjLayout.Width-48
-                              X: =24
-                              Y: =lblPrjUrlLabel.Y+22
-                              Height: =36
                         - lblPrjModified:
                             Control: Label@2.5.1
                             Properties:
@@ -1480,365 +585,157 @@ Screens:
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjSecLinks.Y+38+74
-      - navPrj:
-          Control: GroupContainer@1.5.0
-          Variant: AutoLayout
+      - cmpPrjFooter:
+          Control: CanvasComponent
+          ComponentName: cmpFooter
           Properties:
+            DiscardText: =If(LangNl && !IsBlank(T.prjDiscard.nl),T.prjDiscard.nl,T.prjDiscard.en)
+            DiscardEnabled: |-
+              =!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))))
+            Height: =68
+            HomeText: =If(LangNl && !IsBlank(T.prjHome.nl),T.prjHome.nl,T.prjHome.en)
+            HomeEnabled: |-
+              =!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & "")))
+            NewText: =If(LangNl && !IsBlank(T.prjNew.nl),T.prjNew.nl,T.prjNew.en)
+            NewEnabled: |-
+              =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & "")))
+            OnDiscard: |-
+              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & "")))),
+               Trace("DIAG|Projects|Discard",TraceSeverity.Information,{Screen:"Projects",Mode:Coalesce(varPrjMode,""),SaveFailed:Coalesce(varPrjSaveFailed,false)});
+               Clear(colPrjSaveErrors);
+               If(Coalesce(varPrjSaveFailed,false),
+                Set(varPrjForceRefresh,true); Select(btnPrjLoad),
+                If(varPrjMode="New",Set(varPrjMode,""); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""}));
+                Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
+                Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadDiscarded.nl),T.admHeadDiscarded.nl,T.admHeadDiscarded.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgDiscarded.nl),T.prjMsgDiscarded.nl,T.prjMsgDiscarded.en))
+               ),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
+              )
+            OnHome: |-
+              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))),Navigate(scrHome))
+            OnNew: |-
+              =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))),
+               Set(varPrjMode,"New"); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""});
+               Clear(colPrjSaveErrors); Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
+               Trace("DIAG|Projects|New",TraceSeverity.Information,{Screen:"Projects"}),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
+              )
+            OnRefresh: |-
+              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & "")))),
+               Trace("DIAG|Projects|Refresh",TraceSeverity.Information,{Screen:"Projects",SaveFailed:Coalesce(varPrjSaveFailed,false)});
+               If(Coalesce(varPrjSaveFailed,false),Clear(colPrjSaveErrors));
+               Set(varPrjForceRefresh,true); Select(btnPrjLoad),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
+              )
+            OnSave: |-
+              =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && (varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID))) && (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))),
+               Set(varPrjSaving,true); Set(varPrjDiagT0,Now());
+               Clear(colPrjSaveErrors); Clear(colPrjPreRaw); Clear(colPrjPre); Clear(colPrjDup); Clear(colPrjPeriods); Clear(colPrjPatched); Clear(colPrjVerifyRaw); Clear(colPrjVerify);
+               Set(varPrjSaveReads,0); Set(varPrjSaveWrites,0); Set(varPrjSaveVerified,false); Set(varPrjSaveDupFound,false); Set(varPrjSaveConflict,false); Set(varPrjSaveOpenPeriods,0); Set(varPrjSavePeriodsUnchecked,false); Set(varPrjVerifyDiff,"");
+               Set(varPrjSaveMode,varPrjMode); Set(varPrjSaveID,If(varPrjMode="Edit",varPrjSelectedID,Blank())); Set(varPrjPatchedID,Blank());
+               Set(varPrjSaveRec,{Name:Trim(cmpPrjName.CurrentValue & ""),Number:Trim(cmpPrjNumber.CurrentValue & ""),Reference:Trim(cmpPrjReference.CurrentValue & ""),Customer:Trim(cmpPrjCustomer.CurrentValue & ""),Status:Trim(cmpPrjStatus.CurrentValue & ""),Street:Trim(cmpPrjStreet.CurrentValue & ""),HouseNumber:Trim(cmpPrjHouseNumber.CurrentValue & ""),PostalCode:Trim(cmpPrjPostalCode.CurrentValue & ""),City:Trim(cmpPrjCity.CurrentValue & ""),Country:Trim(cmpPrjCountry.CurrentValue & ""),Url:Trim(cmpPrjUrl.CurrentValue & "")});
+               Set(varPrjSaveNumber,varPrjSaveRec.Number); Set(varPrjDupKey,Lower(varPrjSaveRec.Number)); Set(varPrjSaveKey,If(varPrjSaveMode="Edit",Text(varPrjSaveID),""));
+               Set(varPrjSaveRenumbered,varPrjSaveMode="Edit" && varPrjEdit.Number<>varPrjSaveRec.Number);
+               Set(varPrjSaveCheckPeriods,varPrjSaveMode="Edit" && !IsBlank(varPrjSaveID) && varPrjEdit.Status<>"Closed" && varPrjSaveRec.Status="Closed");
+               If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name",Message:If(LangNl && !IsBlank(T.prjErrNameRequired.nl),T.prjErrNameRequired.nl,T.prjErrNameRequired.en)}));
+               If(IsBlank(varPrjSaveRec.Number),Collect(colPrjSaveErrors,{Field:"Number",Message:If(LangNl && !IsBlank(T.prjErrNumberRequired.nl),T.prjErrNumberRequired.nl,T.prjErrNumberRequired.en)}));
+               If(IsBlank(varPrjSaveRec.Status) || (CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0 && !(varPrjSaveMode="Edit" && varPrjSaveRec.Status=varPrjEdit.Status)),Collect(colPrjSaveErrors,{Field:"Status",Message:If(LangNl && !IsBlank(T.prjErrStatusRequired.nl),T.prjErrStatusRequired.nl,T.prjErrStatusRequired.en)}));
+               If(Len(varPrjSaveRec.Name)>255,Collect(colPrjSaveErrors,{Field:"Name",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en))}));
+               If(Len(varPrjSaveRec.Number)>255,Collect(colPrjSaveErrors,{Field:"Number",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en))}));
+               If(Len(varPrjSaveRec.Reference)>255,Collect(colPrjSaveErrors,{Field:"Reference",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en))}));
+               If(Len(varPrjSaveRec.Customer)>255,Collect(colPrjSaveErrors,{Field:"Customer",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en))}));
+               If(Len(varPrjSaveRec.Street)>255,Collect(colPrjSaveErrors,{Field:"Street",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en))}));
+               If(Len(varPrjSaveRec.HouseNumber)>255,Collect(colPrjSaveErrors,{Field:"HouseNumber",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en))}));
+               If(Len(varPrjSaveRec.PostalCode)>255,Collect(colPrjSaveErrors,{Field:"PostalCode",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en))}));
+               If(Len(varPrjSaveRec.City)>255,Collect(colPrjSaveErrors,{Field:"City",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en))}));
+               If(Len(varPrjSaveRec.Url)>255,Collect(colPrjSaveErrors,{Field:"Url",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en))}));
+               If(!IsBlank(varPrjSaveRec.Url) && !StartsWith(varPrjSaveRec.Url,"https://"),Collect(colPrjSaveErrors,{Field:"Url",Message:If(LangNl && !IsBlank(T.prjErrUrl.nl),T.prjErrUrl.nl,T.prjErrUrl.en)}));
+               If(!IsBlank(varPrjSaveRec.Number) && CountIf(colAdminProjects,Lower(Trim(Number))=varPrjDupKey && (varPrjSaveMode="New" || ID<>varPrjSaveID))>0,
+                Set(varPrjSaveDupFound,true); Collect(colPrjSaveErrors,{Field:"Number",Message:If(LangNl && !IsBlank(T.prjErrDuplicate.nl),T.prjErrDuplicate.nl,T.prjErrDuplicate.en)}));
+               If(IsEmpty(colPrjSaveErrors),
+                IfError(Refresh(Projects),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrPreRead.nl),T.prjErrPreRead.nl,T.prjErrPreRead.en)});false);
+                If(IsEmpty(colPrjSaveErrors) && varPrjSaveMode="Edit",
+                 Set(varPrjSaveReads,varPrjSaveReads+1);
+                 IfError(CountRows(ClearCollect(colPrjPreRaw,Filter(Projects,ID=varPrjSaveID)))>=0,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrPreRead.nl),T.prjErrPreRead.nl,T.prjErrPreRead.en)});false);
+                 If(IsEmpty(colPrjSaveErrors) && CountRows(colPrjPreRaw)<>1,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrNotFound.nl),T.prjErrNotFound.nl,T.prjErrNotFound.en)}));
+                 If(IsEmpty(colPrjSaveErrors),ClearCollect(colPrjPre,ForAll(colPrjPreRaw As prj,{ID:prj.ID,Name:Trim(prj.Title & ""),Number:Trim(prj.'Project Number' & ""),Reference:Trim(prj.'Project Reference' & ""),Customer:Trim(prj.'Customer Name' & ""),Status:Trim(prj.Status.Value & ""),Street:Trim(prj.Street & ""),HouseNumber:Trim(prj.'House Number' & ""),PostalCode:Trim(prj.'Postal Code' & ""),City:Trim(prj.City & ""),Country:Trim(prj.Country.Value & ""),Leader:Trim(prj.'Project Leader'.DisplayName & ""),SiteManager:Trim(prj.'Site Managers'.DisplayName & ""),Url:Trim(prj.'ProjectHomeSite URL' & "")})))
+                );
+                If(IsEmpty(colPrjSaveErrors),
+                 Set(varPrjSaveReads,varPrjSaveReads+1);
+                 IfError(CountRows(ClearCollect(colPrjDup,ForAll(Filter(Projects,'Project Number'=varPrjSaveNumber) As prj,{ID:prj.ID,Name:Trim(prj.Title & ""),Number:Trim(prj.'Project Number' & ""),Reference:Trim(prj.'Project Reference' & ""),Customer:Trim(prj.'Customer Name' & ""),Status:Trim(prj.Status.Value & ""),Street:Trim(prj.Street & ""),HouseNumber:Trim(prj.'House Number' & ""),PostalCode:Trim(prj.'Postal Code' & ""),City:Trim(prj.City & ""),Country:Trim(prj.Country.Value & ""),Leader:Trim(prj.'Project Leader'.DisplayName & ""),SiteManager:Trim(prj.'Site Managers'.DisplayName & ""),Url:Trim(prj.'ProjectHomeSite URL' & "")})))>=0,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrDupRead.nl),T.prjErrDupRead.nl,T.prjErrDupRead.en)});false);
+                 If(IsEmpty(colPrjSaveErrors) && CountRows(colPrjDup)>=500,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrDupLimit.nl),T.prjErrDupLimit.nl,T.prjErrDupLimit.en)}));
+                 If(IsEmpty(colPrjSaveErrors) && CountIf(colPrjDup,Lower(Trim(Number))=varPrjDupKey && (varPrjSaveMode="New" || ID<>varPrjSaveID))>0,
+                  Set(varPrjSaveDupFound,true); Collect(colPrjSaveErrors,{Field:"Number",Message:If(LangNl && !IsBlank(T.prjErrDuplicate.nl),T.prjErrDuplicate.nl,T.prjErrDuplicate.en)}))
+                );
+                If(IsEmpty(colPrjSaveErrors) && varPrjSaveMode="Edit",
+                 With({p:First(colPrjPre)},
+                  If(p.ID<>varPrjSaveID || Trim(p.Name & "")<>Trim(varPrjEdit.Name & "") || Trim(p.Number & "")<>Trim(varPrjEdit.Number & "") || Trim(p.Reference & "")<>Trim(varPrjEdit.Reference & "") || Trim(p.Customer & "")<>Trim(varPrjEdit.Customer & "") || Trim(p.Status & "")<>Trim(varPrjEdit.Status & "") || Trim(p.Street & "")<>Trim(varPrjEdit.Street & "") || Trim(p.HouseNumber & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(p.PostalCode & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(p.City & "")<>Trim(varPrjEdit.City & "") || Trim(p.Country & "")<>Trim(varPrjEdit.Country & "") || Trim(p.Url & "")<>Trim(varPrjEdit.Url & ""),
+                   Set(varPrjSaveConflict,true); Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrConflict.nl),T.prjErrConflict.nl,T.prjErrConflict.en)});
+                   Trace("DIAG|Projects|Conflict",TraceSeverity.Warning,{Screen:"Projects",ItemID:varPrjSaveID})
+                  )
+                 )
+                );
+                If(IsEmpty(colPrjSaveErrors) && varPrjSaveCheckPeriods,
+                 Set(varPrjSaveReads,varPrjSaveReads+1);
+                 IfError(Refresh('Assignment Periods'),Set(varPrjSavePeriodsUnchecked,true);false);
+                 IfError(CountRows(ClearCollect(colPrjPeriods,ForAll(Filter('Assignment Periods',ProjectKey=varPrjSaveKey) As ap,{ID:ap.ID,ProjectKey:ap.ProjectKey,Until:ap.Until})))>=0,Set(varPrjSavePeriodsUnchecked,true);false);
+                 If(CountRows(colPrjPeriods)>=500,Set(varPrjSavePeriodsUnchecked,true));
+                 Set(varPrjSaveOpenPeriods,CountIf(colPrjPeriods,ProjectKey=varPrjSaveKey && IsBlank(Until)))
+                );
+                If(IsEmpty(colPrjSaveErrors),
+                 Set(varPrjPatchError,false);
+                 IfError(CountRows(ClearCollect(colPrjPatched,Patch(Projects,If(varPrjSaveMode="New",Defaults(Projects),First(colPrjPreRaw)),{Title:varPrjSaveRec.Name,'Project Number':varPrjSaveRec.Number,'Project Reference':varPrjSaveRec.Reference,'Customer Name':varPrjSaveRec.Customer,Status:{Value:varPrjSaveRec.Status},Street:varPrjSaveRec.Street,'House Number':varPrjSaveRec.HouseNumber,'Postal Code':varPrjSaveRec.PostalCode,City:varPrjSaveRec.City,Country:If(IsBlank(varPrjSaveRec.Country),Blank(),{Value:varPrjSaveRec.Country}),'ProjectHomeSite URL':If(IsBlank(varPrjSaveRec.Url),Blank(),varPrjSaveRec.Url)})))>=0,
+                  Set(varPrjPatchError,true); Collect(colPrjSaveErrors,{Field:If("duplicate" in Lower(FirstError.Message),"Number",""),Message:If("duplicate" in Lower(FirstError.Message),If(LangNl && !IsBlank(T.prjErrDuplicateServer.nl),T.prjErrDuplicateServer.nl,T.prjErrDuplicateServer.en),If(LangNl && !IsBlank(T.prjErrSharePoint.nl),T.prjErrSharePoint.nl,T.prjErrSharePoint.en) & " " & FirstError.Message)});false);
+                 If(CountIf(colPrjSaveErrors,Field="Number")>0,Set(varPrjSaveDupFound,true));
+                 Set(varPrjPatchedID,First(colPrjPatched).ID);
+                 Set(varPrjSaveWrites,If(varPrjPatchError && IsBlank(varPrjPatchedID),0,1));
+                 If(IsEmpty(colPrjSaveErrors) && (IsBlank(varPrjPatchedID) || (varPrjSaveMode="Edit" && varPrjPatchedID<>varPrjSaveID)),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrPatch.nl),T.prjErrPatch.nl,T.prjErrPatch.en)}));
+                 If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrVerify.nl),T.prjErrVerify.nl,T.prjErrVerify.en)});false));
+                 If(IsEmpty(colPrjSaveErrors),
+                  Set(varPrjSaveReads,varPrjSaveReads+1);
+                  IfError(CountRows(ClearCollect(colPrjVerifyRaw,Filter(Projects,ID=varPrjPatchedID)))>=0,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrVerify.nl),T.prjErrVerify.nl,T.prjErrVerify.en)});false)
+                 );
+                 If(IsEmpty(colPrjSaveErrors),ClearCollect(colPrjVerify,ForAll(colPrjVerifyRaw As prj,{ID:prj.ID,Name:Trim(prj.Title & ""),Number:Trim(prj.'Project Number' & ""),Reference:Trim(prj.'Project Reference' & ""),Customer:Trim(prj.'Customer Name' & ""),Status:Trim(prj.Status.Value & ""),Street:Trim(prj.Street & ""),HouseNumber:Trim(prj.'House Number' & ""),PostalCode:Trim(prj.'Postal Code' & ""),City:Trim(prj.City & ""),Country:Trim(prj.Country.Value & ""),Leader:Trim(prj.'Project Leader'.DisplayName & ""),SiteManager:Trim(prj.'Site Managers'.DisplayName & ""),Url:Trim(prj.'ProjectHomeSite URL' & "")})));
+                 If(IsEmpty(colPrjSaveErrors),
+                  With({v:First(colPrjVerify),rowOk:CountRows(colPrjVerifyRaw)=1 && CountRows(colPrjVerify)=1 && First(colPrjVerify).ID=varPrjPatchedID},
+                   With({d:Filter(Table({F:"Name",L:If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en),D:Trim(v.Name & "")<>Trim(varPrjSaveRec.Name & "")},{F:"Number",L:If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en),D:Trim(v.Number & "")<>Trim(varPrjSaveRec.Number & "")},{F:"Reference",L:If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en),D:Trim(v.Reference & "")<>Trim(varPrjSaveRec.Reference & "")},{F:"Customer",L:If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en),D:Trim(v.Customer & "")<>Trim(varPrjSaveRec.Customer & "")},{F:"Status",L:If(LangNl && !IsBlank(T.prjFieldStatus.nl),T.prjFieldStatus.nl,T.prjFieldStatus.en),D:Trim(v.Status & "")<>Trim(varPrjSaveRec.Status & "")},{F:"Street",L:If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en),D:Trim(v.Street & "")<>Trim(varPrjSaveRec.Street & "")},{F:"HouseNumber",L:If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en),D:Trim(v.HouseNumber & "")<>Trim(varPrjSaveRec.HouseNumber & "")},{F:"PostalCode",L:If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en),D:Trim(v.PostalCode & "")<>Trim(varPrjSaveRec.PostalCode & "")},{F:"City",L:If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en),D:Trim(v.City & "")<>Trim(varPrjSaveRec.City & "")},{F:"Country",L:If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en),D:Trim(v.Country & "")<>Trim(varPrjSaveRec.Country & "")},{F:"Url",L:If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en),D:Trim(v.Url & "")<>Trim(varPrjSaveRec.Url & "")}),D)},
+                    If(rowOk && IsEmpty(d),
+                     Set(varPrjSaveVerified,true),
+                     Set(varPrjVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));
+                     Collect(colPrjSaveErrors,{Field:"",Message:If(rowOk,Substitute(If(LangNl && !IsBlank(T.prjErrVerifyFields.nl),T.prjErrVerifyFields.nl,T.prjErrVerifyFields.en),"{0}",Concat(d,L,", ")),If(LangNl && !IsBlank(T.prjErrVerify.nl),T.prjErrVerify.nl,T.prjErrVerify.en))});
+                     Trace("DIAG|Projects|VerifyMismatch",TraceSeverity.Warning,{Screen:"Projects",ItemID:Coalesce(varPrjPatchedID,0),Rows:CountRows(colPrjVerifyRaw),Fields:varPrjVerifyDiff})
+                    )
+                   )
+                  )
+                 )
+                )
+               );
+               If(varPrjSaveVerified && IsEmpty(colPrjSaveErrors),
+                RemoveIf(colAdminProjects,ID=varPrjPatchedID); Collect(colAdminProjects,First(colPrjVerify));
+                RemoveIf(colPrjModified,ID=varPrjPatchedID); Collect(colPrjModified,{ID:varPrjPatchedID,Modified:First(colPrjVerifyRaw).Modified});
+                Set(varPrjEdit,First(colPrjVerify)); Set(varPrjSelectedID,varPrjPatchedID); Set(varPrjMode,"Edit");
+                Set(varProjectsCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
+                Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
+                If(varPrjSaveOpenPeriods>0 || varPrjSavePeriodsUnchecked,
+                 Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,Trim(If(LangNl && !IsBlank(T.admMsgSavedPrefix.nl),T.admMsgSavedPrefix.nl,T.admMsgSavedPrefix.en) & " " & If(varPrjSaveRenumbered,If(LangNl && !IsBlank(T.prjMsgSavedRenumber.nl),T.prjMsgSavedRenumber.nl,T.prjMsgSavedRenumber.en),"") & If(varPrjSaveOpenPeriods>0," " & Substitute(If(LangNl && !IsBlank(T.prjWarnOpenPeriods.nl),T.prjWarnOpenPeriods.nl,T.prjWarnOpenPeriods.en),"{0}",Text(varPrjSaveOpenPeriods)),"") & If(varPrjSavePeriodsUnchecked," " & If(LangNl && !IsBlank(T.prjWarnPeriodsUnchecked.nl),T.prjWarnPeriodsUnchecked.nl,T.prjWarnPeriodsUnchecked.en),""))),
+                 Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,If(varPrjSaveRenumbered,If(LangNl && !IsBlank(T.prjMsgSavedRenumber.nl),T.prjMsgSavedRenumber.nl,T.prjMsgSavedRenumber.en),""))
+                );
+                Select(btnPrjFormReset),
+                varPrjSaveWrites=0,
+                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotSaved.nl),T.admHeadNotSaved.nl,T.admHeadNotSaved.en)); Set(varAdmMsgBody,With({n:CountRows(colPrjSaveErrors)-1},First(colPrjSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.prjMsgMore.nl),T.prjMsgMore.nl,T.prjMsgMore.en),"{0}",Text(n)),""))),
+                Set(varPrjSaveFailed,true); Set(varPrjLoadState,"Failed");
+                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotSaved.nl),T.admHeadNotSaved.nl,T.admHeadNotSaved.en)); Set(varAdmMsgBody,With({n:CountRows(colPrjSaveErrors)-1},First(colPrjSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.prjMsgMore.nl),T.prjMsgMore.nl,T.prjMsgMore.en),"{0}",Text(n)),"")) & " " & If(varPrjSaveMode="New",If(LangNl && !IsBlank(T.prjMsgSaveFailedNew.nl),T.prjMsgSaveFailedNew.nl,T.prjMsgSaveFailedNew.en),If(LangNl && !IsBlank(T.prjMsgSaveFailed.nl),T.prjMsgSaveFailed.nl,T.prjMsgSaveFailed.en)))
+               );
+               Set(varPrjSaving,false);
+               Trace("DIAG|Projects|SaveEnd",TraceSeverity.Information,{Screen:"Projects",Mode:varPrjSaveMode,ItemID:Coalesce(varPrjPatchedID,varPrjSaveID,0),ElapsedMs:DateDiff(varPrjDiagT0,Now(),TimeUnit.Milliseconds),Reads:varPrjSaveReads,Writes:varPrjSaveWrites,Verified:varPrjSaveVerified,DupFound:varPrjSaveDupFound,Conflict:varPrjSaveConflict,OpenPeriods:varPrjSaveOpenPeriods,PeriodsUnchecked:varPrjSavePeriodsUnchecked,Errors:CountRows(colPrjSaveErrors)}),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
+              )
+            RefreshText: =If(LangNl && !IsBlank(T.prjRefresh.nl),T.prjRefresh.nl,T.prjRefresh.en)
+            RefreshEnabled: |-
+              =!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))))
+            SaveText: =If(LangNl && !IsBlank(T.prjSave.nl),T.prjSave.nl,T.prjSave.en)
+            SaveEnabled: |-
+              =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && (varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID))) && (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & "")))
+            Width: =Parent.Width
             X: =0
             Y: =Parent.Height-Self.Height
-            Width: =Parent.Width
-            Height: =68
-            Fill: =Color.White
-            LayoutDirection: =LayoutDirection.Vertical
-            LayoutAlignItems: =LayoutAlignItems.Start
-            LayoutJustifyContent: =LayoutJustifyContent.Start
-            LayoutWrap: =false
-            LayoutOverflowX: =LayoutOverflow.Scroll
-            LayoutOverflowY: =LayoutOverflow.Hide
-            LayoutGap: =0
-            PaddingTop: =0
-            PaddingBottom: =0
-            PaddingLeft: =0
-            PaddingRight: =0
-          Children:
-            - conPrjButtonRow:
-                Control: GroupContainer@1.5.0
-                Variant: ManualLayout
-                Properties:
-                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnPrjHome.Width+btnPrjNew.Width+btnPrjRefresh.Width+btnPrjDiscard.Width+btnPrjSave.Width+4*lblFooterButtonMetrics.Width)
-                  Height: =68
-                  FillPortions: =0
-                  Fill: =Color.Transparent
-                Children:
-                  - btnPrjHome:
-                      Control: Classic/Button@2.2.0
-                      Properties:
-                        BorderColor: =ColorValue("#0303B8")
-                        Color: =Color.White
-                        DisabledBorderColor: =ColorValue("#E6E6E6")
-                        DisabledColor: =ColorValue("#787878")
-                        DisabledFill: =ColorValue("#E6E6E6")
-                        Fill: =ColorValue("#0303B8")
-                        HoverBorderColor: =ColorValue("#000F41")
-                        HoverColor: =Color.White
-                        HoverFill: =ColorValue("#000F41")
-                        PressedBorderColor: =ColorValue("#000F41")
-                        PressedColor: =Color.White
-                        PressedFill: =ColorValue("#000F41")
-                        Text: =If(LangNl && !IsBlank(T.prjHome.nl),T.prjHome.nl,T.prjHome.en)
-                        OnSelect: |-
-                          =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),Navigate(scrHome))
-                        DisplayMode: |-
-                          =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),DisplayMode.Edit,DisplayMode.Disabled)
-                        X: =lblFooterButtonMetrics.X
-                        Width: =110
-                        Y: =(Parent.Height-Self.Height)/2
-                        Height: =lblFooterButtonMetrics.Height
-                        Font: ="Inter, Arial, sans-serif"
-                        Size: =14
-                        FontWeight: =FontWeight.Semibold
-                        Align: =Align.Center
-                        VerticalAlign: =VerticalAlign.Middle
-                        PaddingTop: =0
-                        PaddingBottom: =0
-                        PaddingLeft: =40
-                        PaddingRight: =16
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
-                  - icoPrjHome:
-                      Control: Classic/Icon@2.5.0
-                      Properties:
-                        Color: =If(btnPrjHome.DisplayMode=DisplayMode.Edit,Color.White,ColorValue("#787878"))
-                        Height: =20
-                        Icon: =Icon.Home
-                        OnSelect: =Select(btnPrjHome)
-                        Width: =20
-                        X: =btnPrjHome.X+14
-                        Y: =btnPrjHome.Y+(btnPrjHome.Height-Self.Height)/2
-                  - btnPrjNew:
-                      Control: Classic/Button@2.2.0
-                      Properties:
-                        BorderColor: =ColorValue("#0303B8")
-                        BorderThickness: =1
-                        BorderStyle: =BorderStyle.Solid
-                        Color: =ColorValue("#0303B8")
-                        DisabledBorderColor: =ColorValue("#E6E6E6")
-                        DisabledColor: =ColorValue("#787878")
-                        DisabledFill: =ColorValue("#E6E6E6")
-                        Fill: =Color.White
-                        HoverBorderColor: =ColorValue("#0303B8")
-                        HoverColor: =ColorValue("#0303B8")
-                        HoverFill: =ColorValue("#D5EDFF")
-                        PressedBorderColor: =ColorValue("#0303B8")
-                        PressedColor: =ColorValue("#0303B8")
-                        PressedFill: =ColorValue("#D5EDFF")
-                        Text: =If(LangNl && !IsBlank(T.prjNew.nl),T.prjNew.nl,T.prjNew.en)
-                        OnSelect: |-
-                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),
-                           Set(varPrjMode,"New"); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""});
-                           Clear(colPrjSaveErrors); Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl);
-                           Trace("DIAG|Projects|New",TraceSeverity.Information,{Screen:"Projects"}),
-                           Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
-                          )
-                        DisplayMode: |-
-                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),DisplayMode.Edit,DisplayMode.Disabled)
-                        X: =btnPrjRefresh.X-lblFooterButtonMetrics.Width-Self.Width
-                        Width: =90
-                        Y: =(Parent.Height-Self.Height)/2
-                        Height: =lblFooterButtonMetrics.Height
-                        Font: ="Inter, Arial, sans-serif"
-                        Size: =14
-                        FontWeight: =FontWeight.Semibold
-                        Align: =Align.Center
-                        VerticalAlign: =VerticalAlign.Middle
-                        PaddingTop: =0
-                        PaddingBottom: =0
-                        PaddingLeft: =16
-                        PaddingRight: =16
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
-                  - btnPrjRefresh:
-                      Control: Classic/Button@2.2.0
-                      Properties:
-                        BorderColor: =ColorValue("#0303B8")
-                        BorderThickness: =1
-                        BorderStyle: =BorderStyle.Solid
-                        Color: =ColorValue("#0303B8")
-                        DisabledBorderColor: =ColorValue("#E6E6E6")
-                        DisabledColor: =ColorValue("#787878")
-                        DisabledFill: =ColorValue("#E6E6E6")
-                        Fill: =Color.White
-                        HoverBorderColor: =ColorValue("#0303B8")
-                        HoverColor: =ColorValue("#0303B8")
-                        HoverFill: =ColorValue("#D5EDFF")
-                        PressedBorderColor: =ColorValue("#0303B8")
-                        PressedColor: =ColorValue("#0303B8")
-                        PressedFill: =ColorValue("#D5EDFF")
-                        Text: =If(LangNl && !IsBlank(T.prjRefresh.nl),T.prjRefresh.nl,T.prjRefresh.en)
-                        OnSelect: |-
-                          =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & "")))),
-                           Trace("DIAG|Projects|Refresh",TraceSeverity.Information,{Screen:"Projects",SaveFailed:Coalesce(varPrjSaveFailed,false)});
-                           If(Coalesce(varPrjSaveFailed,false),Clear(colPrjSaveErrors));
-                           Set(varPrjForceRefresh,true); Select(btnPrjLoad),
-                           Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
-                          )
-                        DisplayMode: |-
-                          =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !(Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & "")))),DisplayMode.Edit,DisplayMode.Disabled)
-                        X: =btnPrjDiscard.X-lblFooterButtonMetrics.Width-Self.Width
-                        Width: =110
-                        Y: =(Parent.Height-Self.Height)/2
-                        Height: =lblFooterButtonMetrics.Height
-                        Font: ="Inter, Arial, sans-serif"
-                        Size: =14
-                        FontWeight: =FontWeight.Semibold
-                        Align: =Align.Center
-                        VerticalAlign: =VerticalAlign.Middle
-                        PaddingTop: =0
-                        PaddingBottom: =0
-                        PaddingLeft: =16
-                        PaddingRight: =16
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
-                  - btnPrjDiscard:
-                      Control: Classic/Button@2.2.0
-                      Properties:
-                        BorderColor: =ColorValue("#0303B8")
-                        BorderThickness: =1
-                        BorderStyle: =BorderStyle.Solid
-                        Color: =ColorValue("#0303B8")
-                        DisabledBorderColor: =ColorValue("#E6E6E6")
-                        DisabledColor: =ColorValue("#787878")
-                        DisabledFill: =ColorValue("#E6E6E6")
-                        Fill: =Color.White
-                        HoverBorderColor: =ColorValue("#0303B8")
-                        HoverColor: =ColorValue("#0303B8")
-                        HoverFill: =ColorValue("#D5EDFF")
-                        PressedBorderColor: =ColorValue("#0303B8")
-                        PressedColor: =ColorValue("#0303B8")
-                        PressedFill: =ColorValue("#D5EDFF")
-                        Text: =If(LangNl && !IsBlank(T.prjDiscard.nl),T.prjDiscard.nl,T.prjDiscard.en)
-                        OnSelect: |-
-                          =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & "")))),
-                           Trace("DIAG|Projects|Discard",TraceSeverity.Information,{Screen:"Projects",Mode:Coalesce(varPrjMode,""),SaveFailed:Coalesce(varPrjSaveFailed,false)});
-                           Clear(colPrjSaveErrors);
-                           If(Coalesce(varPrjSaveFailed,false),
-                            Set(varPrjForceRefresh,true); Select(btnPrjLoad),
-                            If(varPrjMode="New",Set(varPrjMode,""); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""}));
-                            Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl);
-                            Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadDiscarded.nl),T.admHeadDiscarded.nl,T.admHeadDiscarded.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgDiscarded.nl),T.prjMsgDiscarded.nl,T.prjMsgDiscarded.en))
-                           ),
-                           Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
-                          )
-                        DisplayMode: |-
-                          =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & "")))),DisplayMode.Edit,DisplayMode.Disabled)
-                        X: =btnPrjSave.X-lblFooterButtonMetrics.Width-Self.Width
-                        Width: =188
-                        Y: =(Parent.Height-Self.Height)/2
-                        Height: =lblFooterButtonMetrics.Height
-                        Font: ="Inter, Arial, sans-serif"
-                        Size: =14
-                        FontWeight: =FontWeight.Semibold
-                        Align: =Align.Center
-                        VerticalAlign: =VerticalAlign.Middle
-                        PaddingTop: =0
-                        PaddingBottom: =0
-                        PaddingLeft: =16
-                        PaddingRight: =16
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
-                  - btnPrjSave:
-                      Control: Classic/Button@2.2.0
-                      Properties:
-                        BorderColor: =ColorValue("#1AFF80")
-                        BorderThickness: =0
-                        Color: =ColorValue("#000F41")
-                        DisabledBorderColor: =ColorValue("#E6E6E6")
-                        DisabledColor: =ColorValue("#787878")
-                        DisabledFill: =ColorValue("#E6E6E6")
-                        Fill: =ColorValue("#1AFF80")
-                        HoverBorderColor: =ColorValue("#18DD6E")
-                        HoverColor: =ColorValue("#000F41")
-                        HoverFill: =ColorValue("#18DD6E")
-                        PressedBorderColor: =ColorValue("#18DD6E")
-                        PressedColor: =ColorValue("#000F41")
-                        PressedFill: =ColorValue("#18DD6E")
-                        Text: =If(LangNl && !IsBlank(T.prjSave.nl),T.prjSave.nl,T.prjSave.en)
-                        OnSelect: |-
-                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && (varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID))) && (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),
-                           Set(varPrjSaving,true); Set(varPrjDiagT0,Now());
-                           Clear(colPrjSaveErrors); Clear(colPrjPreRaw); Clear(colPrjPre); Clear(colPrjDup); Clear(colPrjPeriods); Clear(colPrjPatched); Clear(colPrjVerifyRaw); Clear(colPrjVerify);
-                           Set(varPrjSaveReads,0); Set(varPrjSaveWrites,0); Set(varPrjSaveVerified,false); Set(varPrjSaveDupFound,false); Set(varPrjSaveConflict,false); Set(varPrjSaveOpenPeriods,0); Set(varPrjSavePeriodsUnchecked,false); Set(varPrjVerifyDiff,"");
-                           Set(varPrjSaveMode,varPrjMode); Set(varPrjSaveID,If(varPrjMode="Edit",varPrjSelectedID,Blank())); Set(varPrjPatchedID,Blank());
-                           Set(varPrjSaveRec,{Name:Trim(txtPrjName.Text & ""),Number:Trim(txtPrjNumber.Text & ""),Reference:Trim(txtPrjReference.Text & ""),Customer:Trim(txtPrjCustomer.Text & ""),Status:Trim(ddPrjStatus.Selected.Value & ""),Street:Trim(txtPrjStreet.Text & ""),HouseNumber:Trim(txtPrjHouseNumber.Text & ""),PostalCode:Trim(txtPrjPostalCode.Text & ""),City:Trim(txtPrjCity.Text & ""),Country:Trim(ddPrjCountry.Selected.Value & ""),Url:Trim(txtPrjUrl.Text & "")});
-                           Set(varPrjSaveNumber,varPrjSaveRec.Number); Set(varPrjDupKey,Lower(varPrjSaveRec.Number)); Set(varPrjSaveKey,If(varPrjSaveMode="Edit",Text(varPrjSaveID),""));
-                           Set(varPrjSaveRenumbered,varPrjSaveMode="Edit" && varPrjEdit.Number<>varPrjSaveRec.Number);
-                           Set(varPrjSaveCheckPeriods,varPrjSaveMode="Edit" && !IsBlank(varPrjSaveID) && varPrjEdit.Status<>"Closed" && varPrjSaveRec.Status="Closed");
-                           If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name",Message:If(LangNl && !IsBlank(T.prjErrNameRequired.nl),T.prjErrNameRequired.nl,T.prjErrNameRequired.en)}));
-                           If(IsBlank(varPrjSaveRec.Number),Collect(colPrjSaveErrors,{Field:"Number",Message:If(LangNl && !IsBlank(T.prjErrNumberRequired.nl),T.prjErrNumberRequired.nl,T.prjErrNumberRequired.en)}));
-                           If(IsBlank(varPrjSaveRec.Status) || (CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0 && !(varPrjSaveMode="Edit" && varPrjSaveRec.Status=varPrjEdit.Status)),Collect(colPrjSaveErrors,{Field:"Status",Message:If(LangNl && !IsBlank(T.prjErrStatusRequired.nl),T.prjErrStatusRequired.nl,T.prjErrStatusRequired.en)}));
-                           If(Len(varPrjSaveRec.Name)>255,Collect(colPrjSaveErrors,{Field:"Name",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en))}));
-                           If(Len(varPrjSaveRec.Number)>255,Collect(colPrjSaveErrors,{Field:"Number",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en))}));
-                           If(Len(varPrjSaveRec.Reference)>255,Collect(colPrjSaveErrors,{Field:"Reference",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en))}));
-                           If(Len(varPrjSaveRec.Customer)>255,Collect(colPrjSaveErrors,{Field:"Customer",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en))}));
-                           If(Len(varPrjSaveRec.Street)>255,Collect(colPrjSaveErrors,{Field:"Street",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en))}));
-                           If(Len(varPrjSaveRec.HouseNumber)>255,Collect(colPrjSaveErrors,{Field:"HouseNumber",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en))}));
-                           If(Len(varPrjSaveRec.PostalCode)>255,Collect(colPrjSaveErrors,{Field:"PostalCode",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en))}));
-                           If(Len(varPrjSaveRec.City)>255,Collect(colPrjSaveErrors,{Field:"City",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en))}));
-                           If(Len(varPrjSaveRec.Url)>255,Collect(colPrjSaveErrors,{Field:"Url",Message:Substitute(If(LangNl && !IsBlank(T.prjErrTooLong.nl),T.prjErrTooLong.nl,T.prjErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en))}));
-                           If(!IsBlank(varPrjSaveRec.Url) && !StartsWith(varPrjSaveRec.Url,"https://"),Collect(colPrjSaveErrors,{Field:"Url",Message:If(LangNl && !IsBlank(T.prjErrUrl.nl),T.prjErrUrl.nl,T.prjErrUrl.en)}));
-                           If(!IsBlank(varPrjSaveRec.Number) && CountIf(colAdminProjects,Lower(Trim(Number))=varPrjDupKey && (varPrjSaveMode="New" || ID<>varPrjSaveID))>0,
-                            Set(varPrjSaveDupFound,true); Collect(colPrjSaveErrors,{Field:"Number",Message:If(LangNl && !IsBlank(T.prjErrDuplicate.nl),T.prjErrDuplicate.nl,T.prjErrDuplicate.en)}));
-                           If(IsEmpty(colPrjSaveErrors),
-                            IfError(Refresh(Projects),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrPreRead.nl),T.prjErrPreRead.nl,T.prjErrPreRead.en)});false);
-                            If(IsEmpty(colPrjSaveErrors) && varPrjSaveMode="Edit",
-                             Set(varPrjSaveReads,varPrjSaveReads+1);
-                             IfError(CountRows(ClearCollect(colPrjPreRaw,Filter(Projects,ID=varPrjSaveID)))>=0,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrPreRead.nl),T.prjErrPreRead.nl,T.prjErrPreRead.en)});false);
-                             If(IsEmpty(colPrjSaveErrors) && CountRows(colPrjPreRaw)<>1,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrNotFound.nl),T.prjErrNotFound.nl,T.prjErrNotFound.en)}));
-                             If(IsEmpty(colPrjSaveErrors),ClearCollect(colPrjPre,ForAll(colPrjPreRaw As prj,{ID:prj.ID,Name:Trim(prj.Title & ""),Number:Trim(prj.'Project Number' & ""),Reference:Trim(prj.'Project Reference' & ""),Customer:Trim(prj.'Customer Name' & ""),Status:Trim(prj.Status.Value & ""),Street:Trim(prj.Street & ""),HouseNumber:Trim(prj.'House Number' & ""),PostalCode:Trim(prj.'Postal Code' & ""),City:Trim(prj.City & ""),Country:Trim(prj.Country.Value & ""),Leader:Trim(prj.'Project Leader'.DisplayName & ""),SiteManager:Trim(prj.'Site Managers'.DisplayName & ""),Url:Trim(prj.'ProjectHomeSite URL' & "")})))
-                            );
-                            If(IsEmpty(colPrjSaveErrors),
-                             Set(varPrjSaveReads,varPrjSaveReads+1);
-                             IfError(CountRows(ClearCollect(colPrjDup,ForAll(Filter(Projects,'Project Number'=varPrjSaveNumber) As prj,{ID:prj.ID,Name:Trim(prj.Title & ""),Number:Trim(prj.'Project Number' & ""),Reference:Trim(prj.'Project Reference' & ""),Customer:Trim(prj.'Customer Name' & ""),Status:Trim(prj.Status.Value & ""),Street:Trim(prj.Street & ""),HouseNumber:Trim(prj.'House Number' & ""),PostalCode:Trim(prj.'Postal Code' & ""),City:Trim(prj.City & ""),Country:Trim(prj.Country.Value & ""),Leader:Trim(prj.'Project Leader'.DisplayName & ""),SiteManager:Trim(prj.'Site Managers'.DisplayName & ""),Url:Trim(prj.'ProjectHomeSite URL' & "")})))>=0,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrDupRead.nl),T.prjErrDupRead.nl,T.prjErrDupRead.en)});false);
-                             If(IsEmpty(colPrjSaveErrors) && CountRows(colPrjDup)>=500,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrDupLimit.nl),T.prjErrDupLimit.nl,T.prjErrDupLimit.en)}));
-                             If(IsEmpty(colPrjSaveErrors) && CountIf(colPrjDup,Lower(Trim(Number))=varPrjDupKey && (varPrjSaveMode="New" || ID<>varPrjSaveID))>0,
-                              Set(varPrjSaveDupFound,true); Collect(colPrjSaveErrors,{Field:"Number",Message:If(LangNl && !IsBlank(T.prjErrDuplicate.nl),T.prjErrDuplicate.nl,T.prjErrDuplicate.en)}))
-                            );
-                            If(IsEmpty(colPrjSaveErrors) && varPrjSaveMode="Edit",
-                             With({p:First(colPrjPre)},
-                              If(p.ID<>varPrjSaveID || Trim(p.Name & "")<>Trim(varPrjEdit.Name & "") || Trim(p.Number & "")<>Trim(varPrjEdit.Number & "") || Trim(p.Reference & "")<>Trim(varPrjEdit.Reference & "") || Trim(p.Customer & "")<>Trim(varPrjEdit.Customer & "") || Trim(p.Status & "")<>Trim(varPrjEdit.Status & "") || Trim(p.Street & "")<>Trim(varPrjEdit.Street & "") || Trim(p.HouseNumber & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(p.PostalCode & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(p.City & "")<>Trim(varPrjEdit.City & "") || Trim(p.Country & "")<>Trim(varPrjEdit.Country & "") || Trim(p.Url & "")<>Trim(varPrjEdit.Url & ""),
-                               Set(varPrjSaveConflict,true); Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrConflict.nl),T.prjErrConflict.nl,T.prjErrConflict.en)});
-                               Trace("DIAG|Projects|Conflict",TraceSeverity.Warning,{Screen:"Projects",ItemID:varPrjSaveID})
-                              )
-                             )
-                            );
-                            If(IsEmpty(colPrjSaveErrors) && varPrjSaveCheckPeriods,
-                             Set(varPrjSaveReads,varPrjSaveReads+1);
-                             IfError(Refresh('Assignment Periods'),Set(varPrjSavePeriodsUnchecked,true);false);
-                             IfError(CountRows(ClearCollect(colPrjPeriods,ForAll(Filter('Assignment Periods',ProjectKey=varPrjSaveKey) As ap,{ID:ap.ID,ProjectKey:ap.ProjectKey,Until:ap.Until})))>=0,Set(varPrjSavePeriodsUnchecked,true);false);
-                             If(CountRows(colPrjPeriods)>=500,Set(varPrjSavePeriodsUnchecked,true));
-                             Set(varPrjSaveOpenPeriods,CountIf(colPrjPeriods,ProjectKey=varPrjSaveKey && IsBlank(Until)))
-                            );
-                            If(IsEmpty(colPrjSaveErrors),
-                             Set(varPrjPatchError,false);
-                             IfError(CountRows(ClearCollect(colPrjPatched,Patch(Projects,If(varPrjSaveMode="New",Defaults(Projects),First(colPrjPreRaw)),{Title:varPrjSaveRec.Name,'Project Number':varPrjSaveRec.Number,'Project Reference':varPrjSaveRec.Reference,'Customer Name':varPrjSaveRec.Customer,Status:{Value:varPrjSaveRec.Status},Street:varPrjSaveRec.Street,'House Number':varPrjSaveRec.HouseNumber,'Postal Code':varPrjSaveRec.PostalCode,City:varPrjSaveRec.City,Country:If(IsBlank(varPrjSaveRec.Country),Blank(),{Value:varPrjSaveRec.Country}),'ProjectHomeSite URL':If(IsBlank(varPrjSaveRec.Url),Blank(),varPrjSaveRec.Url)})))>=0,
-                              Set(varPrjPatchError,true); Collect(colPrjSaveErrors,{Field:If("duplicate" in Lower(FirstError.Message),"Number",""),Message:If("duplicate" in Lower(FirstError.Message),If(LangNl && !IsBlank(T.prjErrDuplicateServer.nl),T.prjErrDuplicateServer.nl,T.prjErrDuplicateServer.en),If(LangNl && !IsBlank(T.prjErrSharePoint.nl),T.prjErrSharePoint.nl,T.prjErrSharePoint.en) & " " & FirstError.Message)});false);
-                             If(CountIf(colPrjSaveErrors,Field="Number")>0,Set(varPrjSaveDupFound,true));
-                             Set(varPrjPatchedID,First(colPrjPatched).ID);
-                             Set(varPrjSaveWrites,If(varPrjPatchError && IsBlank(varPrjPatchedID),0,1));
-                             If(IsEmpty(colPrjSaveErrors) && (IsBlank(varPrjPatchedID) || (varPrjSaveMode="Edit" && varPrjPatchedID<>varPrjSaveID)),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrPatch.nl),T.prjErrPatch.nl,T.prjErrPatch.en)}));
-                             If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrVerify.nl),T.prjErrVerify.nl,T.prjErrVerify.en)});false));
-                             If(IsEmpty(colPrjSaveErrors),
-                              Set(varPrjSaveReads,varPrjSaveReads+1);
-                              IfError(CountRows(ClearCollect(colPrjVerifyRaw,Filter(Projects,ID=varPrjPatchedID)))>=0,Collect(colPrjSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.prjErrVerify.nl),T.prjErrVerify.nl,T.prjErrVerify.en)});false)
-                             );
-                             If(IsEmpty(colPrjSaveErrors),ClearCollect(colPrjVerify,ForAll(colPrjVerifyRaw As prj,{ID:prj.ID,Name:Trim(prj.Title & ""),Number:Trim(prj.'Project Number' & ""),Reference:Trim(prj.'Project Reference' & ""),Customer:Trim(prj.'Customer Name' & ""),Status:Trim(prj.Status.Value & ""),Street:Trim(prj.Street & ""),HouseNumber:Trim(prj.'House Number' & ""),PostalCode:Trim(prj.'Postal Code' & ""),City:Trim(prj.City & ""),Country:Trim(prj.Country.Value & ""),Leader:Trim(prj.'Project Leader'.DisplayName & ""),SiteManager:Trim(prj.'Site Managers'.DisplayName & ""),Url:Trim(prj.'ProjectHomeSite URL' & "")})));
-                             If(IsEmpty(colPrjSaveErrors),
-                              With({v:First(colPrjVerify),rowOk:CountRows(colPrjVerifyRaw)=1 && CountRows(colPrjVerify)=1 && First(colPrjVerify).ID=varPrjPatchedID},
-                               With({d:Filter(Table({F:"Name",L:If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en),D:Trim(v.Name & "")<>Trim(varPrjSaveRec.Name & "")},{F:"Number",L:If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en),D:Trim(v.Number & "")<>Trim(varPrjSaveRec.Number & "")},{F:"Reference",L:If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en),D:Trim(v.Reference & "")<>Trim(varPrjSaveRec.Reference & "")},{F:"Customer",L:If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en),D:Trim(v.Customer & "")<>Trim(varPrjSaveRec.Customer & "")},{F:"Status",L:If(LangNl && !IsBlank(T.prjFieldStatus.nl),T.prjFieldStatus.nl,T.prjFieldStatus.en),D:Trim(v.Status & "")<>Trim(varPrjSaveRec.Status & "")},{F:"Street",L:If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en),D:Trim(v.Street & "")<>Trim(varPrjSaveRec.Street & "")},{F:"HouseNumber",L:If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en),D:Trim(v.HouseNumber & "")<>Trim(varPrjSaveRec.HouseNumber & "")},{F:"PostalCode",L:If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en),D:Trim(v.PostalCode & "")<>Trim(varPrjSaveRec.PostalCode & "")},{F:"City",L:If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en),D:Trim(v.City & "")<>Trim(varPrjSaveRec.City & "")},{F:"Country",L:If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en),D:Trim(v.Country & "")<>Trim(varPrjSaveRec.Country & "")},{F:"Url",L:If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en),D:Trim(v.Url & "")<>Trim(varPrjSaveRec.Url & "")}),D)},
-                                If(rowOk && IsEmpty(d),
-                                 Set(varPrjSaveVerified,true),
-                                 Set(varPrjVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));
-                                 Collect(colPrjSaveErrors,{Field:"",Message:If(rowOk,Substitute(If(LangNl && !IsBlank(T.prjErrVerifyFields.nl),T.prjErrVerifyFields.nl,T.prjErrVerifyFields.en),"{0}",Concat(d,L,", ")),If(LangNl && !IsBlank(T.prjErrVerify.nl),T.prjErrVerify.nl,T.prjErrVerify.en))});
-                                 Trace("DIAG|Projects|VerifyMismatch",TraceSeverity.Warning,{Screen:"Projects",ItemID:Coalesce(varPrjPatchedID,0),Rows:CountRows(colPrjVerifyRaw),Fields:varPrjVerifyDiff})
-                                )
-                               )
-                              )
-                             )
-                            )
-                           );
-                           If(varPrjSaveVerified && IsEmpty(colPrjSaveErrors),
-                            RemoveIf(colAdminProjects,ID=varPrjPatchedID); Collect(colAdminProjects,First(colPrjVerify));
-                            RemoveIf(colPrjModified,ID=varPrjPatchedID); Collect(colPrjModified,{ID:varPrjPatchedID,Modified:First(colPrjVerifyRaw).Modified});
-                            Set(varPrjEdit,First(colPrjVerify)); Set(varPrjSelectedID,varPrjPatchedID); Set(varPrjMode,"Edit");
-                            Set(varProjectsCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
-                            Reset(txtPrjName); Reset(txtPrjNumber); Reset(txtPrjReference); Reset(txtPrjCustomer); Reset(ddPrjStatus); Reset(txtPrjStreet); Reset(txtPrjHouseNumber); Reset(txtPrjPostalCode); Reset(txtPrjCity); Reset(ddPrjCountry); Reset(txtPrjUrl);
-                            If(varPrjSaveOpenPeriods>0 || varPrjSavePeriodsUnchecked,
-                             Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,Trim(If(LangNl && !IsBlank(T.admMsgSavedPrefix.nl),T.admMsgSavedPrefix.nl,T.admMsgSavedPrefix.en) & " " & If(varPrjSaveRenumbered,If(LangNl && !IsBlank(T.prjMsgSavedRenumber.nl),T.prjMsgSavedRenumber.nl,T.prjMsgSavedRenumber.en),"") & If(varPrjSaveOpenPeriods>0," " & Substitute(If(LangNl && !IsBlank(T.prjWarnOpenPeriods.nl),T.prjWarnOpenPeriods.nl,T.prjWarnOpenPeriods.en),"{0}",Text(varPrjSaveOpenPeriods)),"") & If(varPrjSavePeriodsUnchecked," " & If(LangNl && !IsBlank(T.prjWarnPeriodsUnchecked.nl),T.prjWarnPeriodsUnchecked.nl,T.prjWarnPeriodsUnchecked.en),""))),
-                             Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,If(varPrjSaveRenumbered,If(LangNl && !IsBlank(T.prjMsgSavedRenumber.nl),T.prjMsgSavedRenumber.nl,T.prjMsgSavedRenumber.en),""))
-                            );
-                            Select(btnPrjFormReset),
-                            varPrjSaveWrites=0,
-                            Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotSaved.nl),T.admHeadNotSaved.nl,T.admHeadNotSaved.en)); Set(varAdmMsgBody,With({n:CountRows(colPrjSaveErrors)-1},First(colPrjSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.prjMsgMore.nl),T.prjMsgMore.nl,T.prjMsgMore.en),"{0}",Text(n)),""))),
-                            Set(varPrjSaveFailed,true); Set(varPrjLoadState,"Failed");
-                            Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotSaved.nl),T.admHeadNotSaved.nl,T.admHeadNotSaved.en)); Set(varAdmMsgBody,With({n:CountRows(colPrjSaveErrors)-1},First(colPrjSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.prjMsgMore.nl),T.prjMsgMore.nl,T.prjMsgMore.en),"{0}",Text(n)),"")) & " " & If(varPrjSaveMode="New",If(LangNl && !IsBlank(T.prjMsgSaveFailedNew.nl),T.prjMsgSaveFailedNew.nl,T.prjMsgSaveFailedNew.en),If(LangNl && !IsBlank(T.prjMsgSaveFailed.nl),T.prjMsgSaveFailed.nl,T.prjMsgSaveFailed.en)))
-                           );
-                           Set(varPrjSaving,false);
-                           Trace("DIAG|Projects|SaveEnd",TraceSeverity.Information,{Screen:"Projects",Mode:varPrjSaveMode,ItemID:Coalesce(varPrjPatchedID,varPrjSaveID,0),ElapsedMs:DateDiff(varPrjDiagT0,Now(),TimeUnit.Milliseconds),Reads:varPrjSaveReads,Writes:varPrjSaveWrites,Verified:varPrjSaveVerified,DupFound:varPrjSaveDupFound,Conflict:varPrjSaveConflict,OpenPeriods:varPrjSaveOpenPeriods,PeriodsUnchecked:varPrjSavePeriodsUnchecked,Errors:CountRows(colPrjSaveErrors)}),
-                           Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
-                          )
-                        DisplayMode: |-
-                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && (varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID))) && (Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(txtPrjName.Text & "")<>Trim(varPrjEdit.Name & "") || Trim(txtPrjNumber.Text & "")<>Trim(varPrjEdit.Number & "") || Trim(txtPrjReference.Text & "")<>Trim(varPrjEdit.Reference & "") || Trim(txtPrjCustomer.Text & "")<>Trim(varPrjEdit.Customer & "") || Trim(ddPrjStatus.Selected.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(txtPrjStreet.Text & "")<>Trim(varPrjEdit.Street & "") || Trim(txtPrjHouseNumber.Text & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(txtPrjPostalCode.Text & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(txtPrjCity.Text & "")<>Trim(varPrjEdit.City & "") || Trim(ddPrjCountry.Selected.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(txtPrjUrl.Text & "")<>Trim(varPrjEdit.Url & ""))),DisplayMode.Edit,DisplayMode.Disabled)
-                        X: =Parent.Width-lblFooterButtonMetrics.X-Self.Width
-                        Width: =140
-                        Y: =(Parent.Height-Self.Height)/2
-                        Height: =lblFooterButtonMetrics.Height
-                        Font: ="Inter, Arial, sans-serif"
-                        Size: =14
-                        FontWeight: =FontWeight.Semibold
-                        Align: =Align.Center
-                        VerticalAlign: =VerticalAlign.Middle
-                        PaddingTop: =0
-                        PaddingBottom: =0
-                        PaddingLeft: =16
-                        PaddingRight: =16
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
-      - recPrjFooterLine:
-          Control: Rectangle@2.3.0
-          Properties:
-            BorderColor: =Color.Transparent
-            Fill: =ColorValue("#DCDCDC")
-            Height: =1
-            Width: =Parent.Width
-            X: =0
-            Y: =navPrj.Y
