@@ -9,7 +9,7 @@
 ComponentDefinitions:
   cmpMessageBar:
     DefinitionType: CanvasComponent
-    Description: Admin screen message bar (Admin screen pattern), directly below the title bar. An empty or unknown Kind shows nothing (BarHeight 0). The host sets the instance Height to BarHeight and handles OnClose (clears its message variables).
+    Description: Admin screen message bar (Admin screen pattern), directly below the title bar. An empty or unknown Kind shows nothing (BarHeight 0). The host sets the instance Height from its own message variable (for example If(IsBlank(varAdmMsgKind),0,40)), never from the BarHeight output of the same instance (Microsoft known limitation - circular reference), and handles OnClose (clears its message variables).
     CustomProperties:
       Kind:
         PropertyKind: Input
@@ -34,7 +34,7 @@ ComponentDefinitions:
       BarHeight:
         PropertyKind: Output
         DataType: Number
-        Description: 40 when a message is shown, otherwise 0. The host uses it as the instance Height.
+        Description: 40 when a message is shown, otherwise 0 (informational; never bind an input or the Height of the same instance to it).
       OnClose:
         PropertyKind: Event
         ReturnType: None

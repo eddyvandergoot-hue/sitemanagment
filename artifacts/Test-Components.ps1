@@ -22,7 +22,7 @@ $contract = @{
                        OnHome = 'Event:None'; OnNew = 'Event:None'; OnRefresh = 'Event:None'; OnDiscard = 'Event:None'; OnSave = 'Event:None' }
     cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; Value = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
                        CurrentValue = 'Output:Text'; OnChange = 'Event:None' }
-    cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountText = 'Input:Text'; ShowInactiveText = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
+    cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountFormat = 'Input:Text'; ShowInactiveText = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
                        SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; SelectedRowID = 'Output:Number'; OnSelectRow = 'Event:None'; OnToggleShowInactive = 'Event:None' }
 }
 foreach ($c in $contract.Keys) {
@@ -194,7 +194,7 @@ Assert-True ($fd['Children'].Count -eq 3) 'cmpField: three children (label, text
 # (8) cmpListCard ------------------------------------------------------------------------------------------
 $ld = $defs['cmpListCard']; $li = $idx['cmpListCard']; $ldp = $ld['Properties']
 Assert-True ($ld['CustomProperties']['Enabled']['Default'] -eq '=false' -and $ld['CustomProperties']['ShowInactive']['Default'] -eq '=false') 'cmpListCard: Enabled fail-closed =false, ShowInactive default false'
-Assert-True ($ld['CustomProperties']['Items']['Default'] -eq '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""})' -and $ld['CustomProperties']['SelectedID']['Default'] -eq '=0') 'cmpListCard: Items default is a plain typed table (ID, Title, Subtitle, Inactive, ChipText; no Filter trick, D7 import failure 30-10-2026), SelectedID default 0'
+Assert-True ($ld['CustomProperties']['Items']['Default'] -eq '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: "", SearchKey: ""})' -and $ld['CustomProperties']['CountFormat']['Default'] -eq '="{0}"' -and $ld['CustomProperties']['SelectedID']['Default'] -eq '=0') 'cmpListCard: Items default is a plain typed table (ID, Title, Subtitle, Inactive, ChipText, SearchKey; no Filter trick, D7 import failure 30-10-2026), SelectedID default 0, CountFormat default {0}'
 $sr = $ld['CustomProperties']['OnSelectRow']
 Assert-True (!$sr.ContainsKey('Parameters') -and $ldp['SelectedRowID'] -eq '=Coalesce(galCmpList.Selected.ID,0)') 'cmpListCard selection contract: OnSelectRow has no parameters (AGENTS: no event parameters); the row ID is Output SelectedRowID'
 Assert-True ($ldp['SearchText'] -eq '=txtCmpListSearch.Text' -and $ldp['ShowInactiveValue'] -eq '=cmpListCard.ShowInactive' -and !$ldp.ContainsKey('OnReset') -and $ld['CustomProperties'].Values.Where({ $_.ContainsKey('RaiseOnReset') }).Count -eq 0) 'cmpListCard outputs: SearchText from the search field, ShowInactiveValue echoes the input, OnReset clears the search'
@@ -207,7 +207,11 @@ Assert-True ($li['icoCmpListSearch']['Control'] -eq 'Classic/Icon@2.5.0' -and $i
 $inf = $li['htmlCmpListInfo']; $ih = [string]$inf['Properties']['HtmlText']
 Assert-True ($inf['Control'] -eq 'HtmlViewer@2.1.0') 'cmpListCard info row: one HtmlViewer@2.1.0 (count left, Show inactive label right, one line)'
 foreach ($css in 'display:flex', 'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis', 'flex:1 1 0', 'flex:none', 'text-align:right') { Assert-True ($ih.Contains($css)) "cmpListCard info HtmlText contains $css" }
-foreach ($field in 'cmpListCard.CountText', 'cmpListCard.ShowInactiveText') {
+$lcPred = 'IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey)'
+$cntInner = 'Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(Filter(cmpListCard.Items,' + $lcPred + '))))'
+$eCnt = 'Substitute(Substitute(Substitute(Substitute(Substitute(' + $cntInner + ',"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"' + "'" + '","&#39;")'
+Assert-True ($ih.Contains($eCnt) -and ([regex]::Matches($ih, [regex]::Escape('cmpListCard.CountFormat'))).Count -eq 1 -and $ih -notmatch 'CountText') 'cmpListCard info: count = CountFormat with {0} = rows shown after the component search (same predicate as the gallery), escaped; no host CountText'
+foreach ($field in 'cmpListCard.ShowInactiveText') {
     $e2 = 'Substitute(Substitute(Substitute(Substitute(Substitute(' + $field + ',"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"' + "'" + '","&#39;")'
     Assert-True ($ih.Contains($e2) -and ([regex]::Matches($ih, [regex]::Escape($field))).Count -eq 1) "cmpListCard info escapes $field"
 }
@@ -215,7 +219,7 @@ $sw = $li['btnCmpListSwitch']; $swp = $sw['Properties']; $kn = $li['btnCmpListKn
 Assert-True ($sw['Control'] -eq 'Classic/Button@2.2.0' -and !$swp.ContainsKey('AccessibleLabel') -and $swp['Width'] -eq '=44' -and $swp['Height'] -eq '=24' -and $swp['RadiusTopLeft'] -eq '=12' -and $swp['Fill'] -eq '=If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))' -and $swp['Tooltip'] -eq '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)') 'cmpListCard switch: track 44x24 radius 12, #0303B8 on / #B4B4B4 off, tooltip with label and state'
 Assert-True ($swp['OnSelect'] -eq '=If(cmpListCard.Enabled,cmpListCard.OnToggleShowInactive())' -and $swp['DisplayMode'] -eq '=If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)' -and $kn['OnSelect'] -eq '=Select(btnCmpListSwitch)' -and $kn['DisplayMode'] -eq '=btnCmpListSwitch.DisplayMode' -and $kn['Fill'] -eq '=Color.White' -and $kn['Width'] -eq '=18') 'cmpListCard switch contract: only raises OnToggleShowInactive while Enabled, never flips state; white 18 px knob selects the track'
 $ga = $li['galCmpList']; $gp = $ga['Properties']
-Assert-True ($ga['Control'] -eq 'Gallery@2.15.0' -and $gp['TemplateSize'] -eq '=64' -and $gp['TemplatePadding'] -eq '=0' -and $gp['Items'] -eq '=cmpListCard.Items' -and $gp['OnSelect'] -eq '=If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow())') 'cmpListCard gallery: Gallery@2.15.0 fixed row height 64, Items = Items input, OnSelect raises OnSelectRow(ID) only while Enabled (no own guard)'
+Assert-True ($ga['Control'] -eq 'Gallery@2.15.0' -and $gp['TemplateSize'] -eq '=64' -and $gp['TemplatePadding'] -eq '=0' -and $gp['Items'] -eq ('=Filter(cmpListCard.Items,' + $lcPred + ')') -and $gp['OnSelect'] -eq '=If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow())') 'cmpListCard gallery: Gallery@2.15.0 fixed row height 64, Items = Items input filtered by the own search text on SearchKey, OnSelect raises OnSelectRow only while Enabled (no own guard)'
 $rowN = @($ga['Children'] | ForEach-Object { @($_.Keys)[0] })
 Assert-True (($rowN -join ',') -eq 'recCmpRowFill,recCmpRowBar,recCmpRowLine,htmlCmpRowTitle,htmlCmpRowSub,btnCmpRowChip') 'cmpListCard row: fill, selection bar, divider, title, subtitle, chip'
 $row = @{}; Index-CmpControls $ga['Children'] $row
@@ -300,4 +304,79 @@ foreach ($f in Get-ChildItem (Join-Path $projectRoot 'Src') -Recurse -Filter *.p
 Assert-True ($older.Count -eq 0) "No control version older than its template in the .msapr ($($older -join '; '))"
 # AGENTS (D7 import failure 30-10-2026): no event parameters in any component.
 foreach ($c in $defs.Keys) { foreach ($p in $defs[$c]['CustomProperties'].Keys) { $cp = $defs[$c]['CustomProperties'][$p]; Assert-True (!$cp.ContainsKey('Parameters')) "$c.$p has no Parameters (no event parameters)" } }
-Write-Output 'Not verified locally: Studio import, rendering, chip text in the real browser font.'
+# (12) Instance wiring on the screens (Studio FAIL 01-11-2026, build components-20261031_074310: dirty right after load, Discard/Save without effect) ------
+# Microsoft Learn (create-component, Known limitations): a custom input property of an instance must not reference a custom output property of the
+# same or another instance of the same component (circular reference). Rule here, stricter: no non-event property of an instance references ANY
+# output of ANY component instance, and no instance property references its own instance (except in event handlers, which may read outputs such as
+# SelectedRowID). Screen formulas outside instances (labels, buttons) may read outputs.
+$cmpOutputs = @{}; $cmpEvents = @{}
+foreach ($c in $defs.Keys) { $cps = $defs[$c]['CustomProperties']; $cmpOutputs[$c] = @($cps.Keys | Where-Object { $cps[$_]['PropertyKind'] -eq 'Output' }); $cmpEvents[$c] = @($cps.Keys | Where-Object { $cps[$_]['PropertyKind'] -eq 'Event' }) }
+function Get-Instances($entries, $list) { foreach ($e in $entries) { $n = @($e.Keys)[0]; $v = $e[$n]; if ($v['Control'] -eq 'CanvasComponent') { $list.Add([pscustomobject]@{ Name = $n; Comp = [string]$v['ComponentName']; Props = $v['Properties'] }) | Out-Null }; if ($v['Children']) { Get-Instances $v['Children'] $list } } }
+function Find-InstanceCycles($instances) {
+    $bad = @()
+    foreach ($i in $instances) {
+        foreach ($k in @($i.Props.Keys)) {
+            if ($cmpEvents[$i.Comp] -contains $k) { continue }
+            $fx = [string]$i.Props[$k]
+            if ($fx -match ('\b' + [regex]::Escape($i.Name) + '\.\w')) { $bad += "$($i.Name).$k references its own instance" }
+            foreach ($j in $instances) { foreach ($o in $cmpOutputs[$j.Comp]) { if ($fx -match ('\b' + [regex]::Escape($j.Name) + '\.' + $o + '\b')) { $bad += "$($i.Name).$k references output $($j.Name).$o" } } }
+        }
+    }
+    return , $bad
+}
+$dbgRx = '^=Set\(varDbgEvent,"(On\w+) " & Text\(Now\(\),"hh:mm:ss"\)\); '
+function Strip-Debug([string]$fx, [string]$ev) { $m = [regex]::Match($fx, $dbgRx); if ($m.Success) { if ($m.Groups[1].Value -cne $ev) { throw "FAIL debug prefix of $ev names $($m.Groups[1].Value)" }; return '=' + $fx.Substring($m.Length) }; return $fx }
+# self-test of the cycle finder on the two patterns of build 074310 and on a clean instance
+$fake = [System.Collections.ArrayList]@()
+$fake.Add([pscustomobject]@{ Name = 'cmpXList'; Comp = 'cmpListCard'; Props = [ordered]@{ Items = '=Filter(colX,Lower(cmpXList.SearchText) in Name)'; CountText = '=Text(CountRows(cmpXList.Items))'; OnSelectRow = '=Set(v,cmpXList.SelectedRowID)' } }) | Out-Null
+$fake.Add([pscustomobject]@{ Name = 'cmpXBar'; Comp = 'cmpMessageBar'; Props = [ordered]@{ Height = '=cmpXBar.BarHeight' } }) | Out-Null
+$fake.Add([pscustomobject]@{ Name = 'cmpXFoot'; Comp = 'cmpFooter'; Props = [ordered]@{ SaveEnabled = '=Trim(cmpXName.CurrentValue)<>""'; OnSave = '=Patch(L,{a:cmpXName.CurrentValue})' } }) | Out-Null
+$fake.Add([pscustomobject]@{ Name = 'cmpXName'; Comp = 'cmpField'; Props = [ordered]@{ Value = '=varX.Name' } }) | Out-Null
+$fb = Find-InstanceCycles $fake
+Assert-True (($fb -join ';').Contains('cmpXList.Items references output cmpXList.SearchText') -and ($fb -join ';').Contains('cmpXList.CountText references its own instance') -and ($fb -join ';').Contains('cmpXBar.Height references output cmpXBar.BarHeight') -and ($fb -join ';').Contains('cmpXFoot.SaveEnabled references output cmpXName.CurrentValue') -and !($fb -join ';').Contains('OnSelectRow') -and !($fb -join ';').Contains('OnSave') -and !($fb -join ';').Contains('cmpXName.Value')) "cycle finder self-test: flags Items->own SearchText, CountText->own Items, Height->own BarHeight, an Enabled input->another instance's CurrentValue; event handlers and clean inputs pass ($($fb.Count) findings)"
+$scrFiles = @(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | Where-Object { $_.Name -notin @('App.pa.yaml', '_EditorState.pa.yaml') })
+$instTotal = 0
+foreach ($sf in $scrFiles) {
+    $sd = $builder.Build().Deserialize([IO.File]::ReadAllText($sf.FullName))
+    if (-not $sd['Screens']) { continue }
+    foreach ($sn in $sd['Screens'].Keys) {
+        $inst = [System.Collections.ArrayList]@(); Get-Instances $sd['Screens'][$sn]['Children'] $inst
+        if ($inst.Count -eq 0) { continue }
+        $instTotal += $inst.Count
+        $cyc = Find-InstanceCycles $inst
+        Assert-True ($cyc.Count -eq 0) "${sn}: no instance input/size property references a component output or its own instance ($($inst.Count) instances; $($cyc -join '; '))"
+        foreach ($i in $inst) {
+            foreach ($k in @($i.Props.Keys)) { if ($k -clike 'On*' -and @($defs[$i.Comp]['CustomProperties'].Keys) -notcontains $k) { throw "FAIL ${sn}: $($i.Name).$k is not an Event of $($i.Comp) (event names must equal the definition)" } }
+            $req = switch ($i.Comp) { 'cmpFooter' { @('OnHome', 'OnNew', 'OnRefresh', 'OnDiscard', 'OnSave') } 'cmpListCard' { @('OnSelectRow', 'OnToggleShowInactive') } 'cmpMessageBar' { @('OnClose') } default { @() } }
+            foreach ($ev in $req) {
+                Assert-True ((@($i.Props.Keys) -contains $ev) -and ([string]$i.Props[$ev]).Trim().Length -gt 1) "${sn}: $($i.Name).$ev is set on the instance (name equal to the $($i.Comp) definition; the definition Default =false is only a fallback)"
+                $h = Strip-Debug (([string]$i.Props[$ev]).Trim()) $ev
+                if ($i.Comp -eq 'cmpFooter') {
+                    $en = ([string]$i.Props[$ev.Substring(2) + 'Enabled']).Trim()
+                    Assert-True ($en.StartsWith('=') -and $h.StartsWith('=If(' + $en.Substring(1) + ',')) "${sn}: $($i.Name).$ev starts (after the optional debug line) with If(<$($ev.Substring(2))Enabled>, : same guard text as the input"
+                } elseif ($i.Comp -eq 'cmpListCard') {
+                    $en = ([string]$i.Props['Enabled']).Trim()
+                    Assert-True ($en.StartsWith('=') -and $h.StartsWith('=If(' + $en.Substring(1) + ',')) "${sn}: $($i.Name).$ev starts (after the optional debug line) with If(<Enabled>, : same guard text as the input"
+                } else {
+                    Assert-True ($h.Contains('Set(varAdmMsgKind,"")')) "${sn}: $($i.Name).OnClose clears the message (no guard needed: local only)"
+                }
+            }
+        }
+    }
+}
+Assert-True ($instTotal -gt 0) "instance wiring checked on $instTotal component instances"
+# the component side of the event contract: each footer button raises exactly its own event, gated by its own Enabled input
+foreach ($b in @(@('btnCmpHome', 'Home'), @('btnCmpNew', 'New'), @('btnCmpRefresh', 'Refresh'), @('btnCmpDiscard', 'Discard'), @('btnCmpSave', 'Save'))) {
+    Assert-True ($idx['cmpFooter'][$b[0]]['Properties']['OnSelect'] -ceq "=If(cmpFooter.$($b[1])Enabled,cmpFooter.On$($b[1])())" -and $defs['cmpFooter']['CustomProperties']["On$($b[1])"]['PropertyKind'] -eq 'Event') "cmpFooter.$($b[0]).OnSelect = If(cmpFooter.$($b[1])Enabled,cmpFooter.On$($b[1])()) and On$($b[1]) is an Event of the definition"
+}
+# cmpListCard search and count (interpreter): the component filters the host rows on SearchKey with its own search text
+[Reflection.Assembly]::LoadFrom((Join-Path $pacDir 'Microsoft.PowerFx.Interpreter.dll')) | Out-Null
+$cEng = New-Object Microsoft.PowerFx.RecalcEngine; $cOpt = New-Object Microsoft.PowerFx.ParserOptions; $cOpt.Culture = [Globalization.CultureInfo]::GetCultureInfo('en-US')
+function Eval-C([string]$fx) { $v = $cEng.Eval($fx, $null, $cOpt); if ($v -is [Microsoft.PowerFx.Types.ErrorValue]) { throw "FAIL eval: $($v.ToExpression())" }; return $v.Value }
+$rowsFx = 'Table({ID:1,Title:"Alpha BV",Subtitle:"",Inactive:false,ChipText:"",SearchKey:"alpha bv emp-001 delft"},{ID:2,Title:"Beta",Subtitle:"",Inactive:false,ChipText:"",SearchKey:"beta emp-002 ede"},{ID:3,Title:"Gamma",Subtitle:"",Inactive:true,ChipText:"Inactive",SearchKey:"gamma  "})'
+$galFx = ([string]$idx['cmpListCard']['galCmpList']['Properties']['Items']).TrimStart('='); $htmlFx = ([string]$idx['cmpListCard']['htmlCmpListInfo']['Properties']['HtmlText']).TrimStart('=')
+foreach ($c in @(@('""', '1,2,3', 3), @('"   "', '1,2,3', 3), @('" EDE "', '2', 1), @('"emp-00"', '1,2', 2), @('"alpha bv"', '1', 1), @('"nomatch"', '', 0), @('If(false,"x")', '1,2,3', 3))) {
+    $env = "With({cmpListCard:{Items:$rowsFx,CountFormat:`"{0} contractors`",ShowInactiveText:`"Show inactive`"},txtCmpListSearch:{Text:$($c[0])}},"
+    Assert-True ((Eval-C ($env + "Concat($galFx,Text(ID),`",`"))")) -eq $c[1]) "cmpListCard search $($c[0]): gallery shows IDs '$($c[1])' (trim, case-insensitive, on SearchKey only)"
+    Assert-True ((Eval-C ($env + "$htmlFx)")).Contains(">$($c[2]) contractors</span>")) "cmpListCard search $($c[0]): info row shows '$($c[2]) contractors' (count of the shown rows)"
+}Write-Output 'Not verified locally: Studio import, rendering, chip text in the real browser font.'

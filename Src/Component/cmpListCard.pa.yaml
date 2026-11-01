@@ -9,13 +9,13 @@
 ComponentDefinitions:
   cmpListCard:
     DefinitionType: CanvasComponent
-    Description: 'Admin screen list card (Admin screen pattern): white card (radius 8, DropShadow.Light, padding 24) with search field, one info row (count left, Show inactive switch right) and a gallery of rows (height 64). Presentation only: the host filters and sorts and passes the ready Items; the component never filters. Selection contract - the host passes SelectedID and handles OnSelectRow (no parameters) with its guard as the first condition, reading the clicked row from Output SelectedRowID; the component highlights the row where ID = SelectedID and only raises the event while Enabled is true. Switch contract - the host passes ShowInactive and handles OnToggleShowInactive by flipping its own variable (guard first); the component never flips the state itself. Search contract - the host reads Output SearchText in its Items filter. No OnReset and no RaiseOnReset (no preview-only component features, AGENTS): the search text stays until the user clears it.'
+    Description: 'Admin screen list card (Admin screen pattern): white card (radius 8, DropShadow.Light, padding 24) with search field, one info row (count left, Show inactive switch right) and a gallery of rows (height 64). Presentation only: the host filters (Show inactive) and sorts and passes the rows with a SearchKey column; the component applies only its own search text to SearchKey (local table, no data source) and counts the shown rows itself (CountFormat). Microsoft known limitation: an instance input must never reference an output of the same (or another instance of the same) component, so the host never reads SearchText or Items back in an input. Selection contract - the host passes SelectedID and handles OnSelectRow (no parameters) with its guard as the first condition, reading the clicked row from Output SelectedRowID; the component highlights the row where ID = SelectedID and only raises the event while Enabled is true. Switch contract - the host passes ShowInactive and handles OnToggleShowInactive by flipping its own variable (guard first); the component never flips the state itself. Search contract - the component filters Items with IsBlank(Trim(search)) || Lower(Trim(search)) in Lower(SearchKey); the host may read Output SearchText only in behaviour formulas (for example its loader auto-select). No OnReset and no RaiseOnReset (no preview-only component features, AGENTS): the search text stays until the user clears it.'
     CustomProperties:
       Items:
         PropertyKind: Input
         DataType: Table
-        Description: 'Rows, already filtered and sorted by the host. Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean, grey title), ChipText (Text, empty = no chip). Allowed ChipText values are Inactive, On hold and Closed (80 px chip, Inter 12, measured text at most 64 px); other texts need a new measurement.'
-        Default: '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""})'
+        Description: 'Rows, filtered (Show inactive) and sorted by the host, not by the search. Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean, grey title), ChipText (Text, empty = no chip), SearchKey (Text, lower-case search text, for example name, code and city joined with spaces). Allowed ChipText values are Inactive, On hold and Closed (80 px chip, Inter 12, measured text at most 64 px); other texts need a new measurement.'
+        Default: '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: "", SearchKey: ""})'
       SelectedID:
         PropertyKind: Input
         DataType: Number
@@ -26,11 +26,11 @@ ComponentDefinitions:
         DataType: Text
         Description: Placeholder and accessible label of the search field.
         Default: =""
-      CountText:
+      CountFormat:
         PropertyKind: Input
         DataType: Text
-        Description: Count text composed by the host, for example 6 contractors (plain text, escaped by the component).
-        Default: =""
+        Description: Count text with {0} for the number of shown rows (after the search), for example {0} contractors (plain text, escaped by the component).
+        Default: ="{0}"
       ShowInactiveText:
         PropertyKind: Input
         DataType: Text
@@ -59,7 +59,7 @@ ComponentDefinitions:
       SearchText:
         PropertyKind: Output
         DataType: Text
-        Description: Current text of the search field.
+        Description: Current text of the search field. Read it only in behaviour formulas (for example the loader auto-select), never in an input of a cmpListCard instance (circular reference).
       ShowInactiveValue:
         PropertyKind: Output
         DataType: Boolean
@@ -156,7 +156,7 @@ ComponentDefinitions:
                   Fill: =Color.Transparent
                   Font: ="Inter, Arial, sans-serif"
                   Height: =24
-                  HtmlText: ="<div style='display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
+                  HtmlText: ="<div style='display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(Filter(cmpListCard.Items,IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey))))),"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
@@ -246,7 +246,7 @@ ComponentDefinitions:
                   DisplayMode: =If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)
                   Fill: =Color.White
                   Height: =Max(0,Parent.Height-Self.Y-12)
-                  Items: =cmpListCard.Items
+                  Items: =Filter(cmpListCard.Items,IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey))
                   OnSelect: =If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow())
                   TemplateFill: =Color.Transparent
                   TemplatePadding: =0

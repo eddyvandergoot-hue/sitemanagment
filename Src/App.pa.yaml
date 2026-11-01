@@ -8,7 +8,7 @@
 # ************************************************************************************************
 App:
   Properties:
-    OnStart: =Set(varSaving, false); Set(varWeekSaving, false); Set(varLang, "en")
+    OnStart: =Set(varSaving, false); Set(varWeekSaving, false); Set(varLang, "en"); Set(varDebug, true)
     StartScreen: =scrHome
     Formulas: |-
       =LangNl = Coalesce(varLang,"en")="nl";

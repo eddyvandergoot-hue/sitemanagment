@@ -133,8 +133,8 @@ if($fi['icoCmpHome']['Properties']['Icon'] -ne '=Icon.Home' -or $fi['icoCmpHome'
 if($fi['conCmpFooter']['Properties']['LayoutWrap'] -ne '=false' -or $fi['conCmpFooter']['Properties']['LayoutOverflowX'] -ne '=LayoutOverflow.Scroll' -or $fi['conCmpFooterRow']['Properties']['Width'] -ne '=Max(Parent.Width,2*lblCmpFooterMetrics.X+btnCmpHome.Width+btnCmpNew.Width+btnCmpRefresh.Width+btnCmpDiscard.Width+btnCmpSave.Width+4*lblCmpFooterMetrics.Width)'){throw 'cmpFooter single row, scroll, minimum row width'}
 $minRow=2*40+($bw.Values | Measure-Object -Sum).Sum+4*12
 if($minRow -ne 766){throw "Contractors minimum footer row width changed ($minRow; unchanged by step 3a: 80 + 638 button widths + 48 gaps = 766; AGENTS still says 746)"}
-# screen layout formulas (title 60, message bar BarHeight, body above the footer)
-if($ci['cmpEmpMsgBar']['Properties']['Y'] -ne '=cmpEmpTitle.Y+cmpEmpTitle.Height' -or $ci['cmpEmpMsgBar']['Properties']['Height'] -ne '=cmpEmpMsgBar.BarHeight' -or $ci['cmpEmpMsgBar']['Properties']['Width'] -ne '=cmpEmpTitle.Width' -or $ci['cmpEmpMsgBar']['Properties']['X'] -ne '=cmpEmpTitle.X'){throw 'cmpEmpMsgBar not directly under the title bar at full title width with Height = BarHeight'}
+# screen layout formulas (title 60, message bar 40/0 from varAdmMsgKind, body above the footer)
+if($ci['cmpEmpMsgBar']['Properties']['Y'] -ne '=cmpEmpTitle.Y+cmpEmpTitle.Height' -or $ci['cmpEmpMsgBar']['Properties']['Height'] -ne '=If(IsBlank(varAdmMsgKind),0,40)' -or $ci['cmpEmpMsgBar']['Properties']['Width'] -ne '=cmpEmpTitle.Width' -or $ci['cmpEmpMsgBar']['Properties']['X'] -ne '=cmpEmpTitle.X'){throw 'cmpEmpMsgBar not directly under the title bar at full title width with Height = If(IsBlank(varAdmMsgKind),0,40) (host variable, not the own BarHeight output)'}
 if($ci['conEmpBody']['Properties']['Y'] -ne '=cmpEmpMsgBar.Y+cmpEmpMsgBar.Height' -or $ci['conEmpBody']['Properties']['Height'] -ne '=Max(0,cmpEmpFooter.Y-Self.Y)'){throw 'conEmpBody not directly under the message bar / above the footer'}
 foreach($case in @(@(320,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){
  $w=$case[0];$h=$case[1]; $rowW=[Math]::Max($w,$minRow)
@@ -161,8 +161,8 @@ if($fi['icoCmpHome']['Properties']['Icon'] -ne '=Icon.Home' -or $fi['icoCmpHome'
 if($fi['conCmpFooter']['Properties']['LayoutWrap'] -ne '=false' -or $fi['conCmpFooter']['Properties']['LayoutOverflowX'] -ne '=LayoutOverflow.Scroll' -or $fi['conCmpFooterRow']['Properties']['Width'] -ne '=Max(Parent.Width,2*lblCmpFooterMetrics.X+btnCmpHome.Width+btnCmpNew.Width+btnCmpRefresh.Width+btnCmpDiscard.Width+btnCmpSave.Width+4*lblCmpFooterMetrics.Width)'){throw 'cmpFooter single row, scroll, minimum row width'}
 $minRow=2*40+($bw.Values | Measure-Object -Sum).Sum+4*12
 if($minRow -ne 766){throw "Contractors minimum footer row width changed ($minRow; unchanged by step 3a: 80 + 638 button widths + 48 gaps = 766; AGENTS still says 746)"}
-# screen layout formulas (title 60, message bar BarHeight, body above the footer)
-if($ci['cmpPrjMsgBar']['Properties']['Y'] -ne '=cmpPrjTitle.Y+cmpPrjTitle.Height' -or $ci['cmpPrjMsgBar']['Properties']['Height'] -ne '=cmpPrjMsgBar.BarHeight' -or $ci['cmpPrjMsgBar']['Properties']['Width'] -ne '=cmpPrjTitle.Width' -or $ci['cmpPrjMsgBar']['Properties']['X'] -ne '=cmpPrjTitle.X'){throw 'cmpPrjMsgBar not directly under the title bar at full title width with Height = BarHeight'}
+# screen layout formulas (title 60, message bar 40/0 from varAdmMsgKind, body above the footer)
+if($ci['cmpPrjMsgBar']['Properties']['Y'] -ne '=cmpPrjTitle.Y+cmpPrjTitle.Height' -or $ci['cmpPrjMsgBar']['Properties']['Height'] -ne '=If(IsBlank(varAdmMsgKind),0,40)' -or $ci['cmpPrjMsgBar']['Properties']['Width'] -ne '=cmpPrjTitle.Width' -or $ci['cmpPrjMsgBar']['Properties']['X'] -ne '=cmpPrjTitle.X'){throw 'cmpPrjMsgBar not directly under the title bar at full title width with Height = If(IsBlank(varAdmMsgKind),0,40) (host variable, not the own BarHeight output)'}
 if($ci['conPrjBody']['Properties']['Y'] -ne '=cmpPrjMsgBar.Y+cmpPrjMsgBar.Height' -or $ci['conPrjBody']['Properties']['Height'] -ne '=Max(0,cmpPrjFooter.Y-Self.Y)'){throw 'conPrjBody not directly under the message bar / above the footer'}
 foreach($case in @(@(320,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){
  $w=$case[0];$h=$case[1]; $rowW=[Math]::Max($w,$minRow)
