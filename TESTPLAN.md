@@ -356,3 +356,21 @@ C. Korte regressie (TP-CONTRACTORS-01 / TP-PROJECTS-01 kern):
 | 19 | Projects: Status Closed op TEST-000 (open periodes) | amber waarschuwing; opslaan toegestaan |
 
 Bewuste afwijkingen (niet als fout melden): zoekveld en Show inactive uitgeschakeld tijdens laden/opslaan/Failed/dirty; uitgeschakelde velden wit; statuschip in New toont "Active"; Projects-lijst sorteert op nummer. Mislukt: noteer stap, foutmelding (exact) en scherm.
+
+## TP-STEP3-02 Fix na TP-STEP3-01 FAIL (OPEN; DEBUG-testbuild components-20261101_170603)
+
+Resultaat TP-STEP3-01 (Eddy 1-11-2026, build 074310): FAIL, Contractors en Projects gelijk: A dirty direct na laden/selectie; B Discard/Save zonder effect; C lijstrijen grijs bedekt en niet klikbaar; D scrollbalkje naast HtmlText; E rechter-/onderrand afgeknipt; F focusrand weg; G Home oude layout (verwacht).
+Fix: circulaire verwijzingen (instantie-input -> eigen output) verwijderd, dirty via verborgen label, lijstrij-lagen met transparante klikknop, HtmlViewer margin-reset, rasterbreedte met scrollbalkreserve en 1 px inzet. TIJDELIJKE debugregel onderaan beide schermen (alleen in deze build; zichtbaar via App.OnStart, anders Run OnStart).
+
+Alleen TEST-records. Geef de debugregel steeds LETTERLIJK door.
+| # | Stap | Verwacht |
+|---|---|---|
+| 1 | Contractors openen, niets aanraken | debugregel "IsDirty: false | changed: (leeg)"; Home, New, Refresh, zoeken en lijst actief; Discard/Save uit |
+| 2 | Andere rij aanklikken | formulier toont die rij; debug "last event: OnSelectRow hh:mm:ss", SelectedRowID = die rij, IsDirty false |
+| 3 | Zoeken op een deel van naam/code/plaats | lijst en telling filteren; zoekveld klikbaar |
+| 4 | Veld wijzigen (TEST-contractor), dan Discard | IsDirty true na wijzigen; na Discard waarde terug, IsDirty false, "last event: OnDiscard"; groene balk Discarded |
+| 5 | Veld wijzigen, Save | "last event: OnSave"; groene balk Saved; waarde in SharePoint gewijzigd |
+| 6 | Zelfde 1-5 op Projects (TEST-project) | idem |
+| 7 | Visueel: lijstrijen, labels, 3e kolom, focus | geen grijze vlakken over tekst; geen scrollbalkje naast teksten; randen van City/Contact Phone/Country volledig zichtbaar; klik in veld = 2 px blauwe rand |
+
+Bekend: hover-kleur #F0F0F0 op lijstrijen valt weg (transparante klikknop bovenop; keuze Eddy). Na 1-11: controleer in SharePoint Modified/versiegeschiedenis van records waarop op 1-11 Save is geklikt (mogelijk onzichtbare Patch).
