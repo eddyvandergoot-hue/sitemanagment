@@ -230,3 +230,41 @@ foreach($componentFileName in $componentDocs.Keys) {
     }
 }
 Write-Output "Canvas-componenten: $componentChecked definitie(s) in Src\Component gecontroleerd (DefinitionType, CustomProperties/PropertyKind/DataType, Power Fx-syntaxis, kinderen tegen Templates.json); HtmlViewer@2.1.0 en ModernSpinner@1.1.0 komen uit de templates."
+# TP-STEP3-02 (01-11-2026): the app runs with supportcolumnnamesasidentifiers = True, so a column name given as text
+# (ShowColumns(t,"Value"), Ungroup(t,"t")) is a formula error in Studio. In cmpField that error made the output CurrentValue blank
+# for every instance (dirty after load, Save "Contractor Name empty"). Column-name arguments must be identifiers.
+if(!$settings.AppPreviewFlagsMap.supportcolumnnamesasidentifiers) { throw 'Verwacht AppPreviewFlagsMap.supportcolumnnamesasidentifiers = True (kolomnamen als identifiers).' }
+function Get-CallArgs([string]$text,[int]$open) {
+    $out=New-Object System.Collections.Generic.List[string]; $depth=0; $inStr=$false; $start=$open+1
+    for($i=$open+1; $i -lt $text.Length; $i++) {
+        $ch=$text[$i]
+        if($inStr) { if($ch -eq '"') { if($i+1 -lt $text.Length -and $text[$i+1] -eq '"') { $i++ } else { $inStr=$false } }; continue }
+        if($ch -eq '"') { $inStr=$true; continue }
+        if($ch -in @('(','{','[')) { $depth++; continue }
+        if($ch -in @(')','}',']')) { if($depth -eq 0) { $out.Add($text.Substring($start,$i-$start)); return ,$out }; $depth--; continue }
+        if($ch -eq ',' -and $depth -eq 0) { $out.Add($text.Substring($start,$i-$start)); $start=$i+1 }
+    }
+    return ,$out
+}
+function Find-TextColumnNames([string]$text) {
+    $hits=@()
+    foreach($m in [regex]::Matches($text,'(?<![\w.])(ShowColumns|DropColumns|Ungroup|RenameColumns|GroupBy|AddColumns|SortByColumns|Search)\s*\(')) {
+        $fn=$m.Groups[1].Value; $callArgs=Get-CallArgs $text ($m.Index+$m.Length-1)
+        for($a=1; $a -lt $callArgs.Count; $a++) {
+            if($fn -in @('AddColumns','SortByColumns') -and ($a % 2) -eq 0) { continue }
+            if($fn -eq 'Search' -and $a -lt 2) { continue }
+            if($callArgs[$a].Trim() -match '^"([^"]|"")*"$') { $hits+="$fn argument $a = $($callArgs[$a].Trim())" }
+        }
+    }
+    return ,$hits
+}
+$selfTest=Find-TextColumnNames 'Ungroup(Table({t: ShowColumns(Items,"Value")},{t: Table({Value: "x"})}),"t") & ShowColumns(c,ID) & AddColumns(c,Name,"a") & SortByColumns(c,Name,SortOrder.Ascending) & Search(c,"q",Title) & Search(c,"q","Title") & Filter(c,Title="Value")'
+if(($selfTest -join ';') -ne 'Ungroup argument 1 = "t";ShowColumns argument 1 = "Value";Search argument 2 = "Title"') { throw "Zelftest tekst-kolomnamen faalt: $($selfTest -join ';')" }
+$columnCalls=0; $columnBad=@()
+foreach($srcFile in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter '*.pa.yaml' -Recurse) {
+    $srcText=[IO.File]::ReadAllText($srcFile.FullName)
+    $columnCalls+=[regex]::Matches($srcText,'(?<![\w.])(ShowColumns|DropColumns|Ungroup|RenameColumns|GroupBy|AddColumns|SortByColumns|Search)\s*\(').Count
+    $found=Find-TextColumnNames $srcText; foreach($h in $found) { $columnBad+="$($srcFile.Name): $h" }
+}
+if($columnBad.Count) { throw "Kolomnaam als tekst (fout bij supportcolumnnamesasidentifiers): $($columnBad -join ' | ')" }
+Write-Output "Kolomnamen als identifiers: $columnCalls aanroepen van ShowColumns/DropColumns/Ungroup/RenameColumns/GroupBy/AddColumns/SortByColumns/Search in Src, geen kolomnaam als tekst (zelftest geslaagd)."

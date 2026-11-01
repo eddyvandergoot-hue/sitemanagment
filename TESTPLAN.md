@@ -357,7 +357,7 @@ C. Korte regressie (TP-CONTRACTORS-01 / TP-PROJECTS-01 kern):
 
 Bewuste afwijkingen (niet als fout melden): zoekveld en Show inactive uitgeschakeld tijdens laden/opslaan/Failed/dirty; uitgeschakelde velden wit; statuschip in New toont "Active"; Projects-lijst sorteert op nummer. Mislukt: noteer stap, foutmelding (exact) en scherm.
 
-## TP-STEP3-02 Fix na TP-STEP3-01 FAIL (OPEN; DEBUG-testbuild components-20261101_170603)
+## TP-STEP3-02 Fix na TP-STEP3-01 FAIL (FAIL Contractors, Eddy 1-11-2026; DEBUG-testbuild components-20261101_170603)
 
 Resultaat TP-STEP3-01 (Eddy 1-11-2026, build 074310): FAIL, Contractors en Projects gelijk: A dirty direct na laden/selectie; B Discard/Save zonder effect; C lijstrijen grijs bedekt en niet klikbaar; D scrollbalkje naast HtmlText; E rechter-/onderrand afgeknipt; F focusrand weg; G Home oude layout (verwacht).
 Fix: circulaire verwijzingen (instantie-input -> eigen output) verwijderd, dirty via verborgen label, lijstrij-lagen met transparante klikknop, HtmlViewer margin-reset, rasterbreedte met scrollbalkreserve en 1 px inzet. TIJDELIJKE debugregel onderaan beide schermen (alleen in deze build; zichtbaar via App.OnStart, anders Run OnStart).
@@ -374,3 +374,24 @@ Alleen TEST-records. Geef de debugregel steeds LETTERLIJK door.
 | 7 | Visueel: lijstrijen, labels, 3e kolom, focus | geen grijze vlakken over tekst; geen scrollbalkje naast teksten; randen van City/Contact Phone/Country volledig zichtbaar; klik in veld = 2 px blauwe rand |
 
 Bekend: hover-kleur #F0F0F0 op lijstrijen valt weg (transparante klikknop bovenop; keuze Eddy). Na 1-11: controleer in SharePoint Modified/versiegeschiedenis van records waarop op 1-11 Save is geklikt (mogelijk onzichtbare Patch).
+
+Resultaat TP-STEP3-02 (Eddy 1-11-2026): FAIL Contractors. Debugregel onaangeraakt: "IsDirty: true | changed: Name[0/5], Address[0/27], Postalcode[0/6], City[0/9] | last event: - | SelectedRowID: 2"; andere rij: geen OnSelectRow, geen selectiekleur; zoekveld niet klikbaar; Country "ww" verschijnt nooit; Save: "Not saved. Fix: Contractor Name empty" terwijl het veld tekst toont, geen write. Projects niet getest.
+
+## TP-STEP3-03 Fix cmpField CurrentValue (OPEN; DEBUG-testbuild components-20261101_234115)
+
+Oorzaak: de app draait met AppPreviewFlagsMap.supportcolumnnamesasidentifiers = True. In cmpField gebruikte de dropdown-Items tekst als kolomnaam (ShowColumns(cmpField.Items,"Value"), Ungroup(...,"t")); dat is onder die vlag een formulefout. Daardoor was ddCmpFieldInput.Selected ongeldig en faalde de hele CurrentValue-formule: output blank voor elk veld, ook tekstvelden. Gevolg: dirty direct na laden, lijst en zoekveld geblokkeerd (Enabled = guard met dirty), geen OnSelectRow, Save leest lege waarden. Zelfde fout in scrProjects (Status/Country Items).
+Fix: kolomnamen als identifiers (cmpField, scrProjects); CurrentValue = Switch(InputType, dropdown: Selected.Value, readonly: Value, anders: txt.Text); rij-hover = halftransparant #F0F0F0 (#F0F0F099) op de klikknop, alleen als de lijst actief is. Tests: Test-Components (CurrentValue leest txtCmpFieldInput.Text en ddCmpFieldInput.Selected.Value, geen Default/Blank; Items met identifiers; hover), Check-WeeklySource (geen tekst-kolomnaam in ShowColumns/DropColumns/Ungroup/RenameColumns/GroupBy/AddColumns/SortByColumns/Search in heel Src; vlag vereist).
+
+Stappen (alleen TEST-records; debugregel letterlijk doorgeven; niet zichtbaar = Run OnStart). Eerst App Checker: geen formulefout op cmpField/cmpListCard/scrContractors/scrProjects.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| 1 | Contractors openen, niets aanraken | "IsDirty: false \| changed: -"; zoekveld, lijst, Home, New, Refresh actief; Discard/Save uit |
+| 2 | Andere rij aanklikken | "last event: OnSelectRow"; formulier en selectiekleur (#D5EDFF + blauwe balk) volgen; IsDirty false |
+| 3 | Hover over rijen | lichtgrijze waas, tekst leesbaar |
+| 4 | Zoeken op deel van naam/code/plaats | lijst en telling filteren |
+| 5 | Country "ww" typen (TEST-contractor) | changed toont Country[2/..]; IsDirty true; lijst/zoekveld uit |
+| 6 | Discard | waarde terug, IsDirty false, "last event: OnDiscard", groene balk Discarded |
+| 7 | Veld wijzigen, Save | "last event: OnSave", groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
+| 8 | Stap 1-7 op Projects (TEST-project), incl. Status/Country-dropdown wijzigen | idem; dropdowns tonen keuzes |
+| 9 | Visueel | geen grijze vlakken, geen scrollbalkjes, randen volledig, focusrand 2 px blauw |

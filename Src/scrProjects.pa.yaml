@@ -392,7 +392,7 @@ Screens:
                               Invalid: =CountIf(colPrjSaveErrors,Field="Status")>0
                               InputType: ="dropdown"
                               Items: |-
-                                =ShowColumns(Choices([@Projects].Status),"Value")
+                                =ShowColumns(Choices([@Projects].Status),Value)
                               Label: =If(LangNl && !IsBlank(T.prjFieldStatus.nl),T.prjFieldStatus.nl,T.prjFieldStatus.en)
                               MaxLength: =255
                               Required: =true
@@ -493,7 +493,7 @@ Screens:
                               Invalid: =CountIf(colPrjSaveErrors,Field="Country")>0
                               InputType: ="dropdown"
                               Items: |-
-                                =ShowColumns(Choices([@Projects].Country),"Value")
+                                =ShowColumns(Choices([@Projects].Country),Value)
                               Label: =If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en)
                               MaxLength: =255
                               Value: =varPrjEdit.Country

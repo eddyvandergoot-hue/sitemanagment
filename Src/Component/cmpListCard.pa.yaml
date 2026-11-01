@@ -371,7 +371,7 @@ ComponentDefinitions:
                         Height: =Parent.TemplateHeight
                         HoverBorderColor: =Color.Transparent
                         HoverColor: =Color.Transparent
-                        HoverFill: =Color.Transparent
+                        HoverFill: =If(cmpListCard.Enabled,ColorValue("#F0F0F099"),Color.Transparent)
                         OnSelect: =Select(Parent)
                         PaddingBottom: =0
                         PaddingLeft: =0

@@ -67,7 +67,7 @@ ComponentDefinitions:
         Description: The user changed the text or the choice. Only raised while Enabled is true. The host handler starts with its guard and compares CurrentValue with the saved value.
         Default: =false
     Properties:
-      CurrentValue: =If(cmpField.InputType="dropdown",Coalesce(ddCmpFieldInput.Selected.Value,""),Coalesce(txtCmpFieldInput.Text,""))
+      CurrentValue: =Switch(cmpField.InputType,"dropdown",Coalesce(ddCmpFieldInput.Selected.Value,""),"readonly",Coalesce(cmpField.Value,""),Coalesce(txtCmpFieldInput.Text,""))
       Fill: =Color.Transparent
       Height: =58
       OnReset: =Reset(txtCmpFieldInput); Reset(ddCmpFieldInput)
@@ -155,7 +155,7 @@ ComponentDefinitions:
             HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
             HoverColor: =ColorValue("#000F41")
             HoverFill: =ColorValue("#D5EDFF")
-            Items: '=If(IsBlank(cmpField.Value) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.Value)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,"Value")},{t: Table({Value: cmpField.Value})}),"t"))'
+            Items: '=If(IsBlank(cmpField.Value) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.Value)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.Value})}),t))'
             Items.Value: =Value
             OnChange: =If(cmpField.Enabled,cmpField.OnChange())
             PressedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
