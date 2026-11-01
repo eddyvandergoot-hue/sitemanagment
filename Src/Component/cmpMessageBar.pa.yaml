@@ -64,7 +64,7 @@ ComponentDefinitions:
             Fill: =Color.Transparent
             Font: ="Inter, Arial, sans-serif"
             Height: =Parent.Height
-            HtmlText: ="<div style='width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:" & Parent.Height & "px;color:" & If(cmpMessageBar.Kind="Error","#FFFFFF","#000F41") & "'><b>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpMessageBar.Head,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</b> " & Substitute(Substitute(Substitute(Substitute(Substitute(cmpMessageBar.Body,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
+            HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:" & Parent.Height & "px;color:" & If(cmpMessageBar.Kind="Error","#FFFFFF","#000F41") & "'><b>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpMessageBar.Head,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</b> " & Substitute(Substitute(Substitute(Substitute(Substitute(cmpMessageBar.Body,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
             PaddingBottom: =0
             PaddingLeft: =0
             PaddingRight: =0

@@ -123,6 +123,10 @@ foreach ($s in $screens) {
             # every field instance inside the form card, none outside the card content
             $fields = @($names.Keys | Where-Object { $names[$_]['ComponentName'] -eq 'cmpField' })
             foreach ($f in $fields) { $fr = $state.Rects[$f]; if ($fr.X -lt 24 - 0.01 -or $fr.X + $fr.Width -gt $formR.Width - 24 + 0.01) { throw "FAIL $label : $f outside the 24 px card padding (X=$($fr.X), W=$($fr.Width), card $($formR.Width))" } }
+            # 1-11-2026: the scrolling body may show a 16 px scrollbar; both cards must end >= 24 px + 16 px before the body's right edge, and every input (X+1 .. W-2 inside the component, 2 px focus border) lies fully inside the card
+            $bodyR = $state.Rects["con${p}Body"]
+            Assert-True (($formR.X + $formR.Width) -le ($bodyR.Width - 40 + 0.01) -and ($listR.X + $listR.Width) -le ($bodyR.Width - 40 + 0.01)) "$label : cards keep 24 px margin plus a 16 px scrollbar reserve at the right edge"
+            foreach ($f in $fields) { $fr = $state.Rects[$f]; $inL = $fr.X + 1 - 2; $inR = $fr.X + $fr.Width - 1 + 2; if ($inL -lt 0 -or $inR -gt $formR.Width - 16) { throw "FAIL $label : input of $f (incl. 2 px border) leaves the card ($inL..$inR of $($formR.Width))" } }
             Write-Output "PASS $label : $($script:layoutChecked) visible controls inside their parents, no sibling overlaps, $($fields.Count) cmpField instances always rendered inside the card padding (columns: $([math]::Round($state.Rects["lbl${p}Grid"].Width,1)) px)."
         }
     }

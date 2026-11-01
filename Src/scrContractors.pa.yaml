@@ -50,7 +50,7 @@ Screens:
             Visible: =false
             X: =If(Parent.Width>=1000,1,0)
             Y: =If(Self.X=1,408,24)
-            Width: =If(Self.X=1,Max(0,Parent.Width-432),Parent.Width-48)
+            Width: =If(Self.X=1,Max(0,Parent.Width-448),Parent.Width-64)
             Height: =If(Self.X=1,24,500)
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
@@ -219,7 +219,7 @@ Screens:
                         SelectedID: =Coalesce(varEmpSelectedID,0)
                         ShowInactive: =Coalesce(varEmpShowInactive,false)
                         ShowInactiveText: =If(LangNl && !IsBlank(T.empShowInactive.nl),T.empShowInactive.nl,T.empShowInactive.en)
-                        Width: =If(lblEmpLayout.X=1,360,Parent.Width-48)
+                        Width: =If(lblEmpLayout.X=1,360,Parent.Width-64)
                         X: =24
                         Y: =24
                   - conEmpFormCard:

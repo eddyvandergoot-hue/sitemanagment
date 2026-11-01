@@ -155,8 +155,8 @@ ComponentDefinitions:
                   Color: =ColorValue("#000000")
                   Fill: =Color.Transparent
                   Font: ="Inter, Arial, sans-serif"
-                  Height: =24
-                  HtmlText: ="<div style='display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(Filter(cmpListCard.Items,IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey))))),"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
+                  Height: =26
+                  HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(Filter(cmpListCard.Items,IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey))))),"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
@@ -200,7 +200,7 @@ ComponentDefinitions:
                   Tooltip: '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)'
                   Width: =44
                   X: =Parent.Width-24-Self.Width
-                  Y: =htmlCmpListInfo.Y
+                  Y: =htmlCmpListInfo.Y+1
             - btnCmpListKnob:
                 Control: Classic/Button@2.2.0
                 Properties:
@@ -243,7 +243,7 @@ ComponentDefinitions:
                 Properties:
                   BorderColor: =Color.Transparent
                   BorderThickness: =0
-                  DisplayMode: =If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =DisplayMode.Edit
                   Fill: =Color.White
                   Height: =Max(0,Parent.Height-Self.Y-12)
                   Items: =Filter(cmpListCard.Items,IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey))
@@ -262,7 +262,6 @@ ComponentDefinitions:
                         Fill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),Color.White)
                         Height: =Parent.TemplateHeight
                         HoverFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
-                        OnSelect: =Select(Parent)
                         PressedFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
                         TabIndex: =-1
                         Width: =Parent.TemplateWidth
@@ -272,7 +271,6 @@ ComponentDefinitions:
                         BorderColor: =Color.Transparent
                         Fill: =ColorValue("#0303B8")
                         Height: =Parent.TemplateHeight
-                        OnSelect: =Select(Parent)
                         Visible: =ThisItem.ID=cmpListCard.SelectedID
                         TabIndex: =-1
                         Width: =3
@@ -282,7 +280,6 @@ ComponentDefinitions:
                         BorderColor: =Color.Transparent
                         Fill: =ColorValue("#EDEDED")
                         Height: =1
-                        OnSelect: =Select(Parent)
                         TabIndex: =-1
                         Width: =Parent.TemplateWidth
                         Y: =Parent.TemplateHeight-1
@@ -293,9 +290,8 @@ ComponentDefinitions:
                         Color: =If(ThisItem.Inactive,ColorValue("#6B6B6B"),ColorValue("#000F41"))
                         Fill: =Color.Transparent
                         Font: ="Inter, Arial, sans-serif"
-                        Height: =22
-                        HtmlText: ="<div style='width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:600;line-height:22px;color:" & If(ThisItem.Inactive,"#6B6B6B","#000F41") & "'>" & Substitute(Substitute(Substitute(Substitute(Substitute(ThisItem.Title,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
-                        OnSelect: =Select(Parent)
+                        Height: =24
+                        HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:600;line-height:22px;color:" & If(ThisItem.Inactive,"#6B6B6B","#000F41") & "'>" & Substitute(Substitute(Substitute(Substitute(Substitute(ThisItem.Title,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
                         PaddingBottom: =0
                         PaddingLeft: =0
                         PaddingRight: =0
@@ -304,7 +300,7 @@ ComponentDefinitions:
                         Tooltip: =ThisItem.Title
                         Width: =Max(0,Parent.TemplateWidth-Self.X-If(IsBlank(ThisItem.ChipText),16,16+btnCmpRowChip.Width+8))
                         X: =16
-                        Y: =12
+                        Y: =10
                   - htmlCmpRowSub:
                       Control: HtmlViewer@2.1.0
                       Properties:
@@ -312,9 +308,8 @@ ComponentDefinitions:
                         Color: =ColorValue("#5A5A5A")
                         Fill: =Color.Transparent
                         Font: ="Inter, Arial, sans-serif"
-                        Height: =18
-                        HtmlText: ="<div style='width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:18px;color:#5A5A5A'>" & Substitute(Substitute(Substitute(Substitute(Substitute(ThisItem.Subtitle,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
-                        OnSelect: =Select(Parent)
+                        Height: =20
+                        HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:18px;color:#5A5A5A'>" & Substitute(Substitute(Substitute(Substitute(Substitute(ThisItem.Subtitle,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</div>"
                         PaddingBottom: =0
                         PaddingLeft: =0
                         PaddingRight: =0
@@ -360,3 +355,34 @@ ComponentDefinitions:
                         Width: =80
                         X: =Parent.TemplateWidth-16-Self.Width
                         Y: =13
+                  - btnCmpRowHit:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =Color.Transparent
+                        BorderThickness: =0
+                        Color: =Color.Transparent
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =Color.Transparent
+                        DisabledFill: =Color.Transparent
+                        DisplayMode: =DisplayMode.Edit
+                        Fill: =Color.Transparent
+                        Font: ="Inter, Arial, sans-serif"
+                        FontWeight: =FontWeight.Normal
+                        Height: =Parent.TemplateHeight
+                        HoverBorderColor: =Color.Transparent
+                        HoverColor: =Color.Transparent
+                        HoverFill: =Color.Transparent
+                        OnSelect: =Select(Parent)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Color.Transparent
+                        PressedColor: =Color.Transparent
+                        PressedFill: =Color.Transparent
+                        Size: =12
+                        TabIndex: =-1
+                        Text: =""
+                        Width: =Parent.TemplateWidth
+                        X: =0
+                        Y: =0

@@ -50,7 +50,7 @@ Screens:
             Visible: =false
             X: =If(Parent.Width>=1000,1,0)
             Y: =If(Self.X=1,408,24)
-            Width: =If(Self.X=1,Max(0,Parent.Width-432),Parent.Width-48)
+            Width: =If(Self.X=1,Max(0,Parent.Width-448),Parent.Width-64)
             Height: =If(Self.X=1,24,500)
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
@@ -212,7 +212,7 @@ Screens:
                         SelectedID: =Coalesce(varPrjSelectedID,0)
                         ShowInactive: =Coalesce(varPrjShowInactive,false)
                         ShowInactiveText: =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en)
-                        Width: =If(lblPrjLayout.X=1,360,Parent.Width-48)
+                        Width: =If(lblPrjLayout.X=1,360,Parent.Width-64)
                         X: =24
                         Y: =24
                   - conPrjFormCard:
