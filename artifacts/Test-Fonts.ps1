@@ -37,12 +37,12 @@ foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContrac
  }
  foreach($name in $semibold[$screen]+$bold[$screen]){if(!$new.ContainsKey($name)){throw "Missing $name"}}
 }
-# Canvas components (Src\Component): every control with text carries the Inter font; weights per role.
+# Canvas components (Src\Components): every control with text carries the Inter font; weights per role.
 $componentTextTypes='^(Label@|Classic/Button@|Classic/TextInput@|HtmlViewer@|ModernSpinner@)'
 $componentSemibold=@('lblCmpTitleText','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave')
 $componentTechnical=@('lblCmpFooterMetrics')
 $componentFonts=0
-foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Component') -Filter *.pa.yaml){
+foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Components') -Filter *.pa.yaml){
  $componentDoc=$builder.Build().Deserialize([IO.File]::ReadAllText($componentFile.FullName))
  foreach($componentName in $componentDoc['ComponentDefinitions'].Keys){
   $componentIndex=@{};Index-RegressionControls $componentDoc['ComponentDefinitions'][$componentName]['Children'] $componentIndex
@@ -58,8 +58,8 @@ foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Component')
   foreach($name in $componentIndex.Keys){ if($componentIndex[$name]['Control'] -like 'HtmlViewer@*'){ if(([string]$componentIndex[$name]['Properties']['HtmlText']) -notmatch 'font-family:Inter,Arial,sans-serif'){throw "Component HtmlText without Inter/Arial font-family: $componentName.$name"} } }
  }
 }
-if($componentFonts -eq 0){throw 'No component text controls found in Src\Component.'}
-Write-Output "PASS components: $componentFonts text controls in Src\Component use Font Inter/Arial (HtmlText CSS font-family Inter, Arial, sans-serif); titles/buttons Semibold, other labels Normal."
+if($componentFonts -eq 0){throw 'No component text controls found in Src\Components.'}
+Write-Output "PASS components: $componentFonts text controls in Src\Components use Font Inter/Arial (HtmlText CSS font-family Inter, Arial, sans-serif); titles/buttons Semibold, other labels Normal."
 $src=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
 if($src -match "Font\.'"){throw 'Font enum (Font.''…'') still present'}
 if($src -match 'GEA Sans'){throw 'GEA Sans must not be used in the app'}

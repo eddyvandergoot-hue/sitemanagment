@@ -80,7 +80,7 @@ Screens:
           Control: Label@2.5.1
           Properties:
             Text: |-
-              =If((Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.CurrentValue & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.CurrentValue & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.CurrentValue & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.CurrentValue & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.CurrentValue & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.CurrentValue & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.CurrentValue & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.CurrentValue & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.CurrentValue & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.CurrentValue & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.CurrentValue & "")<>Trim(varPrjEdit.Url & ""))),"true","false")
+              =If((Coalesce(varPrjMode,"") in ["New","Edit"] && (Trim(cmpPrjName.Value & "")<>Trim(varPrjEdit.Name & "") || Trim(cmpPrjNumber.Value & "")<>Trim(varPrjEdit.Number & "") || Trim(cmpPrjReference.Value & "")<>Trim(varPrjEdit.Reference & "") || Trim(cmpPrjCustomer.Value & "")<>Trim(varPrjEdit.Customer & "") || Trim(cmpPrjStatus.Value & "")<>Trim(varPrjEdit.Status & "") || Trim(cmpPrjStreet.Value & "")<>Trim(varPrjEdit.Street & "") || Trim(cmpPrjHouseNumber.Value & "")<>Trim(varPrjEdit.HouseNumber & "") || Trim(cmpPrjPostalCode.Value & "")<>Trim(varPrjEdit.PostalCode & "") || Trim(cmpPrjCity.Value & "")<>Trim(varPrjEdit.City & "") || Trim(cmpPrjCountry.Value & "")<>Trim(varPrjEdit.Country & "") || Trim(cmpPrjUrl.Value & "")<>Trim(varPrjEdit.Url & ""))),"true","false")
             Visible: =false
             X: =0
             Y: =0
@@ -120,7 +120,7 @@ Screens:
                    Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)),
                    varPrjMode="New" && !Coalesce(varPrjSaveFailed,false),
                    Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""}),
-                   Set(varPrjSelectedID,First(Filter(ForAll(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed")),Lower(Number),SortOrder.Ascending) As r,{ID:r.ID,Title:If(IsBlank(r.Name),r.Number,r.Name),Subtitle:If(IsBlank(r.Number),r.City,r.Number & If(IsBlank(r.City),""," · " & r.City)),Inactive:r.Status="Closed",ChipText:If(r.Status in ["Closed","On hold"],r.Status,""),SearchKey:Lower(r.Number & " " & r.Name & " " & r.City)}),IsBlank(Trim(cmpPrjList.SearchText)) || Lower(Trim(cmpPrjList.SearchText)) in Lower(SearchKey))).ID);
+                   Set(varPrjSelectedID,First(Filter(ForAll(Sort(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),Lower(Number),SortOrder.Ascending) As r,{ID:r.ID,Title:If(IsBlank(r.Name),r.Number,r.Name),Subtitle:If(IsBlank(r.Number),r.City,r.Number & If(IsBlank(r.City),""," · " & r.City)),Inactive:r.Status="Closed",ChipText:If(r.Status in ["Closed","On hold"],r.Status,"")}),(Coalesce(varPrjShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpPrjList.SearchText)) || Trim(cmpPrjList.SearchText) in Title || Trim(cmpPrjList.SearchText) in Subtitle))).ID);
                    If(!IsBlank(varPrjSelectedID) && !IsBlank(LookUp(colAdminProjects,ID=varPrjSelectedID).ID),
                     Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)); Set(varPrjMode,"Edit"),
                     Set(varPrjMode,""); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""})
@@ -195,7 +195,7 @@ Screens:
                           =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true")
                         Height: =lblPrjMetrics.Width
                         Items: |-
-                          =ForAll(Sort(Filter(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),(Coalesce(varPrjShowInactive,false) || Status<>"Closed")),Lower(Number),SortOrder.Ascending) As r,{ID:r.ID,Title:If(IsBlank(r.Name),r.Number,r.Name),Subtitle:If(IsBlank(r.Number),r.City,r.Number & If(IsBlank(r.City),""," · " & r.City)),Inactive:r.Status="Closed",ChipText:If(r.Status in ["Closed","On hold"],r.Status,""),SearchKey:Lower(r.Number & " " & r.Name & " " & r.City)})
+                          =ForAll(Sort(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),Lower(Number),SortOrder.Ascending) As r,{ID:r.ID,Title:If(IsBlank(r.Name),r.Number,r.Name),Subtitle:If(IsBlank(r.Number),r.City,r.Number & If(IsBlank(r.City),""," · " & r.City)),Inactive:r.Status="Closed",ChipText:If(r.Status in ["Closed","On hold"],r.Status,"")})
                         OffText: =If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en)
                         OnText: =If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en)
                         OnSelectRow: |-
@@ -205,9 +205,9 @@ Screens:
                             Clear(colPrjSaveErrors); Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl)
                            ),
                            Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
-                          )
+                          ); true
                         OnToggleShowInactive: |-
-                          =Set(varDbgEvent,"OnToggleShowInactive " & Text(Now(),"hh:mm:ss")); If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false)))
+                          =Set(varDbgEvent,"OnToggleShowInactive " & Text(Now(),"hh:mm:ss")); If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false))); true
                         SearchHint: =If(LangNl && !IsBlank(T.prjSearchHint.nl),T.prjSearchHint.nl,T.prjSearchHint.en)
                         SelectedID: =Coalesce(varPrjSelectedID,0)
                         ShowInactive: =Coalesce(varPrjShowInactive,false)
@@ -328,7 +328,7 @@ Screens:
                               Label: =If(LangNl && !IsBlank(T.prjFieldName.nl),T.prjFieldName.nl,T.prjFieldName.en)
                               MaxLength: =255
                               Required: =true
-                              Value: =varPrjEdit.Name
+                              DefaultValue: =varPrjEdit.Name
                               Width: =lblPrjGrid.Width
                               X: =24
                               Y: =lblPrjSecGeneral.Y+30
@@ -345,7 +345,7 @@ Screens:
                               Label: =If(LangNl && !IsBlank(T.prjFieldNumber.nl),T.prjFieldNumber.nl,T.prjFieldNumber.en)
                               MaxLength: =255
                               Required: =true
-                              Value: =varPrjEdit.Number
+                              DefaultValue: =varPrjEdit.Number
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(1/lblPrjMetrics.X,0)*74
@@ -361,7 +361,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.prjFieldReference.nl),T.prjFieldReference.nl,T.prjFieldReference.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.Reference
+                              DefaultValue: =varPrjEdit.Reference
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(2,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(2/lblPrjMetrics.X,0)*74
@@ -377,7 +377,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.prjFieldCustomer.nl),T.prjFieldCustomer.nl,T.prjFieldCustomer.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.Customer
+                              DefaultValue: =varPrjEdit.Customer
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(3,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(3/lblPrjMetrics.X,0)*74
@@ -396,7 +396,7 @@ Screens:
                               Label: =If(LangNl && !IsBlank(T.prjFieldStatus.nl),T.prjFieldStatus.nl,T.prjFieldStatus.en)
                               MaxLength: =255
                               Required: =true
-                              Value: =varPrjEdit.Status
+                              DefaultValue: =varPrjEdit.Status
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(4,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecGeneral.Y+30+RoundDown(4/lblPrjMetrics.X,0)*74
@@ -430,7 +430,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.prjFieldStreet.nl),T.prjFieldStreet.nl,T.prjFieldStreet.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.Street
+                              DefaultValue: =varPrjEdit.Street
                               Width: =lblPrjGrid.Width
                               X: =24
                               Y: =lblPrjSecAddress.Y+30
@@ -446,7 +446,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.prjFieldHouseNumber.nl),T.prjFieldHouseNumber.nl,T.prjFieldHouseNumber.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.HouseNumber
+                              DefaultValue: =varPrjEdit.HouseNumber
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(1/lblPrjMetrics.X,0)*74
@@ -462,7 +462,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.prjFieldPostalCode.nl),T.prjFieldPostalCode.nl,T.prjFieldPostalCode.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.PostalCode
+                              DefaultValue: =varPrjEdit.PostalCode
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(2,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(2/lblPrjMetrics.X,0)*74
@@ -478,7 +478,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.prjFieldCity.nl),T.prjFieldCity.nl,T.prjFieldCity.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.City
+                              DefaultValue: =varPrjEdit.City
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(3,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(3/lblPrjMetrics.X,0)*74
@@ -496,7 +496,7 @@ Screens:
                                 =ShowColumns(Choices([@Projects].Country),Value)
                               Label: =If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.Country
+                              DefaultValue: =varPrjEdit.Country
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(4,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecAddress.Y+30+RoundDown(4/lblPrjMetrics.X,0)*74
@@ -528,7 +528,7 @@ Screens:
                               InputType: ="readonly"
                               Label: =If(LangNl && !IsBlank(T.prjFieldLeader.nl),T.prjFieldLeader.nl,T.prjFieldLeader.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.Leader
+                              DefaultValue: =varPrjEdit.Leader
                               Width: =lblPrjGrid.Width
                               X: =24
                               Y: =lblPrjSecPeople.Y+30
@@ -542,7 +542,7 @@ Screens:
                               InputType: ="readonly"
                               Label: =If(LangNl && !IsBlank(T.prjFieldSiteManager.nl),T.prjFieldSiteManager.nl,T.prjFieldSiteManager.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.SiteManager
+                              DefaultValue: =varPrjEdit.SiteManager
                               Width: =lblPrjGrid.Width
                               X: =24+Mod(1,lblPrjMetrics.X)*(lblPrjGrid.Width+16)
                               Y: =lblPrjSecPeople.Y+30+RoundDown(1/lblPrjMetrics.X,0)*74
@@ -576,7 +576,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.prjFieldUrl.nl),T.prjFieldUrl.nl,T.prjFieldUrl.en)
                               MaxLength: =255
-                              Value: =varPrjEdit.Url
+                              DefaultValue: =varPrjEdit.Url
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjSecLinks.Y+30
@@ -611,7 +611,7 @@ Screens:
                         PaddingTop: =0
                         Size: =12
                         Text: |-
-                          ="IsDirty: " & lblPrjDirty.Text & " | changed: " & Coalesce(Concat(Filter(Table({F:"Name",C:Trim(cmpPrjName.CurrentValue & ""),L:Trim(varPrjEdit.Name & "")},{F:"Number",C:Trim(cmpPrjNumber.CurrentValue & ""),L:Trim(varPrjEdit.Number & "")},{F:"Reference",C:Trim(cmpPrjReference.CurrentValue & ""),L:Trim(varPrjEdit.Reference & "")},{F:"Customer",C:Trim(cmpPrjCustomer.CurrentValue & ""),L:Trim(varPrjEdit.Customer & "")},{F:"Status",C:Trim(cmpPrjStatus.CurrentValue & ""),L:Trim(varPrjEdit.Status & "")},{F:"Street",C:Trim(cmpPrjStreet.CurrentValue & ""),L:Trim(varPrjEdit.Street & "")},{F:"HouseNumber",C:Trim(cmpPrjHouseNumber.CurrentValue & ""),L:Trim(varPrjEdit.HouseNumber & "")},{F:"PostalCode",C:Trim(cmpPrjPostalCode.CurrentValue & ""),L:Trim(varPrjEdit.PostalCode & "")},{F:"City",C:Trim(cmpPrjCity.CurrentValue & ""),L:Trim(varPrjEdit.City & "")},{F:"Country",C:Trim(cmpPrjCountry.CurrentValue & ""),L:Trim(varPrjEdit.Country & "")},{F:"Url",C:Trim(cmpPrjUrl.CurrentValue & ""),L:Trim(varPrjEdit.Url & "")}),C<>L),F & "[" & Len(C) & "/" & Len(L) & "]",", "),"-") & " | last event: " & Coalesce(varDbgEvent,"-") & " | SelectedRowID: " & Text(cmpPrjList.SelectedRowID)
+                          ="IsDirty: " & lblPrjDirty.Text & " | changed: " & Coalesce(Concat(Filter(Table({F:"Name",C:Trim(cmpPrjName.Value & ""),L:Trim(varPrjEdit.Name & "")},{F:"Number",C:Trim(cmpPrjNumber.Value & ""),L:Trim(varPrjEdit.Number & "")},{F:"Reference",C:Trim(cmpPrjReference.Value & ""),L:Trim(varPrjEdit.Reference & "")},{F:"Customer",C:Trim(cmpPrjCustomer.Value & ""),L:Trim(varPrjEdit.Customer & "")},{F:"Status",C:Trim(cmpPrjStatus.Value & ""),L:Trim(varPrjEdit.Status & "")},{F:"Street",C:Trim(cmpPrjStreet.Value & ""),L:Trim(varPrjEdit.Street & "")},{F:"HouseNumber",C:Trim(cmpPrjHouseNumber.Value & ""),L:Trim(varPrjEdit.HouseNumber & "")},{F:"PostalCode",C:Trim(cmpPrjPostalCode.Value & ""),L:Trim(varPrjEdit.PostalCode & "")},{F:"City",C:Trim(cmpPrjCity.Value & ""),L:Trim(varPrjEdit.City & "")},{F:"Country",C:Trim(cmpPrjCountry.Value & ""),L:Trim(varPrjEdit.Country & "")},{F:"Url",C:Trim(cmpPrjUrl.Value & ""),L:Trim(varPrjEdit.Url & "")}),C<>L),F & "[" & Len(C) & "/" & Len(L) & "]",", "),"-") & " | last event: " & Coalesce(varDbgEvent,"-") & " | SelectedRowID: " & Text(cmpPrjList.SelectedRowID)
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =varDebug
                         Width: =Max(0,Parent.Width-48)
@@ -666,7 +666,7 @@ Screens:
                Clear(colPrjSaveErrors); Clear(colPrjPreRaw); Clear(colPrjPre); Clear(colPrjDup); Clear(colPrjPeriods); Clear(colPrjPatched); Clear(colPrjVerifyRaw); Clear(colPrjVerify);
                Set(varPrjSaveReads,0); Set(varPrjSaveWrites,0); Set(varPrjSaveVerified,false); Set(varPrjSaveDupFound,false); Set(varPrjSaveConflict,false); Set(varPrjSaveOpenPeriods,0); Set(varPrjSavePeriodsUnchecked,false); Set(varPrjVerifyDiff,"");
                Set(varPrjSaveMode,varPrjMode); Set(varPrjSaveID,If(varPrjMode="Edit",varPrjSelectedID,Blank())); Set(varPrjPatchedID,Blank());
-               Set(varPrjSaveRec,{Name:Trim(cmpPrjName.CurrentValue & ""),Number:Trim(cmpPrjNumber.CurrentValue & ""),Reference:Trim(cmpPrjReference.CurrentValue & ""),Customer:Trim(cmpPrjCustomer.CurrentValue & ""),Status:Trim(cmpPrjStatus.CurrentValue & ""),Street:Trim(cmpPrjStreet.CurrentValue & ""),HouseNumber:Trim(cmpPrjHouseNumber.CurrentValue & ""),PostalCode:Trim(cmpPrjPostalCode.CurrentValue & ""),City:Trim(cmpPrjCity.CurrentValue & ""),Country:Trim(cmpPrjCountry.CurrentValue & ""),Url:Trim(cmpPrjUrl.CurrentValue & "")});
+               Set(varPrjSaveRec,{Name:Trim(cmpPrjName.Value & ""),Number:Trim(cmpPrjNumber.Value & ""),Reference:Trim(cmpPrjReference.Value & ""),Customer:Trim(cmpPrjCustomer.Value & ""),Status:Trim(cmpPrjStatus.Value & ""),Street:Trim(cmpPrjStreet.Value & ""),HouseNumber:Trim(cmpPrjHouseNumber.Value & ""),PostalCode:Trim(cmpPrjPostalCode.Value & ""),City:Trim(cmpPrjCity.Value & ""),Country:Trim(cmpPrjCountry.Value & ""),Url:Trim(cmpPrjUrl.Value & "")});
                Set(varPrjSaveNumber,varPrjSaveRec.Number); Set(varPrjDupKey,Lower(varPrjSaveRec.Number)); Set(varPrjSaveKey,If(varPrjSaveMode="Edit",Text(varPrjSaveID),""));
                Set(varPrjSaveRenumbered,varPrjSaveMode="Edit" && varPrjEdit.Number<>varPrjSaveRec.Number);
                Set(varPrjSaveCheckPeriods,varPrjSaveMode="Edit" && !IsBlank(varPrjSaveID) && varPrjEdit.Status<>"Closed" && varPrjSaveRec.Status="Closed");

@@ -14,7 +14,7 @@ foreach($c in $cfg){
   if($ci['Control'] -ne 'CanvasComponent' -or $ci['ComponentName'] -ne 'cmpTitleBar'){throw "$screen $title must be a cmpTitleBar instance"}
   if($ip['Logo'] -ne '=GEA_logo_white'){throw "$screen cmpTitleBar.Logo must be the media resource GEA_logo_white unchanged"}
   if($ip['Height'] -ne '=60' -or $ip['Y'] -ne '=0' -or $ip['X'] -ne '=0'){throw "$screen title instance geometry"}
-  $cd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Component/cmpTitleBar.pa.yaml')))['ComponentDefinitions']['cmpTitleBar']
+  $cd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Components/cmpTitleBar.pa.yaml')))['ComponentDefinitions']['cmpTitleBar']
   $cidx=@{}; foreach($e in $cd['Children']){$cidx[@($e.Keys)[0]]=$e[@($e.Keys)[0]]}
   $cimgs=@($cidx.Keys | Where-Object {$cidx[$_]['Control'] -like 'Image@*'})
   if($cimgs.Count -ne 1 -or $cimgs[0] -ne 'imgCmpTitleLogo'){throw 'cmpTitleBar: expected exactly one Image (imgCmpTitleLogo)'}

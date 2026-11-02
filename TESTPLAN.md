@@ -377,7 +377,7 @@ Bekend: hover-kleur #F0F0F0 op lijstrijen valt weg (transparante klikknop boveno
 
 Resultaat TP-STEP3-02 (Eddy 1-11-2026): FAIL Contractors. Debugregel onaangeraakt: "IsDirty: true | changed: Name[0/5], Address[0/27], Postalcode[0/6], City[0/9] | last event: - | SelectedRowID: 2"; andere rij: geen OnSelectRow, geen selectiekleur; zoekveld niet klikbaar; Country "ww" verschijnt nooit; Save: "Not saved. Fix: Contractor Name empty" terwijl het veld tekst toont, geen write. Projects niet getest.
 
-## TP-STEP3-03 Fix cmpField CurrentValue (OPEN; DEBUG-testbuild components-20261101_234115)
+## TP-STEP3-03 Fix cmpField CurrentValue (VERVALLEN: vervangen door TP-STEP3-04 op de Studio-skeletten van Eddy; DEBUG-testbuild components-20261101_234115)
 
 Oorzaak: de app draait met AppPreviewFlagsMap.supportcolumnnamesasidentifiers = True. In cmpField gebruikte de dropdown-Items tekst als kolomnaam (ShowColumns(cmpField.Items,"Value"), Ungroup(...,"t")); dat is onder die vlag een formulefout. Daardoor was ddCmpFieldInput.Selected ongeldig en faalde de hele CurrentValue-formule: output blank voor elk veld, ook tekstvelden. Gevolg: dirty direct na laden, lijst en zoekveld geblokkeerd (Enabled = guard met dirty), geen OnSelectRow, Save leest lege waarden. Zelfde fout in scrProjects (Status/Country Items).
 Fix: kolomnamen als identifiers (cmpField, scrProjects); CurrentValue = Switch(InputType, dropdown: Selected.Value, readonly: Value, anders: txt.Text); rij-hover = halftransparant #F0F0F0 (#F0F0F099) op de klikknop, alleen als de lijst actief is. Tests: Test-Components (CurrentValue leest txtCmpFieldInput.Text en ddCmpFieldInput.Selected.Value, geen Default/Blank; Items met identifiers; hover), Check-WeeklySource (geen tekst-kolomnaam in ShowColumns/DropColumns/Ungroup/RenameColumns/GroupBy/AddColumns/SortByColumns/Search in heel Src; vlag vereist).
@@ -395,3 +395,25 @@ Stappen (alleen TEST-records; debugregel letterlijk doorgeven; niet zichtbaar = 
 | 7 | Veld wijzigen, Save | "last event: OnSave", groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
 | 8 | Stap 1-7 op Projects (TEST-project), incl. Status/Country-dropdown wijzigen | idem; dropdowns tonen keuzes |
 | 9 | Visueel | geen grijze vlakken, geen scrollbalkjes, randen volledig, focusrand 2 px blauw |
+
+## TP-STEP3-04 cmpField + cmpListCard herbouwd op de Studio-skeletten van Eddy (OPEN; DEBUG-testbuild components-20261102_172252)
+
+Basis: Incoming\20261102Components.msapp (Eddy, in Play getest op scrTest). Alleen de componentdefinities zijn overgenomen; App Id 88e53928 en verbindingen blijven uit Site Managment_VS.msapr; scrTest is niet overgenomen.
+Overgenomen vorm: map Src\Components (meervoud, zoals Studio); DisplayName op elke property; events ReturnType Boolean, Default =true (host-handlers eindigen op "; true"); cmpField Input DefaultValue -> txtFieldValue.Default, Output Value = txtFieldValue.Text (dropdown ddFieldValue.Selected.Value, readonly DefaultValue); cmpListCard SelectedRowID = galRows.Selected.ID, galRows.OnSelect = cmpListCard.OnSelectRow(), filteren binnen de component (Show inactive + zoeken in Title/Subtitle).
+Bewust anders dan het skelet: selectiekleur volgt de selectie van het scherm (SelectedID = wat het formulier toont), niet galRows.Selected; klikknop per rij uitgeschakeld als de lijst geblokkeerd is; cmpFooter/cmpMessageBar/cmpTitleBar ongewijzigd (ReturnType None, bewezen).
+Bekend: zoeken over twee velden heen (naam + code in één zoekterm) vindt niets meer; zoek op naam, code, nummer of plaats afzonderlijk.
+
+Stappen (alleen TEST-records; debugregel letterlijk doorgeven; niet zichtbaar = Run OnStart). Eerst App Checker: geen formulefout op cmpField/cmpListCard/scrContractors/scrProjects.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| 1 | Contractors openen, niets aanraken | "IsDirty: false \| changed: -"; zoekveld, lijst, Home, New, Refresh actief; Discard/Save uit |
+| 2 | Andere rij aanklikken | "last event: OnSelectRow"; formulier, SelectedRowID en selectiekleur (#D5EDFF + blauwe balk) volgen; IsDirty false |
+| 3 | Hover over niet-geselecteerde rijen | lichtgrijze waas, tekst leesbaar |
+| 4 | Zoeken op deel van naam, code of plaats | lijst en telling filteren |
+| 5 | Show inactive aan/uit | inactieve rijen verschijnen/verdwijnen, telling klopt; "last event: OnToggleShowInactive" |
+| 6 | Country "ww" typen (TEST-contractor) | changed toont Country; IsDirty true; zoekveld, lijst en switch uit |
+| 7 | Discard | waarde terug, IsDirty false, "last event: OnDiscard", groene balk Discarded |
+| 8 | Veld wijzigen, Save | "last event: OnSave", groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
+| 9 | Stap 1-8 op Projects (TEST-project), incl. Status/Country-dropdown | idem; dropdowns tonen keuzes |
+| 10 | Visueel | geen grijze vlakken, geen scrollbalkjes, randen volledig, focusrand 2 px blauw |

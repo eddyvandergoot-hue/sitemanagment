@@ -121,7 +121,7 @@ Write-Output 'Geometry and source invariants only; native AutoLayout scrollbar, 
 # 30-10-2026 (step 3a): scrContractors footer = cmpFooter instance (68 px, anchored at the bottom); geometry pinned on the instance and the component definition, evaluated numerically.
 $ci=$indexes['scrContractors']; $inst=$ci['cmpEmpFooter']['Properties']
 if($ci['cmpEmpFooter']['Control'] -ne 'CanvasComponent' -or $ci['cmpEmpFooter']['ComponentName'] -ne 'cmpFooter' -or $inst['X'] -ne '=0' -or $inst['Y'] -ne '=Parent.Height-Self.Height' -or $inst['Width'] -ne '=Parent.Width' -or $inst['Height'] -ne '=68'){throw 'scrContractors cmpEmpFooter instance geometry (X 0, Y Parent.Height-Self.Height, Width Parent.Width, Height 68)'}
-$fd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Component/cmpFooter.pa.yaml')))['ComponentDefinitions']['cmpFooter']
+$fd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Components/cmpFooter.pa.yaml')))['ComponentDefinitions']['cmpFooter']
 $fi=@{}; Index-RegressionControls $fd['Children'] $fi
 if($fd['Properties']['Height'] -ne '=68' -or $fd['Properties']['Fill'] -ne '=Color.White' -or $fi['lblCmpFooterMetrics']['Properties']['X'] -ne '=40' -or $fi['lblCmpFooterMetrics']['Properties']['Width'] -ne '=12' -or $fi['lblCmpFooterMetrics']['Properties']['Height'] -ne '=40'){throw 'cmpFooter metrics (X 40, gap 12, button height 40, bar 68 white)'}
 $bw=@{Home=110;New=90;Refresh=110;Discard=188;Save=140}
@@ -149,7 +149,7 @@ foreach($case in @(@(320,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(19
 # 30-10-2026 (step 3a): scrProjects footer = cmpFooter instance (68 px, anchored at the bottom); geometry pinned on the instance and the component definition, evaluated numerically.
 $ci=$indexes['scrProjects']; $inst=$ci['cmpPrjFooter']['Properties']
 if($ci['cmpPrjFooter']['Control'] -ne 'CanvasComponent' -or $ci['cmpPrjFooter']['ComponentName'] -ne 'cmpFooter' -or $inst['X'] -ne '=0' -or $inst['Y'] -ne '=Parent.Height-Self.Height' -or $inst['Width'] -ne '=Parent.Width' -or $inst['Height'] -ne '=68'){throw 'scrProjects cmpPrjFooter instance geometry (X 0, Y Parent.Height-Self.Height, Width Parent.Width, Height 68)'}
-$fd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Component/cmpFooter.pa.yaml')))['ComponentDefinitions']['cmpFooter']
+$fd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Components/cmpFooter.pa.yaml')))['ComponentDefinitions']['cmpFooter']
 $fi=@{}; Index-RegressionControls $fd['Children'] $fi
 if($fd['Properties']['Height'] -ne '=68' -or $fd['Properties']['Fill'] -ne '=Color.White' -or $fi['lblCmpFooterMetrics']['Properties']['X'] -ne '=40' -or $fi['lblCmpFooterMetrics']['Properties']['Width'] -ne '=12' -or $fi['lblCmpFooterMetrics']['Properties']['Height'] -ne '=40'){throw 'cmpFooter metrics (X 40, gap 12, button height 40, bar 68 white)'}
 $bw=@{Home=110;New=90;Refresh=110;Discard=188;Save=140}

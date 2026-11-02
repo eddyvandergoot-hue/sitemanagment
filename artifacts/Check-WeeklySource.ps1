@@ -67,9 +67,9 @@ if ($settings.DefaultConnectedDataSourceMaxGetRowsCount -ne 500 -or !$settings.A
 }
 $script:controlCount=0
 $script:names=@{}
-# Canvas component definitions (App components) live in Src\Component (docs: power-apps-yaml "File structure"); one file per component.
+# Canvas component definitions (App components) live in Src\Components (docs: power-apps-yaml "File structure"); one file per component.
 $script:componentDefs=@{}
-$componentDir=Join-Path $projectRoot 'Src\Component'
+$componentDir=Join-Path $projectRoot 'Src\Components'
 $componentDocs=@{}
 if(Test-Path $componentDir) {
     foreach($componentFile in Get-ChildItem $componentDir -Filter '*.pa.yaml') {
@@ -179,14 +179,14 @@ foreach($srcFile in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter '*.pa.y
 }
 if($iconUses -eq 0) { throw 'Geen Icon.<Naam>-verwijzingen gevonden in Src.' }
 Write-Output "Icon-namen: $iconUses verwijzingen in Src bestaan in de Classic/Icon 2.5.0-enum ($($iconEnum.Count) namen)."
-# Canvas component definitions (Src\Component): schema subset of pa.schema.yaml v3.0 (ComponentDefinition-instance, ComponentDefinition-CustomProperty) plus control templates.
+# Canvas component definitions (Src\Components): schema subset of pa.schema.yaml v3.0 (ComponentDefinition-instance, ComponentDefinition-CustomProperty) plus control templates.
 $pfxDataTypes=@('Text','Number','Boolean','DateAndTime','Screen','Record','Table','Image','VideoOrAudio','Color','Currency')
 $propertyKinds=@('Input','Output','InputFunction','OutputFunction','Event','Action')
 $componentChecked=0
 $editorState=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/_EditorState.pa.yaml')))
 $orderList=@($editorState['EditorState']['ComponentDefinitionsOrder'] | ForEach-Object { [string]$_ } | Sort-Object)
 $fileList=@($componentDocs.Keys | ForEach-Object { $_ -replace '\.pa\.yaml$','' } | Sort-Object)
-if(($orderList -join ',') -ne ($fileList -join ',')) { throw "_EditorState ComponentDefinitionsOrder ($($orderList -join ',')) is niet gelijk aan de bestanden in Src\Component ($($fileList -join ','))." }
+if(($orderList -join ',') -ne ($fileList -join ',')) { throw "_EditorState ComponentDefinitionsOrder ($($orderList -join ',')) is niet gelijk aan de bestanden in Src\Components ($($fileList -join ','))." }
 foreach($componentFileName in $componentDocs.Keys) {
     $componentDoc=$componentDocs[$componentFileName]
     $script:formulas=0; $script:failures=0
@@ -229,7 +229,7 @@ foreach($componentFileName in $componentDocs.Keys) {
         $componentChecked++
     }
 }
-Write-Output "Canvas-componenten: $componentChecked definitie(s) in Src\Component gecontroleerd (DefinitionType, CustomProperties/PropertyKind/DataType, Power Fx-syntaxis, kinderen tegen Templates.json); HtmlViewer@2.1.0 en ModernSpinner@1.1.0 komen uit de templates."
+Write-Output "Canvas-componenten: $componentChecked definitie(s) in Src\Components gecontroleerd (DefinitionType, CustomProperties/PropertyKind/DataType, Power Fx-syntaxis, kinderen tegen Templates.json); HtmlViewer@2.1.0 en ModernSpinner@1.1.0 komen uit de templates."
 # TP-STEP3-02 (01-11-2026): the app runs with supportcolumnnamesasidentifiers = True, so a column name given as text
 # (ShowColumns(t,"Value"), Ungroup(t,"t")) is a formula error in Studio. In cmpField that error made the output CurrentValue blank
 # for every instance (dirty after load, Save "Contractor Name empty"). Column-name arguments must be identifiers.

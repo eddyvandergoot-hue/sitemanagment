@@ -1,10 +1,10 @@
-# Structural checks for the canvas components in Src\Component (stap 2, 30-10-2026): cmpTitleBar, cmpMessageBar, cmpFooter, cmpField, cmpListCard.
+# Structural checks for the canvas components in Src\Components (stap 2, 30-10-2026): cmpTitleBar, cmpMessageBar, cmpFooter, cmpField, cmpListCard.
 # Proves source structure only: no Studio import, binding of component properties, rendering of HtmlViewer/ModernSpinner or event wiring.
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Check-WeeklySource.ps1')
 function Assert-True($cond, $label) { if (!$cond) { throw "FAIL $label" }; Write-Output "PASS $label" }
 function Index-CmpControls($entries, $index) { foreach ($entry in $entries) { $name = @($entry.Keys)[0]; $index[$name] = $entry[$name]; Index-CmpControls $entry[$name]['Children'] $index } }
-$dir = Join-Path $projectRoot 'Src\Component'
+$dir = Join-Path $projectRoot 'Src\Components'
 $files = @{}
 foreach ($f in Get-ChildItem $dir -Filter *.pa.yaml) { $files[$f.Name -replace '\.pa\.yaml$', ''] = [IO.File]::ReadAllText($f.FullName) }
 Assert-True (($files.Keys | Sort-Object) -join ',' -eq 'cmpField,cmpFooter,cmpListCard,cmpMessageBar,cmpTitleBar') 'exactly five component files, one component per file (cmpTitleBar, cmpMessageBar, cmpFooter, cmpField, cmpListCard)'
@@ -20,10 +20,10 @@ $contract = @{
     cmpFooter     = @{ HomeText = 'Input:Text'; NewText = 'Input:Text'; RefreshText = 'Input:Text'; DiscardText = 'Input:Text'; SaveText = 'Input:Text'
                        HomeEnabled = 'Input:Boolean'; NewEnabled = 'Input:Boolean'; RefreshEnabled = 'Input:Boolean'; DiscardEnabled = 'Input:Boolean'; SaveEnabled = 'Input:Boolean'
                        OnHome = 'Event:None'; OnNew = 'Event:None'; OnRefresh = 'Event:None'; OnDiscard = 'Event:None'; OnSave = 'Event:None' }
-    cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; Value = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
-                       CurrentValue = 'Output:Text'; OnChange = 'Event:None' }
+    cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; DefaultValue = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
+                       Value = 'Output:Text'; OnChange = 'Event:Boolean' }
     cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountFormat = 'Input:Text'; ShowInactiveText = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
-                       SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; SelectedRowID = 'Output:Number'; OnSelectRow = 'Event:None'; OnToggleShowInactive = 'Event:None' }
+                       SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; SelectedRowID = 'Output:Number'; OnSelectRow = 'Event:Boolean'; OnToggleShowInactive = 'Event:Boolean' }
 }
 foreach ($c in $contract.Keys) {
     $cps = $defs[$c]['CustomProperties']
@@ -32,7 +32,7 @@ foreach ($c in $contract.Keys) {
         $kind, $type = $contract[$c][$p] -split ':'
         $cp = $cps[$p]
         Assert-True ($null -ne $cp -and $cp['PropertyKind'] -eq $kind) "$c.$p is $kind"
-        if ($kind -eq 'Event') { Assert-True ($cp['ReturnType'] -eq $type) "$c.$p ReturnType None" } else { Assert-True ($cp['DataType'] -eq $type) "$c.$p DataType $type" }
+        if ($kind -eq 'Event') { Assert-True ($cp['ReturnType'] -eq $type) "$c.$p ReturnType $type" } else { Assert-True ($cp['DataType'] -eq $type) "$c.$p DataType $type" }
         # Studio PA2231 (import 30-10-2026): every Input and Event custom property needs a non-empty Default formula.
         if ($kind -in @('Input', 'Event')) { Assert-True ($cp.ContainsKey('Default') -and ([string]$cp['Default']).StartsWith('=') -and ([string]$cp['Default']).Trim().Length -gt 1) "$c.$p has a non-empty Default formula (PA2231)" }
     }
@@ -41,6 +41,8 @@ foreach ($c in $contract.Keys) {
 }
 foreach ($p in 'HomeEnabled', 'NewEnabled', 'RefreshEnabled', 'DiscardEnabled', 'SaveEnabled') { Assert-True ($defs['cmpFooter']['CustomProperties'][$p]['Default'] -eq '=false') "cmpFooter.$p default is fail-closed (=false)" }
 Assert-True ($defs['cmpTitleBar']['CustomProperties']['Busy']['Default'] -eq '=false') 'cmpTitleBar.Busy default =false'
+# 02-11-2026: cmpField and cmpListCard follow the shape Eddy built and tested in Studio (Incoming 20261102Components): DisplayName = property name, events ReturnType Boolean with Default =true.
+foreach ($c in 'cmpField', 'cmpListCard') { foreach ($p in $defs[$c]['CustomProperties'].Keys) { $cp = $defs[$c]['CustomProperties'][$p]; Assert-True ($cp['DisplayName'] -ceq $p) "$c.$p DisplayName = $p (Studio shape)"; if ($cp['PropertyKind'] -eq 'Event') { Assert-True ($cp['ReturnType'] -eq 'Boolean' -and $cp['Default'] -eq '=true') "$c.$p event ReturnType Boolean, Default =true (Studio shape)" } } }
 
 # (2) Pure presentation: no app state, navigation or writes ----------------------------------------------
 foreach ($c in $files.Keys) {
@@ -145,16 +147,16 @@ function Overlap($a, $b) { $a.x -lt ($b.x + $b.w) -and $b.x -lt ($a.x + $a.w) -a
 # (7) cmpField ---------------------------------------------------------------------------------------------
 $fd = $defs['cmpField']; $fi = $idx['cmpField']; $fdp = $fd['Properties']
 Assert-True ($fdp['Height'] -eq '=58' -and $fdp['Fill'] -eq '=Color.Transparent') 'cmpField: component height 58, transparent'
-Assert-True ($fd['CustomProperties']['Value']['RaiseOnReset'] -eq $true -and $fdp['OnReset'] -eq '=Reset(txtCmpFieldInput); Reset(ddCmpFieldInput)') 'cmpField reset contract: Value RaiseOnReset, OnReset resets the text input and the dropdown'
+Assert-True (!$fd['CustomProperties']['DefaultValue'].ContainsKey('RaiseOnReset') -and $fd['CustomProperties'].Values.Where({ $_.ContainsKey('RaiseOnReset') }).Count -eq 0 -and $fdp['OnReset'] -eq '=Reset(txtFieldValue); Reset(ddFieldValue)') 'cmpField reset contract (Studio shape 02-11-2026): no RaiseOnReset; a changed DefaultValue updates the inner Default, Reset(instance) runs OnReset (text input and dropdown)'
 Assert-True ($fd['CustomProperties']['Enabled']['Default'] -eq '=false' -and $fd['CustomProperties']['InputType']['Default'] -eq '="text"' -and $fd['CustomProperties']['Invalid']['Default'] -eq '=false') 'cmpField: Enabled fail-closed =false, InputType default text, Invalid default false'
 Assert-True ($fd['CustomProperties']['Items']['Default'] -eq '=Filter(Table({Value: ""}),false)' -and $fd['CustomProperties']['MaxLength']['Default'] -eq '=255') 'cmpField: Items default is an empty table with column Value, MaxLength 255'
-Assert-True ($fdp['CurrentValue'] -eq '=Switch(cmpField.InputType,"dropdown",Coalesce(ddCmpFieldInput.Selected.Value,""),"readonly",Coalesce(cmpField.Value,""),Coalesce(txtCmpFieldInput.Text,""))') 'cmpField output CurrentValue: dropdown = selection or empty string (an explicit empty choice never returns the old value), readonly = Value, otherwise the typed text'
+Assert-True ($fdp['Value'] -eq '=Switch(cmpField.InputType,"dropdown",Coalesce(ddFieldValue.Selected.Value,""),"readonly",cmpField.DefaultValue,txtFieldValue.Text)') 'cmpField output Value (Studio shape: Value = txtFieldValue.Text): dropdown = selection or empty string, readonly = DefaultValue, otherwise the typed text'
 # TP-STEP3-02 (01-11-2026): CurrentValue was blank in Studio. The output must read the live inner control properties, never an inner Default or Blank().
-Assert-True ($fdp['CurrentValue'] -cmatch 'txtCmpFieldInput\.Text' -and $fdp['CurrentValue'] -cmatch 'ddCmpFieldInput\.Selected\.Value' -and $fdp['CurrentValue'] -notmatch '\.Default\b' -and $fdp['CurrentValue'] -notmatch 'Blank\(') 'cmpField output CurrentValue references the inner controls (txtCmpFieldInput.Text, ddCmpFieldInput.Selected.Value), not a Default or Blank()'
-Assert-True ($fi['txtCmpFieldInput']['Properties']['Default'] -eq '=cmpField.Value' -and $fi['ddCmpFieldInput']['Properties']['Default'] -eq '=cmpField.Value') 'cmpField inner Default = cmpField.Value (shown value); CurrentValue is the separate live value'
-$itemsF = [string]$fi['ddCmpFieldInput']['Properties']['Items']
+Assert-True ($fdp['Value'] -cmatch 'txtFieldValue\.Text' -and $fdp['Value'] -cmatch 'ddFieldValue\.Selected\.Value' -and $fdp['Value'] -notmatch '\.Default\b' -and $fdp['Value'] -notmatch 'Blank\(') 'cmpField output Value references the inner controls (txtFieldValue.Text, ddFieldValue.Selected.Value), not a Default or Blank()'
+Assert-True ($fi['txtFieldValue']['Properties']['Default'] -eq '=cmpField.DefaultValue' -and $fi['ddFieldValue']['Properties']['Default'] -eq '=cmpField.DefaultValue' -and $fd['CustomProperties']['DefaultValue']['PropertyKind'] -eq 'Input' -and $fd['CustomProperties']['Value']['PropertyKind'] -eq 'Output') 'cmpField (Studio shape): Input DefaultValue -> inner Default; Output Value is the separate live value'
+$itemsF = [string]$fi['ddFieldValue']['Properties']['Items']
 # Column names as identifiers (app flag supportcolumnnamesasidentifiers): "Value"/"t" as text made Items an error, which made CurrentValue blank for every instance.
-Assert-True ($itemsF -eq '=If(IsBlank(cmpField.Value) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.Value)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.Value})}),t))') 'cmpField dropdown Items: host Items plus one extra row {Value: Value} when Value is filled and not in Items (shown as-is); column names as identifiers'
+Assert-True ($itemsF -eq '=If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t))') 'cmpField dropdown Items: host Items plus one extra row {Value: DefaultValue} when DefaultValue is filled and not in Items (shown as-is); column names as identifiers'
 # Interpreter fixtures: the same rules evaluated in PowerShell (dropdown rows and CurrentValue), proving the intended behaviour of the formulas above.
 function Fx-Rows($items, $value) { if ([string]::IsNullOrEmpty($value) -or ($items -contains $value)) { return @($items) } else { return @($items) + @($value) } }
 function Fx-Current($rows, $selected) { if ($null -eq $selected -or $selected -eq '') { return '' } else { return $selected } }
@@ -165,7 +167,7 @@ Assert-True ((Fx-Rows @('Active', 'Closed') 'Active').Count -eq 2 -and (Fx-Rows 
 Assert-True ((Fx-Current $fxRows $null) -eq '') 'fixture: an explicit empty choice gives an empty string, not the old value'
 $lblN = @($fi.Keys | Where-Object { $fi[$_]['Control'] -like 'Label@*' -or $fi[$_]['Control'] -like 'HtmlViewer@*' })
 Assert-True ($lblN.Count -eq 1 -and $fi[$lblN[0]]['Control'] -eq 'HtmlViewer@2.1.0') 'cmpField: exactly one HtmlViewer@2.1.0 for the label (no separate star control)'
-$lp2 = $fi['htmlCmpFieldLabel']['Properties']; $lh = [string]$lp2['HtmlText']
+$lp2 = $fi['htmlFieldLabel']['Properties']; $lh = [string]$lp2['HtmlText']
 foreach ($css in 'font-family:Inter,Arial,sans-serif', 'font-size:13px', 'font-weight:600', 'color:#000000', 'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis', 'width:100%') { Assert-True ($lh.Contains($css)) "cmpField label HtmlText contains $css" }
 $starLit = "If(cmpField.Required,""<span style='color:#DB1E28'>&nbsp;*</span>"","""")"
 Assert-True ($lh.Contains($starLit)) 'cmpField label: red star <span style=color:#DB1E28>&nbsp;*</span> only when Required'
@@ -173,12 +175,12 @@ Assert-True ($lh.IndexOf("</span>"" & " + $starLit) -gt 0) 'cmpField label: the 
 $esc = 'Substitute(Substitute(Substitute(Substitute(Substitute(cmpField.Label,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"' + "'" + '","&#39;")'
 Assert-True ($lh.Contains($esc) -and ([regex]::Matches($lh, [regex]::Escape('cmpField.Label'))).Count -eq 1) 'cmpField label: Label only through the escape (& first, then < > double quote single quote)'
 Assert-True ($lp2['Height'] -eq '=20' -and $lp2['Y'] -eq '=0' -and $lp2['Width'] -eq '=Parent.Width-2' -and $lp2['Size'] -eq '=13' -and $lp2['Font'] -eq '="Inter, Arial, sans-serif"') 'cmpField label: height 20 (line 18, no scrollbar) at Y 0, width Parent-2, Inter 13'
-$tx = $fi['txtCmpFieldInput']; $dd = $fi['ddCmpFieldInput']; $tp2 = $tx['Properties']; $dp2 = $dd['Properties']
+$tx = $fi['txtFieldValue']; $dd = $fi['ddFieldValue']; $tp2 = $tx['Properties']; $dp2 = $dd['Properties']
 Assert-True ($tx['Control'] -eq 'Classic/TextInput@2.3.2' -and $dd['Control'] -eq 'Classic/DropDown@2.3.1') 'cmpField inputs: Classic/TextInput@2.3.2 and Classic/DropDown@2.3.1'
 Assert-True ($tp2['Visible'] -eq '=cmpField.InputType<>"dropdown"' -and $dp2['Visible'] -eq '=cmpField.InputType="dropdown"') 'cmpField: text input visible unless dropdown, dropdown visible only for dropdown'
-foreach ($k in 'txtCmpFieldInput', 'ddCmpFieldInput') {
+foreach ($k in 'txtFieldValue', 'ddFieldValue') {
     $p = $fi[$k]['Properties']
-    Assert-True ($p['Height'] -eq '=36' -and $p['Y'] -eq '=htmlCmpFieldLabel.Y+htmlCmpFieldLabel.Height+1' -and $p['X'] -eq '=1' -and $p['Width'] -eq '=Parent.Width-2' -and $p['Fill'] -eq '=Color.White' -and $p['Font'] -eq '="Inter, Arial, sans-serif"' -and $p['FontWeight'] -eq '=FontWeight.Normal' -and $p['Size'] -eq '=14' -and $p['Color'] -eq '=ColorValue("#000000")') "$k : 36 high, 1 px under the label, 1 px inside the component (2 px border never clipped), white, Inter 14 Normal black"
+    Assert-True ($p['Height'] -eq '=36' -and $p['Y'] -eq '=htmlFieldLabel.Y+htmlFieldLabel.Height+1' -and $p['X'] -eq '=1' -and $p['Width'] -eq '=Parent.Width-2' -and $p['Fill'] -eq '=Color.White' -and $p['Font'] -eq '="Inter, Arial, sans-serif"' -and $p['FontWeight'] -eq '=FontWeight.Normal' -and $p['Size'] -eq '=14' -and $p['Color'] -eq '=ColorValue("#000000")') "$k : 36 high, 1 px under the label, 1 px inside the component (2 px border never clipped), white, Inter 14 Normal black"
     Assert-True ($p['FocusedBorderThickness'] -eq '=2' -and $p['DisabledColor'] -eq '=ColorValue("#000000")') "$k : focus 2 px, disabled text black"
     foreach ($bp in 'BorderColor', 'HoverBorderColor', 'FocusedBorderColor', 'PressedBorderColor', 'DisabledBorderColor') { Assert-True (([string]$p[$bp]).Contains('If(cmpField.Invalid,ColorValue("#DB1E28")')) "$k.$bp is red #DB1E28 when Invalid" }
     Assert-True (([string]$p['BorderThickness']).StartsWith('=If(cmpField.Invalid,2,')) "$k.BorderThickness is 2 when Invalid"
@@ -188,33 +190,33 @@ foreach ($k in 'txtCmpFieldInput', 'ddCmpFieldInput') {
 Assert-True ($tp2['BorderColor'] -match '"#9B9B9B"' -and $tp2['HoverBorderColor'] -match '"#5A5A5A"' -and $tp2['FocusedBorderColor'] -match '"#0303B8"' -and $tp2['PressedBorderColor'] -match '"#0303B8"' -and $tp2['RadiusTopLeft'] -eq '=4' -and $tp2['RadiusBottomRight'] -eq '=4') 'cmpField text: white, border #9B9B9B, hover #5A5A5A, focus/pressed #0303B8, radius 4'
 Assert-True ($tp2['BorderThickness'] -eq '=If(cmpField.Invalid,2,If(cmpField.InputType="readonly",0,1))' -and $tp2['BorderColor'] -match 'If\(cmpField.InputType="readonly",Color.Transparent' -and $tp2['DisabledFill'] -eq '=If(cmpField.InputType="readonly",ColorValue("#F0F0F0"),Color.White)') 'cmpField readonly: #F0F0F0 without border; other disabled states white with border #9B9B9B'
 Assert-True ($tp2['DisabledBorderColor'] -match '"#9B9B9B"' -and $tp2['DisplayMode'] -eq '=If(cmpField.Enabled && cmpField.InputType="text",DisplayMode.Edit,DisplayMode.Disabled)') 'cmpField text: disabled border #9B9B9B; readonly (and unknown InputType) is always Disabled, text only Edit while Enabled'
-Assert-True ($tp2['Default'] -eq '=cmpField.Value' -and $tp2['HintText'] -eq '=cmpField.HintText' -and $tp2['MaxLength'] -eq '=cmpField.MaxLength') 'cmpField text: Default = Value, HintText, MaxLength from the inputs'
+Assert-True ($tp2['Default'] -eq '=cmpField.DefaultValue' -and $tp2['HintText'] -eq '=cmpField.HintText' -and $tp2['MaxLength'] -eq '=cmpField.MaxLength') 'cmpField text: Default = DefaultValue, HintText, MaxLength from the inputs'
 Assert-True ($dp2['Fill'] -eq '=Color.White' -and $dp2['DisabledFill'] -eq '=Color.White' -and $dp2['BorderColor'] -match '"#9B9B9B"' -and $dp2['DisabledBorderColor'] -match '"#9B9B9B"' -and $dp2['DisplayMode'] -eq '=If(cmpField.Enabled && cmpField.InputType="dropdown",DisplayMode.Edit,DisplayMode.Disabled)') 'cmpField dropdown: white, border #9B9B9B (decision c), Edit only while Enabled'
 $ddStyle = @{ HoverFill = '=ColorValue("#D5EDFF")'; HoverColor = '=ColorValue("#000F41")'; PressedFill = '=ColorValue("#D5EDFF")'; PressedColor = '=ColorValue("#000F41")'; SelectionFill = '=ColorValue("#0303B8")'; SelectionColor = '=Color.White'; ChevronBackground = '=Color.White'; ChevronFill = '=ColorValue("#0303B8")'; ChevronHoverBackground = '=ColorValue("#D5EDFF")' }
 foreach ($k in $ddStyle.Keys) { Assert-True ($dp2[$k] -eq $ddStyle[$k]) "cmpField dropdown $k per the GEA dropdown style" }
-Assert-True ($dp2['HoverFill'] -ne $dp2['Fill'] -and $dp2['Items.Value'] -eq '=Value' -and $dp2['Default'] -eq '=cmpField.Value' -and $dp2['HoverBorderColor'] -match '"#5A5A5A"' -and $dp2['ChevronBackground'] -eq '=Color.White' -and $dp2['Items.Value'] -eq '=Value') 'cmpField dropdown: HoverFill differs from Fill, Default = Value, hover border #5A5A5A like the text field, chevron background white (hover #D5EDFF)'
+Assert-True ($dp2['HoverFill'] -ne $dp2['Fill'] -and $dp2['Items.Value'] -eq '=Value' -and $dp2['Default'] -eq '=cmpField.DefaultValue' -and $dp2['HoverBorderColor'] -match '"#5A5A5A"' -and $dp2['ChevronBackground'] -eq '=Color.White' -and $dp2['Items.Value'] -eq '=Value') 'cmpField dropdown: HoverFill differs from Fill, Default = Value, hover border #5A5A5A like the text field, chevron background white (hover #D5EDFF)'
 Assert-True ($fd['Children'].Count -eq 3) 'cmpField: three children (label, text input, dropdown), no stacked or hidden extra controls'
 
 # (8) cmpListCard ------------------------------------------------------------------------------------------
 $ld = $defs['cmpListCard']; $li = $idx['cmpListCard']; $ldp = $ld['Properties']
 Assert-True ($ld['CustomProperties']['Enabled']['Default'] -eq '=false' -and $ld['CustomProperties']['ShowInactive']['Default'] -eq '=false') 'cmpListCard: Enabled fail-closed =false, ShowInactive default false'
-Assert-True ($ld['CustomProperties']['Items']['Default'] -eq '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: "", SearchKey: ""})' -and $ld['CustomProperties']['CountFormat']['Default'] -eq '="{0}"' -and $ld['CustomProperties']['SelectedID']['Default'] -eq '=0') 'cmpListCard: Items default is a plain typed table (ID, Title, Subtitle, Inactive, ChipText, SearchKey; no Filter trick, D7 import failure 30-10-2026), SelectedID default 0, CountFormat default {0}'
+Assert-True ($ld['CustomProperties']['Items']['Default'] -eq '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""})' -and $ld['CustomProperties']['CountFormat']['Default'] -eq '="{0}"' -and $ld['CustomProperties']['SelectedID']['Default'] -eq '=0') 'cmpListCard: Items default is a plain typed table (ID, Title, Subtitle, Inactive, ChipText; no Filter trick, D7 import failure 30-10-2026), SelectedID default 0, CountFormat default {0}'
 $sr = $ld['CustomProperties']['OnSelectRow']
-Assert-True (!$sr.ContainsKey('Parameters') -and $ldp['SelectedRowID'] -eq '=Coalesce(galCmpList.Selected.ID,0)') 'cmpListCard selection contract: OnSelectRow has no parameters (AGENTS: no event parameters); the row ID is Output SelectedRowID'
-Assert-True ($ldp['SearchText'] -eq '=txtCmpListSearch.Text' -and $ldp['ShowInactiveValue'] -eq '=cmpListCard.ShowInactive' -and !$ldp.ContainsKey('OnReset') -and $ld['CustomProperties'].Values.Where({ $_.ContainsKey('RaiseOnReset') }).Count -eq 0) 'cmpListCard outputs: SearchText from the search field, ShowInactiveValue echoes the input, OnReset clears the search'
+Assert-True (!$sr.ContainsKey('Parameters') -and $ldp['SelectedRowID'] -eq '=galRows.Selected.ID') 'cmpListCard selection contract (Studio shape: SelectedRowID = galRows.Selected.ID): OnSelectRow has no parameters (AGENTS: no event parameters); the row ID is Output SelectedRowID'
+Assert-True ($ldp['SearchText'] -eq '=txtSearch.Text' -and $ldp['ShowInactiveValue'] -eq '=cmpListCard.ShowInactive' -and !$ldp.ContainsKey('OnReset') -and $ld['CustomProperties'].Values.Where({ $_.ContainsKey('RaiseOnReset') }).Count -eq 0) 'cmpListCard outputs: SearchText from the search field, ShowInactiveValue echoes the input, no OnReset or RaiseOnReset'
 $card = $li['conCmpListCard']; $cp3 = $card['Properties']
 Assert-True ($card['Control'] -eq 'GroupContainer@1.5.0' -and $card['Variant'] -eq 'ManualLayout' -and $cp3['DropShadow'] -eq '=DropShadow.Light' -and $cp3['Fill'] -eq '=Color.White' -and $cp3['RadiusTopLeft'] -eq '=8' -and $cp3['RadiusBottomRight'] -eq '=8' -and $cp3['Width'] -eq '=Parent.Width' -and $cp3['Height'] -eq '=Parent.Height' -and $ldp['Fill'] -eq '=Color.Transparent') 'cmpListCard card: white GroupContainer radius 8, DropShadow.Light (component fill transparent so the corners show)'
-$se = $li['txtCmpListSearch']['Properties']
-Assert-True ($li['txtCmpListSearch']['Control'] -eq 'Classic/TextInput@2.3.2' -and $se['X'] -eq '=24' -and $se['Y'] -eq '=24' -and $se['Width'] -eq '=Parent.Width-48' -and $se['Height'] -eq '=36' -and $se['Fill'] -eq '=Color.White' -and $se['BorderColor'] -eq '=ColorValue("#9B9B9B")' -and $se['HintText'] -eq '=cmpListCard.SearchHint' -and $se['PaddingLeft'] -eq '=40' -and $se['DisplayMode'] -eq '=If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)') 'cmpListCard search: padding 24, 36 high, white, border #9B9B9B, hint from SearchHint, Edit only while Enabled'
+$se = $li['txtSearch']['Properties']
+Assert-True ($li['txtSearch']['Control'] -eq 'Classic/TextInput@2.3.2' -and $se['X'] -eq '=24' -and $se['Y'] -eq '=24' -and $se['Width'] -eq '=Parent.Width-48' -and $se['Height'] -eq '=36' -and $se['Fill'] -eq '=Color.White' -and $se['BorderColor'] -eq '=ColorValue("#9B9B9B")' -and $se['HintText'] -eq '=cmpListCard.SearchHint' -and $se['PaddingLeft'] -eq '=40' -and $se['DisplayMode'] -eq '=If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)') 'cmpListCard search: padding 24, 36 high, white, border #9B9B9B, hint from SearchHint, Edit only while Enabled'
 $ic = $li['icoCmpListSearch']['Properties']
 Assert-True ($li['icoCmpListSearch']['Control'] -eq 'Classic/Icon@2.5.0' -and $ic['Icon'] -eq '=Icon.Search' -and $ic['AccessibleLabel'] -eq '=""') 'cmpListCard search icon: Classic/Icon Icon.Search, decorative (AccessibleLabel empty)'
 $inf = $li['htmlCmpListInfo']; $ih = [string]$inf['Properties']['HtmlText']
 Assert-True ($inf['Control'] -eq 'HtmlViewer@2.1.0') 'cmpListCard info row: one HtmlViewer@2.1.0 (count left, Show inactive label right, one line)'
 foreach ($css in 'display:flex', 'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis', 'flex:1 1 0', 'flex:none', 'text-align:right') { Assert-True ($ih.Contains($css)) "cmpListCard info HtmlText contains $css" }
-$lcPred = 'IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey)'
-$cntInner = 'Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(Filter(cmpListCard.Items,' + $lcPred + '))))'
+$lcPred = '(cmpListCard.ShowInactive || !Inactive) && (IsBlank(Trim(txtSearch.Text)) || Trim(txtSearch.Text) in Title || Trim(txtSearch.Text) in Subtitle)'
+$cntInner = 'Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(galRows.AllItems)))'
 $eCnt = 'Substitute(Substitute(Substitute(Substitute(Substitute(' + $cntInner + ',"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"' + "'" + '","&#39;")'
-Assert-True ($ih.Contains($eCnt) -and ([regex]::Matches($ih, [regex]::Escape('cmpListCard.CountFormat'))).Count -eq 1 -and $ih -notmatch 'CountText') 'cmpListCard info: count = CountFormat with {0} = rows shown after the component search (same predicate as the gallery), escaped; no host CountText'
+Assert-True ($ih.Contains($eCnt) -and ([regex]::Matches($ih, [regex]::Escape('cmpListCard.CountFormat'))).Count -eq 1 -and $ih -notmatch 'CountText') 'cmpListCard info: count = CountFormat with {0} = rows shown by the gallery (CountRows(galRows.AllItems): after Show inactive and search), escaped; no host CountText'
 foreach ($field in 'cmpListCard.ShowInactiveText') {
     $e2 = 'Substitute(Substitute(Substitute(Substitute(Substitute(' + $field + ',"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"' + "'" + '","&#39;")'
     Assert-True ($ih.Contains($e2) -and ([regex]::Matches($ih, [regex]::Escape($field))).Count -eq 1) "cmpListCard info escapes $field"
@@ -222,8 +224,8 @@ foreach ($field in 'cmpListCard.ShowInactiveText') {
 $sw = $li['btnCmpListSwitch']; $swp = $sw['Properties']; $kn = $li['btnCmpListKnob']['Properties']
 Assert-True ($sw['Control'] -eq 'Classic/Button@2.2.0' -and !$swp.ContainsKey('AccessibleLabel') -and $swp['Width'] -eq '=44' -and $swp['Height'] -eq '=24' -and $swp['RadiusTopLeft'] -eq '=12' -and $swp['Fill'] -eq '=If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))' -and $swp['Tooltip'] -eq '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)') 'cmpListCard switch: track 44x24 radius 12, #0303B8 on / #B4B4B4 off, tooltip with label and state'
 Assert-True ($swp['OnSelect'] -eq '=If(cmpListCard.Enabled,cmpListCard.OnToggleShowInactive())' -and $swp['DisplayMode'] -eq '=If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)' -and $kn['OnSelect'] -eq '=Select(btnCmpListSwitch)' -and $kn['DisplayMode'] -eq '=btnCmpListSwitch.DisplayMode' -and $kn['Fill'] -eq '=Color.White' -and $kn['Width'] -eq '=18') 'cmpListCard switch contract: only raises OnToggleShowInactive while Enabled, never flips state; white 18 px knob selects the track'
-$ga = $li['galCmpList']; $gp = $ga['Properties']
-Assert-True ($ga['Control'] -eq 'Gallery@2.15.0' -and $gp['TemplateSize'] -eq '=64' -and $gp['TemplatePadding'] -eq '=0' -and $gp['Items'] -eq ('=Filter(cmpListCard.Items,' + $lcPred + ')') -and $gp['OnSelect'] -eq '=If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow())') 'cmpListCard gallery: Gallery@2.15.0 fixed row height 64, Items = Items input filtered by the own search text on SearchKey, OnSelect raises OnSelectRow only while Enabled (no own guard)'
+$ga = $li['galRows']; $gp = $ga['Properties']
+Assert-True ($ga['Control'] -eq 'Gallery@2.15.0' -and $gp['TemplateSize'] -eq '=64' -and $gp['TemplatePadding'] -eq '=0' -and $gp['Items'] -eq ('=Filter(cmpListCard.Items,' + $lcPred + ')') -and $gp['OnSelect'] -eq '=cmpListCard.OnSelectRow()' -and !$gp.ContainsKey('Default')) 'cmpListCard gallery (Studio shape): Gallery@2.15.0 fixed row height 64, Items filtered INSIDE the component (Show inactive, search in Title or Subtitle), OnSelect = cmpListCard.OnSelectRow() (guard in the host handler), no Default (as tested in Studio)'
 $rowN = @($ga['Children'] | ForEach-Object { @($_.Keys)[0] })
 Assert-True (($rowN -join ',') -eq 'recCmpRowFill,recCmpRowBar,recCmpRowLine,htmlCmpRowTitle,htmlCmpRowSub,btnCmpRowChip,btnCmpRowHit') 'cmpListCard row: fill, selection bar, divider, title, subtitle, chip, transparent click target on top'
 $row = @{}; Index-CmpControls $ga['Children'] $row
@@ -244,11 +246,11 @@ foreach ($n in 'btnCmpRowHit') { Assert-True ($row[$n]['Properties']['OnSelect']
 # (9) Geometry: no overlaps inside the components at widths 200/280/360/512 -------------------------------------
 foreach ($w in 200, 280, 360, 512) {
     $env = @{ pw = $w; ph = 58; tw = 0; th = 0; chip = $false; show = $false }
-    $a = Rect $fi 'htmlCmpFieldLabel' $env; $b = Rect $fi 'txtCmpFieldInput' $env; $c = Rect $fi 'ddCmpFieldInput' $env
+    $a = Rect $fi 'htmlFieldLabel' $env; $b = Rect $fi 'txtFieldValue' $env; $c = Rect $fi 'ddFieldValue' $env
     Assert-True (!(Overlap $a $b) -and !(Overlap $a $c) -and ($b.y + $b.h) -le 58 -and ($a.y + $a.h + 1) -eq $b.y -and $b.x -eq 1 -and ($b.x + $b.w) -eq ($w - 1) -and $a.w -eq ($w - 2)) "cmpField width ${w}: label (0..20), 1 px gap, input (21..57), 1 px inside both sides, no overlap"
     foreach ($show in $false, $true) {
         $env = @{ pw = $w; ph = 600; tw = 0; th = 0; chip = $false; show = $show }
-        $s = Rect $li 'txtCmpListSearch' $env; $i = Rect $li 'htmlCmpListInfo' $env; $t = Rect $li 'btnCmpListSwitch' $env; $k = Rect $li 'btnCmpListKnob' $env; $g = Rect $li 'galCmpList' $env
+        $s = Rect $li 'txtSearch' $env; $i = Rect $li 'htmlCmpListInfo' $env; $t = Rect $li 'btnCmpListSwitch' $env; $k = Rect $li 'btnCmpListKnob' $env; $g = Rect $li 'galRows' $env
         $ok = !(Overlap $s $i) -and !(Overlap $s $t) -and !(Overlap $i $t) -and !(Overlap $i $g) -and !(Overlap $t $g) -and !(Overlap $s $g) -and $i.w -ge 0 -and $g.h -gt 0 -and ($t.x + $t.w) -eq ($w - 24) -and $k.x -ge $t.x -and ($k.x + $k.w) -le ($t.x + $t.w) -and $k.y -ge $t.y -and ($k.y + $k.h) -le ($t.y + $t.h) -and ($i.y + $i.h) -le $g.y -and ($g.y + $g.h) -le 600 -and $t.y -ge $i.y -and ($t.y + $t.h) -le ($i.y + $i.h)
         Assert-True $ok "cmpListCard width ${w} (switch on=$show): search, info row, switch and gallery do not overlap; knob inside the track; switch vertically aligned with the info row; right margin 24"
     }
@@ -334,10 +336,10 @@ function Strip-Debug([string]$fx, [string]$ev) { $m = [regex]::Match($fx, $dbgRx
 $fake = [System.Collections.ArrayList]@()
 $fake.Add([pscustomobject]@{ Name = 'cmpXList'; Comp = 'cmpListCard'; Props = [ordered]@{ Items = '=Filter(colX,Lower(cmpXList.SearchText) in Name)'; CountText = '=Text(CountRows(cmpXList.Items))'; OnSelectRow = '=Set(v,cmpXList.SelectedRowID)' } }) | Out-Null
 $fake.Add([pscustomobject]@{ Name = 'cmpXBar'; Comp = 'cmpMessageBar'; Props = [ordered]@{ Height = '=cmpXBar.BarHeight' } }) | Out-Null
-$fake.Add([pscustomobject]@{ Name = 'cmpXFoot'; Comp = 'cmpFooter'; Props = [ordered]@{ SaveEnabled = '=Trim(cmpXName.CurrentValue)<>""'; OnSave = '=Patch(L,{a:cmpXName.CurrentValue})' } }) | Out-Null
-$fake.Add([pscustomobject]@{ Name = 'cmpXName'; Comp = 'cmpField'; Props = [ordered]@{ Value = '=varX.Name' } }) | Out-Null
+$fake.Add([pscustomobject]@{ Name = 'cmpXFoot'; Comp = 'cmpFooter'; Props = [ordered]@{ SaveEnabled = '=Trim(cmpXName.Value)<>""'; OnSave = '=Patch(L,{a:cmpXName.Value})' } }) | Out-Null
+$fake.Add([pscustomobject]@{ Name = 'cmpXName'; Comp = 'cmpField'; Props = [ordered]@{ DefaultValue = '=varX.Name' } }) | Out-Null
 $fb = Find-InstanceCycles $fake
-Assert-True (($fb -join ';').Contains('cmpXList.Items references output cmpXList.SearchText') -and ($fb -join ';').Contains('cmpXList.CountText references its own instance') -and ($fb -join ';').Contains('cmpXBar.Height references output cmpXBar.BarHeight') -and ($fb -join ';').Contains('cmpXFoot.SaveEnabled references output cmpXName.CurrentValue') -and !($fb -join ';').Contains('OnSelectRow') -and !($fb -join ';').Contains('OnSave') -and !($fb -join ';').Contains('cmpXName.Value')) "cycle finder self-test: flags Items->own SearchText, CountText->own Items, Height->own BarHeight, an Enabled input->another instance's CurrentValue; event handlers and clean inputs pass ($($fb.Count) findings)"
+Assert-True (($fb -join ';').Contains('cmpXList.Items references output cmpXList.SearchText') -and ($fb -join ';').Contains('cmpXList.CountText references its own instance') -and ($fb -join ';').Contains('cmpXBar.Height references output cmpXBar.BarHeight') -and ($fb -join ';').Contains('cmpXFoot.SaveEnabled references output cmpXName.Value') -and !($fb -join ';').Contains('OnSelectRow') -and !($fb -join ';').Contains('OnSave') -and !($fb -join ';').Contains('cmpXName.DefaultValue')) "cycle finder self-test: flags Items->own SearchText, CountText->own Items, Height->own BarHeight, an Enabled input->another instance's Value; event handlers and clean inputs pass ($($fb.Count) findings)"
 $scrFiles = @(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | Where-Object { $_.Name -notin @('App.pa.yaml', '_EditorState.pa.yaml') })
 $instTotal = 0
 foreach ($sf in $scrFiles) {
@@ -373,17 +375,18 @@ Assert-True ($instTotal -gt 0) "instance wiring checked on $instTotal component 
 foreach ($b in @(@('btnCmpHome', 'Home'), @('btnCmpNew', 'New'), @('btnCmpRefresh', 'Refresh'), @('btnCmpDiscard', 'Discard'), @('btnCmpSave', 'Save'))) {
     Assert-True ($idx['cmpFooter'][$b[0]]['Properties']['OnSelect'] -ceq "=If(cmpFooter.$($b[1])Enabled,cmpFooter.On$($b[1])())" -and $defs['cmpFooter']['CustomProperties']["On$($b[1])"]['PropertyKind'] -eq 'Event') "cmpFooter.$($b[0]).OnSelect = If(cmpFooter.$($b[1])Enabled,cmpFooter.On$($b[1])()) and On$($b[1]) is an Event of the definition"
 }
-# cmpListCard search and count (interpreter): the component filters the host rows on SearchKey with its own search text
+# cmpListCard filter and count (interpreter): the component filters the host rows on Show inactive and on its own search text (in Title or Subtitle)
 [Reflection.Assembly]::LoadFrom((Join-Path $pacDir 'Microsoft.PowerFx.Interpreter.dll')) | Out-Null
 $cEng = New-Object Microsoft.PowerFx.RecalcEngine; $cOpt = New-Object Microsoft.PowerFx.ParserOptions; $cOpt.Culture = [Globalization.CultureInfo]::GetCultureInfo('en-US')
 function Eval-C([string]$fx) { $v = $cEng.Eval($fx, $null, $cOpt); if ($v -is [Microsoft.PowerFx.Types.ErrorValue]) { throw "FAIL eval: $($v.ToExpression())" }; return $v.Value }
-$rowsFx = 'Table({ID:1,Title:"Alpha BV",Subtitle:"",Inactive:false,ChipText:"",SearchKey:"alpha bv emp-001 delft"},{ID:2,Title:"Beta",Subtitle:"",Inactive:false,ChipText:"",SearchKey:"beta emp-002 ede"},{ID:3,Title:"Gamma",Subtitle:"",Inactive:true,ChipText:"Inactive",SearchKey:"gamma  "})'
-$galFx = ([string]$idx['cmpListCard']['galCmpList']['Properties']['Items']).TrimStart('='); $htmlFx = ([string]$idx['cmpListCard']['htmlCmpListInfo']['Properties']['HtmlText']).TrimStart('=')
-foreach ($c in @(@('""', '1,2,3', 3), @('"   "', '1,2,3', 3), @('" EDE "', '2', 1), @('"emp-00"', '1,2', 2), @('"alpha bv"', '1', 1), @('"nomatch"', '', 0), @('If(false,"x")', '1,2,3', 3))) {
-    $env = "With({cmpListCard:{Items:$rowsFx,CountFormat:`"{0} contractors`",ShowInactiveText:`"Show inactive`"},txtCmpListSearch:{Text:$($c[0])}},"
-    Assert-True ((Eval-C ($env + "Concat($galFx,Text(ID),`",`"))")) -eq $c[1]) "cmpListCard search $($c[0]): gallery shows IDs '$($c[1])' (trim, case-insensitive, on SearchKey only)"
-    Assert-True ((Eval-C ($env + "$htmlFx)")).Contains(">$($c[2]) contractors</span>")) "cmpListCard search $($c[0]): info row shows '$($c[2]) contractors' (count of the shown rows)"
-}Write-Output 'Not verified locally: Studio import, rendering, chip text in the real browser font.'
+$rowsFx = 'Table({ID:1,Title:"Alpha BV",Subtitle:"EMP-001 - Delft",Inactive:false,ChipText:""},{ID:2,Title:"Beta",Subtitle:"EMP-002 - Ede",Inactive:false,ChipText:""},{ID:3,Title:"Gamma",Subtitle:"",Inactive:true,ChipText:"Inactive"})'
+$galFx = ([string]$idx['cmpListCard']['galRows']['Properties']['Items']).TrimStart('='); $htmlFx = ([string]$idx['cmpListCard']['htmlCmpListInfo']['Properties']['HtmlText']).TrimStart('=')
+foreach ($c in @(@('""', 'false', '1,2', 2), @('"   "', 'false', '1,2', 2), @('" EDE "', 'false', '2', 1), @('"emp-00"', 'false', '1,2', 2), @('"alpha bv"', 'false', '1', 1), @('"nomatch"', 'false', '', 0), @('If(false,"x")', 'false', '1,2', 2), @('"gamma"', 'false', '', 0), @('""', 'true', '1,2,3', 3), @('"gamma"', 'true', '3', 1))) {
+    $env = "With({cmpListCard:{Items:$rowsFx,ShowInactive:$($c[1]),CountFormat:`"{0} contractors`",ShowInactiveText:`"Show inactive`"},txtSearch:{Text:$($c[0])}},"
+    Assert-True ((Eval-C ($env + "Concat($galFx,Text(ID),`",`"))")) -eq $c[2]) "cmpListCard filter search $($c[0]) ShowInactive $($c[1]): gallery shows IDs '$($c[2])' (trim, case-insensitive, Title or Subtitle; inactive rows only with ShowInactive)"
+    Assert-True ((Eval-C ($env + "With({galRows:{AllItems:$galFx}},$htmlFx))")).Contains(">$($c[3]) contractors</span>")) "cmpListCard filter search $($c[0]) ShowInactive $($c[1]): info row shows '$($c[3]) contractors' (count of the shown rows)"
+}
+Write-Output 'Not verified locally: Studio import, rendering, chip text in the real browser font.'
 
 # (11) Presentation fixes 1-11-2026 (Studio test): scrollbars, overlays, clipping, focus border ------------------
 foreach ($c in $idx.Keys) {
@@ -398,14 +401,14 @@ foreach ($c in $idx.Keys) {
         else { Assert-True ($ht -match 'line-height:" & Parent.Height' -and $hh -eq '=Parent.Height') "$c.$n : line height follows the control height exactly" }
     }
     # TP-STEP3-02 (Eddy 01-11-2026): the only semi-transparent colour is the row hover on the cmpListCard click target (#F0F0F099).
-    $src = $files[$c]; if ($c -eq 'cmpListCard') { $src = $src.Replace('HoverFill: =If(cmpListCard.Enabled,ColorValue("#F0F0F099"),Color.Transparent)', '') }
+    $src = $files[$c]; if ($c -eq 'cmpListCard') { $src = $src.Replace('HoverFill: =If(cmpListCard.Enabled && ThisItem.ID<>cmpListCard.SelectedID,ColorValue("#F0F0F099"),Color.Transparent)', '') }
     Assert-True ($src -notmatch 'RGBA\(' -and $src -notmatch '#[0-9A-Fa-f]{8}\b' -and $src -notmatch 'ColorFade\(') "$c : no semi-transparent colour (RGBA, #RRGGBBAA, ColorFade) except the cmpListCard row hover"
 }
 Assert-True ($rowN[0] -eq 'recCmpRowFill' -and $rowN[-1] -eq 'btnCmpRowHit') 'cmpListCard row: background first (behind the text), click target last (top layer)'
 $hit = $row['btnCmpRowHit']['Properties']
 $allT = $true; foreach ($k in 'Fill', 'PressedFill', 'DisabledFill', 'BorderColor', 'HoverBorderColor', 'PressedBorderColor', 'DisabledBorderColor') { if ($hit[$k] -ne '=Color.Transparent') { $allT = $false } }
-Assert-True ($allT -and $hit['Text'] -eq '=""' -and $hit['TabIndex'] -eq '=-1' -and $hit['OnSelect'] -eq '=Select(Parent)' -and $hit['Width'] -eq '=Parent.TemplateWidth' -and $hit['Height'] -eq '=Parent.TemplateHeight' -and $hit['DisplayMode'] -eq '=DisplayMode.Edit') 'cmpListCard click target: transparent (except hover), no text, TabIndex -1, whole row, Select(Parent)'
-Assert-True ($hit['HoverFill'] -eq '=If(cmpListCard.Enabled,ColorValue("#F0F0F099"),Color.Transparent)') 'cmpListCard click target: HoverFill semi-transparent #F0F0F0 (alpha 0x99 = 0.6) only while the list is enabled (no clickable look when guarded), text readable'
-Assert-True ($row['recCmpRowFill']['Properties']['Fill'] -notmatch 'Transparent' -and $row['recCmpRowFill']['Properties']['HoverFill'] -match '#F0F0F0' -and $li['galCmpList']['Properties']['DisplayMode'] -eq '=DisplayMode.Edit') 'cmpListCard row: opaque background (white / #D5EDFF), gallery not in Disabled mode (no dimming overlay)'
-foreach ($k in 'txtCmpFieldInput', 'ddCmpFieldInput') { $q = $fi[$k]['Properties']; Assert-True ($q['FocusedBorderThickness'] -eq '=2' -and $q['FocusedBorderColor'] -match '#0303B8' -and $q['FocusedBorderColor'] -match '#DB1E28') "cmpField.$k : focus border 2 px #0303B8 (red when Invalid)" }
-Assert-True ($li['txtCmpListSearch']['Properties']['FocusedBorderThickness'] -eq '=2' -and $li['txtCmpListSearch']['Properties']['Width'] -eq '=Parent.Width-48') 'cmpListCard search: focus border 2 px, 24 px margins inside the card'
+Assert-True ($allT -and $hit['Text'] -eq '=""' -and $hit['TabIndex'] -eq '=-1' -and $hit['OnSelect'] -eq '=Select(Parent)' -and $hit['Width'] -eq '=Parent.TemplateWidth' -and $hit['Height'] -eq '=Parent.TemplateHeight' -and $hit['DisplayMode'] -eq '=If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)') 'cmpListCard click target: transparent (except hover, also disabled), no text, TabIndex -1, whole row, Select(Parent); disabled while the list is not Enabled'
+Assert-True ($hit['HoverFill'] -eq '=If(cmpListCard.Enabled && ThisItem.ID<>cmpListCard.SelectedID,ColorValue("#F0F0F099"),Color.Transparent)') 'cmpListCard click target: HoverFill semi-transparent #F0F0F0 (alpha 0x99 = 0.6) only while the list is enabled and not on the selected row (no clickable look when guarded, selected row stays #D5EDFF), text readable'
+Assert-True ($row['recCmpRowFill']['Properties']['Fill'] -notmatch 'Transparent' -and $row['recCmpRowFill']['Properties']['HoverFill'] -match '#F0F0F0' -and $li['galRows']['Properties']['DisplayMode'] -eq '=DisplayMode.Edit') 'cmpListCard row: opaque background (white / #D5EDFF), gallery not in Disabled mode (no dimming overlay)'
+foreach ($k in 'txtFieldValue', 'ddFieldValue') { $q = $fi[$k]['Properties']; Assert-True ($q['FocusedBorderThickness'] -eq '=2' -and $q['FocusedBorderColor'] -match '#0303B8' -and $q['FocusedBorderColor'] -match '#DB1E28') "cmpField.$k : focus border 2 px #0303B8 (red when Invalid)" }
+Assert-True ($li['txtSearch']['Properties']['FocusedBorderThickness'] -eq '=2' -and $li['txtSearch']['Properties']['Width'] -eq '=Parent.Width-48') 'cmpListCard search: focus border 2 px, 24 px margins inside the card'

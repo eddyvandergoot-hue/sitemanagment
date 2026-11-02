@@ -16,7 +16,7 @@ Active test suite (artifacts/, run from the repo root):
 - Test-Fonts — Inter/Arial and weight roles
 - Test-GeaColors — GEA palette, button roles, no old literals
 - Test-AdminScreens — admin screens (scrContractors, scrProjects): guards, loaders, no Remove, 500 guards
-- Test-Components — Src/Component: Default op elke Input/Event-property, geen Parameters, controlversies
+- Test-Components — Src/Components: Default op elke Input/Event-property, geen Parameters, controlversies
 - Test-Layout — scrContractors/scrProjects bij 1366/1000/700 x 768, met en zonder melding: binnen parent, geen overlap van zichtbare siblings, alle cmpField-invoer zichtbaar
 - Test-Logo — logo geometry, order, official SVG hash
 - Measure-FontFit -InterDir <dir> [-ArialDir <dir>] — text fit; font files are outside the repo, so report SKIPPED if no font folder is given

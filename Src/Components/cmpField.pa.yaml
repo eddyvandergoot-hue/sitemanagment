@@ -9,71 +9,81 @@
 ComponentDefinitions:
   cmpField:
     DefinitionType: CanvasComponent
-    Description: 'Admin screen form field (Admin screen pattern): label with optional required star above one input (text, dropdown or read-only), total height 58 (label 20 + 1 + input 36 + 1; the input lies 1 px inside the component so the 2 px focus/invalid border is never clipped). Presentation only. Contract - the host passes the complete edit guard in Enabled and puts the SAME guard as the first condition in its OnChange handler. Reset contract - after every load, row select, New, Discard or save the host calls Reset(<instance>); this runs the component OnReset, which resets the inner input to Value (RaiseOnReset on Value also resets when Value changes). Dirty check and Save read CurrentValue, never the inner controls. OnChange may also fire after a reset, so the host handler must compare CurrentValue with the saved value and stay idempotent.'
+    Description: 'Admin screen form field (Admin screen pattern), built on the shape Eddy made and tested in Studio (Incoming 20261102Components, scrTest): input DefaultValue -> txtFieldValue.Default, output Value = txtFieldValue.Text (dropdown: ddFieldValue.Selected.Value, readonly: DefaultValue). Label with optional red star above one input (text, dropdown or readonly), total height 58 (label 20 + 1 + input 36 + 1; the input lies 1 px inside the component so the 2 px focus/invalid border is never clipped). Presentation only. Contract - the host passes the complete edit guard in Enabled and puts the SAME guard as the first condition in its OnChange handler. Reset contract - a changed DefaultValue updates the inner input (classic Default behaviour); after Discard the host calls Reset(<instance>), which runs OnReset and resets the inner input to DefaultValue. Dirty check and Save read the output Value, never the inner controls.'
     CustomProperties:
-      Label:
+      DefaultValue:
         PropertyKind: Input
+        DisplayName: DefaultValue
+        Description: Value shown when loaded (loaded or saved value; never a draft). A dropdown DefaultValue that is not in Items is shown as an extra row (as-is) and Value returns it unchanged.
         DataType: Text
-        Description: Label text (plain text, escaped by the component). Shown semibold 13 above the field, one line with ellipsis.
         Default: =""
-      Required:
-        PropertyKind: Input
-        DataType: Boolean
-        Description: True shows a red star directly after the label text.
-        Default: =false
-      InputType:
-        PropertyKind: Input
-        DataType: Text
-        Description: 'text, dropdown or readonly. Any other value renders a disabled white text field (fail-closed).'
-        Default: ="text"
-      Value:
-        PropertyKind: Input
-        DataType: Text
-        Description: Loaded or saved value; never a draft that is set from OnChange (RaiseOnReset resets the input when it changes). A dropdown Value that is not in Items is shown as an extra row (as-is) and CurrentValue returns it unchanged.
-        RaiseOnReset: true
-        Default: =""
-      Items:
-        PropertyKind: Input
-        DataType: Table
-        Description: Dropdown choices, one column Value. Ignored for text and readonly. A Value outside this list is appended by the component as one extra row.
-        Default: '=Filter(Table({Value: ""}),false)'
-      Invalid:
-        PropertyKind: Input
-        DataType: Boolean
-        Description: True gives the field a 2 px red border (all states).
-        Default: =false
       Enabled:
         PropertyKind: Input
-        DataType: Boolean
+        DisplayName: Enabled
         Description: Edit guard (true = Edit, false = Disabled). Fail-closed default. Read-only fields are always Disabled.
+        DataType: Boolean
         Default: =false
       HintText:
         PropertyKind: Input
-        DataType: Text
+        DisplayName: HintText
         Description: Placeholder of the text field.
+        DataType: Text
+        Default: =""
+      InputType:
+        PropertyKind: Input
+        DisplayName: InputType
+        Description: 'text, dropdown or readonly. Any other value renders a disabled white text field (fail-closed).'
+        DataType: Text
+        Default: ="text"
+      Invalid:
+        PropertyKind: Input
+        DisplayName: Invalid
+        Description: True gives the field a 2 px red border (all states).
+        DataType: Boolean
+        Default: =false
+      Items:
+        PropertyKind: Input
+        DisplayName: Items
+        Description: Dropdown choices, one column Value. Ignored for text and readonly. A DefaultValue outside this list is appended by the component as one extra row.
+        DataType: Table
+        Default: '=Filter(Table({Value: ""}),false)'
+      Label:
+        PropertyKind: Input
+        DisplayName: Label
+        Description: Field label (plain text, escaped by the component). Shown semibold 13 above the field, one line with ellipsis.
+        DataType: Text
         Default: =""
       MaxLength:
         PropertyKind: Input
-        DataType: Number
+        DisplayName: MaxLength
         Description: Maximum number of characters of the text field.
+        DataType: Number
         Default: =255
-      CurrentValue:
-        PropertyKind: Output
-        DataType: Text
-        Description: The current input or choice, for the dirty check and Save. A dropdown shows a Value outside Items as an extra row, so it is not a change; an explicit empty choice returns an empty string.
       OnChange:
         PropertyKind: Event
-        ReturnType: None
-        Description: The user changed the text or the choice. Only raised while Enabled is true. The host handler starts with its guard and compares CurrentValue with the saved value.
+        DisplayName: OnChange
+        Description: The user changed the text or the choice. Only raised while Enabled is true. The host handler starts with its guard and compares Value with the saved value.
+        ReturnType: Boolean
+        Default: =true
+      Required:
+        PropertyKind: Input
+        DisplayName: Required
+        Description: Field is required (red star directly after the label text).
+        DataType: Boolean
         Default: =false
+      Value:
+        PropertyKind: Output
+        DisplayName: Value
+        Description: Current field value (the typed text, the dropdown choice or, for readonly, DefaultValue), for the dirty check and Save. An explicit empty dropdown choice returns an empty string.
+        DataType: Text
     Properties:
-      CurrentValue: =Switch(cmpField.InputType,"dropdown",Coalesce(ddCmpFieldInput.Selected.Value,""),"readonly",Coalesce(cmpField.Value,""),Coalesce(txtCmpFieldInput.Text,""))
       Fill: =Color.Transparent
       Height: =58
-      OnReset: =Reset(txtCmpFieldInput); Reset(ddCmpFieldInput)
+      OnReset: =Reset(txtFieldValue); Reset(ddFieldValue)
+      Value: =Switch(cmpField.InputType,"dropdown",Coalesce(ddFieldValue.Selected.Value,""),"readonly",cmpField.DefaultValue,txtFieldValue.Text)
       Width: =360
     Children:
-      - htmlCmpFieldLabel:
+      - htmlFieldLabel:
           Control: HtmlViewer@2.1.0
           Properties:
             AutoHeight: =false
@@ -90,7 +100,7 @@ ComponentDefinitions:
             Width: =Parent.Width-2
             X: =1
             Y: =0
-      - txtCmpFieldInput:
+      - txtFieldValue:
           Control: Classic/TextInput@2.3.2
           Properties:
             AccessibleLabel: =cmpField.Label
@@ -98,7 +108,7 @@ ComponentDefinitions:
             BorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),If(cmpField.InputType="readonly",Color.Transparent,ColorValue("#9B9B9B")))
             BorderThickness: =If(cmpField.Invalid,2,If(cmpField.InputType="readonly",0,1))
             Color: =ColorValue("#000000")
-            Default: =cmpField.Value
+            Default: =cmpField.DefaultValue
             DisabledBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),If(cmpField.InputType="readonly",Color.Transparent,ColorValue("#9B9B9B")))
             DisabledColor: =ColorValue("#000000")
             DisabledFill: =If(cmpField.InputType="readonly",ColorValue("#F0F0F0"),Color.White)
@@ -128,8 +138,8 @@ ComponentDefinitions:
             Visible: =cmpField.InputType<>"dropdown"
             Width: =Parent.Width-2
             X: =1
-            Y: =htmlCmpFieldLabel.Y+htmlCmpFieldLabel.Height+1
-      - ddCmpFieldInput:
+            Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1
+      - ddFieldValue:
           Control: Classic/DropDown@2.3.1
           Properties:
             AccessibleLabel: =cmpField.Label
@@ -141,7 +151,7 @@ ComponentDefinitions:
             ChevronHoverBackground: =ColorValue("#D5EDFF")
             ChevronHoverFill: =ColorValue("#0303B8")
             Color: =ColorValue("#000000")
-            Default: =cmpField.Value
+            Default: =cmpField.DefaultValue
             DisabledBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
             DisabledColor: =ColorValue("#000000")
             DisabledFill: =Color.White
@@ -155,7 +165,7 @@ ComponentDefinitions:
             HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
             HoverColor: =ColorValue("#000F41")
             HoverFill: =ColorValue("#D5EDFF")
-            Items: '=If(IsBlank(cmpField.Value) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.Value)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.Value})}),t))'
+            Items: '=If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t))'
             Items.Value: =Value
             OnChange: =If(cmpField.Enabled,cmpField.OnChange())
             PressedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
@@ -167,4 +177,4 @@ ComponentDefinitions:
             Visible: =cmpField.InputType="dropdown"
             Width: =Parent.Width-2
             X: =1
-            Y: =htmlCmpFieldLabel.Y+htmlCmpFieldLabel.Height+1
+            Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1

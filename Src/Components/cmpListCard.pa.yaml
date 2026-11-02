@@ -9,80 +9,94 @@
 ComponentDefinitions:
   cmpListCard:
     DefinitionType: CanvasComponent
-    Description: 'Admin screen list card (Admin screen pattern): white card (radius 8, DropShadow.Light, padding 24) with search field, one info row (count left, Show inactive switch right) and a gallery of rows (height 64). Presentation only: the host filters (Show inactive) and sorts and passes the rows with a SearchKey column; the component applies only its own search text to SearchKey (local table, no data source) and counts the shown rows itself (CountFormat). Microsoft known limitation: an instance input must never reference an output of the same (or another instance of the same) component, so the host never reads SearchText or Items back in an input. Selection contract - the host passes SelectedID and handles OnSelectRow (no parameters) with its guard as the first condition, reading the clicked row from Output SelectedRowID; the component highlights the row where ID = SelectedID and only raises the event while Enabled is true. Switch contract - the host passes ShowInactive and handles OnToggleShowInactive by flipping its own variable (guard first); the component never flips the state itself. Search contract - the component filters Items with IsBlank(Trim(search)) || Lower(Trim(search)) in Lower(SearchKey); the host may read Output SearchText only in behaviour formulas (for example its loader auto-select). No OnReset and no RaiseOnReset (no preview-only component features, AGENTS): the search text stays until the user clears it.'
+    Description: 'Admin screen list card (Admin screen pattern), built on the shape Eddy made and tested in Studio (Incoming 20261102Components, scrTest): SelectedRowID = galRows.Selected.ID, galRows.OnSelect = cmpListCard.OnSelectRow() (no parameters), filtering INSIDE the component (no instance output fed back into its own input). White card (radius 8, DropShadow.Light, padding 24) with search field, one info row (count left, Show inactive switch right) and a gallery of rows (height 64). The host passes all rows sorted; the component filters on Show inactive (column Inactive) and on its own search text (in Title or Subtitle, case-insensitive) and counts the shown rows. Selection contract - the host handles OnSelectRow with its guard as the first condition and reads the clicked row from Output SelectedRowID; the host passes its selection back in SelectedID; the row highlight shows the host selection (ThisItem.ID = SelectedID, what the form shows; none while SelectedID is 0), so a click the host guard blocks never moves the highlight; the row click target is disabled while Enabled is false. Switch contract - the host passes ShowInactive and handles OnToggleShowInactive by flipping its own variable (guard first); Output ShowInactiveValue echoes the state. The search text stays until the user clears it.'
     CustomProperties:
-      Items:
-        PropertyKind: Input
-        DataType: Table
-        Description: 'Rows, filtered (Show inactive) and sorted by the host, not by the search. Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean, grey title), ChipText (Text, empty = no chip), SearchKey (Text, lower-case search text, for example name, code and city joined with spaces). Allowed ChipText values are Inactive, On hold and Closed (80 px chip, Inter 12, measured text at most 64 px); other texts need a new measurement.'
-        Default: '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: "", SearchKey: ""})'
-      SelectedID:
-        PropertyKind: Input
-        DataType: Number
-        Description: ID of the selected row (0 or no match = no highlight; SharePoint IDs start at 1).
-        Default: =0
-      SearchHint:
-        PropertyKind: Input
-        DataType: Text
-        Description: Placeholder and accessible label of the search field.
-        Default: =""
       CountFormat:
         PropertyKind: Input
+        DisplayName: CountFormat
+        Description: Count text with {0} for the number of shown rows (after Show inactive and search), for example {0} contractors (plain text, escaped by the component).
         DataType: Text
-        Description: Count text with {0} for the number of shown rows (after the search), for example {0} contractors (plain text, escaped by the component).
         Default: ="{0}"
-      ShowInactiveText:
-        PropertyKind: Input
-        DataType: Text
-        Description: Label of the switch, for example Show inactive (plain text, escaped by the component).
-        Default: =""
-      OnText:
-        PropertyKind: Input
-        DataType: Text
-        Description: Word for the switch state on, used in the tooltip.
-        Default: ="On"
-      OffText:
-        PropertyKind: Input
-        DataType: Text
-        Description: Word for the switch state off, used in the tooltip.
-        Default: ="Off"
-      ShowInactive:
-        PropertyKind: Input
-        DataType: Boolean
-        Description: Switch state (true = on).
-        Default: =false
       Enabled:
         PropertyKind: Input
-        DataType: Boolean
+        DisplayName: Enabled
         Description: Guard for search, row selection and the switch (true = Edit, false = Disabled). Fail-closed default.
-        Default: =false
-      SearchText:
-        PropertyKind: Output
-        DataType: Text
-        Description: Current text of the search field. Read it only in behaviour formulas (for example the loader auto-select), never in an input of a cmpListCard instance (circular reference).
-      ShowInactiveValue:
-        PropertyKind: Output
         DataType: Boolean
-        Description: Echo of the ShowInactive input (the component keeps no state of its own).
-      SelectedRowID:
-        PropertyKind: Output
-        DataType: Number
-        Description: ID of the row the user clicked last (0 = none). Read it in the OnSelectRow handler.
+        Default: =false
+      Items:
+        PropertyKind: Input
+        DisplayName: Items
+        Description: 'All rows, sorted by the host (not filtered). Columns ID (Number), Title (Text), Subtitle (Text), Inactive (Boolean: grey title, hidden unless ShowInactive), ChipText (Text, empty = no chip). Allowed ChipText values are Inactive, On hold and Closed (80 px chip, Inter 12, measured text at most 64 px); other texts need a new measurement.'
+        DataType: Table
+        Default: '=Table({ID: 0, Title: "", Subtitle: "", Inactive: false, ChipText: ""})'
+      OffText:
+        PropertyKind: Input
+        DisplayName: OffText
+        Description: Word for the switch state off, used in the tooltip.
+        DataType: Text
+        Default: ="Off"
       OnSelectRow:
         PropertyKind: Event
-        ReturnType: None
-        Description: A row was selected; the row ID is in Output SelectedRowID. No event parameters (AGENTS). Only raised while Enabled is true. The host handler starts with its guard.
-        Default: =false
+        DisplayName: OnSelectRow
+        Description: A row was selected; the row ID is in Output SelectedRowID. No event parameters (AGENTS). The host handler starts with its guard.
+        ReturnType: Boolean
+        Default: =true
+      OnText:
+        PropertyKind: Input
+        DisplayName: OnText
+        Description: Word for the switch state on, used in the tooltip.
+        DataType: Text
+        Default: ="On"
       OnToggleShowInactive:
         PropertyKind: Event
-        ReturnType: None
+        DisplayName: OnToggleShowInactive
         Description: The switch was pressed. Only raised while Enabled is true. The host handler starts with its guard and flips its own variable.
+        ReturnType: Boolean
+        Default: =true
+      SearchHint:
+        PropertyKind: Input
+        DisplayName: SearchHint
+        Description: Placeholder and accessible label of the search field.
+        DataType: Text
+        Default: =""
+      SearchText:
+        PropertyKind: Output
+        DisplayName: SearchText
+        Description: Current text of the search field. Read it only in behaviour formulas (for example the loader auto-select), never in an input of a cmpListCard instance (circular reference).
+        DataType: Text
+      SelectedID:
+        PropertyKind: Input
+        DisplayName: SelectedID
+        Description: ID of the host selection (row highlight; 0 = no selection, no highlight; SharePoint IDs start at 1).
+        DataType: Number
+        Default: =0
+      SelectedRowID:
+        PropertyKind: Output
+        DisplayName: SelectedRowID
+        Description: ID of the selected gallery row (galRows.Selected.ID). Read it in the OnSelectRow handler.
+        DataType: Number
+      ShowInactive:
+        PropertyKind: Input
+        DisplayName: ShowInactive
+        Description: Switch state (true = on, inactive rows shown).
+        DataType: Boolean
         Default: =false
+      ShowInactiveText:
+        PropertyKind: Input
+        DisplayName: ShowInactiveText
+        Description: Label of the switch, for example Show inactive (plain text, escaped by the component).
+        DataType: Text
+        Default: =""
+      ShowInactiveValue:
+        PropertyKind: Output
+        DisplayName: ShowInactiveValue
+        Description: Echo of the ShowInactive input (the switch state the list is filtered with).
+        DataType: Boolean
     Properties:
       Fill: =Color.Transparent
       Height: =600
-      SearchText: =txtCmpListSearch.Text
-      SelectedRowID: =Coalesce(galCmpList.Selected.ID,0)
+      SearchText: =txtSearch.Text
+      SelectedRowID: =galRows.Selected.ID
       ShowInactiveValue: =cmpListCard.ShowInactive
       Width: =360
     Children:
@@ -101,7 +115,7 @@ ComponentDefinitions:
             X: =0
             Y: =0
           Children:
-            - txtCmpListSearch:
+            - txtSearch:
                 Control: Classic/TextInput@2.3.2
                 Properties:
                   AccessibleLabel: =cmpListCard.SearchHint
@@ -146,8 +160,8 @@ ComponentDefinitions:
                   Height: =18
                   Icon: =Icon.Search
                   Width: =18
-                  X: =txtCmpListSearch.X+12
-                  Y: =txtCmpListSearch.Y+(txtCmpListSearch.Height-Self.Height)/2
+                  X: =txtSearch.X+12
+                  Y: =txtSearch.Y+(txtSearch.Height-Self.Height)/2
             - htmlCmpListInfo:
                 Control: HtmlViewer@2.1.0
                 Properties:
@@ -156,7 +170,7 @@ ComponentDefinitions:
                   Fill: =Color.Transparent
                   Font: ="Inter, Arial, sans-serif"
                   Height: =26
-                  HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(Filter(cmpListCard.Items,IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey))))),"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
+                  HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(galRows.AllItems))),"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
@@ -164,7 +178,7 @@ ComponentDefinitions:
                   Size: =13
                   Width: =Max(0,btnCmpListSwitch.X-8-Self.X)
                   X: =24
-                  Y: =txtCmpListSearch.Y+txtCmpListSearch.Height+12
+                  Y: =txtSearch.Y+txtSearch.Height+12
             - btnCmpListSwitch:
                 Control: Classic/Button@2.2.0
                 Properties:
@@ -237,7 +251,7 @@ ComponentDefinitions:
                   Width: =18
                   X: =btnCmpListSwitch.X+If(cmpListCard.ShowInactive,btnCmpListSwitch.Width-Self.Width-3,3)
                   Y: =btnCmpListSwitch.Y+3
-            - galCmpList:
+            - galRows:
                 Control: Gallery@2.15.0
                 Variant: BrowseLayout_Vertical_TwoTextVariant_ver5.0
                 Properties:
@@ -246,8 +260,8 @@ ComponentDefinitions:
                   DisplayMode: =DisplayMode.Edit
                   Fill: =Color.White
                   Height: =Max(0,Parent.Height-Self.Y-12)
-                  Items: =Filter(cmpListCard.Items,IsBlank(Trim(txtCmpListSearch.Text)) || Lower(Trim(txtCmpListSearch.Text)) in Lower(SearchKey))
-                  OnSelect: =If(cmpListCard.Enabled && !IsBlank(galCmpList.Selected.ID),cmpListCard.OnSelectRow())
+                  Items: =Filter(cmpListCard.Items,(cmpListCard.ShowInactive || !Inactive) && (IsBlank(Trim(txtSearch.Text)) || Trim(txtSearch.Text) in Title || Trim(txtSearch.Text) in Subtitle))
+                  OnSelect: =cmpListCard.OnSelectRow()
                   TemplateFill: =Color.Transparent
                   TemplatePadding: =0
                   TemplateSize: =64
@@ -261,8 +275,8 @@ ComponentDefinitions:
                         BorderColor: =Color.Transparent
                         Fill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),Color.White)
                         Height: =Parent.TemplateHeight
-                        HoverFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
-                        PressedFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),ColorValue("#F0F0F0"))
+                        HoverFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),If(cmpListCard.Enabled,ColorValue("#F0F0F0"),Color.White))
+                        PressedFill: =If(ThisItem.ID=cmpListCard.SelectedID,ColorValue("#D5EDFF"),If(cmpListCard.Enabled,ColorValue("#F0F0F0"),Color.White))
                         TabIndex: =-1
                         Width: =Parent.TemplateWidth
                   - recCmpRowBar:
@@ -364,14 +378,14 @@ ComponentDefinitions:
                         DisabledBorderColor: =Color.Transparent
                         DisabledColor: =Color.Transparent
                         DisabledFill: =Color.Transparent
-                        DisplayMode: =DisplayMode.Edit
+                        DisplayMode: =If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)
                         Fill: =Color.Transparent
                         Font: ="Inter, Arial, sans-serif"
                         FontWeight: =FontWeight.Normal
                         Height: =Parent.TemplateHeight
                         HoverBorderColor: =Color.Transparent
                         HoverColor: =Color.Transparent
-                        HoverFill: =If(cmpListCard.Enabled,ColorValue("#F0F0F099"),Color.Transparent)
+                        HoverFill: =If(cmpListCard.Enabled && ThisItem.ID<>cmpListCard.SelectedID,ColorValue("#F0F0F099"),Color.Transparent)
                         OnSelect: =Select(Parent)
                         PaddingBottom: =0
                         PaddingLeft: =0

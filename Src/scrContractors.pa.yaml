@@ -80,7 +80,7 @@ Screens:
           Control: Label@2.5.1
           Properties:
             Text: |-
-              =If((Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(cmpEmpName.CurrentValue & "")<>Trim(varEmpEdit.Name & "") || Trim(cmpEmpAddress.CurrentValue & "")<>Trim(varEmpEdit.Address & "") || Trim(cmpEmpPostalcode.CurrentValue & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(cmpEmpCity.CurrentValue & "")<>Trim(varEmpEdit.City & "") || Trim(cmpEmpCountry.CurrentValue & "")<>Trim(varEmpEdit.Country & "") || Trim(cmpEmpContactName.CurrentValue & "")<>Trim(varEmpEdit.ContactName & "") || Trim(cmpEmpContactEmail.CurrentValue & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(cmpEmpContactPhone.CurrentValue & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true))),"true","false")
+              =If((Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(cmpEmpName.Value & "")<>Trim(varEmpEdit.Name & "") || Trim(cmpEmpAddress.Value & "")<>Trim(varEmpEdit.Address & "") || Trim(cmpEmpPostalcode.Value & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(cmpEmpCity.Value & "")<>Trim(varEmpEdit.City & "") || Trim(cmpEmpCountry.Value & "")<>Trim(varEmpEdit.Country & "") || Trim(cmpEmpContactName.Value & "")<>Trim(varEmpEdit.ContactName & "") || Trim(cmpEmpContactEmail.Value & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(cmpEmpContactPhone.Value & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true))),"true","false")
             Visible: =false
             X: =0
             Y: =0
@@ -127,7 +127,7 @@ Screens:
                    Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)),
                    varEmpMode="New" && !Coalesce(varEmpSaveFailed,false),
                    Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}),
-                   Set(varEmpSelectedID,First(Filter(ForAll(Sort(Filter(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),(Coalesce(varEmpShowInactive,false) || Active)),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.City,r.Code & If(IsBlank(r.City),""," · " & r.City)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en)),SearchKey:Lower(r.Name & " " & r.Code & " " & r.City)}),IsBlank(Trim(cmpEmpList.SearchText)) || Lower(Trim(cmpEmpList.SearchText)) in Lower(SearchKey))).ID);
+                   Set(varEmpSelectedID,First(Filter(ForAll(Sort(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.City,r.Code & If(IsBlank(r.City),""," · " & r.City)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))}),(Coalesce(varEmpShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpEmpList.SearchText)) || Trim(cmpEmpList.SearchText) in Title || Trim(cmpEmpList.SearchText) in Subtitle))).ID);
                    If(!IsBlank(varEmpSelectedID) && !IsBlank(LookUp(colAdminEmployers,ID=varEmpSelectedID).ID),
                     Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)); Set(varEmpMode,"Edit"),
                     Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
@@ -202,7 +202,7 @@ Screens:
                           =varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(lblEmpDirty.Text="true")
                         Height: =lblEmpMetrics.Width
                         Items: |-
-                          =ForAll(Sort(Filter(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),(Coalesce(varEmpShowInactive,false) || Active)),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.City,r.Code & If(IsBlank(r.City),""," · " & r.City)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en)),SearchKey:Lower(r.Name & " " & r.Code & " " & r.City)})
+                          =ForAll(Sort(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.City,r.Code & If(IsBlank(r.City),""," · " & r.City)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))})
                         OffText: =If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en)
                         OnText: =If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en)
                         OnSelectRow: |-
@@ -212,9 +212,9 @@ Screens:
                             Clear(colEmpSaveErrors); Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))
                            ),
                            Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en))
-                          )
+                          ); true
                         OnToggleShowInactive: |-
-                          =Set(varDbgEvent,"OnToggleShowInactive " & Text(Now(),"hh:mm:ss")); If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(lblEmpDirty.Text="true"),Set(varEmpShowInactive,!Coalesce(varEmpShowInactive,false)))
+                          =Set(varDbgEvent,"OnToggleShowInactive " & Text(Now(),"hh:mm:ss")); If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && !(lblEmpDirty.Text="true"),Set(varEmpShowInactive,!Coalesce(varEmpShowInactive,false))); true
                         SearchHint: =If(LangNl && !IsBlank(T.empSearchHint.nl),T.empSearchHint.nl,T.empSearchHint.en)
                         SelectedID: =Coalesce(varEmpSelectedID,0)
                         ShowInactive: =Coalesce(varEmpShowInactive,false)
@@ -335,7 +335,7 @@ Screens:
                               Label: =If(LangNl && !IsBlank(T.empFieldName.nl),T.empFieldName.nl,T.empFieldName.en)
                               MaxLength: =255
                               Required: =true
-                              Value: =varEmpEdit.Name
+                              DefaultValue: =varEmpEdit.Name
                               Width: =lblEmpGrid.Width
                               X: =24
                               Y: =lblEmpSecGeneral.Y+30
@@ -349,7 +349,7 @@ Screens:
                               InputType: ="readonly"
                               Label: =If(LangNl && !IsBlank(T.empFieldCode.nl),T.empFieldCode.nl,T.empFieldCode.en)
                               MaxLength: =255
-                              Value: |-
+                              DefaultValue: |-
                                 =If(Coalesce(varEmpMode,"")="Edit" && !IsBlank(varEmpEdit.Code),varEmpEdit.Code,Coalesce(varEmpMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.empCodeAuto.nl),T.empCodeAuto.nl,T.empCodeAuto.en),"")
                               Width: =lblEmpGrid.Width
                               X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
@@ -384,7 +384,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.empFieldAddress.nl),T.empFieldAddress.nl,T.empFieldAddress.en)
                               MaxLength: =255
-                              Value: =varEmpEdit.Address
+                              DefaultValue: =varEmpEdit.Address
                               Width: =lblEmpGrid.Width
                               X: =24
                               Y: =lblEmpSecAddress.Y+30
@@ -400,7 +400,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.empFieldPostalcode.nl),T.empFieldPostalcode.nl,T.empFieldPostalcode.en)
                               MaxLength: =255
-                              Value: =varEmpEdit.Postalcode
+                              DefaultValue: =varEmpEdit.Postalcode
                               Width: =lblEmpGrid.Width
                               X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
                               Y: =lblEmpSecAddress.Y+30+RoundDown(1/lblEmpMetrics.X,0)*74
@@ -416,7 +416,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.empFieldCity.nl),T.empFieldCity.nl,T.empFieldCity.en)
                               MaxLength: =255
-                              Value: =varEmpEdit.City
+                              DefaultValue: =varEmpEdit.City
                               Width: =lblEmpGrid.Width
                               X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
                               Y: =lblEmpSecAddress.Y+30+RoundDown(2/lblEmpMetrics.X,0)*74
@@ -432,7 +432,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en)
                               MaxLength: =255
-                              Value: =varEmpEdit.Country
+                              DefaultValue: =varEmpEdit.Country
                               Width: =lblEmpGrid.Width
                               X: =24+Mod(3,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
                               Y: =lblEmpSecAddress.Y+30+RoundDown(3/lblEmpMetrics.X,0)*74
@@ -466,7 +466,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.empFieldContactName.nl),T.empFieldContactName.nl,T.empFieldContactName.en)
                               MaxLength: =255
-                              Value: =varEmpEdit.ContactName
+                              DefaultValue: =varEmpEdit.ContactName
                               Width: =lblEmpGrid.Width
                               X: =24
                               Y: =lblEmpSecContact.Y+30
@@ -482,7 +482,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.empFieldContactEmail.nl),T.empFieldContactEmail.nl,T.empFieldContactEmail.en)
                               MaxLength: =255
-                              Value: =varEmpEdit.ContactEmail
+                              DefaultValue: =varEmpEdit.ContactEmail
                               Width: =lblEmpGrid.Width
                               X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
                               Y: =lblEmpSecContact.Y+30+RoundDown(1/lblEmpMetrics.X,0)*74
@@ -498,7 +498,7 @@ Screens:
                               InputType: ="text"
                               Label: =If(LangNl && !IsBlank(T.empFieldContactPhone.nl),T.empFieldContactPhone.nl,T.empFieldContactPhone.en)
                               MaxLength: =255
-                              Value: =varEmpEdit.ContactPhone
+                              DefaultValue: =varEmpEdit.ContactPhone
                               Width: =lblEmpGrid.Width
                               X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
                               Y: =lblEmpSecContact.Y+30+RoundDown(2/lblEmpMetrics.X,0)*74
@@ -628,7 +628,7 @@ Screens:
                         PaddingTop: =0
                         Size: =12
                         Text: |-
-                          ="IsDirty: " & lblEmpDirty.Text & " | changed: " & Coalesce(Concat(Filter(Table({F:"Name",C:Trim(cmpEmpName.CurrentValue & ""),L:Trim(varEmpEdit.Name & "")},{F:"Address",C:Trim(cmpEmpAddress.CurrentValue & ""),L:Trim(varEmpEdit.Address & "")},{F:"Postalcode",C:Trim(cmpEmpPostalcode.CurrentValue & ""),L:Trim(varEmpEdit.Postalcode & "")},{F:"City",C:Trim(cmpEmpCity.CurrentValue & ""),L:Trim(varEmpEdit.City & "")},{F:"Country",C:Trim(cmpEmpCountry.CurrentValue & ""),L:Trim(varEmpEdit.Country & "")},{F:"ContactName",C:Trim(cmpEmpContactName.CurrentValue & ""),L:Trim(varEmpEdit.ContactName & "")},{F:"ContactEmail",C:Trim(cmpEmpContactEmail.CurrentValue & ""),L:Trim(varEmpEdit.ContactEmail & "")},{F:"ContactPhone",C:Trim(cmpEmpContactPhone.CurrentValue & ""),L:Trim(varEmpEdit.ContactPhone & "")},{F:"Active",C:Text(Coalesce(varEmpActiveDraft,true)),L:Text(Coalesce(varEmpEdit.Active,true))}),C<>L),F & "[" & Len(C) & "/" & Len(L) & "]",", "),"-") & " | last event: " & Coalesce(varDbgEvent,"-") & " | SelectedRowID: " & Text(cmpEmpList.SelectedRowID)
+                          ="IsDirty: " & lblEmpDirty.Text & " | changed: " & Coalesce(Concat(Filter(Table({F:"Name",C:Trim(cmpEmpName.Value & ""),L:Trim(varEmpEdit.Name & "")},{F:"Address",C:Trim(cmpEmpAddress.Value & ""),L:Trim(varEmpEdit.Address & "")},{F:"Postalcode",C:Trim(cmpEmpPostalcode.Value & ""),L:Trim(varEmpEdit.Postalcode & "")},{F:"City",C:Trim(cmpEmpCity.Value & ""),L:Trim(varEmpEdit.City & "")},{F:"Country",C:Trim(cmpEmpCountry.Value & ""),L:Trim(varEmpEdit.Country & "")},{F:"ContactName",C:Trim(cmpEmpContactName.Value & ""),L:Trim(varEmpEdit.ContactName & "")},{F:"ContactEmail",C:Trim(cmpEmpContactEmail.Value & ""),L:Trim(varEmpEdit.ContactEmail & "")},{F:"ContactPhone",C:Trim(cmpEmpContactPhone.Value & ""),L:Trim(varEmpEdit.ContactPhone & "")},{F:"Active",C:Text(Coalesce(varEmpActiveDraft,true)),L:Text(Coalesce(varEmpEdit.Active,true))}),C<>L),F & "[" & Len(C) & "/" & Len(L) & "]",", "),"-") & " | last event: " & Coalesce(varDbgEvent,"-") & " | SelectedRowID: " & Text(cmpEmpList.SelectedRowID)
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =varDebug
                         Width: =Max(0,Parent.Width-48)
@@ -683,7 +683,7 @@ Screens:
                Clear(colEmpSaveErrors); Clear(colEmpPreRaw); Clear(colEmpPre); Clear(colEmpDup); Clear(colEmpPatched); Clear(colEmpVerifyRaw); Clear(colEmpVerify);
                Set(varEmpSaveReads,0); Set(varEmpSaveWrites,0); Set(varEmpSaveVerified,false); Set(varEmpSaveDupFound,false); Set(varEmpSaveConflict,false); Set(varEmpSaveWorkersRefreshFailed,false); Set(varEmpVerifyDiff,"");
                Set(varEmpSaveMode,varEmpMode); Set(varEmpSaveID,If(varEmpMode="Edit",varEmpSelectedID,Blank())); Set(varEmpPatchedID,Blank());
-               Set(varEmpSaveRec,{Name:Trim(cmpEmpName.CurrentValue & ""),Address:Trim(cmpEmpAddress.CurrentValue & ""),Postalcode:Trim(cmpEmpPostalcode.CurrentValue & ""),City:Trim(cmpEmpCity.CurrentValue & ""),Country:Trim(cmpEmpCountry.CurrentValue & ""),ContactName:Trim(cmpEmpContactName.CurrentValue & ""),ContactEmail:Trim(cmpEmpContactEmail.CurrentValue & ""),ContactPhone:Trim(cmpEmpContactPhone.CurrentValue & ""),Active:Coalesce(varEmpActiveDraft,true)});
+               Set(varEmpSaveRec,{Name:Trim(cmpEmpName.Value & ""),Address:Trim(cmpEmpAddress.Value & ""),Postalcode:Trim(cmpEmpPostalcode.Value & ""),City:Trim(cmpEmpCity.Value & ""),Country:Trim(cmpEmpCountry.Value & ""),ContactName:Trim(cmpEmpContactName.Value & ""),ContactEmail:Trim(cmpEmpContactEmail.Value & ""),ContactPhone:Trim(cmpEmpContactPhone.Value & ""),Active:Coalesce(varEmpActiveDraft,true)});
                Set(varEmpDupName,varEmpSaveRec.Name); Set(varEmpDupKey,Lower(varEmpSaveRec.Name));
                Set(varEmpSaveRenamed,varEmpSaveMode="Edit" && varEmpEdit.Name<>varEmpSaveRec.Name);
                Set(varEmpSaveWarnWorkers,If(varEmpSaveMode="Edit" && Coalesce(varEmpEdit.Active,true) && !varEmpSaveRec.Active,CountIf(colEmpWorkers,EmployerID=varEmpSaveID && Coalesce(WorkerActive,true)),0));

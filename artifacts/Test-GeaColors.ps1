@@ -16,7 +16,7 @@ foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml 
  $baseName=($file.Name -replace '\.pa\.yaml$','')
  $componentExtra=@{cmpMessageBar=@('F29400');cmpField=@('9B9B9B','5A5A5A');cmpListCard=@('9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4')}
  $allowedHex=if($baseName -in $adminScreens){$tokens+$adminTokens}elseif($componentExtra.ContainsKey($baseName)){$tokens+$componentExtra[$baseName]}else{$tokens}
- if($file.DirectoryName -like '*\Src\Component'){
+ if($file.DirectoryName -like '*\Src\Components'){
   # Components: every #RRGGBB literal (ColorValue and inline CSS in HtmlText) must be a palette token; admin-pattern greys only in cmpField/cmpListCard, amber only in the message bar.
   $bad+=@([regex]::Matches([IO.File]::ReadAllText($file.FullName),'#([0-9A-Fa-f]{6})') | Where-Object { $_.Groups[1].Value.ToUpper() -notin $allowedHex } | ForEach-Object { "$($file.Name): $($_.Value)" })
  }
@@ -92,7 +92,7 @@ if($indexes['scrHours']['lblWeekLoadStatus']['Properties']['Color'] -ne '=If(!Is
 $chip=$indexes.scrContractors['btnEmpFormChip']['Properties']; $cf='=If(Coalesce(varEmpEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $cc='=If(Coalesce(varEmpEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))'; foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){ if($chip[$k] -ne $cf){throw "Chip $k"} }; foreach($k in 'Color','HoverColor','PressedColor','DisabledColor'){ if($chip[$k] -ne $cc){throw "Chip $k"} }; if($chip['DisplayMode'] -ne '=DisplayMode.Disabled'){throw 'Chip must be static'}
 # 30-10-2026 (step 3a): Contractors title bar, footer, list card and form fields are component instances; colour roles are pinned on the component definitions.
 $cmpDefs=@{}
-foreach($cf in 'cmpTitleBar','cmpFooter','cmpListCard','cmpField','cmpMessageBar'){ $cmpDefs[$cf]=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot "Src/Component/$cf.pa.yaml")))['ComponentDefinitions'][$cf] }
+foreach($cf in 'cmpTitleBar','cmpFooter','cmpListCard','cmpField','cmpMessageBar'){ $cmpDefs[$cf]=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot "Src/Components/$cf.pa.yaml")))['ComponentDefinitions'][$cf] }
 function Get-CmpIdx($def){ $r=@{}; Index-RegressionControls $def['Children'] $r; return $r }
 $tb=Get-CmpIdx $cmpDefs.cmpTitleBar; if($tb['lblCmpTitleText']['Properties']['Fill'] -ne (CV '#0303B8') -or $tb['lblCmpTitleText']['Properties']['Color'] -ne $W -or $cmpDefs.cmpTitleBar['Properties']['Fill'] -ne (CV '#0303B8')){throw 'cmpTitleBar fill/colour'}
 $ft=Get-CmpIdx $cmpDefs.cmpFooter
@@ -102,14 +102,14 @@ foreach($a in @(@('btnCmpSave','primary'),@('btnCmpHome','nav'),@('btnCmpNew','s
 }
 $lc=Get-CmpIdx $cmpDefs.cmpListCard; $tp=$lc['btnCmpListSwitch']['Properties']; $kp=$lc['btnCmpListKnob']['Properties']; $track='=If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))'
 foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){ if($tp[$k] -ne $track){throw "cmpListCard switch track $k"}; if($kp[$k] -ne $W){throw "cmpListCard knob $k must be white"} }
-$sp=$lc['txtCmpListSearch']['Properties']; foreach($kv in @(@('Fill','=Color.White'),@('HoverFill','=Color.White'),@('BorderColor',(CV '#9B9B9B')),@('HoverBorderColor',(CV '#5A5A5A')),@('FocusedBorderColor',(CV '#0303B8')),@('BorderThickness','=1'),@('RadiusTopLeft','=4'),@('Height','=36'))){ if($sp[$kv[0]] -ne $kv[1]){throw "cmpListCard search $($kv[0])"} }
+$sp=$lc['txtSearch']['Properties']; foreach($kv in @(@('Fill','=Color.White'),@('HoverFill','=Color.White'),@('BorderColor',(CV '#9B9B9B')),@('HoverBorderColor',(CV '#5A5A5A')),@('FocusedBorderColor',(CV '#0303B8')),@('BorderThickness','=1'),@('RadiusTopLeft','=4'),@('Height','=36'))){ if($sp[$kv[0]] -ne $kv[1]){throw "cmpListCard search $($kv[0])"} }
 if($lc['recCmpRowFill']['Properties']['Fill'] -notmatch '#D5EDFF' -or $lc['recCmpRowBar']['Properties']['Fill'] -ne (CV '#0303B8')){throw 'cmpListCard selected row colours'}
-$fi=Get-CmpIdx $cmpDefs.cmpField; $fp=$fi['txtCmpFieldInput']['Properties']
+$fi=Get-CmpIdx $cmpDefs.cmpField; $fp=$fi['txtFieldValue']['Properties']
 foreach($kv in @(@('BorderColor','#9B9B9B'),@('HoverBorderColor','#5A5A5A'),@('FocusedBorderColor','#0303B8'),@('PressedBorderColor','#0303B8'))){ if($fp[$kv[0]] -notmatch ('^=If\(cmpField\.Invalid,ColorValue\("#DB1E28"\)') -or $fp[$kv[0]] -notmatch [regex]::Escape($kv[1])){throw "cmpField input $($kv[0]) (Invalid -> #DB1E28, else $($kv[1]))"} }
 if($fp['BorderThickness'] -notmatch '^=If\(cmpField\.Invalid,2,' -or $fp['FocusedBorderThickness'] -ne '=2' -or $fp['RadiusTopLeft'] -ne '=4' -or $fp['Height'] -ne '=36'){throw 'cmpField input thickness/radius/height'}
 foreach($k in 'Fill','HoverFill','PressedFill'){ if($fp[$k] -ne '=Color.White'){throw "cmpField input $k must be white"} }
 if($fp['DisabledFill'] -notmatch '#F0F0F0'){throw 'cmpField read-only fill #F0F0F0'}
-if($fi['htmlCmpFieldLabel']['Properties']['HtmlText'] -notmatch 'color:#DB1E28'){throw 'cmpField required star must be #DB1E28'}
+if($fi['htmlFieldLabel']['Properties']['HtmlText'] -notmatch 'color:#DB1E28'){throw 'cmpField required star must be #DB1E28'}
 $mb=Get-CmpIdx $cmpDefs.cmpMessageBar; $mf=[string]$mb['recCmpMsgFill']['Properties']['Fill']; foreach($t in '#DB1E28','#F29400','#1AFF80'){ if($mf -notmatch [regex]::Escape($t)){throw "cmpMessageBar fill $t"} }
 Write-Output 'PASS components used by Contractors: title bar #0303B8/white; footer Save primary, Home navigation, New/Refresh/Discard secondary (disabled #E6E6E6/#787878); list card switch #0303B8/#B4B4B4 with white knob, search field #9B9B9B/#5A5A5A/#0303B8, selected row #D5EDFF with #0303B8 bar; field input white/#9B9B9B, invalid #DB1E28 2px, read-only #F0F0F0, red star; message bar #DB1E28/#F29400/#1AFF80.'
 foreach($n in 'lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact'){ if($indexes.scrContractors[$n]['Properties']['Color'] -ne (CV '#0303B8')){throw "Section header $n must be #0303B8"} }; if($indexes.scrContractors['lblEmpFormTitle']['Properties']['Color'] -ne (CV '#000F41')){throw 'Form title #000F41'}
