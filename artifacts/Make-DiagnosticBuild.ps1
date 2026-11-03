@@ -40,7 +40,7 @@ $inserts=@(
  @('scrHours.pa.yaml','                  §Set(varEntryFirstISOYear,IfError(',(Tr 'Week' 'AfterRefresh' 'varDiagWeekT0' $errWeek)),
  @('scrHours.pa.yaml','                  §IfError(CountRows(ClearCollect(colPendingWeekAssignments,',(Tr 'Week' 'AfterYearBounds' 'varDiagWeekT0' (',FirstISOYear:Coalesce(varEntryFirstISOYear,0),LastISOYear:Coalesce(varEntryLastISOYear,0)'+$errWeek))),
  @('scrHours.pa.yaml','                  §ForAll(colPendingWeekAssignments As member,',(Tr 'Week' 'AfterAssignments' 'varDiagWeekT0' (',Assignments:CountRows(colPendingWeekAssignments)'+$errWeek))),
- @('scrHours.pa.yaml','§If(CountIf(colPendingWeekStored,IsBlank(HourValue))>0,',(Tr 'Week' 'AfterHoursQueries' 'varDiagWeekT0' (',DayRows:CountRows(colPendingWeekStored)'+$errWeek))),
+ @('scrHours.pa.yaml','§With({badRows:Filter(colPendingWeekStored,IsBlank(HourValue))},',(Tr 'Week' 'AfterHoursQueries' 'varDiagWeekT0' (',DayRows:CountRows(colPendingWeekStored)'+$errWeek))),
  @('scrHours.pa.yaml','§ClearCollect(colWeekAssignments,colPendingWeekAssignments);',(Tr 'Week' 'AfterLocalBuild' 'varDiagWeekT0' (',Rows:CountRows(colPendingWeekRows)'+$errWeek))),
  @('scrHours.pa.yaml','§If(varWeekLoadState="Loading",Set(varWeekLoadState,"NotLoaded")); Set(varWeekLoading,false)',(Tr 'Week' 'End' 'varDiagWeekT0' (',State:Coalesce(varWeekLoadState,""),Rows:CountRows(colWeekRows)'+$errWeek))),
  @('scrHours.pa.yaml','NotificationType.Warning,15000),§Select(btnReadWeek))',(Tr 'Week' 'RefreshClick' '')),

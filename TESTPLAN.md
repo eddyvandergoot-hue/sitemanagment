@@ -452,3 +452,14 @@ Inhoud: nieuwe Home (5 categorieën, cmpTile, iconen Assets/Icons v1), N1 (dirty
 | 9 | Contractors/Projects: normaal gebruik (rij kiezen, zoeken, Show inactive/closed, Refresh, Home) zonder wijziging | alles werkt zoals in TP-STEP3-05 (N1 mag niets blokkeren); eerste bezoek laadt automatisch |
 | 10 | Projects: TEST-project met Status/Country buiten de keuzelijst (alleen als zo'n record bestaat), ander veld wijzigen, Save | Saved; in SharePoint-versiegeschiedenis is Status/Country niet herschreven |
 | 11 | Projects: New met een bestaand TEST Project Number, Save | rode balk "Not saved." met de reden (dubbel nummer); geen dubbel record in SharePoint; invoer blijft staan |
+
+## TP-KEYS-01 Sleutels in fail-closed meldingen (OPEN; build keys-20261103_210529)
+Bevat ook de Home-build (TP-HOME-02). Alleen leescontroles op project 1; geen opslag buiten TEST-000.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| 1 | App Checker | geen formulefouten |
+| 2 | Hours Summary, project Friesland Campina (1) | "Ophalen gestopt: Een urenregel ... van dit project: <EntryKey> (Assignment-ID n), ... (+n meer). Gegevens laten controleren; geen totalen getoond."; volledige tekst leesbaar (statusregel 80 px) |
+| 3 | Noteer de sleutels en Assignment-ID's; herstel in SharePoint volgens het rapport van 3-11; Refresh | melding weg of volgende sleutels; rapport laadt als alle regels hersteld zijn |
+| 4 | Hours Summary, TEST-000 en een ander gezond project | rapport laadt zoals eerder, statusregel normaal |
+| 5 | Project / team en Weekly Hours op TEST-000 laden | laden zoals eerder, geen nieuwe meldingen |

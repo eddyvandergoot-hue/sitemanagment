@@ -133,7 +133,7 @@ Screens:
           X: =40
           Y: =conSummarySelectors.Y+conSummarySelectors.Height+If(Len(Self.Text)>0,12,0)
           Width: =Parent.Width-80
-          Height: =If(Len(Self.Text)>0,30,0)
+          Height: =If(Len(Self.Text)=0,0,StartsWith(Self.Text,"Ophalen gestopt"),80,30)
           Font: ="Inter, Arial, sans-serif"
           FontWeight: =FontWeight.Normal
           Size: =11
@@ -695,8 +695,10 @@ Screens:
               If(CountRows(colReportAssignments)>=500,
                Collect(colReportLoadErrors,{Message:"500 projectkoppelingen geladen. Volledigheid niet gegarandeerd; rapportage gestopt."})
               );
-              If(CountIf(colReportAssignments,Project.Id<>varReportProjectID)>0,
-               Collect(colReportLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Rapportage gestopt; gegevens laten controleren."})
+              With({badRows:Filter(colReportAssignments,Project.Id<>varReportProjectID)},
+               If(!IsEmpty(badRows),
+                Collect(colReportLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Project Workers-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Rapportage gestopt; gegevens laten controleren."})
+               )
               );
               If(IsEmpty(colReportLoadErrors),
                IfError(Refresh('Assignment Periods'),Collect(colReportLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
@@ -707,8 +709,10 @@ Screens:
               If(CountRows(colReportAssignmentPeriods)>=500,
                Collect(colReportLoadErrors,{Message:"500 periodes geladen. Volledigheid niet gegarandeerd; rapportage gestopt."})
               );
-              If(CountIf(colReportAssignmentPeriods,ProjectKey<>varReportProjectKey || !StartsWith(AssignmentKey,varReportProjectKey & "|"))>0,
-               Collect(colReportLoadErrors,{Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project. Rapportage gestopt; gegevens laten controleren."})
+              With({badRows:Filter(colReportAssignmentPeriods,ProjectKey<>varReportProjectKey || !StartsWith(AssignmentKey,varReportProjectKey & "|"))},
+               If(!IsEmpty(badRows),
+                Collect(colReportLoadErrors,{Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Assignment Periods-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Rapportage gestopt; gegevens laten controleren."})
+               )
               );
               If(IsEmpty(colReportLoadErrors),
                ForAll(Distinct(colReportAssignments,Worker.Id) As person,
@@ -729,7 +733,7 @@ Screens:
                Set(varReportQueryPrefix,varReportProjectKey & "|");
                 IfError(
                  With({batch:ForAll(Filter(Hours,StartsWith(EntryKey,varReportQueryPrefix)) As entry,
-                  {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',ContractorID:entry.Employer.Id,
+                  {HourID:entry.ID,EntryKey:entry.EntryKey,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',ContractorID:entry.Employer.Id,
                    ContractorName:entry.Employer.Value,HourValue:entry.Hours})},
                   If(CountRows(batch)<500,
                    CountRows(Collect(colReportHourStaging,batch))>=0,
@@ -752,7 +756,7 @@ Screens:
                      With({monthFrom:DateAdd(firstMonth,monthIndex.Value-1,TimeUnit.Months),monthUntil:DateAdd(firstMonth,monthIndex.Value,TimeUnit.Months)},
                       IfError(
                        With({monthBatch:ForAll(Filter(Hours,StartsWith(EntryKey,varReportQueryPrefix) && 'Work Date'>=monthFrom && 'Work Date'<monthUntil) As entry,
-                        {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',ContractorID:entry.Employer.Id,
+                        {HourID:entry.ID,EntryKey:entry.EntryKey,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',ContractorID:entry.Employer.Id,
                          ContractorName:entry.Employer.Value,HourValue:entry.Hours})},
                         If(CountRows(monthBatch)<500,
                          CountRows(Collect(colReportHourStaging,monthBatch))>=0,
@@ -760,7 +764,7 @@ Screens:
                           With({dayFrom:DateAdd(monthFrom,dayIndex.Value-1,TimeUnit.Days),dayUntil:DateAdd(monthFrom,dayIndex.Value,TimeUnit.Days)},
                            IfError(
                             With({dayBatch:ForAll(Filter(Hours,StartsWith(EntryKey,varReportQueryPrefix) && 'Work Date'>=dayFrom && 'Work Date'<dayUntil) As entry,
-                             {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',ContractorID:entry.Employer.Id,
+                             {HourID:entry.ID,EntryKey:entry.EntryKey,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',ContractorID:entry.Employer.Id,
                               ContractorName:entry.Employer.Value,HourValue:entry.Hours})},
                              If(CountRows(dayBatch)>=500,
                               Collect(colReportLoadErrors,{Message:"Limiet bereikt bij uren op " & Text(dayFrom,"dd-mm-yyyy") & ". Geen totalen getoond."});false,
@@ -784,11 +788,15 @@ Screens:
                If(CountRows(Distinct(colReportHourStaging,HourID))<>CountRows(colReportHourStaging),
                 Collect(colReportLoadErrors,{Message:"Dezelfde urenregel is meer dan eens teruggelezen. Geen totalen getoond."})
                );
-               If(CountIf(colReportHourStaging,IsBlank(WorkDay) || IsBlank(ContractorID) || IsBlank(HourValue))>0,
-                Collect(colReportLoadErrors,{Message:"Urenregel zonder datum, historische werkgever of uren in dit project. Geen totalen getoond."})
+               With({badRows:Filter(colReportHourStaging,IsBlank(WorkDay) || IsBlank(ContractorID) || IsBlank(HourValue))},
+                If(!IsEmpty(badRows),
+                 Collect(colReportLoadErrors,{Message:"Urenregel zonder datum, historische werkgever of uren in dit project: " & Concat(FirstN(Sort(badRows,EntryKey,SortOrder.Ascending),3),EntryKey & " (Hours-ID " & Text(HourID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Geen totalen getoond."})
+                )
                );
-               If(CountIf(colReportHourStaging,!(AssignmentID in ShowColumns(colReportAssignments,ID)))>0,
-                Collect(colReportLoadErrors,{Message:"Een urenregel met de projectsleutel van dit project hoort niet bij een koppeling van dit project. Gegevens laten controleren; geen totalen getoond."})
+               With({badRows:Filter(colReportHourStaging,!(AssignmentID in ShowColumns(colReportAssignments,ID)))},
+                If(!IsEmpty(badRows),
+                 Collect(colReportLoadErrors,{Message:"Een urenregel met de projectsleutel van dit project hoort niet bij een koppeling van dit project: " & Concat(FirstN(Sort(badRows,EntryKey,SortOrder.Ascending),3),EntryKey & " (Assignment-ID " & Coalesce(Text(AssignmentID),"leeg") & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Gegevens laten controleren; geen totalen getoond."})
+                )
                )
               );
               If(IsEmpty(colReportLoadErrors),

@@ -503,9 +503,9 @@ Screens:
                     Collect(colSelectionLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false)
                   );
                   If(CountRows(colPendingTeamPeriods)>=500,Collect(colSelectionLoadErrors,{Message:"500 periodes voor dit project geladen; volledigheid niet gegarandeerd. Laden gestopt."}));
-                  If(CountIf(colPendingTeamProjectAssignments,Project.Id<>varSelectionProjectID)>0,Collect(colSelectionLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Gegevens laten controleren; opslaan geblokkeerd."}));
-                  If(CountRows(Distinct(colPendingTeamProjectAssignments,Worker.Id))<>CountRows(colPendingTeamProjectAssignments),Collect(colSelectionLoadErrors,{Message:"Dubbele medewerkerkoppelingen in dit project; opslaan geblokkeerd."}));
-                  If(CountIf(colPendingTeamPeriods,ProjectKey<>varSelectionProjectKey || !StartsWith(AssignmentKey,varSelectionProjectKey & "|"))>0,Collect(colSelectionLoadErrors,{Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project. Laden gestopt; gegevens laten controleren."}));
+                  With({badRows:Filter(colPendingTeamProjectAssignments,Project.Id<>varSelectionProjectID)},If(!IsEmpty(badRows),Collect(colSelectionLoadErrors,{Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Project Workers-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Gegevens laten controleren; opslaan geblokkeerd."})));
+                  With({badRows:Filter(colPendingTeamProjectAssignments As pw,CountIf(colPendingTeamProjectAssignments,Worker.Id=pw.Worker.Id)>1)},If(!IsEmpty(badRows),Collect(colSelectionLoadErrors,{Message:"Dubbele medewerkerkoppelingen in dit project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Project Workers-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Opslaan geblokkeerd."})));
+                  With({badRows:Filter(colPendingTeamPeriods,ProjectKey<>varSelectionProjectKey || !StartsWith(AssignmentKey,varSelectionProjectKey & "|"))},If(!IsEmpty(badRows),Collect(colSelectionLoadErrors,{Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Assignment Periods-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Laden gestopt; gegevens laten controleren."})));
                   If(IsEmpty(colSelectionLoadErrors),
                    ClearCollect(colTeamProjectAssignments,colPendingTeamProjectAssignments); ClearCollect(colTeamPeriods,colPendingTeamPeriods);
                    ClearCollect(colTeamPWSnapshot,ForAll(colPendingTeamProjectAssignments As a,{ID:a.ID,ProjectID:a.Project.Id,WorkerID:a.Worker.Id,TeamValue:a.Team.Value,Active:a.Active,AssignmentKey:a.AssignmentKey,ProjectKey:a.ProjectKey}));
@@ -850,12 +850,16 @@ Screens:
                                       If(CountRows(colPeriodSaveCheckRaw)>=500,
                                           Collect(colAssignmentErrors,{WorkerID:0,Message:"500 periodes voor dit project gelezen; volledigheid niet gegarandeerd. Opslaan gestopt."})
                                       );
-                                      If(CountIf(colTeamSaveCheck,Project.Id<>varTeamLoadedProjectID)>0,
-                                          Collect(colAssignmentErrors,{WorkerID:0,Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project. Gegevens laten controleren; opslaan geblokkeerd."})
+                                      With({badRows:Filter(colTeamSaveCheck,Project.Id<>varTeamLoadedProjectID)},
+                                          If(!IsEmpty(badRows),
+                                              Collect(colAssignmentErrors,{WorkerID:0,Message:"Een koppeling met de projectsleutel van dit project verwijst naar een ander project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Project Workers-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Gegevens laten controleren; opslaan geblokkeerd."})
+                                          )
                                       );
                                       ClearCollect(colPeriodSaveCheck,ForAll(colPeriodSaveCheckRaw As p,{ID:p.ID,AssignmentKey:p.AssignmentKey,ProjectKey:p.ProjectKey,From:If(IsBlank(p.From),Blank(),Date(Year(p.From),Month(p.From),Day(p.From))),Until:If(IsBlank(p.Until),Blank(),Date(Year(p.Until),Month(p.Until),Day(p.Until)))}));
-                                      If(CountIf(colPeriodSaveCheck,ProjectKey<>varTeamSaveProjectKey || !StartsWith(AssignmentKey,varTeamSaveProjectKey & "|"))>0,
-                                          Collect(colAssignmentErrors,{WorkerID:0,Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project. Gegevens laten controleren; opslaan geblokkeerd."})
+                                      With({badRows:Filter(colPeriodSaveCheck,ProjectKey<>varTeamSaveProjectKey || !StartsWith(AssignmentKey,varTeamSaveProjectKey & "|"))},
+                                          If(!IsEmpty(badRows),
+                                              Collect(colAssignmentErrors,{WorkerID:0,Message:"Een periode met de projectsleutel van dit project heeft een AssignmentKey van een ander project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Assignment Periods-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Gegevens laten controleren; opslaan geblokkeerd."})
+                                          )
                                       );
                                       If(IsEmpty(colAssignmentErrors) &&
                                           (JSON(Sort(ForAll(colTeamSaveCheck As a,{ID:a.ID,ProjectID:a.Project.Id,WorkerID:a.Worker.Id,TeamValue:a.Team.Value,Active:a.Active,AssignmentKey:a.AssignmentKey,ProjectKey:a.ProjectKey}),ID,SortOrder.Ascending))<>JSON(Sort(colTeamPWSnapshot,ID,SortOrder.Ascending)) ||
@@ -1154,10 +1158,10 @@ Screens:
                            If(CountRows(colMigrationPeriodsCheck)>=500,Collect(colMigrationErrors,{Message:"500 periodes voor dit project gelezen; volledigheid niet gegarandeerd. Migratie gestopt."}));
                            If(IsEmpty(colMigrationErrors) && CountIf(colMigrationPWRaw As pw,pw.Active=true && CountIf(colMigrationPeriodsCheck,AssignmentKey=varMigrationProjectKey & "|" & Text(pw.Worker.Id))=0)=0,Collect(colMigrationErrors,{Message:"Geen actieve koppelingen zonder periode; migratie is niet (meer) nodig. Gebruik Refresh."}));
                            If(IsEmpty(colMigrationErrors) && IsEmpty(colMigrationPWRaw),Collect(colMigrationErrors,{Message:"Geen koppelingen voor dit project teruggelezen; niets te migreren."}));
-                           If(CountIf(colMigrationPWRaw,IsBlank(Worker.Id) || Project.Id<>varMigrationProjectID || ProjectKey<>varMigrationProjectKey || AssignmentKey<>varMigrationProjectKey & "|" & Text(Worker.Id))>0,Collect(colMigrationErrors,{Message:"Een koppeling heeft een afwijkende Project, ProjectKey of AssignmentKey. Migratie gestopt; gegevens laten controleren."}));
-                           If(CountRows(Distinct(colMigrationPWRaw,Worker.Id))<>CountRows(colMigrationPWRaw),Collect(colMigrationErrors,{Message:"Dubbele medewerkerkoppelingen in dit project. Migratie gestopt; gegevens laten controleren."}));
+                           With({badRows:Filter(colMigrationPWRaw,IsBlank(Worker.Id) || Project.Id<>varMigrationProjectID || ProjectKey<>varMigrationProjectKey || AssignmentKey<>varMigrationProjectKey & "|" & Text(Worker.Id))},If(!IsEmpty(badRows),Collect(colMigrationErrors,{Message:"Een koppeling heeft een afwijkende Project, ProjectKey of AssignmentKey: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Project Workers-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Migratie gestopt; gegevens laten controleren."})));
+                           With({badRows:Filter(colMigrationPWRaw As pw,CountIf(colMigrationPWRaw,Worker.Id=pw.Worker.Id)>1)},If(!IsEmpty(badRows),Collect(colMigrationErrors,{Message:"Dubbele medewerkerkoppelingen in dit project: " & Concat(FirstN(Sort(badRows,AssignmentKey & "",SortOrder.Ascending),3),Coalesce(AssignmentKey,"leeg") & " (Project Workers-ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Migratie gestopt; gegevens laten controleren."})));
                            If(IsEmpty(colMigrationErrors),
-                            IfError(With({batch:ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)) As entry,{HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
+                            IfError(With({batch:ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix)) As entry,{HourID:entry.ID,EntryKey:entry.EntryKey,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
                              If(CountRows(batch)<500,
                               CountRows(Collect(colMigrationHours,batch))>=0,
                               Set(varMigrationHoursPaged,true); true
@@ -1177,14 +1181,14 @@ Screens:
                                  With({monthFrom:DateAdd(firstMonth,monthIndex.Value-1,TimeUnit.Months),monthUntil:DateAdd(firstMonth,monthIndex.Value,TimeUnit.Months)},
                                   IfError(
                                    With({monthBatch:ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix) && 'Work Date'>=monthFrom && 'Work Date'<monthUntil) As entry,
-                                    {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
+                                    {HourID:entry.ID,EntryKey:entry.EntryKey,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
                                     If(CountRows(monthBatch)<500,
                                      CountRows(Collect(colMigrationHours,monthBatch))>=0,
                                      CountRows(ForAll(Sequence(DateDiff(monthFrom,monthUntil,TimeUnit.Days)) As dayIndex,
                                       With({dayFrom:DateAdd(monthFrom,dayIndex.Value-1,TimeUnit.Days),dayUntil:DateAdd(monthFrom,dayIndex.Value,TimeUnit.Days)},
                                        IfError(
                                         With({dayBatch:ForAll(Filter(Hours,StartsWith(EntryKey,varMigrationPrefix) && 'Work Date'>=dayFrom && 'Work Date'<dayUntil) As entry,
-                                         {HourID:entry.ID,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
+                                         {HourID:entry.ID,EntryKey:entry.EntryKey,AssignmentID:entry.Assignment.Id,WorkDay:entry.'Work Date',Modified:entry.Modified})},
                                          If(CountRows(dayBatch)>=500,
                                           Collect(colMigrationErrors,{Message:"Limiet bereikt bij uren op " & Text(dayFrom,"dd-mm-yyyy") & ". Migratie gestopt."});false,
                                           CountRows(Collect(colMigrationHours,dayBatch))>=0
@@ -1205,8 +1209,8 @@ Screens:
                            );
                            If(IsEmpty(colMigrationErrors),
                             If(CountRows(Distinct(colMigrationHours,HourID))<>CountRows(colMigrationHours),Collect(colMigrationErrors,{Message:"Dezelfde urenregel is meer dan eens teruggelezen. Migratie gestopt."}));
-                            If(CountIf(colMigrationHours,IsBlank(WorkDay) || IsBlank(AssignmentID))>0,Collect(colMigrationErrors,{Message:"Urenregel zonder werkdatum of koppeling in dit project. Migratie gestopt; gegevens laten controleren."}));
-                            If(CountIf(colMigrationHours,!(AssignmentID in ShowColumns(colMigrationPWRaw,ID)))>0,Collect(colMigrationErrors,{Message:"Een urenregel met de projectsleutel van dit project hoort niet bij een koppeling van dit project. Migratie gestopt; gegevens laten controleren."}))
+                            With({badRows:Filter(colMigrationHours,IsBlank(WorkDay) || IsBlank(AssignmentID))},If(!IsEmpty(badRows),Collect(colMigrationErrors,{Message:"Urenregel zonder werkdatum of koppeling in dit project: " & Concat(FirstN(Sort(badRows,EntryKey,SortOrder.Ascending),3),EntryKey & " (Hours-ID " & Text(HourID) & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Migratie gestopt; gegevens laten controleren."})));
+                            With({badRows:Filter(colMigrationHours,!(AssignmentID in ShowColumns(colMigrationPWRaw,ID)))},If(!IsEmpty(badRows),Collect(colMigrationErrors,{Message:"Een urenregel met de projectsleutel van dit project hoort niet bij een koppeling van dit project: " & Concat(FirstN(Sort(badRows,EntryKey,SortOrder.Ascending),3),EntryKey & " (Assignment-ID " & Coalesce(Text(AssignmentID),"leeg") & ")",", ") & If(CountRows(badRows)>3," (+" & Text(CountRows(badRows)-3) & " meer)","") & ". Migratie gestopt; gegevens laten controleren."})))
                            );
                            If(IsEmpty(colMigrationErrors),
                             ClearCollect(colMigrationPWSnapshot,ForAll(colMigrationPWRaw As a,{ID:a.ID,ProjectID:a.Project.Id,WorkerID:a.Worker.Id,TeamValue:a.Team.Value,Active:a.Active,AssignmentKey:a.AssignmentKey,ProjectKey:a.ProjectKey}));
