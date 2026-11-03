@@ -28,7 +28,7 @@ Screens:
             Height: =Max(1,RoundDown((Self.Y+10)/(Self.Width+10),0))
             Text: =""
             Visible: =false
-            Width: =If(Parent.Width>=1000,190,If(Parent.Width>=700,160,RoundDown((Self.Y-10)/2,0)))
+            Width: =If(Parent.Width>=1000,150,If(Parent.Width>=700,130,Min(110,RoundDown((Self.Y-20)/3,0))))
             X: =If(Parent.Width<700,16,40)
             Y: =Parent.Width-2*Self.X-16
       - conHomeScroll:
@@ -93,11 +93,11 @@ Screens:
                         Arrow: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
                         Icon: =IconTeamWhite
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileProjectTeam.nl),T.homeTileProjectTeam.nl,T.homeTileProjectTeam.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(Screen1); true
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(0,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -110,11 +110,11 @@ Screens:
                         Arrow: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
                         Icon: =IconWeeklyHoursWhite
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileWeeklyHours.nl),T.homeTileWeeklyHours.nl,T.homeTileWeeklyHours.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value),Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected); Trace("DIAG|Nav|HomeToWeeklyHours",TraceSeverity.Information,{Scenario:"Nav",Step:"HomeToWeeklyHours"}); Navigate(scrHours),Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning)); true
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(1,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -127,11 +127,11 @@ Screens:
                         Arrow: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
                         Icon: =IconHoursSummaryWhite
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileHoursSummary.nl),T.homeTileHoursSummary.nl,T.homeTileHoursSummary.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrWeeklyHours); true
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(2,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -143,10 +143,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconWeekReportGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileWeekReport.nl),T.homeTileWeekReport.nl,T.homeTileWeekReport.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(3,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -192,11 +192,11 @@ Screens:
                         Arrow: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
                         Icon: =IconContractorsWhite
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileContractors.nl),T.homeTileContractors.nl,T.homeTileContractors.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrContractors); true
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(0,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -209,11 +209,11 @@ Screens:
                         Arrow: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
                         Icon: =IconProjectsWhite
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileProjects.nl),T.homeTileProjects.nl,T.homeTileProjects.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrProjects); true
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(1,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -225,10 +225,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconWorkersGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileWorkers.nl),T.homeTileWorkers.nl,T.homeTileWorkers.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(2,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -273,10 +273,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconStockOverviewGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileStockOverview.nl),T.homeTileStockOverview.nl,T.homeTileStockOverview.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(0,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -288,10 +288,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconLocationsGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileLocations.nl),T.homeTileLocations.nl,T.homeTileLocations.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(1,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -303,10 +303,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconRequestsGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileRequests.nl),T.homeTileRequests.nl,T.homeTileRequests.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(2,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -351,10 +351,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =Icon3dViewerGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTile3dViewer.nl),T.homeTile3dViewer.nl,T.homeTile3dViewer.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(0,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -366,10 +366,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconPidTrackerGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTilePidTracker.nl),T.homeTilePidTracker.nl,T.homeTilePidTracker.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(1,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -381,10 +381,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconComponentLibraryGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileComponentLibrary.nl),T.homeTileComponentLibrary.nl,T.homeTileComponentLibrary.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(2,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
@@ -429,10 +429,10 @@ Screens:
                         Active: =false
                         Height: =lblHomeMetrics.Width
                         Icon: =IconKnowledgeBaseGrey
-                        IconSize: =If(lblHomeMetrics.Width>=190,56,If(lblHomeMetrics.Width>=160,48,40))
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
                         Label: =If(LangNl && !IsBlank(T.homeTileKnowledgeBase.nl),T.homeTileKnowledgeBase.nl,T.homeTileKnowledgeBase.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=190,14,If(lblHomeMetrics.Width>=160,12,11))
-                        Padding: =If(lblHomeMetrics.Width>=190,20,12)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
                         X: =Mod(0,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)

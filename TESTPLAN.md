@@ -463,3 +463,13 @@ Bevat ook de Home-build (TP-HOME-02). Alleen leescontroles op project 1; geen op
 | 3 | Noteer de sleutels en Assignment-ID's; herstel in SharePoint volgens het rapport van 3-11; Refresh | melding weg of volgende sleutels; rapport laadt als alle regels hersteld zijn |
 | 4 | Hours Summary, TEST-000 en een ander gezond project | rapport laadt zoals eerder, statusregel normaal |
 | 5 | Project / team en Weekly Hours op TEST-000 laden | laden zoals eerder, geen nieuwe meldingen |
+
+## TP-HOME-03 Home-fixes 5-8 (OPEN; build homefix-20261103_224009, bevat ook TP-KEYS-01)
+Alleen de punten 5-8 van TP-HOME-02 opnieuw; opslaan alleen op TEST-records.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| 5 | Muis over een actieve tegel, ook over icoon en pijl; klik en houd vast | hele tegel egaal donkerder (ook icoon), geen donker vierkant, hover blijft over icoon/pijl; ingedrukt iets donkerder; Soon-tegels veranderen niet |
+| 6 | Met Tab door de tegels | focusrand 3 px navy #000F41 duidelijk zichtbaar |
+| 7 | Venster ~1366, ~900, ~700, 390 (telefoon) en 360 | tegels 150 / 130 / ~107; minimaal 3 per rij op de telefoon; labels (vooral "Contractors" en "Component library") niet afgekapt of midden in een woord gebroken |
+| 8 | Contractors en Projects: New | statuschip lichtblauw met blauwe tekst "New"; Active groen, Inactive/Closed grijs zoals eerder |

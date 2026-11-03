@@ -406,9 +406,11 @@ foreach ($c in $idx.Keys) {
         if ($lh.Success) { Assert-True ($hh -match '^=\d+$' -and [int]$hh.TrimStart('=') -gt [int]$lh.Groups[1].Value) "$c.$n : control height $hh is greater than the content line height $($lh.Groups[1].Value)px (no scrollbar)" }
         else { Assert-True ($ht -match 'line-height:" & Parent.Height' -and $hh -eq '=Parent.Height') "$c.$n : line height follows the control height exactly" }
     }
-    # TP-STEP3-02 (Eddy 01-11-2026): the only semi-transparent colour is the row hover on the cmpListCard click target (#F0F0F099).
+    # TP-STEP3-02 (Eddy 01-11-2026): semi-transparent colours only on top-layer click targets: the cmpListCard row hover (#F0F0F099)
+    # and the cmpTile hover/pressed Navy overlay (#000F4159 / #000F4180, Eddy 3-11-2026, TP-HOME-02 point 5).
     $src = $files[$c]; if ($c -eq 'cmpListCard') { $src = $src.Replace('HoverFill: =If(cmpListCard.Enabled && ThisItem.ID<>cmpListCard.SelectedID,ColorValue("#F0F0F099"),Color.Transparent)', '') }
-    Assert-True ($src -notmatch 'RGBA\(' -and $src -notmatch '#[0-9A-Fa-f]{8}\b' -and $src -notmatch 'ColorFade\(') "$c : no semi-transparent colour (RGBA, #RRGGBBAA, ColorFade) except the cmpListCard row hover"
+    if ($c -eq 'cmpTile') { $src = $src.Replace('HoverFill: =ColorValue("#000F4159")', '').Replace('PressedFill: =ColorValue("#000F4180")', '') }
+    Assert-True ($src -notmatch 'RGBA\(' -and $src -notmatch '#[0-9A-Fa-f]{8}\b' -and $src -notmatch 'ColorFade\(') "$c : no semi-transparent colour (RGBA, #RRGGBBAA, ColorFade) except the cmpListCard row hover and the cmpTile overlay"
 }
 Assert-True ($rowN[0] -eq 'recCmpRowFill' -and $rowN[-1] -eq 'btnCmpRowHit') 'cmpListCard row: background first (behind the text), click target last (top layer)'
 $hit = $row['btnCmpRowHit']['Properties']
@@ -419,23 +421,27 @@ Assert-True ($row['recCmpRowFill']['Properties']['Fill'] -notmatch 'Transparent'
 foreach ($k in 'txtFieldValue', 'ddFieldValue') { $q = $fi[$k]['Properties']; Assert-True ($q['FocusedBorderThickness'] -eq '=2' -and $q['FocusedBorderColor'] -match '#0303B8' -and $q['FocusedBorderColor'] -match '#DB1E28') "cmpField.$k : focus border 2 px #0303B8 (red when Invalid)" }
 Assert-True ($li['txtSearch']['Properties']['FocusedBorderThickness'] -eq '=2' -and $li['txtSearch']['Properties']['Width'] -eq '=Parent.Width-48') 'cmpListCard search: focus border 2 px, 24 px margins inside the card'
 
-# (12) cmpTile (Home redesign, 3-11-2026) ------------------------------------------------------------------
+# (12) cmpTile (Home redesign 3-11-2026; TP-HOME-02 fixes 5-7, Eddy 3-11-2026) ----------------------------------
 $tp = $defs['cmpTile']['Properties']; $ti = $idx['cmpTile']; $tcp = $defs['cmpTile']['CustomProperties']
 Assert-True ($tcp['Active']['Default'] -eq '=false') 'cmpTile.Active default =false (fail-closed: a tile without Active is an inert Soon tile)'
 Assert-True ($tcp['Icon']['Default'] -eq '=SampleImage' -and $tcp['Arrow']['Default'] -eq '=SampleImage') 'cmpTile Icon/Arrow: Image inputs with Default =SampleImage (same proven shape as cmpTitleBar.Logo)'
-Assert-True ($tp['Width'] -eq '=190' -and $tp['Height'] -eq '=190') 'cmpTile: default size 190 x 190 (the host passes the responsive size)'
-Assert-True ((@($defs['cmpTile']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'btnCmpTile,imgCmpTileIcon,imgCmpTileArrow,lblCmpTileSoon') 'cmpTile children: click target/label first, icon, arrow, SOON corner on top'
+Assert-True ($tp['Width'] -eq '=150' -and $tp['Height'] -eq '=150') 'cmpTile: default size 150 x 150 (the host passes the responsive size)'
+Assert-True ((@($defs['cmpTile']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'recCmpTileBg,imgCmpTileIcon,lblCmpTileLabel,imgCmpTileArrow,lblCmpTileSoon,btnCmpTile') 'cmpTile layers bottom to top: background, icon, label, arrow, SOON corner, click target LAST (topmost, so icon and arrow never take the hover)'
+Assert-True ($ti['recCmpTileBg']['Control'] -eq 'Rectangle@2.3.0' -and $ti['recCmpTileBg']['Properties']['Width'] -eq '=Parent.Width' -and $ti['recCmpTileBg']['Properties']['Height'] -eq '=Parent.Height') 'cmpTile background: Rectangle@2.3.0 (template in use in the app) over the whole tile'
 $cb = $ti['btnCmpTile']['Properties']
 Assert-True ($ti['btnCmpTile']['Control'] -eq 'Classic/Button@2.2.0' -and -not $cb.ContainsKey('AccessibleLabel')) 'cmpTile.btnCmpTile: Classic/Button@2.2.0 without AccessibleLabel (PA2108)'
 Assert-True ($cb['OnSelect'] -ceq '=If(cmpTile.Active,cmpTile.OnSelect())' -and $cb['DisplayMode'] -ceq '=If(cmpTile.Active,DisplayMode.Edit,DisplayMode.Disabled)') 'cmpTile click target raises OnSelect only while Active; Soon = DisplayMode.Disabled (inert)'
-Assert-True ($cb['Text'] -eq '=cmpTile.Label' -and $cb['Align'] -eq '=Align.Left' -and $cb['VerticalAlign'] -eq '=VerticalAlign.Bottom' -and $cb['Size'] -eq '=cmpTile.LabelSize' -and $cb['FontWeight'] -eq '=FontWeight.Semibold') 'cmpTile label: bottom left, LabelSize, Semibold'
-Assert-True ($cb['PaddingLeft'] -eq '=cmpTile.Padding' -and $cb['PaddingBottom'] -eq '=cmpTile.Padding' -and $cb['PaddingRight'] -eq '=cmpTile.Padding+If(cmpTile.Active,28+8,0)' -and $cb['PaddingTop'] -eq '=cmpTile.Padding+cmpTile.IconSize+8') 'cmpTile label area: padding left/bottom, right clears the 28 px arrow (active tiles only), top clears the icon (a long label can never overlap them)'
+Assert-True ($cb['X'] -eq '=0' -and $cb['Y'] -eq '=0' -and $cb['Width'] -eq '=Parent.Width' -and $cb['Height'] -eq '=Parent.Height' -and $cb['Fill'] -eq '=Color.Transparent' -and $cb['Text'] -eq '=cmpTile.Label' -and $cb['Color'] -eq '=Color.Transparent') 'cmpTile click target: transparent, covers the whole tile; its text is the label in transparent colour (accessible name)'
+Assert-True ($cb['FocusedBorderThickness'] -eq '=3' -and $cb['FocusedBorderColor'] -eq '=ColorValue("#000F41")') 'cmpTile focus: 3 px #000F41 (visible on the white page)'
 foreach ($r in 'RadiusTopLeft', 'RadiusTopRight', 'RadiusBottomLeft', 'RadiusBottomRight') { Assert-True ($cb[$r] -eq '=0') "cmpTile $r = 0 (square)" }
+$cl = $ti['lblCmpTileLabel']['Properties']
+Assert-True ($cl['Text'] -eq '=cmpTile.Label' -and $cl['Align'] -eq '=Align.Left' -and $cl['VerticalAlign'] -eq '=VerticalAlign.Bottom' -and $cl['Size'] -eq '=cmpTile.LabelSize' -and $cl['FontWeight'] -eq '=FontWeight.Semibold' -and $cl['X'] -eq '=cmpTile.Padding' -and $cl['Y'] -eq '=cmpTile.Padding+cmpTile.IconSize+6') 'cmpTile label: bottom left below the icon, LabelSize, Semibold'
+Assert-True ($cl['Width'] -eq '=Max(0,Parent.Width-2*cmpTile.Padding-If(cmpTile.Active,imgCmpTileArrow.Width+4,0))' -and $cl['Height'] -eq '=Max(0,Parent.Height-Self.Y-cmpTile.Padding)') 'cmpTile label area clears the arrow (active tiles only) and the icon; a long label never overlaps them'
 $ci = $ti['imgCmpTileIcon']['Properties']; $ca = $ti['imgCmpTileArrow']['Properties']
 Assert-True ($ci['Image'] -eq '=cmpTile.Icon' -and $ci['Width'] -eq '=cmpTile.IconSize' -and $ci['Height'] -eq '=cmpTile.IconSize' -and $ci['X'] -eq '=cmpTile.Padding' -and $ci['Y'] -eq '=cmpTile.Padding') 'cmpTile icon: top left at the padding, IconSize square'
-Assert-True ($ca['Image'] -eq '=cmpTile.Arrow' -and $ca['Width'] -eq '=28' -and $ca['Height'] -eq '=20' -and $ca['Visible'] -eq '=cmpTile.Active' -and $ca['X'] -eq '=Parent.Width-cmpTile.Padding-Self.Width' -and $ca['Y'] -eq '=Parent.Height-cmpTile.Padding-Self.Height') 'cmpTile arrow: 28x20 bottom right at the padding, only while Active'
-foreach ($k in $ci, $ca) { Assert-True ($k['OnSelect'] -ceq '=If(cmpTile.Active,Select(btnCmpTile))' -and $k['TabIndex'] -eq '=-1' -and !$k.ContainsKey('AccessibleLabel')) 'cmpTile image: click forwards to the tile button only while Active, decorative (TabIndex -1)' }
+Assert-True ($ca['Image'] -eq '=cmpTile.Arrow' -and $ca['Width'] -eq '=If(cmpTile.Width>=150,24,cmpTile.Width>=130,20,14)' -and $ca['Height'] -eq '=If(cmpTile.Width>=150,17,cmpTile.Width>=130,14,10)' -and $ca['Visible'] -eq '=cmpTile.Active' -and $ca['X'] -eq '=Parent.Width-cmpTile.Padding-Self.Width' -and $ca['Y'] -eq '=Parent.Height-cmpTile.Padding-Self.Height') 'cmpTile arrow: 24x17 / 20x14 / 14x10 (aspect 28x20) bottom right at the padding, only while Active'
+foreach ($k in $ci, $ca) { Assert-True (!$k.ContainsKey('OnSelect') -and $k['TabIndex'] -eq '=-1' -and !$k.ContainsKey('AccessibleLabel')) 'cmpTile image: decorative (TabIndex -1), no OnSelect (the click target on top receives every click)' }
 Assert-True ($ti['imgCmpTileIcon']['Control'] -eq 'Image@2.2.3' -and $ti['imgCmpTileArrow']['Control'] -eq 'Image@2.2.3') 'cmpTile images use Image@2.2.3 (template present in the .msapr)'
 $cs = $ti['lblCmpTileSoon']['Properties']
-Assert-True ($cs['Text'] -eq '=Upper(cmpTile.SoonText)' -and $cs['Visible'] -eq '=!cmpTile.Active' -and $cs['Size'] -eq '=11' -and $cs['FontWeight'] -eq '=FontWeight.Semibold' -and $cs['Align'] -eq '=Align.Right') 'cmpTile SOON corner: capitals, 11 Semibold, top right, only while not Active'
+Assert-True ($cs['Text'] -eq '=Upper(cmpTile.SoonText)' -and $cs['Visible'] -eq '=!cmpTile.Active' -and $cs['Size'] -eq '=If(cmpTile.Width>=130,11,9)' -and $cs['FontWeight'] -eq '=FontWeight.Semibold' -and $cs['Align'] -eq '=Align.Right') 'cmpTile SOON corner: capitals, 11 Semibold (9 on the smallest tiles), top right, only while not Active'
 # Soon tiles are inert for the host too: a handler on the instance of a Soon tile would still never run (button disabled, OnSelect guarded by Active)

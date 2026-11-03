@@ -131,14 +131,14 @@ foreach ($s in $screens) {
         }
     }
 }
-# --- scrHome (3-11-2026 Home redesign): five stacked categories, cmpTile grid, tiles 190 (>=1000) / 160 (700-999) / two per row (<700) ---------
+# --- scrHome (3-11-2026 Home redesign): five stacked categories, cmpTile grid, tiles 150 (>=1000) / 130 (700-999) / 110 or smaller (<700), at least 3 per row from 390 px (TP-HOME-02 point 7) ---------
 $homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrHome.pa.yaml')))
 $homeKids = $homeDoc['Screens']['scrHome']['Children']
 $homeScroll = ($homeKids | Where-Object { @($_.Keys)[0] -eq 'conHomeScroll' })['conHomeScroll']
 Assert-True (([string]$homeScroll['Properties']['LayoutOverflowY'] -eq '=LayoutOverflow.Scroll') -and ([string]$homeScroll['Properties']['LayoutGap'] -eq '=32') -and ([string]$homeScroll['Properties']['PaddingTop'] -eq '=32') -and ([string]$homeScroll['Properties']['Fill'] -eq '=Color.White')) 'scrHome: white page, vertical scroll, category gap 32, padding top 32'
 $homeCats = @($homeScroll['Children'] | ForEach-Object { @($_.Keys)[0] })
 Assert-True (($homeCats -join ',') -ceq 'conHomeTeamHours,conHomeMasterData,conHomeInventory,conHomeCadTools,conHomeKnowledge') 'scrHome: categories in order Team & hours, Master data, Inventory, CAD tools, Knowledge'
-foreach ($c in @(@(1366, 768), @(1280, 720), @(1000, 768), @(999, 768), @(900, 768), @(700, 768), @(699, 768), @(414, 800), @(360, 640))) {
+foreach ($c in @(@(1366, 768), @(1280, 720), @(1000, 768), @(999, 768), @(900, 768), @(700, 768), @(699, 768), @(414, 800), @(390, 844), @(360, 640))) {
     $W = $c[0]; $Hh = $c[1]; $label = "scrHome $W x $Hh"
     $state = @{ Rects = @{}; Errors = @{}; Kind = '' }
     $screenRect = @{ X = 0; Y = 0; Width = $W; Height = $Hh }
@@ -147,9 +147,9 @@ foreach ($c in @(@(1366, 768), @(1280, 720), @(1000, 768), @(999, 768), @(900, 7
     $script:layoutChecked = 0
     Collect-Checks $homeKids 'screen' $screenRect $false $null $state 'scrHome' $label
     $m = $state.Rects['lblHomeMetrics']; $pad = $m.X; $contentW = $m.Y; $tile = $m.Width; $perRow = $m.Height; $title = $state.Rects['cmpHomeTitle']
-    $expTile = if ($W -ge 1000) { 190 } elseif ($W -ge 700) { 160 } else { [math]::Floor(($W - 2 * 16 - 16 - 10) / 2) }
+    $expTile = if ($W -ge 1000) { 150 } elseif ($W -ge 700) { 130 } else { [math]::Min(110, [math]::Floor(($W - 2 * 16 - 16 - 20) / 3)) }
     Assert-True (($title.Height -eq 60) -and ($title.Width -eq $W) -and ($tile -eq $expTile) -and ($pad -eq $(if ($W -lt 700) { 16 } else { 40 })) -and ($pad + $contentW + 16 + $pad -eq $W)) "$label : title 60, tile $tile, side padding $pad, content width $contentW (16 px scrollbar reserve)"
-    if ($W -lt 700) { Assert-True (($perRow -eq 2) -and ($tile -ge 145)) "$label : two tiles per row, tile >= 145 ($tile)" } else { Assert-True ($perRow -ge 3) "$label : $perRow tiles per row" }
+    Assert-True (($perRow -ge 3) -and ($perRow * $tile + ($perRow - 1) * 10 -le $contentW)) "$label : $perRow tiles of $tile per row (at least 3) fit the content width $contentW"
     $y = 32
     foreach ($cn in $homeCats) {
         $cr = $state.Rects[$cn]; $cdef = ($homeScroll['Children'] | Where-Object { @($_.Keys)[0] -eq $cn })[$cn]

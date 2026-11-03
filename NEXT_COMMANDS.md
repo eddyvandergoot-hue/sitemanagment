@@ -10,7 +10,7 @@ Model tip: default opus (medium). Mixed builds: `/model opusplan`. Save/load log
 
 Done: Contractors approved (tag approved-20261029-contractors); AGENTS.md "Admin screen pattern" (components mandatory, H19, H20); MS-023 templates merged (30-10-2026); logic fixes 4, 5, a, d, e (commit f500822); step 1 report (below); step 2 components (TP-COMP-01 PASS 30-10-2026); step 3 built 31-10-2026 (Contractors cceb635, Projects 34bbe2b; build components-20261031_074310, PROJECT_STATUS.md; layout items 1-7 delivered by the components).
 
-**Now: waiting for Eddy's Studio tests TESTPLAN.md TP-KEYS-01 (build keys-20261103_210529, contains the Home build too; key lists in fail-closed messages, Hours Summary project 1 diagnosis) and TP-HOME-02.** Home fixes 5-8 (mentioned by Eddy 3-11) not received yet; add to the next build.
+**Now: waiting for Eddy's Studio tests TESTPLAN.md TP-HOME-03 (Home fixes 5-8) and TP-KEYS-01, both in build homefix-20261103_224009.** TP-HOME-02 points 1-4 and 9-11 PASS (Eddy 3-11-2026). After OK on both: tag approved-<date>-home.
 
 **Now: waiting for Eddy's Studio test TESTPLAN.md TP-HOME-02** (build home-20261103_125959: Home redesign with cmpTile + N1/N3/New chip; step 3 approved 3-11-2026, tag approved-20261103-components). After OK: tag `approved-<date>-home`; then the accessibility round (block below), then (2) Workers build (step 4, with H18; item 1 at the end). Also open: N2 (transitive cycle test), N5 (test cosmetics).
 
