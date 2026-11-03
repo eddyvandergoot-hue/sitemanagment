@@ -420,7 +420,7 @@ Stappen (alleen TEST-records; debugregel letterlijk doorgeven; niet zichtbaar = 
 
 Resultaat TP-STEP3-04 (Eddy 3-11-2026): PASS. Contractors stap 1-8 ok, Projects stap 1-8 ok incl. wijziging Status/Country-dropdown, visueel ok (geen grijze vlakken, geen scrollbalkjes, randen zichtbaar, focusrand 2 px blauw). Debugbewijs: onaangeraakt IsDirty false; OnSelectRow gelogd; Country[2/0] gedetecteerd; OnDiscard zet terug.
 
-## TP-STEP3-05 Approval-build componenten (OPEN; build: zie PROJECT_STATUS.md)
+## TP-STEP3-05 Approval-build componenten (PASS Eddy 3-11-2026; build components-20261103_100216, tag approved-20261103-components)
 
 Wijziging t.o.v. TP-STEP3-04: switchlabel van cmpListCard is Input ShowInactiveLabel (Contractors "Show inactive"; Projects "Show closed": verbergt/toont alleen Status Closed, On hold altijd zichtbaar); debugregel verwijderd (lblEmpDebug/lblPrjDebug, varDebug, varDbgEvent). Verder niets.
 
@@ -432,3 +432,5 @@ Stappen (alleen TEST-records). Eerst App Checker: geen formulefout.
 | 2 | Projects openen | geen debugregel; switch heet "Show closed"; uit: geen Closed-projecten, On hold wel zichtbaar; aan: Closed verschijnen, telling klopt |
 | 3 | Contractors: één veld van een TEST-contractor wijzigen, Save | groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
 | 4 | Projects: één veld van een TEST-project wijzigen, Save | groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
+
+Resultaat TP-STEP3-05 (Eddy 3-11-2026): PASS. App Checker schoon, geen debugregel, labels Show inactive / Show closed ok (On hold zichtbaar, Closed schakelt, telling ok), Save Contractors + Projects ok in SharePoint.
