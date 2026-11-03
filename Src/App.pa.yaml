@@ -8,7 +8,7 @@
 # ************************************************************************************************
 App:
   Properties:
-    OnStart: =Set(varSaving, false); Set(varWeekSaving, false); Set(varLang, "en"); Set(varDebug, true)
+    OnStart: =Set(varSaving, false); Set(varWeekSaving, false); Set(varLang, "en")
     StartScreen: =scrHome
     Formulas: |-
       =LangNl = Coalesce(varLang,"en")="nl";
@@ -80,7 +80,7 @@ App:
         prjSave: {en: "Save", nl: ""},
         prjSearchHint: {en: "Search number, name or city", nl: ""},
         prjCount: {en: "{0} projects", nl: ""},
-        prjShowInactive: {en: "Show inactive", nl: ""},
+        prjShowInactive: {en: "Show closed", nl: ""},
         prjFieldName: {en: "Project Name", nl: ""},
         prjFieldNumber: {en: "Project Number", nl: ""},
         prjFieldReference: {en: "Project Reference", nl: ""},

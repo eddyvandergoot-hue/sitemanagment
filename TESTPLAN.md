@@ -396,7 +396,7 @@ Stappen (alleen TEST-records; debugregel letterlijk doorgeven; niet zichtbaar = 
 | 8 | Stap 1-7 op Projects (TEST-project), incl. Status/Country-dropdown wijzigen | idem; dropdowns tonen keuzes |
 | 9 | Visueel | geen grijze vlakken, geen scrollbalkjes, randen volledig, focusrand 2 px blauw |
 
-## TP-STEP3-04 cmpField + cmpListCard herbouwd op de Studio-skeletten van Eddy (OPEN; DEBUG-testbuild components-20261102_172252)
+## TP-STEP3-04 cmpField + cmpListCard herbouwd op de Studio-skeletten van Eddy (PASS Eddy 3-11-2026; DEBUG-testbuild components-20261102_172252)
 
 Basis: Incoming\20261102Components.msapp (Eddy, in Play getest op scrTest). Alleen de componentdefinities zijn overgenomen; App Id 88e53928 en verbindingen blijven uit Site Managment_VS.msapr; scrTest is niet overgenomen.
 Overgenomen vorm: map Src\Components (meervoud, zoals Studio); DisplayName op elke property; events ReturnType Boolean, Default =true (host-handlers eindigen op "; true"); cmpField Input DefaultValue -> txtFieldValue.Default, Output Value = txtFieldValue.Text (dropdown ddFieldValue.Selected.Value, readonly DefaultValue); cmpListCard SelectedRowID = galRows.Selected.ID, galRows.OnSelect = cmpListCard.OnSelectRow(), filteren binnen de component (Show inactive + zoeken in Title/Subtitle).
@@ -417,3 +417,18 @@ Stappen (alleen TEST-records; debugregel letterlijk doorgeven; niet zichtbaar = 
 | 8 | Veld wijzigen, Save | "last event: OnSave", groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
 | 9 | Stap 1-8 op Projects (TEST-project), incl. Status/Country-dropdown | idem; dropdowns tonen keuzes |
 | 10 | Visueel | geen grijze vlakken, geen scrollbalkjes, randen volledig, focusrand 2 px blauw |
+
+Resultaat TP-STEP3-04 (Eddy 3-11-2026): PASS. Contractors stap 1-8 ok, Projects stap 1-8 ok incl. wijziging Status/Country-dropdown, visueel ok (geen grijze vlakken, geen scrollbalkjes, randen zichtbaar, focusrand 2 px blauw). Debugbewijs: onaangeraakt IsDirty false; OnSelectRow gelogd; Country[2/0] gedetecteerd; OnDiscard zet terug.
+
+## TP-STEP3-05 Approval-build componenten (OPEN; build: zie PROJECT_STATUS.md)
+
+Wijziging t.o.v. TP-STEP3-04: switchlabel van cmpListCard is Input ShowInactiveLabel (Contractors "Show inactive"; Projects "Show closed": verbergt/toont alleen Status Closed, On hold altijd zichtbaar); debugregel verwijderd (lblEmpDebug/lblPrjDebug, varDebug, varDbgEvent). Verder niets.
+
+Stappen (alleen TEST-records). Eerst App Checker: geen formulefout.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| 1 | Contractors openen | geen debugregel onder het formulier; switch heet "Show inactive" |
+| 2 | Projects openen | geen debugregel; switch heet "Show closed"; uit: geen Closed-projecten, On hold wel zichtbaar; aan: Closed verschijnen, telling klopt |
+| 3 | Contractors: één veld van een TEST-contractor wijzigen, Save | groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
+| 4 | Projects: één veld van een TEST-project wijzigen, Save | groene balk Saved, waarde in SharePoint gewijzigd (Modified) |

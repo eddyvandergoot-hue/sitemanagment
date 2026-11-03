@@ -42,9 +42,9 @@ function Index-Controls($entries, $index) { foreach ($entry in $entries) { $name
 function Norm([string]$s) { return ($s -replace '\s+', '') }
 # 01-11-2026 (Studio FAIL A/B of build components-20261031_074310): the dirty expression lives once in the hidden label lbl<P>Dirty
 # (Text = If(<dirty>,"true","false")); every guard reads (lbl<P>Dirty.Text="true"), so no cmpField output is read inside a component
-# input. Debug-only: every host event handler starts with Set(varDbgEvent,"<Event> " & Text(Now(),"hh:mm:ss")); and lbl<P>Debug shows
-# the state (remove both before the approval build, NEXT_COMMANDS.md 1). This helper checks both, then expands the label reference and
-# strips the debug line in the property map, so all behavioural checks below still evaluate the real guard text.
+# input. 03-11-2026 (approval build, Eddy): the temporary debug line (lbl<P>Debug, varDebug, varDbgEvent) is removed; this helper checks
+# that nothing of it is left, then expands the label reference in the property map, so all behavioural checks below still evaluate the
+# real guard text.
 function Apply-DirtyLabel($map, [string]$p, [string]$scr) {
     $lblFx = ([string]$map["lbl${p}Dirty.Text"]).Trim()
     $head = "=If((Coalesce(var${p}Mode,`"`") in [`"New`",`"Edit`"] && ("; $tail = ',"true","false")'
@@ -54,20 +54,16 @@ function Apply-DirtyLabel($map, [string]$p, [string]$scr) {
     $users = @(@($map.Keys) | Where-Object { ([string]$map[$_]).Contains($ref) } | Sort-Object)
     $expUsers = @("cmp${p}Footer.DiscardEnabled", "cmp${p}Footer.HomeEnabled", "cmp${p}Footer.NewEnabled", "cmp${p}Footer.OnDiscard", "cmp${p}Footer.OnHome", "cmp${p}Footer.OnNew", "cmp${p}Footer.OnRefresh", "cmp${p}Footer.OnSave", "cmp${p}Footer.RefreshEnabled", "cmp${p}Footer.SaveEnabled", "cmp${p}List.Enabled", "cmp${p}List.OnSelectRow", "cmp${p}List.OnToggleShowInactive", "btn${p}Load.OnSelect", "$(if ($p -eq 'Emp') { 'scrContractors' } else { 'scrProjects' }).OnVisible") | Sort-Object
     Assert-True (($users -join ',') -ceq ($expUsers -join ',')) "${scr}: the 15 guards (footer inputs/handlers, list card, loader, OnVisible) read $ref ($($users -join ', '))"
-    $cv = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -cmatch "\bcmp${p}\w+\.Value\b" -and $_ -notin @("lbl${p}Dirty.Text", "lbl${p}Debug.Text", "cmp${p}Footer.OnSave") })
-    Assert-True ($cv.Count -eq 0) "${scr}: cmpField Value is read only by lbl${p}Dirty, the Save record (cmp${p}Footer.OnSave) and the debug line ($($cv -join ', '))"
+    $cv = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -cmatch "\bcmp${p}\w+\.Value\b" -and $_ -notin @("lbl${p}Dirty.Text", "cmp${p}Footer.OnSave") })
+    Assert-True ($cv.Count -eq 0) "${scr}: cmpField Value is read only by lbl${p}Dirty and the Save record (cmp${p}Footer.OnSave) ($($cv -join ', '))"
     foreach ($k in $users) { $map[$k] = ([string]$map[$k]).Replace($ref, $d) }
     $evs = [ordered]@{ "cmp${p}Footer.OnHome" = 'OnHome'; "cmp${p}Footer.OnNew" = 'OnNew'; "cmp${p}Footer.OnRefresh" = 'OnRefresh'; "cmp${p}Footer.OnDiscard" = 'OnDiscard'; "cmp${p}Footer.OnSave" = 'OnSave'; "cmp${p}List.OnSelectRow" = 'OnSelectRow'; "cmp${p}List.OnToggleShowInactive" = 'OnToggleShowInactive'; "cmp${p}MsgBar.OnClose" = 'OnClose' }
     foreach ($k in $evs.Keys) {
-        $fx = ([string]$map[$k]).Trim(); $pre = "=Set(varDbgEvent,`"$($evs[$k]) `" & Text(Now(),`"hh:mm:ss`")); "
-        Assert-True ($fx.StartsWith($pre) -and ([regex]::Matches($fx, 'varDbgEvent')).Count -eq 1) "${scr}: $k first records the event in varDbgEvent (debug-only, before the guard, nothing else)"
-        $map[$k] = '=' + $fx.Substring($pre.Length)
+        Assert-True (([string]$map[$k]).Trim() -notmatch 'varDbg') "${scr}: $k has no debug prefix (debug line removed for the approval build)"
     }
-    $dbg = ([string]$map["lbl${p}Debug.Text"]).Trim()
-    Assert-True (([string]$map["lbl${p}Debug.Visible"]).Trim() -eq '=varDebug' -and $dbg.Contains("lbl${p}Dirty.Text") -and $dbg.Contains('Coalesce(varDbgEvent,"-")') -and $dbg.Contains("Text(cmp${p}List.SelectedRowID)") -and $dbg -notmatch '\b(Set|Patch|Collect|Navigate|Select|Reset)\(') "${scr}: lbl${p}Debug (Visible = varDebug) shows IsDirty, changed fields, last event and SelectedRowID; display only"
-    $other = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -match '\bvarDbg\w*|\bvarDebug\b' -and $_ -notin @("lbl${p}Debug.Text", "lbl${p}Debug.Visible") })
-    Assert-True ($other.Count -eq 0) "${scr}: varDbgEvent/varDebug are used nowhere else (debug-only, removable) ($($other -join ', '))"
-    foreach ($k in @(@($map.Keys) | Where-Object { $_ -like "lbl${p}Dirty.*" -or $_ -like "lbl${p}Debug.*" })) { $map.Remove($k) }
+    $left = @(@($map.Keys) | Where-Object { $_ -like "lbl${p}Debug.*" -or ([string]$map[$_]) -match '\bvarDbg\w*|\bvarDebug\b' })
+    Assert-True ($left.Count -eq 0) "${scr}: no debug line left (lbl${p}Debug, varDbgEvent, varDebug) ($($left -join ', '))"
+    foreach ($k in @(@($map.Keys) | Where-Object { $_ -like "lbl${p}Dirty.*" })) { $map.Remove($k) }
     $script:lastDirty = $d
 }
 
@@ -91,7 +87,9 @@ foreach ($p in $screenProps.Keys) { $all["$screenName.$p"] = [string]$screenProp
 Apply-DirtyLabel $all 'Emp' 'Contractors'; $dirtyFromLbl = $script:lastDirty
 $screenText = ($all.Values) -join "`n"
 $srcAll = (Get-ChildItem $srcDir -Filter *.pa.yaml | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join "`n"
-Assert-True ($srcAll.Contains('OnStart: =Set(varSaving, false); Set(varWeekSaving, false); Set(varLang, "en"); Set(varDebug, true)')) 'App.OnStart sets varDebug true for this test build (debug line visible; remove before the approval build)'
+Assert-True ($srcAll.Contains('OnStart: =Set(varSaving, false); Set(varWeekSaving, false); Set(varLang, "en")') -and $srcAll -notmatch '\bvarDebug\b|\bvarDbg\w*|lbl(Emp|Prj)Debug') 'App.OnStart without varDebug and no debug line anywhere in Src (approval build)'
+$srcDeep = (Get-ChildItem $srcDir -Filter *.pa.yaml -Recurse | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join "`n"
+Assert-True ($srcDeep -notmatch '\bvarDebug\b|\bvarDbg\w*|lbl(Emp|Prj)Debug') 'No debug line in Src including Src\Components (approval build)'
 # --- Step 3a (30-10-2026): footer, list card, title bar, message bar and form fields are component instances. -----------------------------
 # (1a) Guard parity per instance, checked on the real properties: <Xxx>Enabled is textually the first If-condition of On<Xxx>.
 # (1b) Compatibility layer: the behavioural checks below keep their historical control names (btnEmpSave.OnSelect, btnEmpSave.DisplayMode,
@@ -802,14 +800,14 @@ $li = $idx['cmpEmpList']
 Assert-True ($li['Control'] -eq 'CanvasComponent' -and $li['ComponentName'] -eq 'cmpListCard') 'List card = cmpListCard instance (replaces conEmpListCard, search, count, Show inactive switch and gallery)'
 foreach ($card in @(@('cmpEmpList', 'X', '=24'), @('cmpEmpList', 'Y', '=24'), @('cmpEmpList', 'Width', '=If(lblEmpLayout.X=1,360,Parent.Width-64)'), @('cmpEmpList', 'Height', '=lblEmpMetrics.Width'),
         @('cmpEmpList', 'SelectedID', '=Coalesce(varEmpSelectedID,0)'), @('cmpEmpList', 'ShowInactive', '=Coalesce(varEmpShowInactive,false)'),
-        @('cmpEmpList', 'SearchHint', ('=' + (TT 'empSearchHint'))), @('cmpEmpList', 'ShowInactiveText', ('=' + (TT 'empShowInactive'))), @('cmpEmpList', 'OnText', ('=' + (TT 'admOn'))), @('cmpEmpList', 'OffText', ('=' + (TT 'admOff'))),
+        @('cmpEmpList', 'SearchHint', ('=' + (TT 'empSearchHint'))), @('cmpEmpList', 'ShowInactiveLabel', ('=' + (TT 'empShowInactive'))), @('cmpEmpList', 'OnText', ('=' + (TT 'admOn'))), @('cmpEmpList', 'OffText', ('=' + (TT 'admOff'))),
         @('cmpEmpList', 'CountFormat', ('=' + (TT 'empCount'))),
         @('conEmpFormCard', 'Fill', '=Color.White'), @('conEmpFormCard', 'DropShadow', '=DropShadow.Light'), @('conEmpFormCard', 'RadiusTopLeft', '=8'), @('conEmpFormCard', 'X', '=lblEmpLayout.Y'), @('conEmpFormCard', 'Y', '=lblEmpLayout.Height'), @('conEmpFormCard', 'Width', '=lblEmpLayout.Width'), @('conEmpFormCard', 'Height', '=If(lblEmpLayout.X=1,lblEmpMetrics.Height-48,lblEmpMetrics.Y)'))) {
     Assert-True ((Get-Prop $card[0] $card[1]) -ceq $card[2]) "$($card[0]).$($card[1]) = $($card[2])"
 }
 Assert-True ($srcAll -match 'empSearchHint: \{en: "Search name, code or city"' -and $srcAll -match 'empCount: \{en: "\{0\} contractors"') 'T: search hint "Search name, code or city", count "{0} contractors"'
 $canvKids = @($idx['conEmpCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] })
-Assert-True (($canvKids -join ',') -ceq 'cmpEmpList,conEmpFormCard,lblEmpDebug') 'conEmpCanvas holds exactly the list card instance, the form card and (debug-only) lblEmpDebug in the bottom padding'
+Assert-True (($canvKids -join ',') -ceq 'cmpEmpList,conEmpFormCard') 'conEmpCanvas holds exactly the list card instance and the form card (debug line removed)'
 # cmpListCard internals that fix the list geometry (white card, radius 8, shadow, search 24/36, info row 24, gallery rows 64)
 $lcDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'Components/cmpListCard.pa.yaml')))['ComponentDefinitions']['cmpListCard']
 $lci = @{}; Index-Controls $lcDef['Children'] $lci
@@ -1029,7 +1027,6 @@ function Emp-Inputs([string]$cityOverride) {
     return ($parts -join ',') + ',varEmpActiveDraft:Coalesce(varEmpEdit.Active,true)'
 }
 $lblDirtyFx = ([string]$idx['lblEmpDirty']['Properties']['Text']).Trim().TrimStart('=')
-$lblDebugFx = ([string]$idx['lblEmpDebug']['Properties']['Text']).Trim().TrimStart('=')
 $rawRows = @((Raw '"Zeta"' '"Ede"' '"EMP-001"' 'true' '" Street 1 "').Replace('{ID:7,', '{ID:1,'), (Raw '"alpha"' $blankT $blankT 'false' $blankT).Replace('{ID:7,', '{ID:2,'), (Raw '" Beta "' '"Delft"' '""' $blankB '""').Replace('{ID:7,', '{ID:3,'))
 $loadedCol = 'Table(' + (($rawRows | ForEach-Object { Proj $_ }) -join ',') + ')'
 $loadEnv = "colAdminEmployers:$loadedCol,LangNl:false,T:$tRec,varEmpShowInactive:false,cmpEmpList:{SearchText:`"`"}"
@@ -1039,10 +1036,6 @@ foreach ($id in 1, 2, 3) { Assert-Eval "With({$loadEnv},With({varEmpMode:`"Edit`
 Assert-Eval "With({varEmpMode:`"New`",varEmpEdit:$empEmpty},With({$(Emp-Inputs '')},$lblDirtyFx))" 'false' 'Contractors: dirty false after New (empty snapshot, Active true)'
 Assert-Eval "With({varEmpMode:`"Edit`",varEmpEdit:{ID:9,Name:`"N`",Code:$blankT,Address:$blankT,Postalcode:$blankT,City:$blankT,Country:$blankT,ContactName:$blankT,ContactEmail:$blankT,ContactPhone:$blankT,Active:$blankB}},With({$(Emp-Inputs '')},$lblDirtyFx))" 'false' 'Contractors: dirty false for a snapshot with Blank fields and Blank Active (blank = "" and = active)'
 Assert-Eval "With({$loadEnv},With({varEmpMode:`"Edit`",varEmpEdit:LookUp(colAdminEmployers,ID=3)},With({$(Emp-Inputs $emptyQ)},$lblDirtyFx)))" 'true' 'Contractors: dirty true when an input still shows another value than the loaded one (what the Studio test showed)'
-$dbgEnv = "varDbgEvent:`"OnSelectRow 10:00:00`",lblEmpDirty:{Text:`"true`"}"
-$loadEnv3 = $loadEnv.Replace('{SearchText:""}', '{SearchText:"",SelectedRowID:3}'); $loadEnv0 = $loadEnv.Replace('{SearchText:""}', '{SearchText:"",SelectedRowID:0}')
-Assert-Eval "With({$loadEnv3,$dbgEnv},With({varEmpMode:`"Edit`",varEmpEdit:LookUp(colAdminEmployers,ID=3)},With({$(Emp-Inputs $emptyQ)},$lblDebugFx)))" 'IsDirty: true | changed: City[0/5] | last event: OnSelectRow 10:00:00 | SelectedRowID: 3' 'Contractors debug line names the differing field with current/loaded length, the last event and the row'
-Assert-Eval "With({$loadEnv0,varDbgEvent:If(false,`"`"),lblEmpDirty:{Text:`"false`"}},With({varEmpMode:`"Edit`",varEmpEdit:LookUp(colAdminEmployers,ID=3)},With({$(Emp-Inputs '')},$lblDebugFx)))" 'IsDirty: false | changed: - | last event: - | SelectedRowID: 0' 'Contractors debug line when clean and no event yet'
 Write-Output 'PASS Test-AdminScreens (Contractors): static structure only. Studio import, binding, delegation (Monitor), SharePoint case-sensitivity of Title = and functional tests NOT verified.'
 # =====================================================================================================================
 # Build 2 (30-10-2026): Projects (scrProjects, list Projects). Same admin pattern as Contractors; only fields and rules differ.
@@ -1409,7 +1402,7 @@ foreach ($n in $pIdx.Keys) {
     }
 }
 Assert-True ($pLit.Count -eq 0) "Projects: visible captions use T, no literal text $($pLit -join ', ')"
-$pTexts = [ordered]@{ prjTitle = 'Projects'; prjSearchHint = 'Search number, name or city'; prjCount = '{0} projects'; prjShowInactive = 'Show inactive'; prjNewProject = 'New project'; prjSecGeneral = 'GENERAL'; prjSecAddress = 'ADDRESS'; prjSecPeople = 'PEOPLE'; prjSecLinks = 'LINKS'; prjLastChanged = 'Last changed in SharePoint: {0}'; prjErrConflict = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'; prjErrDuplicate = 'Fix: Project Number already exists' }
+$pTexts = [ordered]@{ prjTitle = 'Projects'; prjSearchHint = 'Search number, name or city'; prjCount = '{0} projects'; prjShowInactive = 'Show closed'; prjNewProject = 'New project'; prjSecGeneral = 'GENERAL'; prjSecAddress = 'ADDRESS'; prjSecPeople = 'PEOPLE'; prjSecLinks = 'LINKS'; prjLastChanged = 'Last changed in SharePoint: {0}'; prjErrConflict = 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'; prjErrDuplicate = 'Fix: Project Number already exists' }
 foreach ($k in $pTexts.Keys) { Assert-True ($formulas.Contains("$($k): {en: ""$($pTexts[$k])"", nl: """"}")) "Projects: T.$k = '$($pTexts[$k])'" }
 
 # (P14) Refresh before every SharePoint read (H16), form reset, Modified display -----------------------------------------
@@ -1570,7 +1563,7 @@ Assert-True ((PGet 'cmpPrjName' 'Enabled') -ceq $pFieldGuard) 'Projects: inputs 
 $pFormKids = @($pIdx['conPrjFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
 $pExpKids = 'lblPrjFormTitle,btnPrjFormChip,lblPrjFormDivider,lblPrjSecGeneral,cmpPrjName,cmpPrjNumber,cmpPrjReference,cmpPrjCustomer,cmpPrjStatus,lblPrjSecAddress,cmpPrjStreet,cmpPrjHouseNumber,cmpPrjPostalCode,cmpPrjCity,cmpPrjCountry,lblPrjSecPeople,cmpPrjLeader,cmpPrjSiteManager,lblPrjSecLinks,cmpPrjUrl,lblPrjModified'
 Assert-True (($pFormKids -join ',') -ceq $pExpKids) "Projects: conPrjFormCard children: $($pFormKids -join ',')"
-Assert-True ((@($pIdx['conPrjCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'cmpPrjList,conPrjFormCard,lblPrjDebug') 'Projects: canvas children = list card instance, form card and (debug-only) lblPrjDebug'
+Assert-True ((@($pIdx['conPrjCanvas']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -ceq 'cmpPrjList,conPrjFormCard') 'Projects: canvas children = list card instance and form card (debug line removed)'
 foreach ($cp in @(@('cmpPrjList', 'X', '=24'), @('cmpPrjList', 'Y', '=24'), @('cmpPrjList', 'Width', '=If(lblPrjLayout.X=1,360,Parent.Width-64)'), @('cmpPrjList', 'Height', '=lblPrjMetrics.Width'), @('conPrjFormCard', 'X', '=lblPrjLayout.Y'), @('conPrjFormCard', 'Y', '=lblPrjLayout.Height'), @('conPrjFormCard', 'Width', '=lblPrjLayout.Width'), @('conPrjFormCard', 'Height', '=If(lblPrjLayout.X=1,lblPrjMetrics.Height-48,lblPrjMetrics.Y)'), @('conPrjFormCard', 'DropShadow', '=DropShadow.Light'), @('conPrjBody', 'Y', '=cmpPrjMsgBar.Y+cmpPrjMsgBar.Height'), @('conPrjBody', 'Height', '=Max(0,cmpPrjFooter.Y-Self.Y)'))) {
     Assert-True ((PGet $cp[0] $cp[1]) -ceq $cp[2]) "Projects: $($cp[0]).$($cp[1]) = $($cp[2])"
 }
@@ -1695,7 +1688,6 @@ function Prj-Inputs([string]$statusOverride) {
     return ($parts -join ',')
 }
 $pLblDirtyFx = ([string]$pIdx['lblPrjDirty']['Properties']['Text']).Trim().TrimStart('=')
-$pLblDebugFx = ([string]$pIdx['lblPrjDebug']['Properties']['Text']).Trim().TrimStart('=')
 $pdT = 'If(false,"x")'; $pdC = 'If(false,{Value:"x"})'; $pdP = 'If(false,{DisplayName:"x"})'  # own names: $bc (= $bC, PowerShell is case-insensitive) is reused for message bodies above
 $pRawRows = @((PRaw '"Alpha"' '"TEST-002"' '"Delft"' '{Value:"Active"}' '{Value:"Netherlands"}' '" x "' '{DisplayName:"P"}').Replace('{ID:7,', '{ID:1,'), (PRaw '"Beta"' '"TEST-001"' $pdT '{Value:"Archived"}' $pdC $pdT $pdP).Replace('{ID:7,', '{ID:2,'), (PRaw $pdT '"A-1"' '"Ede"' $pdC '{Value:"Belgium"}' '""' $pdP).Replace('{ID:7,', '{ID:3,'))
 $pLoadedCol = 'Table(' + (($pRawRows | ForEach-Object { PProj $_ }) -join ',') + ')'
@@ -1705,6 +1697,4 @@ Assert-Eval "With({$pLoadEnv},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdm
 foreach ($id in 1, 2, 3) { Assert-Eval "With({$pLoadEnv},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdminProjects,ID=$id)},With({$(Prj-Inputs '')},$pLblDirtyFx)))" 'false' "Projects: dirty false after selecting row $id (row 2: Status Archived outside Choices shown as-is, blank Country)" }
 Assert-Eval "With({varPrjMode:`"New`",varPrjEdit:{ID:Blank(),Name:`"`",Number:`"`",Reference:`"`",Customer:`"`",Status:`"Active`",Street:`"`",HouseNumber:`"`",PostalCode:`"`",City:`"`",Country:`"Netherlands`",Leader:`"`",SiteManager:`"`",Url:`"`"}},With({$(Prj-Inputs '')},$pLblDirtyFx))" 'false' 'Projects: dirty false after New (Status Active, Country Netherlands preselected)'
 Assert-Eval "With({$pLoadEnv},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdminProjects,ID=1)},With({$(Prj-Inputs $emptyQ)},$pLblDirtyFx)))" 'true' 'Projects: dirty true when the Status dropdown shows no selection while Active was loaded'
-$pLoadEnv1 = $pLoadEnv.Replace('{SearchText:""}', '{SearchText:"",SelectedRowID:1}')
-Assert-Eval "With({$pLoadEnv1,varDbgEvent:`"OnSave 10:00:01`",lblPrjDirty:{Text:`"true`"}},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdminProjects,ID=1)},With({$(Prj-Inputs $emptyQ)},$pLblDebugFx)))" 'IsDirty: true | changed: Status[0/6] | last event: OnSave 10:00:01 | SelectedRowID: 1' 'Projects debug line names the differing field, the last event and the row'
 Write-Output 'PASS Test-AdminScreens (Projects): static structure only. Studio import, binding (Choices/[@Projects], Hyperlink URL, person DisplayName), delegation (Monitor), SharePoint case-sensitivity of ''Project Number'' = and functional tests NOT verified.'

@@ -38,8 +38,7 @@ Screens:
             Head: =varAdmMsgHead
             Height: =If(IsBlank(varAdmMsgKind),0,40)
             Kind: =varAdmMsgKind
-            OnClose: |-
-              =Set(varDbgEvent,"OnClose " & Text(Now(),"hh:mm:ss")); Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")
+            OnClose: =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")
             Width: =cmpPrjTitle.Width
             X: =cmpPrjTitle.X
             Y: =cmpPrjTitle.Y+cmpPrjTitle.Height
@@ -199,7 +198,7 @@ Screens:
                         OffText: =If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en)
                         OnText: =If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en)
                         OnSelectRow: |-
-                          =Set(varDbgEvent,"OnSelectRow " & Text(Now(),"hh:mm:ss")); If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),
+                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),
                            If(!IsBlank(cmpPrjList.SelectedRowID) && !IsBlank(LookUp(colAdminProjects,ID=cmpPrjList.SelectedRowID).ID),
                             Set(varPrjSelectedID,cmpPrjList.SelectedRowID); Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)); Set(varPrjMode,"Edit");
                             Clear(colPrjSaveErrors); Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl)
@@ -207,11 +206,11 @@ Screens:
                            Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
                           ); true
                         OnToggleShowInactive: |-
-                          =Set(varDbgEvent,"OnToggleShowInactive " & Text(Now(),"hh:mm:ss")); If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false))); true
+                          =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),Set(varPrjShowInactive,!Coalesce(varPrjShowInactive,false))); true
                         SearchHint: =If(LangNl && !IsBlank(T.prjSearchHint.nl),T.prjSearchHint.nl,T.prjSearchHint.en)
                         SelectedID: =Coalesce(varPrjSelectedID,0)
                         ShowInactive: =Coalesce(varPrjShowInactive,false)
-                        ShowInactiveText: =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en)
+                        ShowInactiveLabel: =If(LangNl && !IsBlank(T.prjShowInactive.nl),T.prjShowInactive.nl,T.prjShowInactive.en)
                         Width: =If(lblPrjLayout.X=1,360,Parent.Width-64)
                         X: =24
                         Y: =24
@@ -598,26 +597,6 @@ Screens:
                               Width: =lblPrjLayout.Width-48
                               X: =24
                               Y: =lblPrjSecLinks.Y+38+74
-                  - lblPrjDebug:
-                      Control: Label@2.5.1
-                      Properties:
-                        Color: =ColorValue("#787878")
-                        Font: ="Inter, Arial, sans-serif"
-                        FontWeight: =FontWeight.Normal
-                        Height: =20
-                        PaddingBottom: =0
-                        PaddingLeft: =0
-                        PaddingRight: =0
-                        PaddingTop: =0
-                        Size: =12
-                        Text: |-
-                          ="IsDirty: " & lblPrjDirty.Text & " | changed: " & Coalesce(Concat(Filter(Table({F:"Name",C:Trim(cmpPrjName.Value & ""),L:Trim(varPrjEdit.Name & "")},{F:"Number",C:Trim(cmpPrjNumber.Value & ""),L:Trim(varPrjEdit.Number & "")},{F:"Reference",C:Trim(cmpPrjReference.Value & ""),L:Trim(varPrjEdit.Reference & "")},{F:"Customer",C:Trim(cmpPrjCustomer.Value & ""),L:Trim(varPrjEdit.Customer & "")},{F:"Status",C:Trim(cmpPrjStatus.Value & ""),L:Trim(varPrjEdit.Status & "")},{F:"Street",C:Trim(cmpPrjStreet.Value & ""),L:Trim(varPrjEdit.Street & "")},{F:"HouseNumber",C:Trim(cmpPrjHouseNumber.Value & ""),L:Trim(varPrjEdit.HouseNumber & "")},{F:"PostalCode",C:Trim(cmpPrjPostalCode.Value & ""),L:Trim(varPrjEdit.PostalCode & "")},{F:"City",C:Trim(cmpPrjCity.Value & ""),L:Trim(varPrjEdit.City & "")},{F:"Country",C:Trim(cmpPrjCountry.Value & ""),L:Trim(varPrjEdit.Country & "")},{F:"Url",C:Trim(cmpPrjUrl.Value & ""),L:Trim(varPrjEdit.Url & "")}),C<>L),F & "[" & Len(C) & "/" & Len(L) & "]",", "),"-") & " | last event: " & Coalesce(varDbgEvent,"-") & " | SelectedRowID: " & Text(cmpPrjList.SelectedRowID)
-                        VerticalAlign: =VerticalAlign.Middle
-                        Visible: =varDebug
-                        Width: =Max(0,Parent.Width-48)
-                        Wrap: =false
-                        X: =24
-                        Y: =Parent.Height-22
       - cmpPrjFooter:
           Control: CanvasComponent
           ComponentName: cmpFooter
@@ -633,7 +612,7 @@ Screens:
             NewEnabled: |-
               =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true")
             OnDiscard: |-
-              =Set(varDbgEvent,"OnDiscard " & Text(Now(),"hh:mm:ss")); If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || (lblPrjDirty.Text="true")),
+              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || (lblPrjDirty.Text="true")),
                Trace("DIAG|Projects|Discard",TraceSeverity.Information,{Screen:"Projects",Mode:Coalesce(varPrjMode,""),SaveFailed:Coalesce(varPrjSaveFailed,false)});
                Clear(colPrjSaveErrors);
                If(Coalesce(varPrjSaveFailed,false),
@@ -645,23 +624,23 @@ Screens:
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
               )
             OnHome: |-
-              =Set(varDbgEvent,"OnHome " & Text(Now(),"hh:mm:ss")); If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(lblPrjDirty.Text="true"),Navigate(scrHome))
+              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !(lblPrjDirty.Text="true"),Navigate(scrHome))
             OnNew: |-
-              =Set(varDbgEvent,"OnNew " & Text(Now(),"hh:mm:ss")); If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),
+              =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && !(lblPrjDirty.Text="true"),
                Set(varPrjMode,"New"); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""});
                Clear(colPrjSaveErrors); Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
                Trace("DIAG|Projects|New",TraceSeverity.Information,{Screen:"Projects"}),
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
               )
             OnRefresh: |-
-              =Set(varDbgEvent,"OnRefresh " & Text(Now(),"hh:mm:ss")); If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !(lblPrjDirty.Text="true")),
+              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !(lblPrjDirty.Text="true")),
                Trace("DIAG|Projects|Refresh",TraceSeverity.Information,{Screen:"Projects",SaveFailed:Coalesce(varPrjSaveFailed,false)});
                If(Coalesce(varPrjSaveFailed,false),Clear(colPrjSaveErrors));
                Set(varPrjForceRefresh,true); Select(btnPrjLoad),
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgActionBlocked.nl),T.prjMsgActionBlocked.nl,T.prjMsgActionBlocked.en))
               )
             OnSave: |-
-              =Set(varDbgEvent,"OnSave " & Text(Now(),"hh:mm:ss")); If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && (varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID))) && (lblPrjDirty.Text="true"),
+              =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && (varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID))) && (lblPrjDirty.Text="true"),
                Set(varPrjSaving,true); Set(varPrjDiagT0,Now());
                Clear(colPrjSaveErrors); Clear(colPrjPreRaw); Clear(colPrjPre); Clear(colPrjDup); Clear(colPrjPeriods); Clear(colPrjPatched); Clear(colPrjVerifyRaw); Clear(colPrjVerify);
                Set(varPrjSaveReads,0); Set(varPrjSaveWrites,0); Set(varPrjSaveVerified,false); Set(varPrjSaveDupFound,false); Set(varPrjSaveConflict,false); Set(varPrjSaveOpenPeriods,0); Set(varPrjSavePeriodsUnchecked,false); Set(varPrjVerifyDiff,"");

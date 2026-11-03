@@ -81,10 +81,10 @@ ComponentDefinitions:
         Description: Switch state (true = on, inactive rows shown).
         DataType: Boolean
         Default: =false
-      ShowInactiveText:
+      ShowInactiveLabel:
         PropertyKind: Input
-        DisplayName: ShowInactiveText
-        Description: Label of the switch, for example Show inactive (plain text, escaped by the component).
+        DisplayName: ShowInactiveLabel
+        Description: 'Label of the switch: Show inactive (Contractors, later Workers) or Show closed (Projects; Inactive = Status Closed, On hold always shown) (plain text, escaped by the component).'
         DataType: Text
         Default: =""
       ShowInactiveValue:
@@ -170,7 +170,7 @@ ComponentDefinitions:
                   Fill: =Color.Transparent
                   Font: ="Inter, Arial, sans-serif"
                   Height: =26
-                  HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(galRows.AllItems))),"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveText,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
+                  HtmlText: ="<style>html,body{margin:0;padding:0;overflow:hidden}</style><div style='margin:0;padding:0;overflow:hidden;display:flex;width:100%;font-family:Inter,Arial,sans-serif;font-size:13px;line-height:24px;color:#000000'><span style='flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" & Substitute(Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(galRows.AllItems))),"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span><span style='flex:none;white-space:nowrap;text-align:right;padding-left:8px'>" & Substitute(Substitute(Substitute(Substitute(Substitute(cmpListCard.ShowInactiveLabel,"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"'","&#39;") & "</span></div>"
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
@@ -211,7 +211,7 @@ ComponentDefinitions:
                   Size: =12
                   Text: =""
                   TabIndex: =-1
-                  Tooltip: '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)'
+                  Tooltip: '=cmpListCard.ShowInactiveLabel & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)'
                   Width: =44
                   X: =Parent.Width-24-Self.Width
                   Y: =htmlCmpListInfo.Y+1

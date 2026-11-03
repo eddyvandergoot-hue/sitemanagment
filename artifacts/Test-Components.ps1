@@ -22,7 +22,7 @@ $contract = @{
                        OnHome = 'Event:None'; OnNew = 'Event:None'; OnRefresh = 'Event:None'; OnDiscard = 'Event:None'; OnSave = 'Event:None' }
     cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; DefaultValue = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
                        Value = 'Output:Text'; OnChange = 'Event:Boolean' }
-    cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountFormat = 'Input:Text'; ShowInactiveText = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
+    cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountFormat = 'Input:Text'; ShowInactiveLabel = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
                        SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; SelectedRowID = 'Output:Number'; OnSelectRow = 'Event:Boolean'; OnToggleShowInactive = 'Event:Boolean' }
 }
 foreach ($c in $contract.Keys) {
@@ -217,12 +217,12 @@ $lcPred = '(cmpListCard.ShowInactive || !Inactive) && (IsBlank(Trim(txtSearch.Te
 $cntInner = 'Substitute(cmpListCard.CountFormat,"{0}",Text(CountRows(galRows.AllItems)))'
 $eCnt = 'Substitute(Substitute(Substitute(Substitute(Substitute(' + $cntInner + ',"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"' + "'" + '","&#39;")'
 Assert-True ($ih.Contains($eCnt) -and ([regex]::Matches($ih, [regex]::Escape('cmpListCard.CountFormat'))).Count -eq 1 -and $ih -notmatch 'CountText') 'cmpListCard info: count = CountFormat with {0} = rows shown by the gallery (CountRows(galRows.AllItems): after Show inactive and search), escaped; no host CountText'
-foreach ($field in 'cmpListCard.ShowInactiveText') {
+foreach ($field in 'cmpListCard.ShowInactiveLabel') {
     $e2 = 'Substitute(Substitute(Substitute(Substitute(Substitute(' + $field + ',"&","&amp;"),"<","&lt;"),">","&gt;"),"""","&quot;"),"' + "'" + '","&#39;")'
     Assert-True ($ih.Contains($e2) -and ([regex]::Matches($ih, [regex]::Escape($field))).Count -eq 1) "cmpListCard info escapes $field"
 }
 $sw = $li['btnCmpListSwitch']; $swp = $sw['Properties']; $kn = $li['btnCmpListKnob']['Properties']
-Assert-True ($sw['Control'] -eq 'Classic/Button@2.2.0' -and !$swp.ContainsKey('AccessibleLabel') -and $swp['Width'] -eq '=44' -and $swp['Height'] -eq '=24' -and $swp['RadiusTopLeft'] -eq '=12' -and $swp['Fill'] -eq '=If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))' -and $swp['Tooltip'] -eq '=cmpListCard.ShowInactiveText & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)') 'cmpListCard switch: track 44x24 radius 12, #0303B8 on / #B4B4B4 off, tooltip with label and state'
+Assert-True ($sw['Control'] -eq 'Classic/Button@2.2.0' -and !$swp.ContainsKey('AccessibleLabel') -and $swp['Width'] -eq '=44' -and $swp['Height'] -eq '=24' -and $swp['RadiusTopLeft'] -eq '=12' -and $swp['Fill'] -eq '=If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))' -and $swp['Tooltip'] -eq '=cmpListCard.ShowInactiveLabel & ": " & If(cmpListCard.ShowInactive,cmpListCard.OnText,cmpListCard.OffText)') 'cmpListCard switch: track 44x24 radius 12, #0303B8 on / #B4B4B4 off, tooltip with label and state'
 Assert-True ($swp['OnSelect'] -eq '=If(cmpListCard.Enabled,cmpListCard.OnToggleShowInactive())' -and $swp['DisplayMode'] -eq '=If(cmpListCard.Enabled,DisplayMode.Edit,DisplayMode.Disabled)' -and $kn['OnSelect'] -eq '=Select(btnCmpListSwitch)' -and $kn['DisplayMode'] -eq '=btnCmpListSwitch.DisplayMode' -and $kn['Fill'] -eq '=Color.White' -and $kn['Width'] -eq '=18') 'cmpListCard switch contract: only raises OnToggleShowInactive while Enabled, never flips state; white 18 px knob selects the track'
 $ga = $li['galRows']; $gp = $ga['Properties']
 Assert-True ($ga['Control'] -eq 'Gallery@2.15.0' -and $gp['TemplateSize'] -eq '=64' -and $gp['TemplatePadding'] -eq '=0' -and $gp['Items'] -eq ('=Filter(cmpListCard.Items,' + $lcPred + ')') -and $gp['OnSelect'] -eq '=cmpListCard.OnSelectRow()' -and !$gp.ContainsKey('Default')) 'cmpListCard gallery (Studio shape): Gallery@2.15.0 fixed row height 64, Items filtered INSIDE the component (Show inactive, search in Title or Subtitle), OnSelect = cmpListCard.OnSelectRow() (guard in the host handler), no Default (as tested in Studio)'
@@ -331,7 +331,7 @@ function Find-InstanceCycles($instances) {
     return , $bad
 }
 $dbgRx = '^=Set\(varDbgEvent,"(On\w+) " & Text\(Now\(\),"hh:mm:ss"\)\); '
-function Strip-Debug([string]$fx, [string]$ev) { $m = [regex]::Match($fx, $dbgRx); if ($m.Success) { if ($m.Groups[1].Value -cne $ev) { throw "FAIL debug prefix of $ev names $($m.Groups[1].Value)" }; return '=' + $fx.Substring($m.Length) }; return $fx }
+function Strip-Debug([string]$fx, [string]$ev) { if ([regex]::IsMatch($fx, $dbgRx) -or $fx -match '\bvarDbg\w*|\bvarDebug\b') { throw "FAIL $ev still has a debug prefix (debug line removed for the approval build)" }; return $fx }
 # self-test of the cycle finder on the two patterns of build 074310 and on a clean instance
 $fake = [System.Collections.ArrayList]@()
 $fake.Add([pscustomobject]@{ Name = 'cmpXList'; Comp = 'cmpListCard'; Props = [ordered]@{ Items = '=Filter(colX,Lower(cmpXList.SearchText) in Name)'; CountText = '=Text(CountRows(cmpXList.Items))'; OnSelectRow = '=Set(v,cmpXList.SelectedRowID)' } }) | Out-Null
@@ -359,10 +359,10 @@ foreach ($sf in $scrFiles) {
                 $h = Strip-Debug (([string]$i.Props[$ev]).Trim()) $ev
                 if ($i.Comp -eq 'cmpFooter') {
                     $en = ([string]$i.Props[$ev.Substring(2) + 'Enabled']).Trim()
-                    Assert-True ($en.StartsWith('=') -and $h.StartsWith('=If(' + $en.Substring(1) + ',')) "${sn}: $($i.Name).$ev starts (after the optional debug line) with If(<$($ev.Substring(2))Enabled>, : same guard text as the input"
+                    Assert-True ($en.StartsWith('=') -and $h.StartsWith('=If(' + $en.Substring(1) + ',')) "${sn}: $($i.Name).$ev starts with If(<$($ev.Substring(2))Enabled>, : same guard text as the input"
                 } elseif ($i.Comp -eq 'cmpListCard') {
                     $en = ([string]$i.Props['Enabled']).Trim()
-                    Assert-True ($en.StartsWith('=') -and $h.StartsWith('=If(' + $en.Substring(1) + ',')) "${sn}: $($i.Name).$ev starts (after the optional debug line) with If(<Enabled>, : same guard text as the input"
+                    Assert-True ($en.StartsWith('=') -and $h.StartsWith('=If(' + $en.Substring(1) + ',')) "${sn}: $($i.Name).$ev starts with If(<Enabled>, : same guard text as the input"
                 } else {
                     Assert-True ($h.Contains('Set(varAdmMsgKind,"")')) "${sn}: $($i.Name).OnClose clears the message (no guard needed: local only)"
                 }
@@ -382,7 +382,7 @@ function Eval-C([string]$fx) { $v = $cEng.Eval($fx, $null, $cOpt); if ($v -is [M
 $rowsFx = 'Table({ID:1,Title:"Alpha BV",Subtitle:"EMP-001 - Delft",Inactive:false,ChipText:""},{ID:2,Title:"Beta",Subtitle:"EMP-002 - Ede",Inactive:false,ChipText:""},{ID:3,Title:"Gamma",Subtitle:"",Inactive:true,ChipText:"Inactive"})'
 $galFx = ([string]$idx['cmpListCard']['galRows']['Properties']['Items']).TrimStart('='); $htmlFx = ([string]$idx['cmpListCard']['htmlCmpListInfo']['Properties']['HtmlText']).TrimStart('=')
 foreach ($c in @(@('""', 'false', '1,2', 2), @('"   "', 'false', '1,2', 2), @('" EDE "', 'false', '2', 1), @('"emp-00"', 'false', '1,2', 2), @('"alpha bv"', 'false', '1', 1), @('"nomatch"', 'false', '', 0), @('If(false,"x")', 'false', '1,2', 2), @('"gamma"', 'false', '', 0), @('""', 'true', '1,2,3', 3), @('"gamma"', 'true', '3', 1))) {
-    $env = "With({cmpListCard:{Items:$rowsFx,ShowInactive:$($c[1]),CountFormat:`"{0} contractors`",ShowInactiveText:`"Show inactive`"},txtSearch:{Text:$($c[0])}},"
+    $env = "With({cmpListCard:{Items:$rowsFx,ShowInactive:$($c[1]),CountFormat:`"{0} contractors`",ShowInactiveLabel:`"Show inactive`"},txtSearch:{Text:$($c[0])}},"
     Assert-True ((Eval-C ($env + "Concat($galFx,Text(ID),`",`"))")) -eq $c[2]) "cmpListCard filter search $($c[0]) ShowInactive $($c[1]): gallery shows IDs '$($c[2])' (trim, case-insensitive, Title or Subtitle; inactive rows only with ShowInactive)"
     Assert-True ((Eval-C ($env + "With({galRows:{AllItems:$galFx}},$htmlFx))")).Contains(">$($c[3]) contractors</span>")) "cmpListCard filter search $($c[0]) ShowInactive $($c[1]): info row shows '$($c[3]) contractors' (count of the shown rows)"
 }
