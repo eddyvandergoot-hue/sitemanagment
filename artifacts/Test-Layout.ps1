@@ -131,4 +131,45 @@ foreach ($s in $screens) {
         }
     }
 }
+# --- scrHome (3-11-2026 Home redesign): five stacked categories, cmpTile grid, tiles 190 (>=1000) / 160 (700-999) / two per row (<700) ---------
+$homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrHome.pa.yaml')))
+$homeKids = $homeDoc['Screens']['scrHome']['Children']
+$homeScroll = ($homeKids | Where-Object { @($_.Keys)[0] -eq 'conHomeScroll' })['conHomeScroll']
+Assert-True (([string]$homeScroll['Properties']['LayoutOverflowY'] -eq '=LayoutOverflow.Scroll') -and ([string]$homeScroll['Properties']['LayoutGap'] -eq '=32') -and ([string]$homeScroll['Properties']['PaddingTop'] -eq '=32') -and ([string]$homeScroll['Properties']['Fill'] -eq '=Color.White')) 'scrHome: white page, vertical scroll, category gap 32, padding top 32'
+$homeCats = @($homeScroll['Children'] | ForEach-Object { @($_.Keys)[0] })
+Assert-True (($homeCats -join ',') -ceq 'conHomeTeamHours,conHomeMasterData,conHomeInventory,conHomeCadTools,conHomeKnowledge') 'scrHome: categories in order Team & hours, Master data, Inventory, CAD tools, Knowledge'
+foreach ($c in @(@(1366, 768), @(1280, 720), @(1000, 768), @(999, 768), @(900, 768), @(700, 768), @(699, 768), @(414, 800), @(360, 640))) {
+    $W = $c[0]; $Hh = $c[1]; $label = "scrHome $W x $Hh"
+    $state = @{ Rects = @{}; Errors = @{}; Kind = '' }
+    $screenRect = @{ X = 0; Y = 0; Width = $W; Height = $Hh }
+    for ($pass = 0; $pass -lt 8; $pass++) { $state.Errors = @{}; Walk-Children $homeKids $screenRect $null $state }
+    if ($state.Errors.Count -gt 0) { throw "FAIL $label : unresolved geometry formulas: $(($state.Errors.GetEnumerator() | ForEach-Object { $_.Key + ' -> ' + $_.Value }) -join '; ')" }
+    $script:layoutChecked = 0
+    Collect-Checks $homeKids 'screen' $screenRect $false $null $state 'scrHome' $label
+    $m = $state.Rects['lblHomeMetrics']; $pad = $m.X; $contentW = $m.Y; $tile = $m.Width; $perRow = $m.Height; $title = $state.Rects['cmpHomeTitle']
+    $expTile = if ($W -ge 1000) { 190 } elseif ($W -ge 700) { 160 } else { [math]::Floor(($W - 2 * 16 - 16 - 10) / 2) }
+    Assert-True (($title.Height -eq 60) -and ($title.Width -eq $W) -and ($tile -eq $expTile) -and ($pad -eq $(if ($W -lt 700) { 16 } else { 40 })) -and ($pad + $contentW + 16 + $pad -eq $W)) "$label : title 60, tile $tile, side padding $pad, content width $contentW (16 px scrollbar reserve)"
+    if ($W -lt 700) { Assert-True (($perRow -eq 2) -and ($tile -ge 145)) "$label : two tiles per row, tile >= 145 ($tile)" } else { Assert-True ($perRow -ge 3) "$label : $perRow tiles per row" }
+    $y = 32
+    foreach ($cn in $homeCats) {
+        $cr = $state.Rects[$cn]; $cdef = ($homeScroll['Children'] | Where-Object { @($_.Keys)[0] -eq $cn })[$cn]
+        $tiles = @($cdef['Children'] | ForEach-Object { @($_.Keys)[0] } | Where-Object { $_ -like 'cmpTile*' })
+        $rows = [math]::Ceiling($tiles.Count / $perRow)
+        Assert-True (($cr.Width -eq $contentW) -and ($cr.Height -eq 46 + $rows * $tile + ($rows - 1) * 10)) "$label : $cn $($tiles.Count) tiles in $rows row(s), height $($cr.Height) fits header + line + 12 + rows"
+        $hdr = $state.Rects[(@($cdef['Children'] | ForEach-Object { @($_.Keys)[0] } | Where-Object { $_ -like 'lblHomeHeader*' })[0])]; $ln = $state.Rects[(@($cdef['Children'] | ForEach-Object { @($_.Keys)[0] } | Where-Object { $_ -like 'recHomeLine*' })[0])]
+        Assert-True (($ln.Y - ($hdr.Y + $hdr.Height) -eq 8) -and ($ln.Height -eq 2) -and ($ln.Width -eq $contentW)) "$label : $cn line 8 px under the header, 2 px, full content width"
+        $firstRowY = $null
+        foreach ($tn in $tiles) {
+            $tr = $state.Rects[$tn]
+            if (($tr.Width -ne $tile) -or ($tr.Height -ne $tile)) { throw "FAIL $label : $tn is $($tr.Width) x $($tr.Height), expected $tile square" }
+            if ($tr.X + $tr.Width -gt $contentW + 0.01) { throw "FAIL $label : $tn exceeds the content width ($($tr.X + $tr.Width) > $contentW)" }
+            if ($tr.Y + $tr.Height -gt $cr.Height + 0.01) { throw "FAIL $label : $tn exceeds its category height" }
+            if ($null -eq $firstRowY) { $firstRowY = $tr.Y }
+        }
+        Assert-True ($firstRowY -eq $ln.Y + $ln.Height + 12) "$label : $cn tile row starts 12 px under the line"
+        $y += $cr.Height + 32
+    }
+    $contentH = $y - 32 + 32
+    Write-Output "PASS $label : $($script:layoutChecked) visible controls inside their parents, no sibling overlaps; five categories stacked with gap 32, content height $contentH vs viewport $($Hh - 60) ($(if ($contentH -gt $Hh - 60) { 'scrolls' } else { 'fits' }))."
+}
 Write-Output 'Test-Layout covers: bounds (X>=0, Y>=0, right edge inside the parent; bottom edge inside the parent except in the scrolling body), sibling overlaps among visible controls and instances, no Visible formula on cmpField instances, the title/message bar/body/footer stack and the two-card arrangement, for scrContractors and scrProjects at 1366, 1000 and 700 x 768 with and without a message. NOT covered: component internals (see Test-Components/Test-FooterRow), text clipping and rendering in Studio.'

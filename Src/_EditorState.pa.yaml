@@ -20,3 +20,4 @@ EditorState:
     - cmpFooter
     - cmpField
     - cmpListCard
+    - cmpTile

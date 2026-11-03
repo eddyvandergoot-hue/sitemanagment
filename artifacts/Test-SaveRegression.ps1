@@ -360,7 +360,7 @@ foreach($name in $homeIdx.Keys){foreach($prop in @($homeIdx[$name]['Properties']
  Assert-True ($fx -notmatch "(?<![\w])(?:Hours|Workers|Projects|Employers)\b\s*[,)]" -and $fx -notmatch "'Project Workers'" -and $fx -notmatch '\bChoices\(') "scrHome.$name.$prop reads no SharePoint source"
  $homeSets=@([regex]::Matches($fx,'\bSet\(\s*(\w+)\s*,') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
  Assert-True (@($homeSets | Where-Object { $_ -notin @('varProject','varTeam') }).Count -eq 0) "scrHome.$name.$prop sets no state other than varProject/varTeam"
- foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($sel.Groups[1].Value -in @('btnTileProjectTeam','btnTileWeeklyHours','btnTileHoursSummary','btnTileContractors','btnTileProjects')) "scrHome.$name.$prop selects only a navigation tile ($($sel.Groups[1].Value))" }
+ foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($false) "scrHome.$name.$prop uses no Select (cmpTile raises OnSelect itself; navigation tiles hold Navigate only) ($($sel.Groups[1].Value))" }
  foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
 }}
 Assert-True ($homeOn -gt 0) "scrHome event formulas checked: $homeOn"
@@ -379,8 +379,8 @@ Assert-True ($gotoDm.StartsWith('=If(') -and $gotoDm.EndsWith($navSuffix)) 'btnG
 $gotoPred=$gotoDm.Substring(4,$gotoDm.Length-4-$navSuffix.Length)
 Assert-True ($gotoPred -ceq 'varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value') 'Screen1 btnGotoHours guard unchanged'
 $tileLoaded=$gotoPred+' && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value)'
-$tile=([string]$homeIdx['btnTileWeeklyHours']['Properties']['OnSelect']).Trim()
-$tileElse=',Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning))'
+$tile=([string]$homeIdx['cmpTileWeeklyHours']['Properties']['OnSelect']).Trim()
+$tileElse=',Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning)); true'
 Assert-True ($tile.StartsWith('=If('+$tileLoaded+',') -and $tile.EndsWith($tileElse)) 'Weekly Hours tile: If(<btnGotoHours guard + project/team not blank>, ..., Navigate(Screen1); Notify("Choose project and team first"))'
 $tileThen=$tile.Substring(('=If('+$tileLoaded+',').Length);$tileThen=$tileThen.Substring(0,$tileThen.Length-$tileElse.Length)
 Assert-True ($tileThen.StartsWith('Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected);') -and $tileThen.EndsWith('Navigate(scrHours)') -and (Count-Of $tileThen 'Navigate(') -eq 1 -and $tileThen -notmatch 'Notify\(') 'Weekly Hours tile loaded branch: same varProject/varTeam as btnGotoHours, then Navigate(scrHours) only'

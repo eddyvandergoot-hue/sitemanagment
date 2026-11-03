@@ -1,0 +1,41 @@
+# Home icons (3-11-2026): every icon named formula in App.pa.yaml must be literally equal to its source SVG in Assets\Icons
+# (white for active tiles, grey for Soon tiles, white arrow), and every Home tile must use the icon of the README.txt mapping in the right variant.
+# Source structure only: no Studio rendering of the data URIs is verified.
+$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Check-WeeklySource.ps1')
+function Assert-True($cond, $label) { if (!$cond) { throw "FAIL $label" }; Write-Output "PASS $label" }
+$iconDir = Join-Path $projectRoot 'Assets\Icons'
+$app = [IO.File]::ReadAllText((Join-Path $projectRoot 'Src\App.pa.yaml'))
+$forms = @{}
+foreach ($m in [regex]::Matches($app, '(?m)^\s+(Icon\w+) = "data:image/svg\+xml;utf8," & EncodeUrl\("(.*)"\);\s*$')) { $forms[$m.Groups[1].Value] = $m.Groups[2].Value.Replace('""', '"') }
+# formula name -> source file (variant folder / file)
+$map = [ordered]@{
+    IconTeamWhite = 'white/icon-team'; IconWeeklyHoursWhite = 'white/icon-weekly-hours'; IconHoursSummaryWhite = 'white/icon-hours-summary'; IconContractorsWhite = 'white/icon-contractors'; IconProjectsWhite = 'white/icon-projects'; IconArrowWhite = 'white/icon-arrow'
+    IconWeekReportGrey = 'grey/icon-week-report'; IconWorkersGrey = 'grey/icon-workers'; IconStockOverviewGrey = 'grey/icon-stock-overview'; IconLocationsGrey = 'grey/icon-locations'; IconRequestsGrey = 'grey/icon-requests'
+    Icon3dViewerGrey = 'grey/icon-3d-viewer'; IconPidTrackerGrey = 'grey/icon-pid-tracker'; IconComponentLibraryGrey = 'grey/icon-component-library'; IconKnowledgeBaseGrey = 'grey/icon-knowledge-base'
+}
+Assert-True ($forms.Count -eq $map.Count -and (($forms.Keys | Sort-Object) -join ',') -ceq (($map.Keys | Sort-Object) -join ',')) "App.Formulas has exactly the $($map.Count) icon formulas (6 white incl. arrow, 9 grey)"
+foreach ($k in $map.Keys) {
+    $file = Join-Path $iconDir (($map[$k] -replace '/', '\') + '.svg')
+    $svg = ([IO.File]::ReadAllText($file)).Trim()
+    Assert-True ($forms[$k] -ceq $svg) "$k is literally equal to Assets\Icons\$($map[$k] -replace '/','\').svg ($($svg.Length) chars)"
+    Assert-True ($svg -notmatch "[\r\n]" -and $svg.StartsWith('<svg ') -and $svg.EndsWith('</svg>')) "$k : single-line SVG (no line break in the Power Fx string literal)"
+    $stroke = if ($k -like '*White') { '#FFFFFF' } else { '#9B9B9B' }
+    Assert-True ($svg.Contains('stroke="' + $stroke + '"')) "$k : stroke $stroke ($(if ($k -like '*White') { 'white variant' } else { 'grey variant' }))"
+}
+$tileIcon = [ordered]@{
+    cmpTileProjectTeam = 'IconTeamWhite'; cmpTileWeeklyHours = 'IconWeeklyHoursWhite'; cmpTileHoursSummary = 'IconHoursSummaryWhite'; cmpTileWeekReport = 'IconWeekReportGrey'
+    cmpTileContractors = 'IconContractorsWhite'; cmpTileProjects = 'IconProjectsWhite'; cmpTileWorkers = 'IconWorkersGrey'
+    cmpTileStockOverview = 'IconStockOverviewGrey'; cmpTileLocations = 'IconLocationsGrey'; cmpTileRequests = 'IconRequestsGrey'
+    cmpTileViewer3D = 'Icon3dViewerGrey'; cmpTilePIDTracker = 'IconPidTrackerGrey'; cmpTileComponentLibrary = 'IconComponentLibraryGrey'; cmpTileKnowledgeBase = 'IconKnowledgeBaseGrey'
+}
+$doc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src\scrHome.pa.yaml')))
+$idx = @{}; function Index-H($entries) { foreach ($e in $entries) { $n = @($e.Keys)[0]; $idx[$n] = $e[$n]; Index-H $e[$n]['Children'] } }; Index-H $doc['Screens']['scrHome']['Children']
+foreach ($t in $tileIcon.Keys) {
+    $p = $idx[$t]['Properties']
+    Assert-True ($p['Icon'] -ceq ('=' + $tileIcon[$t])) "$t uses $($tileIcon[$t]) ($($map[$tileIcon[$t]]).svg)"
+    if ($p['Active'] -eq '=true') { Assert-True ($tileIcon[$t] -like '*White' -and $p['Arrow'] -ceq '=IconArrowWhite') "$t : active tile = white icon + white arrow" } else { Assert-True ($tileIcon[$t] -like '*Grey' -and !$p.ContainsKey('Arrow')) "$t : Soon tile = grey icon, no arrow" }
+}
+$cmpTiles = @($idx.Keys | Where-Object { $idx[$_]['ComponentName'] -eq 'cmpTile' })
+Assert-True ($cmpTiles.Count -eq $tileIcon.Count -and @($cmpTiles | Where-Object { -not $tileIcon.Contains($_) }).Count -eq 0) "scrHome has exactly the $($tileIcon.Count) mapped tiles (no Skid configurator, Usage or Employers tile)"
+Write-Output 'Not verified locally: rendering of the data URIs in Studio/browser (EncodeUrl of # and spaces), hover behaviour of the Image HoverFill.'

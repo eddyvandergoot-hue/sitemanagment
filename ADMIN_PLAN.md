@@ -146,7 +146,7 @@ Status 31-10-2026 (stap 3: Contractors en Projects op componenten gebouwd in bui
 - Kleuren alleen op beheerschermen: #F5F6F8, #9B9B9B, #5A5A5A, #EDEDED, #6B6B6B, #B4B4B4, #F29400. Grijze tekst alleen voor subregels, inactieve namen en "Last changed". De groene statuschip is een uitzondering op "groen alleen primaire actie". De AGENTS-maten voor titelbalk 56, footer 88/72 en Home 90 gelden niet voor beheerschermen.
 - Tests: Test-AdminScreens (per scherm: guards, loaders, 500-guards, H16, predicaten, Patch-vorm, meldingsmodel, geometrie), Test-GeaColors ($adminScreens), Test-Fonts, Test-FooterRow -GeometryOnly, Test-Logo (titelbalk 60). Studio: TESTPLAN.md TP-STYLE-01, TP-PROJECTS-01.
 
-## 11. Home redesign + cmpTile (spec Eddy 30-10-2026, goedgekeurde mockup; NIET gebouwd; aparte build na goedkeuring van stap 3, vóór Workers)
+## 11. Home redesign + cmpTile (spec Eddy 30-10-2026, goedgekeurde mockup; GEBOUWD 3-11-2026 (niet getest in Studio; lokale tests PASS); afwijkingen: labelmaat 14/12/11 pt i.p.v. 18/16 (pt vs mockup-px, anders past Contractors niet naast de pijl), padding 12 bij kleinere tegels, zijkant 16 onder 700 px, tegelraster berekend i.p.v. LayoutWrap)
 
 Vervangt de huidige Home met 3/4 kolommen.
 - Pagina wit; cmpTitleBar titel "Site Management"; content-padding 32/40; verticaal scrollen als het niet past.

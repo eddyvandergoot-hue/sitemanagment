@@ -41,7 +41,7 @@ function Split-Args([string]$inner) {
 function Index-Controls($entries, $index) { foreach ($entry in $entries) { $name = @($entry.Keys)[0]; $index[$name] = $entry[$name]; Index-Controls $entry[$name]['Children'] $index } }
 function Norm([string]$s) { return ($s -replace '\s+', '') }
 # 01-11-2026 (Studio FAIL A/B of build components-20261031_074310): the dirty expression lives once in the hidden label lbl<P>Dirty
-# (Text = If(<dirty>,"true","false")); every guard reads (lbl<P>Dirty.Text="true"), so no cmpField output is read inside a component
+# (Text = If(<dirty>,"true","false")); every guard reads the label (03-11-2026 N1: fail-closed, clean only = "false"), so no cmpField output is read inside a component
 # input. 03-11-2026 (approval build, Eddy): the temporary debug line (lbl<P>Debug, varDebug, varDbgEvent) is removed; this helper checks
 # that nothing of it is left, then expands the label reference in the property map, so all behavioural checks below still evaluate the
 # real guard text.
@@ -50,13 +50,49 @@ function Apply-DirtyLabel($map, [string]$p, [string]$scr) {
     $head = "=If((Coalesce(var${p}Mode,`"`") in [`"New`",`"Edit`"] && ("; $tail = ',"true","false")'
     Assert-True ($lblFx.StartsWith($head) -and $lblFx.EndsWith($tail) -and ([string]$map["lbl${p}Dirty.Visible"]).Trim() -eq '=false') "${scr}: lbl${p}Dirty is a hidden label, Text = If(<dirty>,""true"",""false"") (the one dirty source)"
     $d = $lblFx.Substring(4, $lblFx.Length - 4 - $tail.Length)
-    $ref = "(lbl${p}Dirty.Text=`"true`")"
-    $users = @(@($map.Keys) | Where-Object { ([string]$map[$_]).Contains($ref) } | Sort-Object)
-    $expUsers = @("cmp${p}Footer.DiscardEnabled", "cmp${p}Footer.HomeEnabled", "cmp${p}Footer.NewEnabled", "cmp${p}Footer.OnDiscard", "cmp${p}Footer.OnHome", "cmp${p}Footer.OnNew", "cmp${p}Footer.OnRefresh", "cmp${p}Footer.OnSave", "cmp${p}Footer.RefreshEnabled", "cmp${p}Footer.SaveEnabled", "cmp${p}List.Enabled", "cmp${p}List.OnSelectRow", "cmp${p}List.OnToggleShowInactive", "btn${p}Load.OnSelect", "$(if ($p -eq 'Emp') { 'scrContractors' } else { 'scrProjects' }).OnVisible") | Sort-Object
-    Assert-True (($users -join ',') -ceq ($expUsers -join ',')) "${scr}: the 15 guards (footer inputs/handlers, list card, loader, OnVisible) read $ref ($($users -join ', '))"
+    # N1 (03-11-2026, fail-closed): "clean" only when the label literally says "false"; every blocking / Discard-permitting read is
+    # <>"false" (blank or unexpected = dirty); Save requires the literal "true" (blank or unexpected = no Save).
+    $scrN = if ($p -eq 'Emp') { 'scrContractors' } else { 'scrProjects' }
+    $cleanRef = "lbl${p}Dirty.Text=`"false`""; $dirtyRef = "lbl${p}Dirty.Text<>`"false`""; $saveRef = "lbl${p}Dirty.Text=`"true`""
+    $expByRef = [ordered]@{
+        $cleanRef = @("cmp${p}Footer.HomeEnabled", "cmp${p}Footer.OnHome", "cmp${p}Footer.NewEnabled", "cmp${p}Footer.OnNew", "cmp${p}Footer.RefreshEnabled", "cmp${p}Footer.OnRefresh", "cmp${p}List.Enabled", "cmp${p}List.OnSelectRow", "cmp${p}List.OnToggleShowInactive", "$scrN.OnVisible") | Sort-Object
+        $dirtyRef = @("cmp${p}Footer.DiscardEnabled", "cmp${p}Footer.OnDiscard", "btn${p}Load.OnSelect") | Sort-Object
+        $saveRef  = @("cmp${p}Footer.SaveEnabled", "cmp${p}Footer.OnSave") | Sort-Object
+    }
+    $readers = @(@($map.Keys) | Where-Object { $_ -notlike "lbl${p}Dirty.*" -and ([string]$map[$_]) -cmatch "\blbl${p}Dirty\.Text\b" } | Sort-Object)
+    $expAll = @($expByRef.Values | ForEach-Object { $_ }) | Sort-Object
+    Assert-True (($readers -join ',') -ceq ($expAll -join ',')) "${scr}: exactly the 15 guards (footer inputs/handlers, list card, loader, OnVisible) read lbl${p}Dirty.Text ($($readers -join ', '))"
+    foreach ($r in $expByRef.Keys) {
+        $users = @(@($map.Keys) | Where-Object { ([string]$map[$_]).Contains($r) } | Sort-Object)
+        Assert-True (($users -join ',') -ceq ($expByRef[$r] -join ',')) "${scr}: guards reading $r : $($users -join ', ')"
+    }
+    $refCount = 0; foreach ($k in $readers) { $t = [string]$map[$k]; $all3 = ([regex]::Matches($t, "\blbl${p}Dirty\.Text\b")).Count; $known = 0; foreach ($r in $expByRef.Keys) { $known += ([regex]::Matches($t, [regex]::Escape($r))).Count }; Assert-True ($all3 -eq $known -and $t -notmatch "!\(lbl${p}Dirty|\(lbl${p}Dirty\.Text=`"true`"\)") "${scr}: $k reads lbl${p}Dirty.Text only in a fail-closed form (=""false"", <>""false"", Save =""true""; no !(... =""true""))"; $refCount += $known }
+    # Fixtures with the label value itself (blank / unexpected text = fail-closed), on the real guard texts before expansion
+    $gfx = "var${p}LoadState:`"Loaded`",col${p}LoadErrors:Filter(Table({Message:`"`"}),false),var${p}Busy:false,var${p}Saving:false,var${p}SaveFailed:false,var${p}Mode:`"Edit`",var${p}SelectedID:5"
+    $gfxFailed = $gfx.Replace("var${p}SaveFailed:false", "var${p}SaveFailed:true").Replace("var${p}LoadState:`"Loaded`"", "var${p}LoadState:`"Failed`"")
+    $visCond = "var${p}LoadState<>`"Loaded`" && !Coalesce(var${p}Busy,false) && !Coalesce(var${p}Saving,false) && $cleanRef"
+    $loadCond = "$dirtyRef && !Coalesce(var${p}SaveFailed,false)"
+    Assert-True (([string]$map["$scrN.OnVisible"]).Contains("If($visCond,Select(btn${p}Load))") -and ([string]$map["btn${p}Load.OnSelect"]).Contains("If($loadCond,")) "${scr}: OnVisible auto-loads only when the label says ""false""; the loader refuses unless the label says ""false"" (or after a failed save)"
+    $gExpr = [ordered]@{ Home = ([string]$map["cmp${p}Footer.HomeEnabled"]).Trim().Substring(1); New = ([string]$map["cmp${p}Footer.NewEnabled"]).Trim().Substring(1); Refresh = ([string]$map["cmp${p}Footer.RefreshEnabled"]).Trim().Substring(1); List = ([string]$map["cmp${p}List.Enabled"]).Trim().Substring(1); Discard = ([string]$map["cmp${p}Footer.DiscardEnabled"]).Trim().Substring(1); Save = ([string]$map["cmp${p}Footer.SaveEnabled"]).Trim().Substring(1); AutoLoad = $visCond; LoadBlocked = $loadCond }
+    #                    label       Home   New    Refresh List   Discard Save   AutoLoad LoadBlocked
+    $gCases = @(@('"false"', $true, $true, $true, $true, $false, $false, $true, $false),
+                @('"true"', $false, $false, $false, $false, $true, $true, $false, $true),
+                @('""', $false, $false, $false, $false, $true, $false, $false, $true),
+                @('Blank()', $false, $false, $false, $false, $true, $false, $false, $true),
+                @('"x"', $false, $false, $false, $false, $true, $false, $false, $true))
+    foreach ($c in $gCases) {
+        $i = 1
+        foreach ($g in $gExpr.Keys) {
+            $env = if ($g -eq 'AutoLoad') { $gfx.Replace("var${p}LoadState:`"Loaded`"", "var${p}LoadState:`"NotLoaded`"") } else { $gfx }
+            Assert-Eval "With({$env,lbl${p}Dirty:{Text:$($c[0])}},$($gExpr[$g]))" $c[$i] "${scr} N1: label $($c[0]) -> $g $(if ($c[$i]) { 'allowed' } else { 'blocked' })"
+            $i++
+        }
+        foreach ($g in @(@('Refresh', $true), @('Discard', $true), @('LoadBlocked', $false), @('Save', $false), @('New', $false))) { Assert-Eval "With({$gfxFailed,lbl${p}Dirty:{Text:$($c[0])}},$($gExpr[$g[0]]))" $g[1] "${scr} N1: after a failed save, label $($c[0]) -> $($g[0]) $(if ($g[1]) { 'allowed (Refresh = Discard, H15)' } else { 'not allowed / not blocking' })" }
+    }
     $cv = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -cmatch "\bcmp${p}\w+\.Value\b" -and $_ -notin @("lbl${p}Dirty.Text", "cmp${p}Footer.OnSave") })
     Assert-True ($cv.Count -eq 0) "${scr}: cmpField Value is read only by lbl${p}Dirty and the Save record (cmp${p}Footer.OnSave) ($($cv -join ', '))"
-    foreach ($k in $users) { $map[$k] = ([string]$map[$k]).Replace($ref, $d) }
+    # Expand the label reference for the behavioural checks below: clean = !<dirty>, dirty / Save = <dirty> (same results as the label for its two real values)
+    foreach ($k in $readers) { $map[$k] = ([string]$map[$k]).Replace($dirtyRef, $d).Replace($saveRef, $d).Replace($cleanRef, '!' + $d) }
     $evs = [ordered]@{ "cmp${p}Footer.OnHome" = 'OnHome'; "cmp${p}Footer.OnNew" = 'OnNew'; "cmp${p}Footer.OnRefresh" = 'OnRefresh'; "cmp${p}Footer.OnDiscard" = 'OnDiscard'; "cmp${p}Footer.OnSave" = 'OnSave'; "cmp${p}List.OnSelectRow" = 'OnSelectRow'; "cmp${p}List.OnToggleShowInactive" = 'OnToggleShowInactive'; "cmp${p}MsgBar.OnClose" = 'OnClose' }
     foreach ($k in $evs.Keys) {
         Assert-True (([string]$map[$k]).Trim() -notmatch 'varDbg') "${scr}: $k has no debug prefix (debug line removed for the approval build)"
@@ -331,7 +367,9 @@ Assert-True ($saveN.Contains('D:Coalesce(v.Active,true)<>Coalesce(varEmpSaveRec.
 Assert-True ($save.Contains('Active:Coalesce(varEmpActiveDraft,true)});')) 'Save record: Active = Coalesce(varEmpActiveDraft,true) (switch draft)'
 $modDisplayN = Norm 'RemoveIf(colEmpModified,ID=varEmpPatchedID); Collect(colEmpModified,{ID:varEmpPatchedID,Modified:First(colEmpVerifyRaw).Modified});'
 Assert-True (([regex]::Matches($saveN, [regex]::Escape($modDisplayN))).Count -eq 1) 'Save updates the display-only Modified copy (colEmpModified) from the verify read, once'
-Assert-True ($saveN.Replace($modDisplayN, '') -notmatch 'p\.Code|v\.Code|Modified') 'Conflict/verify ignore Contractor Code (flow MS-019) and Modified (Modified only in the display copy update)'
+$ctlDecN = Norm 'If(CountRows(colEmpCtlRaw)=1 && First(colEmpCtlRaw).Modified=First(colEmpPreRaw).Modified,"NoWrite","PossibleWrite")'
+Assert-True (([regex]::Matches($saveN, [regex]::Escape($ctlDecN))).Count -eq 1) 'N1 control read (Edit): Modified of the control read compared with the pre-read, once'
+Assert-True ($saveN.Replace($modDisplayN, '').Replace($ctlDecN, '') -notmatch 'p\.Code|v\.Code|Modified') 'Conflict/verify ignore Contractor Code (flow MS-019) and Modified (Modified only in the display copy update and the N1 control read after a Patch error)'
 $iVal = $saveN.IndexOf('If(IsBlank(varEmpSaveRec.Name)')
 $iDupLocal = $saveN.IndexOf('CountIf(colAdminEmployers,')
 $iGateRead = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),IfError(Refresh(Employers),')
@@ -503,7 +541,7 @@ foreach ($p in $screenProps.Keys) { if ($p -like 'On*') { $beh["$screenName.$p"]
 Get-BehaviourFormulas $doc['Screens'][$screenName]['Children'] $screenName $beh
 $spReads = @()
 foreach ($k in ($beh.Keys | Sort-Object)) { foreach ($r in (Test-RefreshBeforeReads $beh[$k])) { $spReads += $r; Assert-True ($r.Status -eq 'Refreshed') "$k : read of $($r.Source) (formula line $($r.Line)) preceded by Refresh($($r.Source)) in the same branch [$($r.Status)]" } }
-Assert-True (@($spReads | Where-Object Source -eq 'Employers').Count -eq 4 -and @($spReads | Where-Object Source -eq 'Workers').Count -eq 1) "SharePoint reads on scrContractors: 4 x Employers (load, pre-read, duplicate, verify), 1 x Workers (load)"
+Assert-True (@($spReads | Where-Object Source -eq 'Employers').Count -eq 6 -and @($spReads | Where-Object Source -eq 'Workers').Count -eq 1) "SharePoint reads on scrContractors: 6 x Employers (load, pre-read, duplicate, verify, N1 control read Edit / New after a Patch error), 1 x Workers (load)"
 # Self-test of the helper on synthetic formulas (forced-only Refresh, other branch, error gate, Concurrent sibling)
 Assert-True ((Test-RefreshBeforeReads '=IfError(Refresh(Employers),false);ClearCollect(c,Sort(Employers,Title))')[0].Status -eq 'Refreshed') 'Helper: Refresh then read = Refreshed'
 Assert-True ((Test-RefreshBeforeReads '=If(Coalesce(f,false),IfError(Refresh(Employers),false));If(x,a,ClearCollect(c,Sort(Employers,Title)))')[0].Status -eq 'Missing') 'Helper: forced-only Refresh does not cover an unconditional (first) load'
@@ -874,7 +912,14 @@ $ftx = (Get-Prop 'lblEmpFormTitle' 'Text')
 Assert-True (((Get-Prop 'lblEmpFormTitle' 'Size') -eq '=22') -and ((Get-Prop 'lblEmpFormTitle' 'FontWeight') -eq '=FontWeight.Semibold') -and ((Get-Prop 'lblEmpFormTitle' 'Color') -eq '=ColorValue("#000F41")') -and (-not $idx['lblEmpFormTitle']['Properties'].ContainsKey('Visible')) -and $ftx.Contains('T.empNewContractor') -and $ftx.Contains('T.empFormDetails') -and $ftx.Contains('T.empNoSelection') -and ($ftx -notmatch 'varEmpEdit\.Name')) 'Header: 22 Semibold #000F41, always visible; New = T.empNewContractor, Edit = T.empFormDetails, no selection = T.empNoSelection; the record name is not repeated'
 foreach ($c in @(@('"New"', 'New contractor'), @('"Edit"', 'Contractor details'), @('""', 'No contractor selected'), @('If(false,"x")', 'No contractor selected'))) { Assert-Eval "With({LangNl:false,T:$tRec,varEmpMode:$($c[0])},$($ftx.TrimStart('=')))" $c[1] "Header text for Mode $($c[0]) = $($c[1])" }
 Assert-True ($formulas.Contains('empFormDetails: {en: "Contractor details", nl: ""}')) 'T.empFormDetails = Contractor details'
-$chipFill = 'If(Coalesce(varEmpEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $chipCol = 'If(Coalesce(varEmpEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))'
+$chipFill = 'If(Coalesce(varEmpMode,"")<>"New" && Coalesce(varEmpEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $chipCol = 'If(Coalesce(varEmpMode,"")<>"New" && Coalesce(varEmpEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))'
+# 03-11-2026 (Eddy): in New mode the chip shows "New" (T.admChipNew) in the grey chip palette (#E6E6E6 / #000000, as the inactive chip and the cmpListCard row chip)
+$empChipTx = (Get-Prop 'btnEmpFormChip' 'Text').TrimStart('=')
+$chipColName = 'If(c=ColorValue("#E6E6E6"),"#E6E6E6",c=ColorValue("#1AFF80"),"#1AFF80",c=ColorValue("#000F41"),"#000F41",c=ColorValue("#000000"),"#000000","?")'
+foreach ($c in @(@('"New"', 'true', 'New|#E6E6E6|#000000'), @('"Edit"', 'true', 'Active|#1AFF80|#000F41'), @('"Edit"', 'false', 'Inactive|#E6E6E6|#000000'), @('"Edit"', 'If(false,true)', 'Active|#1AFF80|#000F41'))) {
+    Assert-Eval "With({LangNl:false,T:$tRec,varEmpMode:$($c[0]),varEmpEdit:{Active:$($c[1])}},$empChipTx & ""|"" & With({c:$chipFill},$chipColName) & ""|"" & With({c:$chipCol},$chipColName))" $c[2] "btnEmpFormChip: Mode $($c[0]), saved Active $($c[1]) -> $($c[2])"
+}
+Assert-True ($formulas.Contains('admChipNew: {en: "New", nl: ""}')) 'T.admChipNew = New (shared admin chip text)'
 Assert-True (($idx['btnEmpFormChip']['Control'] -eq 'Classic/Button@2.2.0') -and ((Get-Prop 'btnEmpFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled') -and (-not $idx['btnEmpFormChip']['Properties'].ContainsKey('OnSelect')) -and ((Get-Prop 'btnEmpFormChip' 'Visible') -eq '=Coalesce(varEmpMode,"") in ["New","Edit"]')) 'Status chip btnEmpFormChip: hand-built Classic/Button, static (Disabled with identical disabled colours), no OnSelect, hidden when Mode is empty'
 foreach ($p in 'Fill', 'HoverFill', 'PressedFill', 'DisabledFill') { Assert-True ((Get-Prop 'btnEmpFormChip' $p) -ceq "=$chipFill") "btnEmpFormChip.$p = green #1AFF80 when the SAVED status is Active (varEmpEdit.Active), grey #E6E6E6 when Inactive (not the switch draft)" }
 foreach ($p in 'Color', 'HoverColor', 'PressedColor', 'DisabledColor') { Assert-True ((Get-Prop 'btnEmpFormChip' $p) -ceq "=$chipCol") "btnEmpFormChip.$p = #000F41 on green, #000000 on grey" }
@@ -955,8 +1000,29 @@ function Test-AutoSelect([string]$load, [string]$itemsFx, [string]$defaultFx, [s
 # after a successful Patch -> Failed + SaveFailed (locked, Refresh = Discard).
 function Test-WriteCounter([string]$save, [string]$p, [string]$list, [string]$scr) {
     $sN = Norm $save
-    $wFx = "If(var${p}PatchError && IsBlank(var${p}PatchedID),0,1)"
-    $iInit = $sN.IndexOf("Set(var${p}SaveWrites,0);"); $iF0 = $sN.IndexOf((Norm "Set(var${p}PatchError,false);IfError(CountRows(ClearCollect(col${p}Patched,Patch($list,"))
+    # 03-11-2026 (reviewer N1): a Patch error without a returned record counts as zero writes ONLY when a control read proves that
+    # nothing was written (Edit: same row, Modified unchanged since the pre-read; New: no row with the duplicate key that was not in
+    # the pre-save duplicate read). Control read failed / 500+ rows / possible write -> counted as a write (Failed, fail-closed).
+    $wFx = "If(var${p}PatchError && IsBlank(var${p}PatchedID) && var${p}SaveCtl=`"NoWrite`",0,1)"
+    $ctlSet = "Set(var${p}SaveCtl,If(var${p}PatchError && IsBlank(var${p}PatchedID),`"Pending`",`"`"));"
+    $iCtl = $sN.IndexOf((Norm $ctlSet)); $iCtlRef = $sN.IndexOf((Norm "If(var${p}SaveCtl=`"Pending`",IfError(Refresh($list),Set(var${p}SaveCtl,`"ReadFailed`");false));"))
+    $iCtlE = $sN.IndexOf((Norm "If(var${p}SaveCtl=`"Pending`" && var${p}SaveMode=`"Edit`",Set(var${p}SaveReads,var${p}SaveReads+1); IfError(CountRows(ClearCollect(col${p}CtlRaw,Filter($list,ID=var${p}SaveID)))>=0,Set(var${p}SaveCtl,`"ReadFailed`");false));"))
+    $iCtlN = $sN.IndexOf((Norm "If(var${p}SaveCtl=`"Pending`" && var${p}SaveMode=`"New`",Set(var${p}SaveReads,var${p}SaveReads+1); IfError(CountRows(ClearCollect(col${p}CtlRaw,Filter($list,"))
+    $decHead = Norm "If(var${p}SaveCtl=`"Pending`",Set(var${p}SaveCtl,If(CountRows(col${p}CtlRaw)>=500,`"ReadFailed`","
+    $iDec = $sN.IndexOf($decHead)
+    Assert-True ($iCtl -gt 0 -and $iCtlRef -gt $iCtl -and $iCtlE -gt $iCtlRef -and $iCtlN -gt $iCtlE -and $iDec -gt $iCtlN -and $sN.Contains('Clear(col' + $p + 'CtlRaw);') -and $sN.Contains("Set(var${p}SaveCtl,`"`");")) "$scr N1: control read only after a Patch error without record: Refresh($list), read by ID (Edit) or by the duplicate key (New), 500 guard, then decision; reset at the start of every save"
+    $decFx = Get-Balanced $save ($save.IndexOf("Set(var${p}SaveCtl,If(CountRows(col${p}CtlRaw)>=500,") + 3); $decFx = $decFx.Substring("(var${p}SaveCtl,".Length, $decFx.Length - "(var${p}SaveCtl,".Length - 1)
+    $pre = "col${p}PreRaw:Table({ID:7,Modified:DateTime(2026,11,3,9,0,0)}),col${p}Dup:Table({ID:3})"
+    foreach ($c in @(@('"Edit"', 'Table({ID:7,Modified:DateTime(2026,11,3,9,0,0)})', 'NoWrite', 'Edit, Modified unchanged'),
+                    @('"Edit"', 'Table({ID:7,Modified:DateTime(2026,11,3,9,0,5)})', 'PossibleWrite', 'Edit, Modified changed'),
+                    @('"Edit"', 'Filter(Table({ID:7,Modified:DateTime(2026,11,3,9,0,0)}),false)', 'PossibleWrite', 'Edit, row not found'),
+                    @('"New"', 'Filter(Table({ID:7,Modified:DateTime(2026,11,3,9,0,0)}),false)', 'NoWrite', 'New, no row with the key'),
+                    @('"New"', 'Table({ID:3,Modified:DateTime(2026,11,3,9,0,0)})', 'NoWrite', 'New, only the row known before the save'),
+                    @('"New"', 'Table({ID:3,Modified:DateTime(2026,11,3,9,0,0)},{ID:12,Modified:DateTime(2026,11,3,9,0,9)})', 'PossibleWrite', 'New, a new row with the key'),
+                    @('"New"', 'ForAll(Sequence(500),{ID:Value+100,Modified:DateTime(2026,11,3,9,0,0)})', 'ReadFailed', 'New, 500+ rows'))) {
+        Assert-Eval "With({$pre,var${p}SaveMode:$($c[0]),col${p}CtlRaw:$($c[1])},$decFx)" $c[2] "$scr N1: control read decision: $($c[3]) -> $($c[2])"
+    }
+    $iInit = $sN.IndexOf("Set(var${p}SaveWrites,0);"); $iF0 = $sN.IndexOf((Norm "Set(var${p}PatchError,false);IfError(CountRows(ClearCollect(col${p}Patched,"))
     $iPatch = $sN.IndexOf("Patch($list,"); $iF1 = $sN.IndexOf((Norm "Set(var${p}PatchError,true); Collect(col${p}SaveErrors,{"))
     $iId = $sN.IndexOf((Norm "Set(var${p}PatchedID,First(col${p}Patched).ID);")); $iW = $sN.IndexOf((Norm "Set(var${p}SaveWrites,$wFx);"))
     $iVer = $sN.IndexOf("ClearCollect(col${p}VerifyRaw,")
@@ -968,13 +1034,17 @@ function Test-WriteCounter([string]$save, [string]$p, [string]$list, [string]$sc
     Assert-True ($zb -notmatch 'Reset\(|Select\(|Clear\(|Set\(var\w*(Edit|Mode|LoadState|SelectedID|SaveFailed),' -and $zb.Contains('T.admHeadNotSaved.en')) "$scr : zero-write branch only shows Not saved. + reason: input, selection and Loaded state kept (retry possible)"
     $out = "If(var${p}SaveVerified && IsEmpty(col${p}SaveErrors),`"Saved`",var${p}SaveWrites=0,`"Loaded`",`"Failed`")"
     $err = 'Table({Field:"",Message:"x"})'; $none = 'Filter(Table({Field:"",Message:""}),false)'
-    foreach ($c in @(@('true', 'If(false,0)', $err, 'false', 'Loaded', 'Patch error without a returned record (SharePoint refused): nothing written'),
-                    @('true', '7', $err, 'false', 'Failed', 'Patch error but a record with ID returned: possibly written'),
-                    @('false', 'If(false,0)', $err, 'false', 'Failed', 'no error and no record (uncertain): counted as a write'),
-                    @('false', '7', $err, 'false', 'Failed', 'Patch returned ID 7, then verify read error or mismatch'),
-                    @('false', '7', $none, 'true', 'Saved', 'Patch ID 7 and verify OK'))) {
-        Assert-Eval "With({var${p}PatchError:$($c[0]),var${p}PatchedID:$($c[1])},With({var${p}SaveWrites:$wFx},With({col${p}SaveErrors:$($c[2]),var${p}SaveVerified:$($c[3])},$out)))" $c[4] "$scr : $($c[5]) -> $($c[4])"
+    foreach ($c in @(@('true', 'If(false,0)', $err, 'false', 'Loaded', 'Patch error without a returned record, control read proves nothing written', '"NoWrite"'),
+                    @('true', 'If(false,0)', $err, 'false', 'Failed', 'Patch error without a returned record, control read shows a possible write', '"PossibleWrite"'),
+                    @('true', 'If(false,0)', $err, 'false', 'Failed', 'Patch error without a returned record, control read failed (unknown)', '"ReadFailed"'),
+                    @('true', 'If(false,0)', $err, 'false', 'Failed', 'Patch error without a returned record, control read never decided', '"Pending"'),
+                    @('true', '7', $err, 'false', 'Failed', 'Patch error but a record with ID returned: possibly written', '""'),
+                    @('false', 'If(false,0)', $err, 'false', 'Failed', 'no error and no record (uncertain): counted as a write', '""'),
+                    @('false', '7', $err, 'false', 'Failed', 'Patch returned ID 7, then verify read error or mismatch', '""'),
+                    @('false', '7', $none, 'true', 'Saved', 'Patch ID 7 and verify OK', '""'))) {
+        Assert-Eval "With({var${p}PatchError:$($c[0]),var${p}PatchedID:$($c[1]),var${p}SaveCtl:$($c[6])},With({var${p}SaveWrites:$wFx},With({col${p}SaveErrors:$($c[2]),var${p}SaveVerified:$($c[3])},$out)))" $c[4] "$scr : $($c[5]) -> $($c[4])"
     }
+    foreach ($c in @(@('true', 'If(false,0)', 'Pending'), @('true', '7', ''), @('false', 'If(false,0)', ''))) { Assert-Eval "With({var${p}PatchError:$($c[0]),var${p}PatchedID:$($c[1])},If(var${p}PatchError && IsBlank(var${p}PatchedID),`"Pending`",`"`"))" $c[2] "$scr N1: control read state after the Patch (error $($c[0]), ID $($c[1])) = '$($c[2])' (only an error without record is checked)" }
 }
 $empEditable = @($inputMap.Keys)
 $kidsOfForm = @($idx['conEmpFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
@@ -1211,13 +1281,13 @@ foreach ($k in $pAll.Keys) {
         $call = Get-Balanced $fx ($m.Index + $m.Value.IndexOf('('))
         $arg = $call.Substring($m.Value.Length - $m.Value.IndexOf('('))
         if ($arg -notmatch "(?<![\w.'@\[])(?:Employers|Workers|Projects|Hours)\b(?!\.)|'(?:Project Workers|Assignment Periods)'") { continue }
-        if ($arg.TrimStart().StartsWith('Patch(')) { continue }
+        if ($arg.TrimStart().StartsWith('Patch(') -or $arg.TrimStart().StartsWith('If(varPrjSaveWriteStatus && varPrjSaveWriteCountry,Patch(Projects,')) { continue }  # N3: the one write (record shape chosen by If)
         $pReads++
         $col = $m.Groups[1].Value; $after = $fx.Substring($m.Index)
         Assert-True ($after.Contains("CountRows($col)>=500") -or $after.Contains("CountRows($col)<>1") -or $after.Contains("CountRows($col)=1")) "Projects: $k : SharePoint read into $col is followed by a 500 guard (or exact-one check for an ID read)"
     }
 }
-Assert-True ($pReads -eq 5) "Projects: SharePoint reads into collections: $pReads (load, pre-read, number check, open periods, verify)"
+Assert-True ($pReads -eq 7) "Projects: SharePoint reads into collections: $pReads (load, pre-read, number check, open periods, verify, N1 control read Edit / New after a Patch error)"
 
 # (P5) Delegable predicates: column = global variable only; Choices only on the dropdown Items and once in Save ---------------
 $pPreds = @()
@@ -1229,7 +1299,7 @@ foreach ($k in $pAll.Keys) {
         $pPreds += "$($m.Groups[2].Value)|" + (Split-Args $call.Substring(1, $call.Length - 2))[1].Trim()
     }
 }
-$pPredExp = @('Projects|ID=varPrjSaveID', "Projects|'Project Number'=varPrjSaveNumber", 'Projects|ID=varPrjPatchedID', "'Assignment Periods'|ProjectKey=varPrjSaveKey")
+$pPredExp = @('Projects|ID=varPrjSaveID', "Projects|'Project Number'=varPrjSaveNumber", 'Projects|ID=varPrjPatchedID', "'Assignment Periods'|ProjectKey=varPrjSaveKey", 'Projects|ID=varPrjSaveID', "Projects|'Project Number'=varPrjSaveNumber")  # last two: N1 control read (same predicates as pre-read / number check)
 Assert-True ((($pPreds | Sort-Object) -join ';') -ceq (($pPredExp | Sort-Object) -join ';')) "Projects: server predicates are exactly column = global variable ($($pPreds -join '; '))"
 Assert-True ($pText -notmatch "\bProjectName\b" -and $pText -notmatch "'Project Name'") "Projects: no bare ProjectName and no 'Project Name' column (Project Name = Title; Project Number = 'Project Number')"
 $pSave = PGet 'btnPrjSave' 'OnSelect'; $pSaveN = Norm $pSave
@@ -1240,12 +1310,34 @@ $pChoices = @($pAll.Keys | Where-Object { $pAll[$_] -match '\bChoices\(' } | Sor
 Assert-True (($pChoices -join ',') -ceq 'btnPrjSave.OnSelect,cmpPrjCountry.Items,cmpPrjStatus.Items') "Projects: Choices() only on the two cmpField dropdown Items and in Save ($($pChoices -join ', '))"
 $pAsIs = @{}; foreach ($c in @('Status', 'Country')) { $pAsIs[$c] = "Split(Concat(Choices([@Projects].$c),Value,Char(31)) & If(!IsBlank(varPrjEdit.$c) && CountIf(Choices([@Projects].$c),Value=varPrjEdit.$c)=0,Char(31) & varPrjEdit.$c,`"`"),Char(31))" }
 Assert-True ((PGet 'cmpPrjStatus' 'Items') -ceq '=ShowColumns(Choices([@Projects].Status),Value)' -and (PGet 'cmpPrjCountry' 'Items') -ceq '=ShowColumns(Choices([@Projects].Country),Value)' -and ($cfFieldIdx['ddFieldValue']['Properties']['Items'] -match 'LookUp\(cmpField\.Items,Value=cmpField\.DefaultValue\)')) 'Projects: Status/Country dropdown Items = the Choices([@Projects].<column>) values (column Value as identifier, not translated); cmpField appends the stored value of the record itself when it is not in the list (shown as-is, never dirty)'
-Assert-True (([regex]::Matches($pSave, '\bChoices\(')).Count -eq 1 -and $pSave.Contains('If(IsBlank(varPrjSaveRec.Status) || (CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)=0 && !(varPrjSaveMode="Edit" && varPrjSaveRec.Status=varPrjEdit.Status)),Collect(colPrjSaveErrors,{Field:"Status"')) 'Projects: Save validates Status once against Choices (not inside ForAll); an unchanged stored value outside Choices is accepted in Edit'
+$pInList = 'Set(varPrjSaveStatusInList,CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)>0); Set(varPrjSaveCountryInList,CountIf(Choices([@Projects].Country),Value=varPrjSaveRec.Country)>0);'
+Assert-True (([regex]::Matches($pSave, '\bChoices\(')).Count -eq 2 -and ([regex]::Matches($pSave, [regex]::Escape($pInList))).Count -eq 1 -and $pSave.Contains('If(IsBlank(varPrjSaveRec.Status) || (!varPrjSaveStatusInList && !(varPrjSaveMode="Edit" && varPrjSaveRec.Status=varPrjEdit.Status)),Collect(colPrjSaveErrors,{Field:"Status"')) 'Projects: Save checks Status and Country once each against Choices (not inside ForAll, before any read/write); Status validation uses the flag; an unchanged stored value outside Choices is accepted in Edit'
+Assert-True ($pSaveN.IndexOf((Norm $pInList)) -gt 0 -and $pSaveN.IndexOf((Norm $pInList)) -lt $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),')) 'Projects N3: in-list flags and write flags set in the local validation, before the first read/write'
 Assert-True (@($pAll.Values | Where-Object { $_ -match 'ForAll\([^;]*\bChoices\(' }).Count -eq 0 -and $pText -notmatch '\bSearch\(') 'Projects: no Choices() inside ForAll, no Search()'
 Assert-True ($pText -notmatch "ForAll\([^)]*\bProjects\b[^)]*\)[^;]*\b(?:LookUp|Filter)\(\s*Projects") 'Projects: no remote LookUp/Filter inside ForAll'
 
 # (P6)-(P8) Save: validation, duplicate block, conflict check, one Patch, verify read, local update after verify ------------
-Assert-True (([regex]::Matches($srcAll, '\bPatch\(\s*Projects\b')).Count -eq 1 -and $pSave -match '\bPatch\(\s*Projects\b') 'Projects: exactly one Patch(Projects) in Src, in btnPrjSave.OnSelect'
+# N3 (03-11-2026): one write per save; the record shape (with / without Status, Country) is chosen by one If inside the single write gate.
+$pSelAt = $pSave.IndexOf('ClearCollect(colPrjPatched,If(')
+Assert-True ($pSelAt -gt 0 -and ([regex]::Matches($pSave, 'ClearCollect\(colPrjPatched,')).Count -eq 1) 'Projects N3: exactly one ClearCollect(colPrjPatched, If(<shape>, Patch, ...)) write step in Save'
+$pSel = Get-Balanced $pSave ($pSelAt + 'ClearCollect(colPrjPatched,If'.Length)
+$pSelArgs = Split-Args $pSel.Substring(1, $pSel.Length - 2)
+Assert-True ($pSelArgs.Count -eq 7 -and $pSelArgs[0].Trim() -ceq 'varPrjSaveWriteStatus && varPrjSaveWriteCountry' -and $pSelArgs[2].Trim() -ceq 'varPrjSaveWriteStatus' -and $pSelArgs[4].Trim() -ceq 'varPrjSaveWriteCountry' -and @(1, 3, 5, 6 | Where-Object { -not $pSelArgs[$_].Trim().StartsWith('Patch(Projects,') }).Count -eq 0) 'Projects N3: If(Status && Country, Patch(all), Status, Patch(no Country), Country, Patch(no Status), Patch(neither)): exactly one Patch runs'
+Assert-True (([regex]::Matches($srcAll, '\bPatch\(\s*Projects\b')).Count -eq 4 -and ([regex]::Matches($pSel, '\bPatch\(\s*Projects\b')).Count -eq 4) 'Projects: the four Patch(Projects) shapes are all inside that one If in btnPrjSave.OnSelect (no other Patch(Projects) in Src)'
+$pShape = @{}
+foreach ($si in 1, 3, 5, 6) {
+    $sp = $pSelArgs[$si].Trim(); $sa = Split-Args $sp.Substring('Patch('.Length, $sp.Length - 'Patch('.Length - 1)
+    Assert-True ($sa.Count -eq 3 -and $sa[1].Trim() -ceq 'If(varPrjSaveMode="New",Defaults(Projects),First(colPrjPreRaw))') "Projects N3: shape $si : base Defaults(Projects) for New, the pre-read record for Edit"
+    $sr = $sa[2].Trim(); $pShape[$si] = [ordered]@{}; foreach ($a in (Split-Args $sr.Substring(1, $sr.Length - 2))) { $kv = $a -split ':', 2; $pShape[$si][$kv[0].Trim()] = $kv[1].Trim() }
+}
+$pShapeKeys = @{ 1 = @('Status', 'Country'); 3 = @('Status'); 5 = @('Country'); 6 = @() }
+foreach ($si in 1, 3, 5, 6) {
+    $common = @($pShape[$si].Keys | Where-Object { $_ -notin @('Status', 'Country') })
+    Assert-True ((($common | ForEach-Object { "$_=$($pShape[$si][$_])" }) -join ';') -ceq ((@($pShape[1].Keys | Where-Object { $_ -notin @('Status', 'Country') }) | ForEach-Object { "$_=$($pShape[1][$_])" }) -join ';') -and (@('Status', 'Country' | Where-Object { $pShape[$si].Contains($_) }) -join ',') -ceq ($pShapeKeys[$si] -join ',')) "Projects N3: shape $si writes the same 9 other fields identically and Status/Country = $($pShapeKeys[$si] -join ',')"
+    if ($pShape[$si].Contains('Status')) { Assert-True ($pShape[$si]['Status'] -ceq '{Value:varPrjSaveRec.Status}') "Projects N3: shape $si Status = {Value: ...}" }
+    if ($pShape[$si].Contains('Country')) { Assert-True ($pShape[$si]['Country'] -ceq 'If(IsBlank(varPrjSaveRec.Country),Blank(),{Value:varPrjSaveRec.Country})') "Projects N3: shape $si Country = {Value: ...} / Blank()" }
+}
+Assert-True ($pSel -notmatch '\bChoices\(') 'Projects N3: no Choices() in any Patch record'
 foreach ($k in $pAll.Keys) { if ($k -ne 'btnPrjSave.OnSelect') { Assert-True ($pAll[$k] -notmatch '\bPatch\(') "Projects: $k has no Patch" } }
 Assert-True ($pText -notmatch "\bPatch\(\s*(?:'Assignment Periods'|'Project Workers'|Hours|Workers|Employers)\b" -and $pText -notmatch "\b(?:Remove|RemoveIf|Update|UpdateIf)\(\s*(?:Projects|'Assignment Periods')\b") 'Projects: no write to other lists; periods are never closed or removed by this screen'
 $pm = [regex]::Match($pSave, '\bPatch\(\s*Projects\s*,')
@@ -1283,7 +1375,7 @@ Assert-True (([regex]::Matches($pSaveN, [regex]::Escape($pModDisp))).Count -eq 1
 $pI = [ordered]@{
     Val = $pSaveN.IndexOf('If(IsBlank(varPrjSaveRec.Name)'); DupLocal = $pSaveN.IndexOf('CountIf(colAdminProjects,'); GateRead = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),')
     Pre = $pSaveN.IndexOf('ClearCollect(colPrjPreRaw,Filter(Projects,ID=varPrjSaveID))'); Dup = $pSaveN.IndexOf('ClearCollect(colPrjDup,'); Conf = $pSaveN.IndexOf('Set(varPrjSaveConflict,true)')
-    Periods = $pSaveN.IndexOf("ClearCollect(colPrjPeriods,"); WriteGate = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),Set(varPrjPatchError,false);IfError(CountRows(ClearCollect(colPrjPatched,Patch(Projects,')
+    Periods = $pSaveN.IndexOf("ClearCollect(colPrjPeriods,"); WriteGate = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),Set(varPrjPatchError,false);IfError(CountRows(ClearCollect(colPrjPatched,If(varPrjSaveWriteStatus&&varPrjSaveWriteCountry,Patch(Projects,')
     Patch = $pSaveN.IndexOf('Patch(Projects,'); Verify = $pSaveN.IndexOf('ClearCollect(colPrjVerifyRaw,Filter(Projects,ID=varPrjPatchedID))'); Ok = $pSaveN.IndexOf('Set(varPrjSaveVerified,true)')
     Local = $pSaveN.IndexOf('If(varPrjSaveVerified&&IsEmpty(colPrjSaveErrors),RemoveIf(colAdminProjects,ID=varPrjPatchedID);Collect(colAdminProjects,First(colPrjVerify));')
 }
@@ -1372,7 +1464,7 @@ foreach ($k in $pAll.Keys) {
     }
 }
 Assert-True ($pTraces -ge 10) "Projects: traces checked: $pTraces"
-Assert-True ($pSaveN.Contains((Norm 'Trace("DIAG|Projects|SaveEnd",TraceSeverity.Information,{Screen:"Projects",Mode:varPrjSaveMode,ItemID:Coalesce(varPrjPatchedID,varPrjSaveID,0),ElapsedMs:DateDiff(varPrjDiagT0,Now(),TimeUnit.Milliseconds),Reads:varPrjSaveReads,Writes:varPrjSaveWrites,Verified:varPrjSaveVerified,DupFound:varPrjSaveDupFound,Conflict:varPrjSaveConflict,OpenPeriods:varPrjSaveOpenPeriods,PeriodsUnchecked:varPrjSavePeriodsUnchecked,Errors:CountRows(colPrjSaveErrors)})'))) 'Projects: SaveEnd trace with Mode/ItemID/ElapsedMs/Reads/Writes/Verified/DupFound/Conflict/OpenPeriods/Errors'
+Assert-True ($pSaveN.Contains((Norm 'Trace("DIAG|Projects|SaveEnd",TraceSeverity.Information,{Screen:"Projects",Mode:varPrjSaveMode,ItemID:Coalesce(varPrjPatchedID,varPrjSaveID,0),ElapsedMs:DateDiff(varPrjDiagT0,Now(),TimeUnit.Milliseconds),Reads:varPrjSaveReads,Writes:varPrjSaveWrites,Verified:varPrjSaveVerified,DupFound:varPrjSaveDupFound,Conflict:varPrjSaveConflict,OpenPeriods:varPrjSaveOpenPeriods,PeriodsUnchecked:varPrjSavePeriodsUnchecked,Errors:CountRows(colPrjSaveErrors),ControlRead:varPrjSaveCtl})'))) 'Projects: SaveEnd trace with Mode/ItemID/ElapsedMs/Reads/Writes/Verified/DupFound/Conflict/OpenPeriods/Errors/ControlRead (N1)'
 Assert-True ($pSaveN.Contains((Norm 'Trace("DIAG|Projects|VerifyMismatch",TraceSeverity.Warning,{Screen:"Projects",ItemID:Coalesce(varPrjPatchedID,0),Rows:CountRows(colPrjVerifyRaw),Fields:varPrjVerifyDiff})'))) 'Projects: VerifyMismatch trace with field names only'
 $pFe = @([regex]::Matches($pText, 'FirstError\.Message'))
 $pFeOk = @($pFe | Where-Object { $pText.Substring([Math]::Max(0, $_.Index - 400), [Math]::Min(400, $_.Index)) -match 'Collect\(col\w*Errors,\{[^{}]*$' })
@@ -1411,7 +1503,7 @@ foreach ($p in $pScreenProps.Keys) { if ($p -like 'On*') { $pBeh["$pScreen.$p"] 
 Get-BehaviourFormulas $pDoc['Screens'][$pScreen]['Children'] $pScreen $pBeh
 $pSp = @()
 foreach ($k in ($pBeh.Keys | Sort-Object)) { foreach ($r in (Test-RefreshBeforeReads $pBeh[$k])) { $pSp += $r; Assert-True ($r.Status -eq 'Refreshed') "Projects: $k : read of $($r.Source) (formula line $($r.Line)) preceded by Refresh($($r.Source)) in the same branch [$($r.Status)]" } }
-Assert-True (@($pSp | Where-Object Source -eq 'Projects').Count -eq 4 -and @($pSp | Where-Object Source -eq "'Assignment Periods'").Count -eq 1 -and $pSp.Count -eq 5) "Projects: SharePoint reads: 4 x Projects (load, pre-read, number check, verify), 1 x Assignment Periods (closing check)"
+Assert-True (@($pSp | Where-Object Source -eq 'Projects').Count -eq 6 -and @($pSp | Where-Object Source -eq "'Assignment Periods'").Count -eq 1 -and $pSp.Count -eq 7) "Projects: SharePoint reads: 6 x Projects (load, pre-read, number check, verify, N1 control read Edit / New after a Patch error), 1 x Assignment Periods (closing check)"
 $pFr = PGet 'btnPrjFormReset' 'OnSelect'
 $pReset = 'Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl)'
 Assert-True ($pIdx['btnPrjFormReset']['Control'] -eq 'Classic/Button@2.2.0' -and (PGet 'btnPrjFormReset' 'Visible') -eq '=false' -and $pFr.StartsWith('=If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false),') -and $pFr.Contains($pReset)) 'Projects: hidden btnPrjFormReset resets all 11 inputs only when Loaded/idle/no failed save'
@@ -1537,7 +1629,12 @@ $pTitleFx = (PGet 'lblPrjFormTitle' 'Text').TrimStart('=')
 foreach ($c in @(@('"New"', 'New project'), @('"Edit"', 'Project details'), @('""', 'No project selected'), @('If(false,"x")', 'No project selected'))) { Assert-Eval "With({LangNl:false,T:$tRec,varPrjMode:$($c[0])},$pTitleFx)" $c[1] "Projects: header text for Mode $($c[0]) = $($c[1]) (no Project Number/Name repeated)" }
 Assert-True ($pTitleFx.Contains('T.prjFormDetails') -and $pTitleFx.Contains('T.prjNoSelection') -and $pTitleFx.Contains('T.prjNewProject') -and ($pTitleFx -notmatch 'varPrjEdit') -and (-not $pIdx['lblPrjFormTitle']['Properties'].ContainsKey('Visible')) -and $formulas.Contains('prjFormDetails: {en: "Project details", nl: ""}')) 'Projects: header texts from T (prjFormDetails, prjNewProject, prjNoSelection), always visible'
 $pFormChipText = (PGet 'btnPrjFormChip' 'Text')
-Assert-True (($pFormChipText -ceq '=varPrjEdit.Status') -and ((PGet 'btnPrjFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled') -and (-not $pIdx['btnPrjFormChip']['Properties'].ContainsKey('OnSelect')) -and ((PGet 'btnPrjFormChip' 'Visible') -ceq '=Coalesce(varPrjMode,"") in ["New","Edit"] && !IsBlank(varPrjEdit.Status)') -and ((PGet 'btnPrjFormChip' 'X') -eq '=Parent.Width-24-Self.Width') -and ((PGet 'lblPrjFormTitle' 'Width') -eq '=Max(0,Parent.Width-48-84)')) 'Projects: status chip shows the SAVED status (varPrjEdit.Status) as text, static, hidden when Mode is empty, right-aligned on the card padding; reviewer N2 solved'
+# 03-11-2026 (Eddy): New mode -> chip "New" (T.admChipNew) in the grey chip palette; Edit -> the SAVED status (green only for Active); no selection -> hidden
+$pChipFill = (PGet 'btnPrjFormChip' 'Fill').TrimStart('='); $pChipCol = (PGet 'btnPrjFormChip' 'Color').TrimStart('='); $pChipVis = (PGet 'btnPrjFormChip' 'Visible').TrimStart('=')
+foreach ($c in @(@('"New"', '"Active"', 'true|New|#E6E6E6|#000000'), @('"Edit"', '"Active"', 'true|Active|#1AFF80|#000F41'), @('"Edit"', '"On hold"', 'true|On hold|#E6E6E6|#000000'), @('"Edit"', '"Closed"', 'true|Closed|#E6E6E6|#000000'), @('"Edit"', '""', 'false|||'), @('""', '""', 'false|||'), @('If(false,"x")', '"Active"', 'false|||'))) {
+    Assert-Eval "With({LangNl:false,T:$tRec,varPrjMode:$($c[0]),varPrjEdit:{Status:$($c[1])}},If($pChipVis,""true|"" & $($pFormChipText.TrimStart('=')) & ""|"" & With({c:$pChipFill},$chipColName) & ""|"" & With({c:$pChipCol},$chipColName),""false|||""))" $c[2] "Projects chip: Mode $($c[0]), saved Status $($c[1]) -> visible|text|fill|colour = $($c[2])"
+}
+Assert-True (($pFormChipText -ceq '=If(Coalesce(varPrjMode,"")="New",If(LangNl && !IsBlank(T.admChipNew.nl),T.admChipNew.nl,T.admChipNew.en),varPrjEdit.Status)') -and ((PGet 'btnPrjFormChip' 'DisplayMode') -eq '=DisplayMode.Disabled') -and (-not $pIdx['btnPrjFormChip']['Properties'].ContainsKey('OnSelect')) -and ((PGet 'btnPrjFormChip' 'Visible') -ceq '=Coalesce(varPrjMode,"")="New" || (Coalesce(varPrjMode,"")="Edit" && !IsBlank(varPrjEdit.Status))') -and ((PGet 'btnPrjFormChip' 'X') -eq '=Parent.Width-24-Self.Width') -and ((PGet 'lblPrjFormTitle' 'Width') -eq '=Max(0,Parent.Width-48-84)')) 'Projects: status chip shows the SAVED status (varPrjEdit.Status) as text, static, hidden when Mode is empty, right-aligned on the card padding; reviewer N2 solved'
 $pLay = [ordered]@{ X = '=If(Parent.Width>=1000,1,0)'; Y = '=If(Self.X=1,408,24)'; Width = '=If(Self.X=1,Max(0,Parent.Width-448),Parent.Width-64)'; Height = '=If(Self.X=1,24,500)' }
 foreach ($k in $pLay.Keys) { Assert-True ((PGet 'lblPrjLayout' $k) -ceq $pLay[$k]) "Projects: layout carrier lblPrjLayout.$k as Contractors" }
 Assert-True ((PGet 'lblPrjMetrics' 'X') -ceq '=If(lblPrjLayout.Width-48>=572,3,If(lblPrjLayout.Width-48>=376,2,1))' -and (PGet 'lblPrjMetrics' 'Y') -ceq '=lblPrjModified.Y+lblPrjModified.Height+24' -and (PGet 'lblPrjMetrics' 'Width') -ceq '=If(lblPrjLayout.X=1,Self.Height-48,452)' -and (PGet 'lblPrjMetrics' 'Height') -ceq '=If(lblPrjLayout.X=1,Max(conPrjBody.Height,Self.Y+48,568),lblPrjLayout.Height+Self.Y+24)' -and (PGet 'lblPrjGrid' 'Width') -ceq '=(lblPrjLayout.Width-48-16*(lblPrjMetrics.X-1))/lblPrjMetrics.X') 'Projects: grid carriers (columns 3/2/1 at content 572/376, gap 16; content height) as Contractors'
@@ -1614,21 +1711,7 @@ Assert-True ((($pKids[0..1] -join ',') -ceq 'cmpPrjTitle,cmpPrjMsgBar') -and ($p
 Assert-True ((PGet 'cmpPrjTitle' 'Height') -eq '=60' -and (PGet 'cmpPrjTitle' 'Title') -ceq ('=' + (TT 'prjTitle')) -and (PGet 'cmpPrjTitle' 'Logo') -eq '=GEA_logo_white' -and (PGet 'cmpPrjTitle' 'Busy') -ceq '=Coalesce(varPrjBusy,false) || Coalesce(varPrjSaving,false) || varPrjLoadState="Loading"' -and (PGet 'cmpPrjTitle' 'BusyLabel') -ceq ('=' + (TT 'prjBusy'))) 'Projects: title bar instance 60 px, title "Projects" from T, logo GEA_logo_white, Busy = busy || saving || Loading'
 Assert-True (($pIdx['cmpPrjFooter']['Control'] -eq 'CanvasComponent') -and ($pIdx['cmpPrjFooter']['ComponentName'] -eq 'cmpFooter') -and ((PGet 'cmpPrjFooter' 'Y') -eq '=Parent.Height-Self.Height') -and ((PGet 'cmpPrjFooter' 'Height') -eq '=68') -and ((PGet 'cmpPrjFooter' 'HomeText') -match 'T\.prjHome') -and ((PGet 'cmpPrjFooter' 'NewText') -match 'T\.prjNew') -and ((PGet 'cmpPrjFooter' 'RefreshText') -match 'T\.prjRefresh') -and ((PGet 'cmpPrjFooter' 'DiscardText') -match 'T\.prjDiscard') -and ((PGet 'cmpPrjFooter' 'SaveText') -match 'T\.prjSave')) 'Projects: footer = cmpFooter instance anchored at the bottom (68), texts from T; widths, order and role colours are pinned in the component (Test-FooterRow, Test-GeaColors)'
 $homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrHome.pa.yaml'))); $homeIdx2 = @{}; Index-Controls $homeDoc['Screens']['scrHome']['Children'] $homeIdx2
-Assert-True ($homeIdx2['btnTileProjects']['Properties']['OnSelect'] -eq '=Navigate(scrProjects)' -and !$homeIdx2['btnTileProjects']['Properties'].ContainsKey('DisplayMode') -and $homeIdx2['icoTileProjects']['Properties']['Icon'] -eq '=Icon.Folder' -and $homeIdx2['icoTileProjects']['Properties']['OnSelect'] -eq '=Select(btnTileProjects)' -and !$homeIdx2.ContainsKey('lblTileSubProjects')) 'Home: Projects tile active (Navigate(scrProjects), Icon.Folder, no "Coming soon")'
-# Home layout: 4 columns from 896 px (margin 24, column gap 16, tile min 200, tile gap 12); static formula check plus mirrored geometry.
-$hlp = $homeIdx2['lblHomeLayout']['Properties']
-Assert-True ((Norm $hlp['X']) -ceq '=If(conHomeScroll.Width-48>=848,4,1)' -and (Norm $hlp['Y']) -ceq '=If(Self.X=4,(conHomeScroll.Width-48-48)/4,conHomeScroll.Width-48)') 'Home layout formulas: 4 columns when content width >= 848 (screen 896), margin 24, column gap 16'
-Assert-True ((Norm $homeIdx2['btnTileKnowledgeBase']['Properties']['X']).StartsWith('=24+If(lblHomeLayout.X=4,3*(lblHomeLayout.Y+16),0)') -and (Norm $homeIdx2['lblHomeHeaderKnowledge']['Properties']['X']).StartsWith('=24+If(lblHomeLayout.X=4,3*(lblHomeLayout.Y+16),0)')) 'Home Knowledge column X = 24 + 3 x (column width + 16)'
-foreach ($w in 320, 728, 895, 896, 900, 1280, 1920) {
-  $avail = $w - 48; $cols = if ($avail -ge 848) { 4 } else { 1 }
-  $colW = if ($cols -eq 4) { [math]::Floor(($avail - 48) / 4) } else { $avail }
-  $n = [math]::Max(1, [math]::Floor(($colW + 12) / 212)); $tileW = ($colW - ($n - 1) * 12) / $n
-  $right = 24 + ($cols - 1) * ($colW + 16) + $colW
-  if ($w -eq 900 -or $w -eq 896) { Assert-True ($cols -eq 4) "Home $w px: 4 columns" }
-  if ($w -eq 895) { Assert-True ($cols -eq 1) 'Home 895 px: stacked mode (no 4 columns)' }
-  if ($w -ge 896) { Assert-True ($colW -ge 200) "Home $w px: column width $colW >= 200" }
-  Assert-True (($tileW -ge 200 -or $avail -lt 200 + 0) -and $right -le $w - 24 + 0.5) "Home $w px: no overlap, tile width $tileW, content right edge $right <= $($w - 24)"
-}
+Assert-True ($homeIdx2['cmpTileProjects']['Properties']['OnSelect'] -eq '=Navigate(scrProjects); true' -and $homeIdx2['cmpTileProjects']['Properties']['Active'] -eq '=true' -and $homeIdx2['cmpTileContractors']['Properties']['OnSelect'] -eq '=Navigate(scrContractors); true' -and $homeIdx2['cmpTileProjects']['ComponentName'] -eq 'cmpTile') 'Home: Projects and Contractors tiles are active cmpTile instances (Navigate(scrProjects) / Navigate(scrContractors)); Home layout (tile size, wrap, no overlap at 1366/1000/700) is pinned in Test-Layout'
 $edState = [IO.File]::ReadAllText((Join-Path $srcDir '_EditorState.pa.yaml'))
 Assert-True ($edState -match '(?m)^\s+- scrProjects\s*$') 'Projects: scrProjects listed in _EditorState ScreensOrder'
 
@@ -1667,13 +1750,33 @@ Assert-Eval (PG 'btnPrjSave' $pUnkClean) $false 'Projects a: Save not enabled by
 Assert-Eval (PG 'btnPrjSave' ($pUnkBase + (PIn '"B"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""'))) $true 'Projects a: other field changed with unknown Status: Save allowed'
 Assert-Eval (PConflict $pRawUnk $pRawUnk) $false 'Projects a: conflict check ignores the dropdown (SharePoint pre-read vs loaded snapshot, both "Archived")'
 $stVal = Get-Balanced $pSave ($pSave.IndexOf('If(IsBlank(varPrjSaveRec.Status) || (') + 2)
-$stCond = (Split-Args $stVal.Substring(1, $stVal.Length - 2))[0].Replace('Choices([@Projects].Status)', 'chS')
+$pInS = 'CountIf(Choices([@Projects].Status),Value=varPrjSaveRec.Status)>0'; $pInC = 'CountIf(Choices([@Projects].Country),Value=varPrjSaveRec.Country)>0'
+Assert-True ($pSave.Contains("Set(varPrjSaveStatusInList,$pInS);") -and $pSave.Contains("Set(varPrjSaveCountryInList,$pInC);")) 'Projects a/N3: in-list flags = CountIf(Choices(...),Value=<save value>)>0'
+$stCond = (Split-Args $stVal.Substring(1, $stVal.Length - 2))[0].Replace('varPrjSaveStatusInList', '(' + $pInS.Replace('Choices([@Projects].Status)', 'chS') + ')')
 foreach ($c in @(@('"Edit"', '"Archived"', '"Archived"', $false, 'Edit, unknown value unchanged: accepted'), @('"Edit"', '"Archived"', '"Retired"', $true, 'Edit, other unknown value: error'), @('"New"', '""', '"Archived"', $true, 'New with an unknown value: error'), @('"Edit"', '"Archived"', '""', $true, 'empty Status: error (required)'), @('"Edit"', '"Active"', '"Closed"', $false, 'known value: accepted'))) {
     Assert-Eval "With({chS:$chS,varPrjSaveMode:$($c[0]),varPrjEdit:{Status:$($c[1])},varPrjSaveRec:{Status:$($c[2])}},$stCond)" $c[3] "Projects a/e: Status validation: $($c[4])"
 }
 $pInUnk = PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""'
-Assert-Eval "With({$pInUnk},With($pSrFx,Status & `"|`" & Country))" 'Archived|Belgium' 'Projects a: unchanged unknown values written back as-is ({Value: stored})'
-Assert-Eval (PVerify $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""') 'F') '' 'Projects a: verify passes after writing back the unknown values unchanged'
+Assert-Eval "With({$pInUnk},With($pSrFx,Status & `"|`" & Country))" 'Archived|Belgium' 'Projects a: the save record keeps the unchanged unknown values (verify compares them; N3 decides whether they are in the Patch record)'
+Assert-Eval (PVerify $pRawUnk (PIn '"TEST Project 2"' '"TEST-002"' '""' '"Archived"' '"Belgium"' '""') 'F') '' 'Projects a/N3: verify passes when the unknown values were not written (SharePoint still holds them unchanged)'
+# N3 (03-11-2026): an unchanged Status/Country outside the current choice list is NOT written (left out of the Patch record);
+# changed values and every value of a New record are written as {Value: ...}. Flags evaluated on the real Save text, the shape
+# picked exactly like the If in the write step (Status && Country -> shape 1, Status -> 3, Country -> 5, else 6).
+function PFlag([string]$name) { $b = Get-Balanced $pSave ($pSave.IndexOf("Set($name,") + 3); return $b.Substring($name.Length + 2, $b.Length - $name.Length - 3) }
+$pWsFx = PFlag 'varPrjSaveWriteStatus'; $pWcFx = PFlag 'varPrjSaveWriteCountry'
+$pInEnv = "varPrjSaveStatusInList:$($pInS.Replace('Choices([@Projects].Status)', 'chS')),varPrjSaveCountryInList:$($pInC.Replace('Choices([@Projects].Country)', 'chC'))"
+foreach ($c in @(@('"Edit"', '"Archived"', '"Belgium"', '"Archived"', '"Belgium"', 'false|false', 'unknown Status and Country unchanged: neither written'),
+                @('"Edit"', '"Archived"', '"Belgium"', '"Active"', '"Belgium"', 'true|false', 'Status changed to a list value: Status written, unchanged unknown Country not'),
+                @('"Edit"', '"Archived"', '"Belgium"', '"Archived"', '"Germany"', 'false|true', 'Country changed: Country written, unchanged unknown Status not'),
+                @('"Edit"', '"Archived"', '"Belgium"', '"Retired"', '"Belgium"', 'true|false', 'Status changed to another unknown value: counted as written (the validation blocks it)'),
+                @('"Edit"', '"Active"', '"Netherlands"', '"Active"', '"Netherlands"', 'true|true', 'list values unchanged: written as before'),
+                @('"Edit"', '"Active"', '""', '"Active"', '""', 'true|true', 'blank Country unchanged: written as Blank() as before'),
+                @('"New"', '"Active"', '"Belgium"', '"Active"', '"Belgium"', 'true|true', 'New record: always written'))) {
+    $fx = "With({chS:$chS,chC:$chC,varPrjSaveMode:$($c[0]),varPrjEdit:{Status:$($c[1]),Country:$($c[2])},varPrjSaveRec:{Status:$($c[3]),Country:$($c[4])}},With({$pInEnv},Text($pWsFx) & ""|"" & Text($pWcFx)))"
+    Assert-Eval $fx $c[5] "Projects N3: $($c[6]) -> WriteStatus|WriteCountry = $($c[5])"
+    $ws = $c[5].StartsWith('true'); $wc = $c[5].EndsWith('true'); $si = if ($ws -and $wc) { 1 } elseif ($ws) { 3 } elseif ($wc) { 5 } else { 6 }
+    Assert-True (($pShape[$si].Contains('Status') -eq $ws) -and ($pShape[$si].Contains('Country') -eq $wc)) "Projects N3: $($c[6]) -> Patch record (shape $si) has Status: $ws, Country: $wc"
+}
 # Item e: Project Name stays required (validation present, red star)
 Assert-True ($pSaveN.Contains('If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name"') -and (PGet 'cmpPrjName' 'Required') -eq '=true') 'Projects e: Project Name required (validation + required field)'
 # Item f: varPrjEdit (saved status source for the chip) only from the loaded list, the verify read or the empty/New snapshot

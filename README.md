@@ -50,7 +50,7 @@ Sitemanagment/
 
 | Internal name | Visible title | Purpose |
 |---|---|---|
-| `scrHome` | Site Management | Startscherm: tegels naar de schermen (placeholders "Coming soon") |
+| `scrHome` | Site Management | Startscherm: vijf categorieën met cmpTile-tegels naar de schermen (inerte tegels "SOON") |
 | `Screen1` | Project / team | Choose project + team, link workers, Save team |
 | `scrHours` | Weekly Hours | Enter hours Mon–Sun per team |
 | `scrWeekReport` *(planned)* | Week Report | Daily hours per worker for one week; export PDF + CSV |

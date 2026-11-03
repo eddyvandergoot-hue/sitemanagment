@@ -2,11 +2,11 @@
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Test-SaveRegression.ps1')
 $font='="Inter, Arial, sans-serif"'
-$technical=@('btnApplyTeamWeek','lblHomeLayout','lblHomeRows','lblHomeColumns','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid','btnPrjLoad','btnPrjFormReset','lblPrjLayout','lblPrjMetrics','lblPrjGrid')
+$technical=@('btnApplyTeamWeek','lblHomeMetrics','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid','btnPrjLoad','btnPrjFormReset','lblPrjLayout','lblPrjMetrics','lblPrjGrid')
 $textTypes='^(Label@|Classic/Button@|Classic/DropDown@|Classic/TextInput@|Classic/CheckBox@|ModernDatePicker@)'
-$homeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','WeekReport','Workers','Contractors','Projects','Viewer3D','PIDTracker','ComponentLibrary','SkidConfigurator','StockOverview','Locations','Usage','Requests','KnowledgeBase')
+$homeTiles=@()
 $semibold=@{
- 'scrHome'=@('lblHomeTitle','lblHomeHeaderAdmin','lblHomeHeaderCad','lblHomeHeaderInventory','lblHomeHeaderKnowledge')+@($homeTiles|ForEach-Object {'btnTile'+$_})
+ 'scrHome'=@('lblHomeHeaderTeamHours','lblHomeHeaderMasterData','lblHomeHeaderInventory','lblHomeHeaderCadTools','lblHomeHeaderKnowledge')  # 3-11-2026: title in cmpTitleBar, tile labels/SOON in cmpTile (component section below)
  'Screen1'=@('lblProjectTeamTitle','btnHomeScreen1','btnGotoHours','btnGotoHoursSummary','btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam')
  'scrHours'=@('lblWeeklyHoursEntryTitle','lblHeaderWorker','lblHeaderMon','lblHeaderTue','lblHeaderWed','lblHeaderThu','lblHeaderFri','lblHeaderSat','lblHeaderSun','lblHeaderTotal','btnHomeHours','btnWeeklyProjectTeam','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')
  'scrContractors'=@('lblEmpFormTitle')  # 30-10-2026 step 3a: title, labels, list rows and footer buttons live in the components (checked in the component section below)
@@ -39,7 +39,7 @@ foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContrac
 }
 # Canvas components (Src\Components): every control with text carries the Inter font; weights per role.
 $componentTextTypes='^(Label@|Classic/Button@|Classic/TextInput@|HtmlViewer@|ModernSpinner@)'
-$componentSemibold=@('lblCmpTitleText','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave')
+$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave')
 $componentTechnical=@('lblCmpFooterMetrics')
 $componentFonts=0
 foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Components') -Filter *.pa.yaml){

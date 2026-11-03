@@ -1,0 +1,162 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+#
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+#
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpTile:
+    DefinitionType: CanvasComponent
+    Description: 'Home tile (ADMIN_PLAN.md par. 11, Eddy 30-10-2026). Presentation only. Contract - the host passes the label, the icon image (white SVG variant for an active tile, grey variant for a Soon tile), the arrow image, the SOON word and the size inputs (the host sets the component Width and Height to the same square size). Active is fail-closed (false = Soon tile: grey, SOON word, no arrow, button disabled, OnSelect never raised). The click target (btnCmpTile) raises cmpTile.OnSelect() only while Active is true; the host handler holds its own guard and navigation. Hover, pressed and focus: fill #000F41, icon and arrow stay white (decided, a green icon is not feasible). The icon and arrow images carry the same hover/pressed fill so the tile does not flicker when the pointer is over them.'
+    CustomProperties:
+      Active:
+        PropertyKind: Input
+        DisplayName: Active
+        Description: True = active tile (blue, arrow, raises OnSelect). False = Soon tile (grey, inert). Fail-closed default.
+        DataType: Boolean
+        Default: =false
+      Arrow:
+        PropertyKind: Input
+        DisplayName: Arrow
+        Description: Arrow image 28x20 (white variant, icon-arrow.svg). Shown only while Active.
+        DataType: Image
+        Default: =SampleImage
+      Icon:
+        PropertyKind: Input
+        DisplayName: Icon
+        Description: Tile icon (white variant for an active tile, grey variant for a Soon tile).
+        DataType: Image
+        Default: =SampleImage
+      IconSize:
+        PropertyKind: Input
+        DisplayName: IconSize
+        Description: Icon size in px (56 at tile 190, 48 at 160, 40 for the two-column phone layout).
+        DataType: Number
+        Default: =56
+      Label:
+        PropertyKind: Input
+        DisplayName: Label
+        Description: Tile label (bottom left, at most 2 lines).
+        DataType: Text
+        Default: =""
+      LabelSize:
+        PropertyKind: Input
+        DisplayName: LabelSize
+        Description: Label font size (Power Apps Size, points). 14 at tile 190 (about 18 px, the mockup size), 12 at 160, 11 for the two-column phone layout; Measure-FontFit proves the longest active label (Contractors) fits next to the arrow.
+        DataType: Number
+        Default: =14
+      OnSelect:
+        PropertyKind: Event
+        DisplayName: OnSelect
+        Description: The active tile was selected (never raised while Active is false). No event parameters (AGENTS). The host handler holds the navigation and its guard.
+        ReturnType: Boolean
+        Default: =true
+      Padding:
+        PropertyKind: Input
+        DisplayName: Padding
+        Description: Inner padding in px (20 at tile 190, 12 for the smaller tiles).
+        DataType: Number
+        Default: =20
+      SoonText:
+        PropertyKind: Input
+        DisplayName: SoonText
+        Description: Word for the Soon corner (the component shows it in capitals). Texts come from the host translation table T.
+        DataType: Text
+        Default: ="Soon"
+    Properties:
+      Fill: =Color.Transparent
+      Height: =190
+      Width: =190
+    Children:
+      - btnCmpTile:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderColor: =If(cmpTile.Active,ColorValue("#0303B8"),ColorValue("#E6E6E6"))
+            BorderThickness: =0
+            Color: =Color.White
+            DisabledBorderColor: =ColorValue("#E6E6E6")
+            DisabledColor: =ColorValue("#6B6B6B")
+            DisabledFill: =ColorValue("#E6E6E6")
+            DisplayMode: =If(cmpTile.Active,DisplayMode.Edit,DisplayMode.Disabled)
+            Fill: =ColorValue("#0303B8")
+            FocusedBorderColor: =Color.White
+            FocusedBorderThickness: =3
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverBorderColor: =ColorValue("#000F41")
+            HoverColor: =Color.White
+            HoverFill: =ColorValue("#000F41")
+            OnSelect: =If(cmpTile.Active,cmpTile.OnSelect())
+            PaddingBottom: =cmpTile.Padding
+            PaddingLeft: =cmpTile.Padding
+            PaddingRight: =cmpTile.Padding+If(cmpTile.Active,28+8,0)
+            PaddingTop: =cmpTile.Padding+cmpTile.IconSize+8
+            PressedBorderColor: =ColorValue("#000F41")
+            PressedColor: =Color.White
+            PressedFill: =ColorValue("#000F41")
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =cmpTile.LabelSize
+            Text: =cmpTile.Label
+            VerticalAlign: =VerticalAlign.Bottom
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - imgCmpTileIcon:
+          Control: Image@2.2.3
+          Properties:
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Fill: =Color.Transparent
+            Height: =cmpTile.IconSize
+            HoverFill: =Color.Transparent
+            Image: =cmpTile.Icon
+            ImagePosition: =ImagePosition.Fit
+            OnSelect: =If(cmpTile.Active,Select(btnCmpTile))
+            PressedFill: =Color.Transparent
+            TabIndex: =-1
+            Width: =cmpTile.IconSize
+            X: =cmpTile.Padding
+            Y: =cmpTile.Padding
+      - imgCmpTileArrow:
+          Control: Image@2.2.3
+          Properties:
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Fill: =Color.Transparent
+            Height: =20
+            HoverFill: =Color.Transparent
+            Image: =cmpTile.Arrow
+            ImagePosition: =ImagePosition.Fit
+            OnSelect: =If(cmpTile.Active,Select(btnCmpTile))
+            PressedFill: =Color.Transparent
+            TabIndex: =-1
+            Visible: =cmpTile.Active
+            Width: =28
+            X: =Parent.Width-cmpTile.Padding-Self.Width
+            Y: =Parent.Height-cmpTile.Padding-Self.Height
+      - lblCmpTileSoon:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            Color: =ColorValue("#5A5A5A")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: =Upper(cmpTile.SoonText)
+            VerticalAlign: =VerticalAlign.Top
+            Visible: =!cmpTile.Active
+            Width: =Parent.Width-cmpTile.Padding-cmpTile.Padding-cmpTile.IconSize-8
+            X: =Parent.Width-cmpTile.Padding-Self.Width
+            Y: =cmpTile.Padding

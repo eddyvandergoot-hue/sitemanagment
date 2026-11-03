@@ -355,7 +355,7 @@ C. Korte regressie (TP-CONTRACTORS-01 / TP-PROJECTS-01 kern):
 | 18 | Contractors: Active uitvinken bij TEST Employer | live amber balk; Save met waarschuwing amber "Attention. Saved. ..." |
 | 19 | Projects: Status Closed op TEST-000 (open periodes) | amber waarschuwing; opslaan toegestaan |
 
-Bewuste afwijkingen (niet als fout melden): zoekveld en Show inactive uitgeschakeld tijdens laden/opslaan/Failed/dirty; uitgeschakelde velden wit; statuschip in New toont "Active"; Projects-lijst sorteert op nummer. Mislukt: noteer stap, foutmelding (exact) en scherm.
+Bewuste afwijkingen (niet als fout melden): zoekveld en Show inactive uitgeschakeld tijdens laden/opslaan/Failed/dirty; uitgeschakelde velden wit; statuschip in New toonde toen "Active" (sinds de Home-build 3-11-2026 grijs "New"); Projects-lijst sorteert op nummer. Mislukt: noteer stap, foutmelding (exact) en scherm.
 
 ## TP-STEP3-02 Fix na TP-STEP3-01 FAIL (FAIL Contractors, Eddy 1-11-2026; DEBUG-testbuild components-20261101_170603)
 
@@ -434,3 +434,21 @@ Stappen (alleen TEST-records). Eerst App Checker: geen formulefout.
 | 4 | Projects: één veld van een TEST-project wijzigen, Save | groene balk Saved, waarde in SharePoint gewijzigd (Modified) |
 
 Resultaat TP-STEP3-05 (Eddy 3-11-2026): PASS. App Checker schoon, geen debugregel, labels Show inactive / Show closed ok (On hold zichtbaar, Closed schakelt, telling ok), Save Contractors + Projects ok in SharePoint.
+
+## TP-HOME-02 Home-redesign (cmpTile) + N1/N3/chip New (OPEN; build home-20261103_125959)
+
+Inhoud: nieuwe Home (5 categorieën, cmpTile, iconen Assets/Icons v1), N1 (dirty-guards fail-closed + controle-read na een Patch-fout zonder record), N3 (ongewijzigde Status/Country buiten de keuzelijst wordt niet geschreven), statuschip New grijs "New". Alleen TEST-records voor opslaan. Eerst App Checker: geen formulefouten (toegankelijkheidsmeldingen zijn een aparte ronde).
+
+| # | Actie | Verwacht |
+|---|---|---|
+| 1 | App openen | Home met titelbalk "Site Management" + logo; categorieën Team & hours, Master data, Inventory, CAD tools, Knowledge |
+| 2 | Actieve tegels: Project / team, Hours summary, Contractors, Projects | navigeren naar Screen1, Hours Summary, Contractors, Projects; Home-knop daar keert terug naar Home |
+| 3 | Weekly hours zonder geladen project/team | gaat naar Project / team met melding "Choose project and team first"; met geladen project/team: naar Weekly Hours |
+| 4 | Soon-tegels (Week report, Workers, Inventory, CAD tools, Knowledge base) | grijs, "SOON" rechtsboven, geen pijl, klikken doet niets |
+| 5 | Hover/pressed op een actieve tegel, ook boven icoon en pijl | tegel navy #000F41, icoon en pijl wit; geen donker vierkant rond icoon/pijl (melden als hover boven het icoon wegvalt) |
+| 6 | Tab naar een tegel | witte focusrand zichtbaar |
+| 7 | Venster ~1366, ~900, ~700 en telefoonbreedte | tegels lopen door naar de volgende regel, nooit overlap, labels niet afgekapt; < 700 twee tegels per rij |
+| 8 | Contractors en Projects: New | statuschip grijs met "New" |
+| 9 | Contractors/Projects: normaal gebruik (rij kiezen, zoeken, Show inactive/closed, Refresh, Home) zonder wijziging | alles werkt zoals in TP-STEP3-05 (N1 mag niets blokkeren); eerste bezoek laadt automatisch |
+| 10 | Projects: TEST-project met Status/Country buiten de keuzelijst (alleen als zo'n record bestaat), ander veld wijzigen, Save | Saved; in SharePoint-versiegeschiedenis is Status/Country niet herschreven |
+| 11 | Projects: New met een bestaand TEST Project Number, Save | rode balk "Not saved." met de reden (dubbel nummer); geen dubbel record in SharePoint; invoer blijft staan |

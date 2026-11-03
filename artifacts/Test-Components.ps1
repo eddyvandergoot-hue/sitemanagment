@@ -7,7 +7,7 @@ function Index-CmpControls($entries, $index) { foreach ($entry in $entries) { $n
 $dir = Join-Path $projectRoot 'Src\Components'
 $files = @{}
 foreach ($f in Get-ChildItem $dir -Filter *.pa.yaml) { $files[$f.Name -replace '\.pa\.yaml$', ''] = [IO.File]::ReadAllText($f.FullName) }
-Assert-True (($files.Keys | Sort-Object) -join ',' -eq 'cmpField,cmpFooter,cmpListCard,cmpMessageBar,cmpTitleBar') 'exactly five component files, one component per file (cmpTitleBar, cmpMessageBar, cmpFooter, cmpField, cmpListCard)'
+Assert-True (($files.Keys | Sort-Object) -join ',' -eq 'cmpField,cmpFooter,cmpListCard,cmpMessageBar,cmpTile,cmpTitleBar') 'exactly six component files, one component per file (cmpTitleBar, cmpMessageBar, cmpFooter, cmpField, cmpListCard, cmpTile)'
 foreach ($n in $files.Keys) { Assert-True (!$files[$n].Contains("`r")) "$n.pa.yaml uses LF line endings" }
 $defs = $script:componentDefs
 $idx = @{}
@@ -22,6 +22,7 @@ $contract = @{
                        OnHome = 'Event:None'; OnNew = 'Event:None'; OnRefresh = 'Event:None'; OnDiscard = 'Event:None'; OnSave = 'Event:None' }
     cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; DefaultValue = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
                        Value = 'Output:Text'; OnChange = 'Event:Boolean' }
+    cmpTile       = @{ Label = 'Input:Text'; Icon = 'Input:Image'; Arrow = 'Input:Image'; Active = 'Input:Boolean'; IconSize = 'Input:Number'; LabelSize = 'Input:Number'; Padding = 'Input:Number'; SoonText = 'Input:Text'; OnSelect = 'Event:Boolean' }
     cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountFormat = 'Input:Text'; ShowInactiveLabel = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
                        SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; SelectedRowID = 'Output:Number'; OnSelectRow = 'Event:Boolean'; OnToggleShowInactive = 'Event:Boolean' }
 }
@@ -42,7 +43,7 @@ foreach ($c in $contract.Keys) {
 foreach ($p in 'HomeEnabled', 'NewEnabled', 'RefreshEnabled', 'DiscardEnabled', 'SaveEnabled') { Assert-True ($defs['cmpFooter']['CustomProperties'][$p]['Default'] -eq '=false') "cmpFooter.$p default is fail-closed (=false)" }
 Assert-True ($defs['cmpTitleBar']['CustomProperties']['Busy']['Default'] -eq '=false') 'cmpTitleBar.Busy default =false'
 # 02-11-2026: cmpField and cmpListCard follow the shape Eddy built and tested in Studio (Incoming 20261102Components): DisplayName = property name, events ReturnType Boolean with Default =true.
-foreach ($c in 'cmpField', 'cmpListCard') { foreach ($p in $defs[$c]['CustomProperties'].Keys) { $cp = $defs[$c]['CustomProperties'][$p]; Assert-True ($cp['DisplayName'] -ceq $p) "$c.$p DisplayName = $p (Studio shape)"; if ($cp['PropertyKind'] -eq 'Event') { Assert-True ($cp['ReturnType'] -eq 'Boolean' -and $cp['Default'] -eq '=true') "$c.$p event ReturnType Boolean, Default =true (Studio shape)" } } }
+foreach ($c in 'cmpField', 'cmpListCard', 'cmpTile') { foreach ($p in $defs[$c]['CustomProperties'].Keys) { $cp = $defs[$c]['CustomProperties'][$p]; Assert-True ($cp['DisplayName'] -ceq $p) "$c.$p DisplayName = $p (Studio shape)"; if ($cp['PropertyKind'] -eq 'Event') { Assert-True ($cp['ReturnType'] -eq 'Boolean' -and $cp['Default'] -eq '=true') "$c.$p event ReturnType Boolean, Default =true (Studio shape)" } } }
 
 # (2) Pure presentation: no app state, navigation or writes ----------------------------------------------
 foreach ($c in $files.Keys) {
@@ -353,6 +354,11 @@ foreach ($sf in $scrFiles) {
         Assert-True ($cyc.Count -eq 0) "${sn}: no instance input/size property references a component output or its own instance ($($inst.Count) instances; $($cyc -join '; '))"
         foreach ($i in $inst) {
             foreach ($k in @($i.Props.Keys)) { if ($k -clike 'On*' -and @($defs[$i.Comp]['CustomProperties'].Keys) -notcontains $k) { throw "FAIL ${sn}: $($i.Name).$k is not an Event of $($i.Comp) (event names must equal the definition)" } }
+            if ($i.Comp -eq 'cmpTile') {
+                $act = ([string]$i.Props['Active']).Trim(); $hasOn = @($i.Props.Keys) -contains 'OnSelect'
+                Assert-True (($act -eq '=true' -and $hasOn -and ([string]$i.Props['OnSelect']).Trim().EndsWith('; true')) -or ($act -eq '=false' -and -not $hasOn)) "${sn}: $($i.Name) cmpTile: Active true has an OnSelect handler ending in ; true (Studio component shape), Active false (Soon) has none"
+                Assert-True (($i.Props['Width'] -eq $i.Props['Height']) -and $i.Props.ContainsKey('Icon') -and $i.Props.ContainsKey('Label')) "${sn}: $($i.Name) cmpTile: square (Width = Height), Icon and Label passed by the host"
+            }
             $req = switch ($i.Comp) { 'cmpFooter' { @('OnHome', 'OnNew', 'OnRefresh', 'OnDiscard', 'OnSave') } 'cmpListCard' { @('OnSelectRow', 'OnToggleShowInactive') } 'cmpMessageBar' { @('OnClose') } default { @() } }
             foreach ($ev in $req) {
                 Assert-True ((@($i.Props.Keys) -contains $ev) -and ([string]$i.Props[$ev]).Trim().Length -gt 1) "${sn}: $($i.Name).$ev is set on the instance (name equal to the $($i.Comp) definition; the definition Default =false is only a fallback)"
@@ -412,3 +418,24 @@ Assert-True ($hit['HoverFill'] -eq '=If(cmpListCard.Enabled && ThisItem.ID<>cmpL
 Assert-True ($row['recCmpRowFill']['Properties']['Fill'] -notmatch 'Transparent' -and $row['recCmpRowFill']['Properties']['HoverFill'] -match '#F0F0F0' -and $li['galRows']['Properties']['DisplayMode'] -eq '=DisplayMode.Edit') 'cmpListCard row: opaque background (white / #D5EDFF), gallery not in Disabled mode (no dimming overlay)'
 foreach ($k in 'txtFieldValue', 'ddFieldValue') { $q = $fi[$k]['Properties']; Assert-True ($q['FocusedBorderThickness'] -eq '=2' -and $q['FocusedBorderColor'] -match '#0303B8' -and $q['FocusedBorderColor'] -match '#DB1E28') "cmpField.$k : focus border 2 px #0303B8 (red when Invalid)" }
 Assert-True ($li['txtSearch']['Properties']['FocusedBorderThickness'] -eq '=2' -and $li['txtSearch']['Properties']['Width'] -eq '=Parent.Width-48') 'cmpListCard search: focus border 2 px, 24 px margins inside the card'
+
+# (12) cmpTile (Home redesign, 3-11-2026) ------------------------------------------------------------------
+$tp = $defs['cmpTile']['Properties']; $ti = $idx['cmpTile']; $tcp = $defs['cmpTile']['CustomProperties']
+Assert-True ($tcp['Active']['Default'] -eq '=false') 'cmpTile.Active default =false (fail-closed: a tile without Active is an inert Soon tile)'
+Assert-True ($tcp['Icon']['Default'] -eq '=SampleImage' -and $tcp['Arrow']['Default'] -eq '=SampleImage') 'cmpTile Icon/Arrow: Image inputs with Default =SampleImage (same proven shape as cmpTitleBar.Logo)'
+Assert-True ($tp['Width'] -eq '=190' -and $tp['Height'] -eq '=190') 'cmpTile: default size 190 x 190 (the host passes the responsive size)'
+Assert-True ((@($defs['cmpTile']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'btnCmpTile,imgCmpTileIcon,imgCmpTileArrow,lblCmpTileSoon') 'cmpTile children: click target/label first, icon, arrow, SOON corner on top'
+$cb = $ti['btnCmpTile']['Properties']
+Assert-True ($ti['btnCmpTile']['Control'] -eq 'Classic/Button@2.2.0' -and -not $cb.ContainsKey('AccessibleLabel')) 'cmpTile.btnCmpTile: Classic/Button@2.2.0 without AccessibleLabel (PA2108)'
+Assert-True ($cb['OnSelect'] -ceq '=If(cmpTile.Active,cmpTile.OnSelect())' -and $cb['DisplayMode'] -ceq '=If(cmpTile.Active,DisplayMode.Edit,DisplayMode.Disabled)') 'cmpTile click target raises OnSelect only while Active; Soon = DisplayMode.Disabled (inert)'
+Assert-True ($cb['Text'] -eq '=cmpTile.Label' -and $cb['Align'] -eq '=Align.Left' -and $cb['VerticalAlign'] -eq '=VerticalAlign.Bottom' -and $cb['Size'] -eq '=cmpTile.LabelSize' -and $cb['FontWeight'] -eq '=FontWeight.Semibold') 'cmpTile label: bottom left, LabelSize, Semibold'
+Assert-True ($cb['PaddingLeft'] -eq '=cmpTile.Padding' -and $cb['PaddingBottom'] -eq '=cmpTile.Padding' -and $cb['PaddingRight'] -eq '=cmpTile.Padding+If(cmpTile.Active,28+8,0)' -and $cb['PaddingTop'] -eq '=cmpTile.Padding+cmpTile.IconSize+8') 'cmpTile label area: padding left/bottom, right clears the 28 px arrow (active tiles only), top clears the icon (a long label can never overlap them)'
+foreach ($r in 'RadiusTopLeft', 'RadiusTopRight', 'RadiusBottomLeft', 'RadiusBottomRight') { Assert-True ($cb[$r] -eq '=0') "cmpTile $r = 0 (square)" }
+$ci = $ti['imgCmpTileIcon']['Properties']; $ca = $ti['imgCmpTileArrow']['Properties']
+Assert-True ($ci['Image'] -eq '=cmpTile.Icon' -and $ci['Width'] -eq '=cmpTile.IconSize' -and $ci['Height'] -eq '=cmpTile.IconSize' -and $ci['X'] -eq '=cmpTile.Padding' -and $ci['Y'] -eq '=cmpTile.Padding') 'cmpTile icon: top left at the padding, IconSize square'
+Assert-True ($ca['Image'] -eq '=cmpTile.Arrow' -and $ca['Width'] -eq '=28' -and $ca['Height'] -eq '=20' -and $ca['Visible'] -eq '=cmpTile.Active' -and $ca['X'] -eq '=Parent.Width-cmpTile.Padding-Self.Width' -and $ca['Y'] -eq '=Parent.Height-cmpTile.Padding-Self.Height') 'cmpTile arrow: 28x20 bottom right at the padding, only while Active'
+foreach ($k in $ci, $ca) { Assert-True ($k['OnSelect'] -ceq '=If(cmpTile.Active,Select(btnCmpTile))' -and $k['TabIndex'] -eq '=-1' -and !$k.ContainsKey('AccessibleLabel')) 'cmpTile image: click forwards to the tile button only while Active, decorative (TabIndex -1)' }
+Assert-True ($ti['imgCmpTileIcon']['Control'] -eq 'Image@2.2.3' -and $ti['imgCmpTileArrow']['Control'] -eq 'Image@2.2.3') 'cmpTile images use Image@2.2.3 (template present in the .msapr)'
+$cs = $ti['lblCmpTileSoon']['Properties']
+Assert-True ($cs['Text'] -eq '=Upper(cmpTile.SoonText)' -and $cs['Visible'] -eq '=!cmpTile.Active' -and $cs['Size'] -eq '=11' -and $cs['FontWeight'] -eq '=FontWeight.Semibold' -and $cs['Align'] -eq '=Align.Right') 'cmpTile SOON corner: capitals, 11 Semibold, top right, only while not Active'
+# Soon tiles are inert for the host too: a handler on the instance of a Soon tile would still never run (button disabled, OnSelect guarded by Active)
