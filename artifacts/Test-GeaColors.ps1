@@ -134,9 +134,9 @@ $tileSet=@($homeIdx.Keys | Where-Object { $homeIdx[$_]['Control'] -eq 'CanvasCom
 $tileExpected=@(($activeTiles+$soonTiles) | ForEach-Object { 'cmpTile'+$_ } | Sort-Object)
 if(($tileSet -join ',') -ne ($tileExpected -join ',')){throw "scrHome tile set changed: found [$($tileSet -join ', ')], expected [$($tileExpected -join ', ')]"}
 foreach($t in $activeTiles){ $p=$homeIdx['cmpTile'+$t]['Properties']
- if($p['Active'] -ne '=true' -or !$p.ContainsKey('OnSelect') -or $p['Arrow'] -ne '=IconArrowWhite' -or $p['Icon'] -notmatch '^=Icon\w+White$'){throw "Active tile $t (Active/OnSelect/Arrow/white icon)"} }
+ if($p['Active'] -ne '=true' -or !$p.ContainsKey('OnSelect') -or $p['ArrowSvg'] -ne '=IconArrowWhite' -or $p['IconSvg'] -notmatch '^=Icon\w+White$' -or $p.ContainsKey('Icon') -or $p.ContainsKey('Arrow')){throw "Active tile $t (Active/OnSelect/ArrowSvg/white IconSvg, no Icon/Arrow)"} }
 foreach($t in $soonTiles){ $p=$homeIdx['cmpTile'+$t]['Properties']
- if($p['Active'] -ne '=false' -or $p.ContainsKey('OnSelect') -or $p.ContainsKey('Arrow') -or $p['Icon'] -notmatch '^=Icon\w+Grey$'){throw "Soon tile $t (Active false, no OnSelect, no arrow, grey icon)"} }
+ if($p['Active'] -ne '=false' -or $p.ContainsKey('OnSelect') -or $p.ContainsKey('ArrowSvg') -or $p.ContainsKey('IconSvg') -or $p['Icon'] -notmatch '^=Icon\w+Grey$'){throw "Soon tile $t (Active false, no OnSelect, no ArrowSvg/IconSvg, grey icon)"} }
 foreach($h in 'TeamHours','MasterData','Inventory','CadTools','Knowledge'){
  if($homeIdx['lblHomeHeader'+$h]['Properties']['Color'] -ne (CV '#000F41') -or $homeIdx['lblHomeHeader'+$h]['Properties']['Size'] -ne '=16'){throw "Home header $h colour/size"}
  if($homeIdx['recHomeLine'+$h]['Properties']['Fill'] -ne (CV '#0303B8') -or $homeIdx['recHomeLine'+$h]['Properties']['Height'] -ne '=2'){throw "Home header line $h"}
@@ -145,12 +145,15 @@ foreach($pair in @(@('cmpTileProjectTeam','=Navigate(Screen1); true'),@('cmpTile
 # Weekly Hours tile: conditional navigation (loaded -> scrHours, else Screen1 + Notify); exact logic checked in Test-SaveRegression.ps1.
 $tileWh=[string]$homeIdx['cmpTileWeeklyHours']['Properties']['OnSelect'];if(!$tileWh.StartsWith('=If(') -or !$tileWh.Contains('Navigate(scrHours)') -or !$tileWh.Contains('Navigate(Screen1)')){throw 'Home navigation cmpTileWeeklyHours'}
 # cmpTile component colours (TP-HOME-02 fixes, Eddy 3-11-2026): background rectangle #0303B8 active / #E6E6E6 Soon; label white / #6B6B6B; SOON #5A5A5A.
-# The click target is a transparent top layer over the whole tile: hover = Navy overlay #000F4159, pressed #000F4180, focus 3 px #000F41; its own text is transparent (accessible name).
+# Soon tiles: btnCmpTile is a disabled transparent top layer (accessible name). Active tiles: one Image imgCmpTile, checked below (TP-HOME-03 item 5).
 $tileDoc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Components/cmpTile.pa.yaml')));$tc=@{};Index-RegressionControls $tileDoc['ComponentDefinitions']['cmpTile']['Children'] $tc
-if($tc['recCmpTileBg']['Properties']['Fill'] -ne '=If(cmpTile.Active,ColorValue("#0303B8"),ColorValue("#E6E6E6"))'){throw 'cmpTile background #0303B8 active / #E6E6E6 Soon'}
-if($tc['lblCmpTileLabel']['Properties']['Color'] -ne '=If(cmpTile.Active,Color.White,ColorValue("#6B6B6B"))'){throw 'cmpTile label white active / #6B6B6B Soon'}
+if($tc['recCmpTileBg']['Properties']['Fill'] -ne '=ColorValue("#E6E6E6")'){throw 'cmpTile Soon background #E6E6E6'}
+if($tc['lblCmpTileLabel']['Properties']['Color'] -ne '=ColorValue("#6B6B6B")'){throw 'cmpTile Soon label #6B6B6B'}
 $tb=$tc['btnCmpTile']['Properties']; $TR='=Color.Transparent'
-foreach($kv in @(@('Fill',$TR),@('Color',$TR),@('HoverFill',(CV '#000F4159')),@('PressedFill',(CV '#000F4180')),@('HoverColor',$TR),@('PressedColor',$TR),@('FocusedBorderColor',(CV '#000F41')),@('FocusedBorderThickness','=3'),@('DisabledFill',$TR),@('DisabledColor',$TR),@('DisabledBorderColor',$TR),@('RadiusTopLeft','=0'),@('RadiusBottomRight','=0'))){ if($tb[$kv[0]] -ne $kv[1]){throw "cmpTile.btnCmpTile.$($kv[0]) = $($tb[$kv[0]]) (expected $($kv[1]))"} }
+foreach($kv in @(@('Fill',$TR),@('Color',$TR),@('HoverFill',$TR),@('PressedFill',$TR),@('HoverColor',$TR),@('PressedColor',$TR),@('DisabledFill',$TR),@('DisabledColor',$TR),@('DisabledBorderColor',$TR),@('RadiusTopLeft','=0'),@('RadiusBottomRight','=0'))){ if($tb[$kv[0]] -ne $kv[1]){throw "cmpTile.btnCmpTile.$($kv[0]) = $($tb[$kv[0]]) (expected $($kv[1]))"} }
 if($tc['lblCmpTileSoon']['Properties']['Color'] -ne (CV '#5A5A5A') -or $tc['lblCmpTileSoon']['Properties']['Size'] -ne '=If(cmpTile.Width>=130,11,9)'){throw 'cmpTile SOON label #5A5A5A / 11 (9 on the smallest tiles)'}
-foreach($i in 'imgCmpTileIcon','imgCmpTileArrow'){ if($tc[$i]['Properties']['HoverFill'] -ne '=Color.Transparent' -or $tc[$i]['Properties']['PressedFill'] -ne '=Color.Transparent'){throw "cmpTile.$i hover/pressed fill must be transparent (no navy box over the tile, review 3-11-2026)"} }
-Write-Output 'PASS Home tiles (cmpTile): 5 active (white icon + arrow, OnSelect, navigation only) and 9 Soon (grey icon, no arrow, no OnSelect); headers #000F41 16 with 2 px #0303B8 line; cmpTile background #0303B8, transparent top-layer click target with Navy overlay hover #000F4159 / pressed #000F4180 over the whole tile, focus 3 px #000F41, Soon #E6E6E6 / #6B6B6B / SOON #5A5A5A, radius 0.'
+foreach($i in 'imgCmpTileIcon'){ if($tc[$i]['Properties']['HoverFill'] -ne '=Color.Transparent' -or $tc[$i]['Properties']['PressedFill'] -ne '=Color.Transparent'){throw "cmpTile.$i hover/pressed fill must be transparent (Soon icon)"} }
+# TP-HOME-03 item 5: an active tile is ONE Image (imgCmpTile): Fill #0303B8, HoverFill #000F41 (whole tile), PressedFill darker, focus 3 px #000F41; no overlay.
+$ti2=$tc['imgCmpTile']['Properties']
+if($ti2['Fill'] -ne (CV '#0303B8') -or $ti2['HoverFill'] -ne (CV '#000F41') -or $ti2['PressedFill'] -ne '=ColorFade(ColorValue("#000F41"),-0.4)' -or $ti2['FocusedBorderColor'] -ne (CV '#000F41') -or $ti2['FocusedBorderThickness'] -ne '=3'){throw 'cmpTile.imgCmpTile colours: Fill #0303B8, HoverFill #000F41, PressedFill ColorFade(#000F41,-0.4), focus 3 px #000F41'}
+Write-Output 'PASS Home tiles (cmpTile): 5 active (white icon + arrow, OnSelect, navigation only) and 9 Soon (grey icon, no arrow, no OnSelect); headers #000F41 16 with 2 px #0303B8 line; active tile = one Image (imgCmpTile) Fill #0303B8 / HoverFill #000F41 / PressedFill ColorFade(#000F41,-0.4), focus 3 px #000F41, Soon #E6E6E6 / #6B6B6B / SOON #5A5A5A, radius 0.'

@@ -9,24 +9,24 @@
 ComponentDefinitions:
   cmpTile:
     DefinitionType: CanvasComponent
-    Description: 'Home tile (ADMIN_PLAN.md par. 11, Eddy 30-10-2026, fixes TP-HOME-02 3-11-2026). Presentation only. Contract - the host passes the label, the icon image (white SVG variant for an active tile, grey variant for a Soon tile), the arrow image, the SOON word and the size inputs (the host sets the component Width and Height to the same square size; the arrow size follows the tile width 150/130/smaller). Active is fail-closed (false = Soon tile: grey, SOON word, no arrow, button disabled, OnSelect never raised). Layers bottom to top: background, icon, label, arrow, SOON word, click target. The click target (btnCmpTile) is transparent, covers the whole tile and is the top layer, so icon and arrow never take the hover; hover = semi-transparent Navy overlay over the whole tile (35 percent, pressed 50 percent), focus = 3 px #000F41 border. It raises cmpTile.OnSelect() only while Active is true; the host handler holds its own guard and navigation. Its text is the label in transparent colour (accessible name; the visible label is lblCmpTileLabel).'
+    Description: 'Home tile (ADMIN_PLAN.md par. 11, Eddy 30-10-2026; TP-HOME-03 item 5, 4-11-2026). Presentation only. Contract - the host passes the label, IconSvg (raw white icon SVG text) and ArrowSvg (raw white arrow SVG text) for an active tile, Icon (grey image) for a Soon tile, the SOON word and the size inputs (the host sets the component Width and Height to the same square size; the arrow size follows the tile width 150/130/smaller). Active is fail-closed (false = Soon tile: grey, SOON word, no arrow, button disabled, OnSelect never raised). An active tile is ONE Image control (imgCmpTile): Image = SVG composition (icon top left, label bottom left in Arial Bold, arrow bottom right, transparent background) built with With() and EncodeUrl; Fill #0303B8, HoverFill #000F41 (the whole tile turns Navy on hover), PressedFill darker, focus 3 px #000F41. No overlay and no separate icon, label or arrow controls for an active tile. A Soon tile keeps the layered controls (background, grey icon, label, SOON word, disabled transparent click target) and is visually unchanged. A green icon on hover is not feasible because an Image has no hover state for its image. The Image raises cmpTile.OnSelect() only while Active is true; the host handler holds its own guard and navigation.'
     CustomProperties:
       Active:
         PropertyKind: Input
         DisplayName: Active
-        Description: True = active tile (blue, arrow, raises OnSelect). False = Soon tile (grey, inert). Fail-closed default.
+        Description: True = active tile (one blue Image with SVG composition, raises OnSelect). False = Soon tile (grey, inert). Fail-closed default.
         DataType: Boolean
         Default: =false
-      Arrow:
+      ArrowSvg:
         PropertyKind: Input
-        DisplayName: Arrow
-        Description: Arrow image (white variant, icon-arrow.svg, aspect 28x20). Shown only while Active; 24x17 at tile 150, 20x14 at 130, 14x10 below.
-        DataType: Image
-        Default: =SampleImage
+        DisplayName: ArrowSvg
+        Description: Raw SVG text of the white arrow (icon-arrow.svg, width 28 height 20). Used only by an active tile; 24x17 at tile 150, 20x14 at 130, 14x10 below.
+        DataType: Text
+        Default: =""
       Icon:
         PropertyKind: Input
         DisplayName: Icon
-        Description: Tile icon (white variant for an active tile, grey variant for a Soon tile).
+        Description: Grey icon image of a Soon tile (an active tile uses IconSvg).
         DataType: Image
         Default: =SampleImage
       IconSize:
@@ -35,6 +35,12 @@ ComponentDefinitions:
         Description: Icon size in px (44 at tile 150, 38 at 130, 32 below).
         DataType: Number
         Default: =44
+      IconSvg:
+        PropertyKind: Input
+        DisplayName: IconSvg
+        Description: Raw SVG text of the white icon of an active tile (56x56, viewBox 24). Empty for a Soon tile.
+        DataType: Text
+        Default: =""
       Label:
         PropertyKind: Input
         DisplayName: Label
@@ -44,7 +50,7 @@ ComponentDefinitions:
       LabelSize:
         PropertyKind: Input
         DisplayName: LabelSize
-        Description: Label font size (Power Apps Size, points). 11 at tile 150, 10 at 130, 8 below; Measure-FontFit proves the longest active word (Contractors) fits next to the arrow.
+        Description: Label font size (Power Apps Size, points). 11 at tile 150, 10 at 130, 8 below. In the SVG of an active tile the font size is Round(LabelSize*4/3) px; Measure-FontFit proves the longest active word (Contractors) fits next to the arrow.
         DataType: Number
         Default: =11
       OnSelect:
@@ -73,8 +79,9 @@ ComponentDefinitions:
       - recCmpTileBg:
           Control: Rectangle@2.3.0
           Properties:
-            Fill: =If(cmpTile.Active,ColorValue("#0303B8"),ColorValue("#E6E6E6"))
+            Fill: =ColorValue("#E6E6E6")
             Height: =Parent.Height
+            Visible: =!cmpTile.Active
             Width: =Parent.Width
             X: =0
             Y: =0
@@ -90,6 +97,7 @@ ComponentDefinitions:
             ImagePosition: =ImagePosition.Fit
             PressedFill: =Color.Transparent
             TabIndex: =-1
+            Visible: =!cmpTile.Active
             Width: =cmpTile.IconSize
             X: =cmpTile.Padding
             Y: =cmpTile.Padding
@@ -97,7 +105,7 @@ ComponentDefinitions:
           Control: Label@2.5.1
           Properties:
             Align: =Align.Left
-            Color: =If(cmpTile.Active,Color.White,ColorValue("#6B6B6B"))
+            Color: =ColorValue("#6B6B6B")
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Semibold
             Height: =Max(0,Parent.Height-Self.Y-cmpTile.Padding)
@@ -108,25 +116,10 @@ ComponentDefinitions:
             Size: =cmpTile.LabelSize
             Text: =cmpTile.Label
             VerticalAlign: =VerticalAlign.Bottom
-            Width: =Max(0,Parent.Width-2*cmpTile.Padding-If(cmpTile.Active,imgCmpTileArrow.Width+4,0))
+            Visible: =!cmpTile.Active
+            Width: =Max(0,Parent.Width-2*cmpTile.Padding)
             X: =cmpTile.Padding
             Y: =cmpTile.Padding+cmpTile.IconSize+6
-      - imgCmpTileArrow:
-          Control: Image@2.2.3
-          Properties:
-            BorderColor: =Color.Transparent
-            BorderThickness: =0
-            Fill: =Color.Transparent
-            Height: =If(cmpTile.Width>=150,17,cmpTile.Width>=130,14,10)
-            HoverFill: =Color.Transparent
-            Image: =cmpTile.Arrow
-            ImagePosition: =ImagePosition.Fit
-            PressedFill: =Color.Transparent
-            TabIndex: =-1
-            Visible: =cmpTile.Active
-            Width: =If(cmpTile.Width>=150,24,cmpTile.Width>=130,20,14)
-            X: =Parent.Width-cmpTile.Padding-Self.Width
-            Y: =Parent.Height-cmpTile.Padding-Self.Height
       - lblCmpTileSoon:
           Control: Label@2.5.1
           Properties:
@@ -155,30 +148,49 @@ ComponentDefinitions:
             DisabledBorderColor: =Color.Transparent
             DisabledColor: =Color.Transparent
             DisabledFill: =Color.Transparent
-            DisplayMode: =If(cmpTile.Active,DisplayMode.Edit,DisplayMode.Disabled)
+            DisplayMode: =DisplayMode.Disabled
             Fill: =Color.Transparent
-            FocusedBorderColor: =ColorValue("#000F41")
-            FocusedBorderThickness: =3
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Semibold
             Height: =Parent.Height
             HoverBorderColor: =Color.Transparent
             HoverColor: =Color.Transparent
-            HoverFill: =ColorValue("#000F4159")
-            OnSelect: =If(cmpTile.Active,cmpTile.OnSelect())
+            HoverFill: =Color.Transparent
             PaddingBottom: =0
             PaddingLeft: =0
             PaddingRight: =0
             PaddingTop: =0
             PressedBorderColor: =Color.Transparent
             PressedColor: =Color.Transparent
-            PressedFill: =ColorValue("#000F4180")
+            PressedFill: =Color.Transparent
             RadiusBottomLeft: =0
             RadiusBottomRight: =0
             RadiusTopLeft: =0
             RadiusTopRight: =0
             Size: =cmpTile.LabelSize
             Text: =cmpTile.Label
+            Visible: =!cmpTile.Active
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - imgCmpTile:
+          Control: Image@2.2.3
+          Properties:
+            AccessibleLabel: =cmpTile.Label
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            DisplayMode: =If(cmpTile.Active,DisplayMode.Edit,DisplayMode.Disabled)
+            Fill: =ColorValue("#0303B8")
+            FocusedBorderColor: =ColorValue("#000F41")
+            FocusedBorderThickness: =3
+            Height: =Parent.Height
+            HoverFill: =ColorValue("#000F41")
+            Image: ="data:image/svg+xml;utf8," & EncodeUrl(With({W:Round(cmpTile.Width,0),P:Round(cmpTile.Padding,0),IZ:Round(cmpTile.IconSize,0),FS:Round(cmpTile.LabelSize*4/3,0),AW:If(cmpTile.Width>=150,24,cmpTile.Width>=130,20,14),AH:If(cmpTile.Width>=150,17,cmpTile.Width>=130,14,10),Lb:Substitute(Substitute(Substitute(Trim(cmpTile.Label),"&","&amp;"),"<","&lt;"),">","&gt;")},With({bl:W-P-Round(FS*0.22,0),lh:Round(FS*1.2,0),lw:Last(Split(Lb," ")).Value,two:Len(Lb)>Len(Substitute(Lb," ","")),sW:Text(W,"0","en-US"),sP:Text(P,"0","en-US"),sIS:Text(IZ,"0","en-US"),sFS:Text(FS,"0","en-US"),sAW:Text(AW,"0","en-US"),sAH:Text(AH,"0","en-US"),sAX:Text(W-P-AW,"0","en-US"),sAY:Text(W-P-AH,"0","en-US")},With({tpre:"<text x=""" & sP & """ y=""",tmid:""" fill=""#FFFFFF"" font-family=""Arial, sans-serif"" font-weight=""700"" font-size=""" & sFS & """>"},"<svg xmlns=""http://www.w3.org/2000/svg"" width=""" & sW & """ height=""" & sW & """ viewBox=""0 0 " & sW & " " & sW & """>" & Substitute(Substitute(cmpTile.IconSvg,"<svg ","<svg x=""" & sP & """ y=""" & sP & """ ",1),"width=""56"" height=""56""","width=""" & sIS & """ height=""" & sIS & """",1) & Substitute(Substitute(cmpTile.ArrowSvg,"<svg ","<svg x=""" & sAX & """ y=""" & sAY & """ ",1),"width=""28"" height=""20""","width=""" & sAW & """ height=""" & sAH & """",1) & If(two,tpre & Text(bl-lh,"0","en-US") & tmid & Left(Lb,Len(Lb)-Len(lw)-1) & "</text>" & tpre & Text(bl,"0","en-US") & tmid & lw & "</text>",tpre & Text(bl,"0","en-US") & tmid & Lb & "</text>") & "</svg>"))))
+            ImagePosition: =ImagePosition.Fit
+            OnSelect: =If(cmpTile.Active,cmpTile.OnSelect())
+            PressedFill: =ColorFade(ColorValue("#000F41"),-0.4)
+            TabIndex: =0
+            Visible: =cmpTile.Active
             Width: =Parent.Width
             X: =0
             Y: =0

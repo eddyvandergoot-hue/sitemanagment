@@ -105,7 +105,7 @@ Screens:
                 Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgReloadBlocked.nl),T.prjMsgReloadBlocked.nl,T.prjMsgReloadBlocked.en)),
                 If(!Coalesce(varPrjForceRefresh,false) && varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjSaveFailed,false),
                  Trace("DIAG|Projects|CacheHit",TraceSeverity.Information,{Screen:"Projects",Rows:CountRows(colAdminProjects)}),
-                 Set(varPrjBusy,true); Set(varPrjLoadState,"Loading"); Set(varPrjDiagT0,Now());
+                 Set(varPrjBusy,true); Set(varPrjLoadState,"Loading"); Set(varPrjDiagT0,Now()); Set(varPrjPrevSelectedID,Blank());
                  Clear(colPrjLoadErrors); Clear(colPendingPrjRaw); Clear(colPendingAdminProjects); Clear(colPendingPrjModified);
                  IfError(Refresh(Projects),Collect(colPrjLoadErrors,{Message:If(LangNl && !IsBlank(T.prjErrLoadProjects.nl),T.prjErrLoadProjects.nl,T.prjErrLoadProjects.en) & " " & FirstError.Message});false);
                  IfError(CountRows(ClearCollect(colPendingPrjRaw,Sort(Projects,Title,SortOrder.Ascending)))>=0,
@@ -603,7 +603,7 @@ Screens:
           Properties:
             DiscardText: =If(LangNl && !IsBlank(T.prjDiscard.nl),T.prjDiscard.nl,T.prjDiscard.en)
             DiscardEnabled: |-
-              =!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || lblPrjDirty.Text<>"false")
+              =!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || varPrjMode="New" || lblPrjDirty.Text<>"false")
             Height: =68
             HomeText: =If(LangNl && !IsBlank(T.prjHome.nl),T.prjHome.nl,T.prjHome.en)
             HomeEnabled: |-
@@ -612,12 +612,20 @@ Screens:
             NewEnabled: |-
               =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && lblPrjDirty.Text="false"
             OnDiscard: |-
-              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || lblPrjDirty.Text<>"false"),
-               Trace("DIAG|Projects|Discard",TraceSeverity.Information,{Screen:"Projects",Mode:Coalesce(varPrjMode,""),SaveFailed:Coalesce(varPrjSaveFailed,false)});
+              =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || varPrjMode="New" || lblPrjDirty.Text<>"false"),
+               Trace("DIAG|Projects|Discard",TraceSeverity.Information,{Screen:"Projects",Mode:Coalesce(varPrjMode,""),SaveFailed:Coalesce(varPrjSaveFailed,false),PrevID:Coalesce(varPrjPrevSelectedID,0)});
                Clear(colPrjSaveErrors);
                If(Coalesce(varPrjSaveFailed,false),
                 Set(varPrjForceRefresh,true); Select(btnPrjLoad),
-                If(varPrjMode="New",Set(varPrjMode,""); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""}));
+                If(varPrjMode="New",
+                 Set(varPrjSelectedID,If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors),With({vis:Filter(ForAll(Sort(ForAll(colAdminProjects As p,{ID:p.ID,Name:p.Name,Number:p.Number,Customer:p.Customer,City:p.City,Status:p.Status}),Lower(Number),SortOrder.Ascending) As r,{ID:r.ID,Title:If(IsBlank(r.Name),r.Number,r.Name),Subtitle:If(IsBlank(r.Number),r.City,r.Number & If(IsBlank(r.City),""," · " & r.City)),Inactive:r.Status="Closed",ChipText:If(r.Status in ["Closed","On hold"],r.Status,"")}),(Coalesce(varPrjShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpPrjList.SearchText)) || Trim(cmpPrjList.SearchText) in Title || Trim(cmpPrjList.SearchText) in Subtitle))},If(!IsBlank(varPrjPrevSelectedID) && !IsBlank(LookUp(vis,ID=varPrjPrevSelectedID).ID),varPrjPrevSelectedID,First(vis).ID)),Blank()));
+                 If(!IsBlank(varPrjSelectedID) && !IsBlank(LookUp(colAdminProjects,ID=varPrjSelectedID).ID),
+                  Set(varPrjEdit,LookUp(colAdminProjects,ID=varPrjSelectedID)); Set(varPrjMode,"Edit"),
+                  Set(varPrjMode,""); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"",Leader:"",SiteManager:"",Url:""})
+                 );
+                 Set(varPrjPrevSelectedID,Blank());
+                 Trace("DIAG|Projects|DiscardNew",TraceSeverity.Information,{Screen:"Projects",SelectedID:Coalesce(varPrjSelectedID,0),Mode:Coalesce(varPrjMode,"")})
+                );
                 Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
                 Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadDiscarded.nl),T.admHeadDiscarded.nl,T.admHeadDiscarded.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.prjMsgDiscarded.nl),T.prjMsgDiscarded.nl,T.prjMsgDiscarded.en))
                ),
@@ -627,6 +635,7 @@ Screens:
               =If(!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && lblPrjDirty.Text="false",Navigate(scrHome))
             OnNew: |-
               =If(varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && lblPrjDirty.Text="false",
+               Set(varPrjPrevSelectedID,If(varPrjMode="Edit" && !IsBlank(varPrjSelectedID),varPrjSelectedID,varPrjMode="New",varPrjPrevSelectedID,Blank()));
                Set(varPrjMode,"New"); Set(varPrjSelectedID,Blank()); Set(varPrjEdit,{ID:Blank(),Name:"",Number:"",Reference:"",Customer:"",Status:"Active",Street:"",HouseNumber:"",PostalCode:"",City:"",Country:"Netherlands",Leader:"",SiteManager:"",Url:""});
                Clear(colPrjSaveErrors); Reset(cmpPrjName); Reset(cmpPrjNumber); Reset(cmpPrjReference); Reset(cmpPrjCustomer); Reset(cmpPrjStatus); Reset(cmpPrjStreet); Reset(cmpPrjHouseNumber); Reset(cmpPrjPostalCode); Reset(cmpPrjCity); Reset(cmpPrjCountry); Reset(cmpPrjUrl);
                Trace("DIAG|Projects|New",TraceSeverity.Information,{Screen:"Projects"}),

@@ -22,7 +22,7 @@ $contract = @{
                        OnHome = 'Event:None'; OnNew = 'Event:None'; OnRefresh = 'Event:None'; OnDiscard = 'Event:None'; OnSave = 'Event:None' }
     cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; DefaultValue = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
                        Value = 'Output:Text'; OnChange = 'Event:Boolean' }
-    cmpTile       = @{ Label = 'Input:Text'; Icon = 'Input:Image'; Arrow = 'Input:Image'; Active = 'Input:Boolean'; IconSize = 'Input:Number'; LabelSize = 'Input:Number'; Padding = 'Input:Number'; SoonText = 'Input:Text'; OnSelect = 'Event:Boolean' }
+    cmpTile       = @{ Label = 'Input:Text'; Icon = 'Input:Image'; IconSvg = 'Input:Text'; ArrowSvg = 'Input:Text'; Active = 'Input:Boolean'; IconSize = 'Input:Number'; LabelSize = 'Input:Number'; Padding = 'Input:Number'; SoonText = 'Input:Text'; OnSelect = 'Event:Boolean' }
     cmpListCard   = @{ Items = 'Input:Table'; SelectedID = 'Input:Number'; SearchHint = 'Input:Text'; CountFormat = 'Input:Text'; ShowInactiveLabel = 'Input:Text'; OnText = 'Input:Text'; OffText = 'Input:Text'; ShowInactive = 'Input:Boolean'; Enabled = 'Input:Boolean'
                        SearchText = 'Output:Text'; ShowInactiveValue = 'Output:Boolean'; SelectedRowID = 'Output:Number'; OnSelectRow = 'Event:Boolean'; OnToggleShowInactive = 'Event:Boolean' }
 }
@@ -357,7 +357,7 @@ foreach ($sf in $scrFiles) {
             if ($i.Comp -eq 'cmpTile') {
                 $act = ([string]$i.Props['Active']).Trim(); $hasOn = @($i.Props.Keys) -contains 'OnSelect'
                 Assert-True (($act -eq '=true' -and $hasOn -and ([string]$i.Props['OnSelect']).Trim().EndsWith('; true')) -or ($act -eq '=false' -and -not $hasOn)) "${sn}: $($i.Name) cmpTile: Active true has an OnSelect handler ending in ; true (Studio component shape), Active false (Soon) has none"
-                Assert-True (($i.Props['Width'] -eq $i.Props['Height']) -and $i.Props.ContainsKey('Icon') -and $i.Props.ContainsKey('Label')) "${sn}: $($i.Name) cmpTile: square (Width = Height), Icon and Label passed by the host"
+                Assert-True (($i.Props['Width'] -eq $i.Props['Height']) -and $i.Props.ContainsKey('Label') -and (($act -eq '=true' -and $i.Props.ContainsKey('IconSvg') -and $i.Props.ContainsKey('ArrowSvg') -and -not $i.Props.ContainsKey('Icon') -and -not $i.Props.ContainsKey('Arrow')) -or ($act -eq '=false' -and $i.Props.ContainsKey('Icon') -and -not $i.Props.ContainsKey('ArrowSvg')))) "${sn}: $($i.Name) cmpTile: square (Width = Height), Label passed; active passes IconSvg + ArrowSvg (no Icon/Arrow), Soon passes Icon (no ArrowSvg)"
             }
             $req = switch ($i.Comp) { 'cmpFooter' { @('OnHome', 'OnNew', 'OnRefresh', 'OnDiscard', 'OnSave') } 'cmpListCard' { @('OnSelectRow', 'OnToggleShowInactive') } 'cmpMessageBar' { @('OnClose') } default { @() } }
             foreach ($ev in $req) {
@@ -407,10 +407,10 @@ foreach ($c in $idx.Keys) {
         else { Assert-True ($ht -match 'line-height:" & Parent.Height' -and $hh -eq '=Parent.Height') "$c.$n : line height follows the control height exactly" }
     }
     # TP-STEP3-02 (Eddy 01-11-2026): semi-transparent colours only on top-layer click targets: the cmpListCard row hover (#F0F0F099)
-    # and the cmpTile hover/pressed Navy overlay (#000F4159 / #000F4180, Eddy 3-11-2026, TP-HOME-02 point 5).
+    # and the cmpTile imgCmpTile PressedFill ColorFade(#000F41,-0.4) (TP-HOME-03 item 5; the Navy overlay #000F4159 is gone).
     $src = $files[$c]; if ($c -eq 'cmpListCard') { $src = $src.Replace('HoverFill: =If(cmpListCard.Enabled && ThisItem.ID<>cmpListCard.SelectedID,ColorValue("#F0F0F099"),Color.Transparent)', '') }
-    if ($c -eq 'cmpTile') { $src = $src.Replace('HoverFill: =ColorValue("#000F4159")', '').Replace('PressedFill: =ColorValue("#000F4180")', '') }
-    Assert-True ($src -notmatch 'RGBA\(' -and $src -notmatch '#[0-9A-Fa-f]{8}\b' -and $src -notmatch 'ColorFade\(') "$c : no semi-transparent colour (RGBA, #RRGGBBAA, ColorFade) except the cmpListCard row hover and the cmpTile overlay"
+    if ($c -eq 'cmpTile') { $src = $src.Replace('HoverFill: =ColorValue("#000F4159")', '').Replace('PressedFill: =ColorFade(ColorValue("#000F41"),-0.4)', '') }
+    Assert-True ($src -notmatch 'RGBA\(' -and $src -notmatch '#[0-9A-Fa-f]{8}\b' -and $src -notmatch 'ColorFade\(') "$c : no semi-transparent colour (RGBA, #RRGGBBAA, ColorFade) except the cmpListCard row hover and the imgCmpTile PressedFill (ColorFade of Navy, darker than hover)"
 }
 Assert-True ($rowN[0] -eq 'recCmpRowFill' -and $rowN[-1] -eq 'btnCmpRowHit') 'cmpListCard row: background first (behind the text), click target last (top layer)'
 $hit = $row['btnCmpRowHit']['Properties']
@@ -424,24 +424,30 @@ Assert-True ($li['txtSearch']['Properties']['FocusedBorderThickness'] -eq '=2' -
 # (12) cmpTile (Home redesign 3-11-2026; TP-HOME-02 fixes 5-7, Eddy 3-11-2026) ----------------------------------
 $tp = $defs['cmpTile']['Properties']; $ti = $idx['cmpTile']; $tcp = $defs['cmpTile']['CustomProperties']
 Assert-True ($tcp['Active']['Default'] -eq '=false') 'cmpTile.Active default =false (fail-closed: a tile without Active is an inert Soon tile)'
-Assert-True ($tcp['Icon']['Default'] -eq '=SampleImage' -and $tcp['Arrow']['Default'] -eq '=SampleImage') 'cmpTile Icon/Arrow: Image inputs with Default =SampleImage (same proven shape as cmpTitleBar.Logo)'
+Assert-True ($tcp['Icon']['Default'] -eq '=SampleImage' -and $tcp['IconSvg']['Default'] -eq '=""' -and $tcp['ArrowSvg']['Default'] -eq '=""' -and -not ($tcp.Keys -contains 'Arrow') -and $tcp['IconSvg']['DataType'] -eq 'Text' -and $tcp['ArrowSvg']['DataType'] -eq 'Text') 'cmpTile: Icon (Image, Soon) Default =SampleImage; IconSvg/ArrowSvg (Text, raw white SVG of an active tile) Default =""; no Image-typed Arrow input'
 Assert-True ($tp['Width'] -eq '=150' -and $tp['Height'] -eq '=150') 'cmpTile: default size 150 x 150 (the host passes the responsive size)'
-Assert-True ((@($defs['cmpTile']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'recCmpTileBg,imgCmpTileIcon,lblCmpTileLabel,imgCmpTileArrow,lblCmpTileSoon,btnCmpTile') 'cmpTile layers bottom to top: background, icon, label, arrow, SOON corner, click target LAST (topmost, so icon and arrow never take the hover)'
+Assert-True ((@($defs['cmpTile']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'recCmpTileBg,imgCmpTileIcon,lblCmpTileLabel,lblCmpTileSoon,btnCmpTile,imgCmpTile') 'cmpTile layers bottom to top: Soon layers (background, icon, label, SOON corner, disabled click target) and imgCmpTile LAST (the one visible control of an active tile, topmost)'
 Assert-True ($ti['recCmpTileBg']['Control'] -eq 'Rectangle@2.3.0' -and $ti['recCmpTileBg']['Properties']['Width'] -eq '=Parent.Width' -and $ti['recCmpTileBg']['Properties']['Height'] -eq '=Parent.Height') 'cmpTile background: Rectangle@2.3.0 (template in use in the app) over the whole tile'
 $cb = $ti['btnCmpTile']['Properties']
 Assert-True ($ti['btnCmpTile']['Control'] -eq 'Classic/Button@2.2.0' -and -not $cb.ContainsKey('AccessibleLabel')) 'cmpTile.btnCmpTile: Classic/Button@2.2.0 without AccessibleLabel (PA2108)'
-Assert-True ($cb['OnSelect'] -ceq '=If(cmpTile.Active,cmpTile.OnSelect())' -and $cb['DisplayMode'] -ceq '=If(cmpTile.Active,DisplayMode.Edit,DisplayMode.Disabled)') 'cmpTile click target raises OnSelect only while Active; Soon = DisplayMode.Disabled (inert)'
+Assert-True (-not $cb.ContainsKey('OnSelect') -and $cb['DisplayMode'] -ceq '=DisplayMode.Disabled' -and $cb['Visible'] -ceq '=!cmpTile.Active') 'cmpTile btnCmpTile = Soon only: Visible =!cmpTile.Active, DisplayMode.Disabled, no OnSelect (inert)'
 Assert-True ($cb['X'] -eq '=0' -and $cb['Y'] -eq '=0' -and $cb['Width'] -eq '=Parent.Width' -and $cb['Height'] -eq '=Parent.Height' -and $cb['Fill'] -eq '=Color.Transparent' -and $cb['Text'] -eq '=cmpTile.Label' -and $cb['Color'] -eq '=Color.Transparent') 'cmpTile click target: transparent, covers the whole tile; its text is the label in transparent colour (accessible name)'
-Assert-True ($cb['FocusedBorderThickness'] -eq '=3' -and $cb['FocusedBorderColor'] -eq '=ColorValue("#000F41")') 'cmpTile focus: 3 px #000F41 (visible on the white page)'
+$im = $ti['imgCmpTile']['Properties']
+Assert-True ($ti['imgCmpTile']['Control'] -eq 'Image@2.2.3' -and $im['Visible'] -ceq '=cmpTile.Active' -and $im['OnSelect'] -ceq '=If(cmpTile.Active,cmpTile.OnSelect())' -and $im['DisplayMode'] -ceq '=If(cmpTile.Active,DisplayMode.Edit,DisplayMode.Disabled)' -and $im['AccessibleLabel'] -ceq '=cmpTile.Label' -and $im['TabIndex'] -eq '=0') 'cmpTile.imgCmpTile (Image@2.2.3): visible only while Active, raises OnSelect only while Active, AccessibleLabel = label'
+Assert-True ($im['X'] -eq '=0' -and $im['Y'] -eq '=0' -and $im['Width'] -eq '=Parent.Width' -and $im['Height'] -eq '=Parent.Height' -and $im['Fill'] -eq '=ColorValue("#0303B8")' -and $im['HoverFill'] -eq '=ColorValue("#000F41")' -and $im['PressedFill'] -eq '=ColorFade(ColorValue("#000F41"),-0.4)' -and $im['BorderThickness'] -eq '=0' -and $im['ImagePosition'] -eq '=ImagePosition.Fit') 'cmpTile.imgCmpTile: whole tile, Fill #0303B8, HoverFill #000F41, PressedFill darker, no border'
+Assert-True ($im['FocusedBorderThickness'] -eq '=3' -and $im['FocusedBorderColor'] -eq '=ColorValue("#000F41")') 'cmpTile focus: 3 px #000F41 (visible on the white page)'
+$imgF = [string]$im['Image']
+Assert-True ($imgF.StartsWith('="data:image/svg+xml;utf8," & EncodeUrl(With(') -and $imgF.Contains('cmpTile.IconSvg') -and $imgF.Contains('cmpTile.ArrowSvg') -and $imgF.Contains('font-family=""Arial, sans-serif""') -and $imgF.Contains('font-weight=""700""') -and -not $imgF.Contains('<rect')) 'cmpTile.imgCmpTile.Image: data-URI SVG composition via With + EncodeUrl from IconSvg/ArrowSvg, Arial Bold label, transparent background (no rect)'
+$nTextCalls = [regex]::Matches($imgF, 'Text\(').Count; $nEnUs = [regex]::Matches($imgF, ',"0","en-US"\)').Count
+Assert-True ($nTextCalls -ge 10 -and $nTextCalls -eq $nEnUs) "cmpTile.imgCmpTile.Image: every number is written with Text(x,""0"",""en-US"") ($nTextCalls Text calls, $nEnUs en-US formats; no locale separator)"
 foreach ($r in 'RadiusTopLeft', 'RadiusTopRight', 'RadiusBottomLeft', 'RadiusBottomRight') { Assert-True ($cb[$r] -eq '=0') "cmpTile $r = 0 (square)" }
 $cl = $ti['lblCmpTileLabel']['Properties']
 Assert-True ($cl['Text'] -eq '=cmpTile.Label' -and $cl['Align'] -eq '=Align.Left' -and $cl['VerticalAlign'] -eq '=VerticalAlign.Bottom' -and $cl['Size'] -eq '=cmpTile.LabelSize' -and $cl['FontWeight'] -eq '=FontWeight.Semibold' -and $cl['X'] -eq '=cmpTile.Padding' -and $cl['Y'] -eq '=cmpTile.Padding+cmpTile.IconSize+6') 'cmpTile label: bottom left below the icon, LabelSize, Semibold'
-Assert-True ($cl['Width'] -eq '=Max(0,Parent.Width-2*cmpTile.Padding-If(cmpTile.Active,imgCmpTileArrow.Width+4,0))' -and $cl['Height'] -eq '=Max(0,Parent.Height-Self.Y-cmpTile.Padding)') 'cmpTile label area clears the arrow (active tiles only) and the icon; a long label never overlaps them'
-$ci = $ti['imgCmpTileIcon']['Properties']; $ca = $ti['imgCmpTileArrow']['Properties']
+Assert-True ($cl['Width'] -eq '=Max(0,Parent.Width-2*cmpTile.Padding)' -and $cl['Height'] -eq '=Max(0,Parent.Height-Self.Y-cmpTile.Padding)' -and $cl['Visible'] -eq '=!cmpTile.Active') 'cmpTile Soon label: clears the icon (no arrow on a Soon tile), Soon only'
+$ci = $ti['imgCmpTileIcon']['Properties']
 Assert-True ($ci['Image'] -eq '=cmpTile.Icon' -and $ci['Width'] -eq '=cmpTile.IconSize' -and $ci['Height'] -eq '=cmpTile.IconSize' -and $ci['X'] -eq '=cmpTile.Padding' -and $ci['Y'] -eq '=cmpTile.Padding') 'cmpTile icon: top left at the padding, IconSize square'
-Assert-True ($ca['Image'] -eq '=cmpTile.Arrow' -and $ca['Width'] -eq '=If(cmpTile.Width>=150,24,cmpTile.Width>=130,20,14)' -and $ca['Height'] -eq '=If(cmpTile.Width>=150,17,cmpTile.Width>=130,14,10)' -and $ca['Visible'] -eq '=cmpTile.Active' -and $ca['X'] -eq '=Parent.Width-cmpTile.Padding-Self.Width' -and $ca['Y'] -eq '=Parent.Height-cmpTile.Padding-Self.Height') 'cmpTile arrow: 24x17 / 20x14 / 14x10 (aspect 28x20) bottom right at the padding, only while Active'
-foreach ($k in $ci, $ca) { Assert-True (!$k.ContainsKey('OnSelect') -and $k['TabIndex'] -eq '=-1' -and !$k.ContainsKey('AccessibleLabel')) 'cmpTile image: decorative (TabIndex -1), no OnSelect (the click target on top receives every click)' }
-Assert-True ($ti['imgCmpTileIcon']['Control'] -eq 'Image@2.2.3' -and $ti['imgCmpTileArrow']['Control'] -eq 'Image@2.2.3') 'cmpTile images use Image@2.2.3 (template present in the .msapr)'
+foreach ($k in $ci) { Assert-True (!$k.ContainsKey('OnSelect') -and $k['TabIndex'] -eq '=-1' -and !$k.ContainsKey('AccessibleLabel')) 'cmpTile image: decorative (TabIndex -1), no OnSelect (the click target on top receives every click)' }
+Assert-True ($ti['imgCmpTileIcon']['Control'] -eq 'Image@2.2.3' -and $ti['imgCmpTile']['Control'] -eq 'Image@2.2.3') 'cmpTile images use Image@2.2.3 (template present in the .msapr)'
 $cs = $ti['lblCmpTileSoon']['Properties']
 Assert-True ($cs['Text'] -eq '=Upper(cmpTile.SoonText)' -and $cs['Visible'] -eq '=!cmpTile.Active' -and $cs['Size'] -eq '=If(cmpTile.Width>=130,11,9)' -and $cs['FontWeight'] -eq '=FontWeight.Semibold' -and $cs['Align'] -eq '=Align.Right') 'cmpTile SOON corner: capitals, 11 Semibold (9 on the smallest tiles), top right, only while not Active'
 # Soon tiles are inert for the host too: a handler on the instance of a Soon tile would still never run (button disabled, OnSelect guarded by Active)

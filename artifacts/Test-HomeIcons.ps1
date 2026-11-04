@@ -7,7 +7,10 @@ function Assert-True($cond, $label) { if (!$cond) { throw "FAIL $label" }; Write
 $iconDir = Join-Path $projectRoot 'Assets\Icons'
 $app = [IO.File]::ReadAllText((Join-Path $projectRoot 'Src\App.pa.yaml'))
 $forms = @{}
-foreach ($m in [regex]::Matches($app, '(?m)^\s+(Icon\w+) = "data:image/svg\+xml;utf8," & EncodeUrl\("(.*)"\);\s*$')) { $forms[$m.Groups[1].Value] = $m.Groups[2].Value.Replace('""', '"') }
+# Grey (Soon) formulas = data-URI images; white (active, TP-HOME-03 item 5) = RAW SVG text, literally the file content (cmpTile builds the composite SVG).
+foreach ($m in [regex]::Matches($app, '(?m)^\s+(Icon\w+Grey) = "data:image/svg\+xml;utf8," & EncodeUrl\("(.*)"\);\s*$')) { $forms[$m.Groups[1].Value] = $m.Groups[2].Value.Replace('""', '"') }
+foreach ($m in [regex]::Matches($app, '(?m)^\s+(Icon\w+White) = "(<svg .*</svg>)";\s*$')) { $forms[$m.Groups[1].Value] = $m.Groups[2].Value.Replace('""', '"') }
+Assert-True ($app -notmatch '(?m)^\s+Icon\w+White = "data:') 'white icon formulas are raw SVG text (no data: prefix, no EncodeUrl)'
 # formula name -> source file (variant folder / file)
 $map = [ordered]@{
     IconTeamWhite = 'white/icon-team'; IconWeeklyHoursWhite = 'white/icon-weekly-hours'; IconHoursSummaryWhite = 'white/icon-hours-summary'; IconContractorsWhite = 'white/icon-contractors'; IconProjectsWhite = 'white/icon-projects'; IconArrowWhite = 'white/icon-arrow'
@@ -33,9 +36,12 @@ $doc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRo
 $idx = @{}; function Index-H($entries) { foreach ($e in $entries) { $n = @($e.Keys)[0]; $idx[$n] = $e[$n]; Index-H $e[$n]['Children'] } }; Index-H $doc['Screens']['scrHome']['Children']
 foreach ($t in $tileIcon.Keys) {
     $p = $idx[$t]['Properties']
-    Assert-True ($p['Icon'] -ceq ('=' + $tileIcon[$t])) "$t uses $($tileIcon[$t]) ($($map[$tileIcon[$t]]).svg)"
-    if ($p['Active'] -eq '=true') { Assert-True ($tileIcon[$t] -like '*White' -and $p['Arrow'] -ceq '=IconArrowWhite') "$t : active tile = white icon + white arrow" } else { Assert-True ($tileIcon[$t] -like '*Grey' -and !$p.ContainsKey('Arrow')) "$t : Soon tile = grey icon, no arrow" }
+    if ($p['Active'] -eq '=true') {
+        Assert-True ($tileIcon[$t] -like '*White' -and $p['IconSvg'] -ceq ('=' + $tileIcon[$t]) -and $p['ArrowSvg'] -ceq '=IconArrowWhite' -and !$p.ContainsKey('Icon') -and !$p.ContainsKey('Arrow')) "$t : active tile passes IconSvg = $($tileIcon[$t]) ($($map[$tileIcon[$t]]).svg) + ArrowSvg = IconArrowWhite, no Icon/Arrow"
+    } else {
+        Assert-True ($tileIcon[$t] -like '*Grey' -and $p['Icon'] -ceq ('=' + $tileIcon[$t]) -and !$p.ContainsKey('ArrowSvg') -and !$p.ContainsKey('IconSvg') -and !$p.ContainsKey('Arrow')) "$t : Soon tile passes Icon = $($tileIcon[$t]) ($($map[$tileIcon[$t]]).svg), no ArrowSvg/IconSvg"
+    }
 }
 $cmpTiles = @($idx.Keys | Where-Object { $idx[$_]['ComponentName'] -eq 'cmpTile' })
 Assert-True ($cmpTiles.Count -eq $tileIcon.Count -and @($cmpTiles | Where-Object { -not $tileIcon.Contains($_) }).Count -eq 0) "scrHome has exactly the $($tileIcon.Count) mapped tiles (no Skid configurator, Usage or Employers tile)"
-Write-Output 'Not verified locally: rendering of the data URIs in Studio/browser (EncodeUrl of # and spaces), hover behaviour of the Image HoverFill.'
+Write-Output 'Not verified locally: rendering of the data URIs and of the composite tile SVG (nested svg, Arial text) in Studio/browser, hover behaviour of the Image HoverFill.'

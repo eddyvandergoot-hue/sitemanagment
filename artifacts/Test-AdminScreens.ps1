@@ -995,6 +995,52 @@ function Test-AutoSelect([string]$load, [string]$itemsFx, [string]$defaultFx, [s
     Assert-True ($iDirty -ge 0 -and $iGate -gt $iDirty -and $iNew -gt $iGate -and $iSel -gt $iNew -and $iOk -gt $iSel) "$scr : auto-selection only after the dirty block, in the successful-load branch, as the last branch (Mode empty or the selected ID no longer exists), before Loaded + form reset"
     if ($defaultFx -ne '') { Assert-True ($defaultFx -ceq "=LookUp($itemsFx,ID=var${p}SelectedID)") "$scr : gallery Default = the selected record within the visible list" }
 }
+# TP-HOME-03 item 8b (Eddy, 4-11-2026): New clicked by mistake. Discard is also enabled in New mode (clean form); the admission check
+# in DiscardEnabled = the first If-condition of OnDiscard. OnNew remembers the record selected before New (Edit with a selection;
+# New -> New keeps the remembered one; else Blank). OnDiscard in New mode (not after a failed save) selects that record again when it is
+# still in the loaded list AND visible in the list card (Show inactive / Show closed, search), else the first visible row - the same
+# filtered Items text as the loader auto-select - and fills varPSelectedID/varPEdit/Mode with the loader's own branch; empty visible list
+# or a load that is not Loaded (or has load errors) = no selection (Mode ""). Local only: no Patch/Refresh/Remove/Collect/Select.
+# The loader clears var<P>PrevSelectedID at the start of every real load (Refresh, Discard after a failed save), so no stale ID survives.
+function Test-DiscardNew([string]$p, [string]$scr, [string]$guard, [string]$dirtyFx, [string]$onDiscard, [string]$onNew, [string]$load, [string]$itemsFx, [string]$col, [string]$emptySnap, [string]$colFix, $cases, $map) {
+    $prev = "var${p}PrevSelectedID"
+    $expGuard = "!Coalesce(var${p}Busy,false) && !Coalesce(var${p}Saving,false) && (Coalesce(var${p}SaveFailed,false) || var${p}Mode=`"New`" || $dirtyFx)"
+    Assert-True ($guard -ceq $expGuard) "$scr 8b: DiscardEnabled = not busy/saving and (SaveFailed or Mode New or dirty)"
+    Assert-True ($onDiscard.StartsWith('=If(' + $expGuard + ',')) "$scr 8b: OnDiscard starts with the identical admission check (fail-closed parity)"
+    # OnNew stores the previous selection before switching to New
+    $newSet = "Set($prev,If(var${p}Mode=`"Edit`" && !IsBlank(var${p}SelectedID),var${p}SelectedID,var${p}Mode=`"New`",$prev,Blank()));"
+    $iNewSet = $onNew.IndexOf($newSet); $iMode = $onNew.IndexOf("Set(var${p}Mode,`"New`")")
+    Assert-True ($iNewSet -gt 0 -and $iMode -gt $iNewSet -and ([regex]::Matches($onNew, [regex]::Escape("Set($prev,"))).Count -eq 1) "$scr 8b: OnNew stores the previous selection ($newSet) before Mode New"
+    $newArg = $newSet.Substring($prev.Length + 5, $newSet.Length - $prev.Length - 7)
+    foreach ($c in @(@('"Edit"', '5', 'If(false,0)', '5', 'Edit with a selection -> remembered'), @('"Edit"', 'If(false,0)', '3', 'blank', 'Edit without a selection -> Blank'), @('"New"', 'If(false,0)', '3', '3', 'New again -> keeps the remembered record'), @('""', 'If(false,0)', '3', 'blank', 'no record in the form -> Blank'))) {
+        Assert-Eval "With({var${p}Mode:$($c[0]),var${p}SelectedID:$($c[1]),${prev}:$($c[2])},With({x:$newArg},If(IsBlank(x),`"blank`",Text(x))))" $c[3] "$scr 8b: OnNew remembers: $($c[4])"
+    }
+    # The loader clears the remembered ID at the start of every real load; only OnNew, OnDiscard and the loader set it
+    Assert-True ($load.Contains("Set(var${p}Busy,true); Set(var${p}LoadState,`"Loading`"); Set(var${p}DiagT0,Now()); Set($prev,Blank());")) "$scr 8b: every real load (Refresh, Discard after a failed save) clears $prev"
+    $setters = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -match "Set\($prev," } | Sort-Object)
+    Assert-True (($setters -join ',') -ceq "btn${p}Discard.OnSelect,btn${p}Load.OnSelect,btn${p}New.OnSelect") "$scr 8b: $prev is set only by New, Discard and the loader ($($setters -join ', '))"
+    # OnDiscard: failed save first (forced reload, unchanged), then the New branch
+    $dN = Norm $onDiscard
+    $head = "Clear(col${p}SaveErrors);If(Coalesce(var${p}SaveFailed,false),Set(var${p}ForceRefresh,true);Select(btn${p}Load),If(var${p}Mode=`"New`","
+    $iHead = $dN.IndexOf((Norm $head))
+    Assert-True ($iHead -gt 0) "$scr 8b: OnDiscard keeps the forced reload after a failed save and only then takes the New branch"
+    $iBr = $onDiscard.IndexOf("If(var${p}Mode=`"New`",")
+    $branch = Get-Balanced $onDiscard ($iBr + 2)
+    Assert-True ($branch -notmatch '\b(Patch|Refresh|Remove|RemoveIf|Collect|ClearCollect|Select|SubmitForm|UpdateIf|Navigate)\(') "$scr 8b: Discard New branch is local (no Patch/Refresh/Remove/Collect/Select/Navigate)"
+    $selAt = $branch.IndexOf("Set(var${p}SelectedID,If(var${p}LoadState=`"Loaded`" && IsEmpty(col${p}LoadErrors),")
+    Assert-True ($selAt -gt 0) "$scr 8b: Discard New branch picks the row only on a Loaded list without load errors"
+    $selSet = Get-Balanced $branch ($selAt + 3); $selArg = $selSet.Substring("var${p}SelectedID,".Length + 1, $selSet.Length - "var${p}SelectedID,".Length - 2)
+    Assert-True ($selArg.Contains("With({vis:$itemsFx},If(!IsBlank($prev) && !IsBlank(LookUp(vis,ID=$prev).ID),$prev,First(vis).ID))")) "$scr 8b: previous-or-first uses the loader auto-select's visible list text (host Items + list card predicate)"
+    $fill = "If(!IsBlank(var${p}SelectedID) && !IsBlank(LookUp($col,ID=var${p}SelectedID).ID),Set(var${p}Edit,LookUp($col,ID=var${p}SelectedID)); Set(var${p}Mode,`"Edit`"),Set(var${p}Mode,`"`"); Set(var${p}SelectedID,Blank()); Set(var${p}Edit,$emptySnap))"
+    $bN = Norm $branch
+    Assert-True ($bN.Contains((Norm ($selSet + ';' + $fill + ";Set($prev,Blank());"))) -and (Norm $load).Contains((Norm $fill))) "$scr 8b: Discard New branch fills the form with the loader's own auto-select branch (same text), then clears $prev"
+    $after = $dN.Substring($dN.IndexOf((Norm $branch)) + (Norm $branch).Length)
+    Assert-True ($after.StartsWith(';Reset(cmp' + $p + 'Name);') -and $after.Contains('Set(varAdmMsgKind,"Success");')) "$scr 8b: after the New branch the form components are reset and the Discarded message is shown (shared with Edit-mode Discard)"
+    foreach ($c in $cases) {
+        $fx = "With({$colFix,LangNl:false,T:$tRec,var${p}ShowInactive:$($c[0]),cmp${p}List:{SearchText:$($c[1])},${prev}:$($c[2]),var${p}LoadState:$($c[3]),col${p}LoadErrors:$($c[4])},With({x:$selArg},If(IsBlank(x),`"blank`",Text(x))))"
+        Assert-Eval $fx $c[5] "$scr 8b: Discard in New mode: $($c[6]) -> $($c[5])"
+    }
+}
 # Item d: "nothing written" (SharePoint refused: Patch error AND no record with ID) -> Not saved., state stays Loaded, input kept,
 # retry possible; a returned ID with an error, no ID without an error (uncertain), an ID mismatch or a verify read/mismatch
 # after a successful Patch -> Failed + SaveFailed (locked, Refresh = Discard).
@@ -1076,6 +1122,23 @@ foreach ($c in @(@('false', '""', '3', 'first active row by name (inactive alpha
 }
 Assert-Eval "With({$empSelFix,LangNl:false,T:$tRec,varEmpShowInactive:false,cmpEmpList:{SearchText:`"nomatch`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty visible list -> no ID -> Mode "" (no selection)'
 Assert-Eval "With({colAdminEmployers:Filter(Table({ID:1,Name:`"`",Code:`"`",City:`"`",Active:true}),false),LangNl:false,T:$tRec,varEmpShowInactive:false,cmpEmpList:{SearchText:`"`"}},IsBlank(First($empItems).ID))" $true 'Contractors auto-select: empty list -> no selection'
+$noErr = 'Filter(Table({Message:""}),false)'
+$empDiscCases = @(@('false', '""', '1', '"Loaded"', $noErr, '1', 'previous record visible -> restored'),
+    @('false', '""', '2', '"Loaded"', $noErr, '3', 'previous record inactive, Show inactive off -> first visible row'),
+    @('true', '""', '2', '"Loaded"', $noErr, '2', 'previous inactive record shown (Show inactive on) -> restored'),
+    @('false', '""', '99', '"Loaded"', $noErr, '3', 'previous record no longer in the loaded list -> first visible row'),
+    @('false', '""', 'If(false,0)', '"Loaded"', $noErr, '3', 'no previous record -> first visible row'),
+    @('false', '"delft"', '1', '"Loaded"', $noErr, '3', 'previous record hidden by the search text -> first visible row'),
+    @('false', '"nomatch"', '1', '"Loaded"', $noErr, 'blank', 'empty visible list -> no selection (Mode "")'),
+    @('false', '""', '1', '"Failed"', $noErr, 'blank', 'load not Loaded -> no selection'),
+    @('false', '""', '1', '"Loaded"', 'Table({Message:"x"})', 'blank', 'load errors present -> no selection'))
+Test-DiscardNew 'Emp' 'Contractors' $guards.btnEmpDiscard $dirty (Get-Prop 'btnEmpDiscard' 'OnSelect') (Get-Prop 'btnEmpNew' 'OnSelect') $load $empItems 'colAdminEmployers' $empEmpty $empSelFix $empDiscCases $all
+$cleanNew = $clean.Replace('varEmpMode:"Edit"', 'varEmpMode:"New"').Replace('varEmpSelectedID:5', 'varEmpSelectedID:Blank()').Replace('varEmpEdit:{ID:5,Name:"A"', 'varEmpEdit:{ID:Blank(),Name:""').Replace('cmpEmpName:{Value:"A"}', 'cmpEmpName:{Value:""}')
+Assert-Eval (Get-GuardFx 'btnEmpSave' $cleanNew) $false 'Contractors 8b fixture: New form untouched is clean (Save blocked)'
+Assert-Eval (Get-GuardFx 'btnEmpDiscard' $cleanNew) $true 'Contractors 8b: Discard allowed in New mode with a clean form'
+Assert-Eval (Get-GuardFx 'btnEmpDiscard' $cleanNew.Replace('varEmpBusy:false', 'varEmpBusy:true')) $false 'Contractors 8b: Discard in New mode blocked while loading'
+Assert-Eval (Get-GuardFx 'btnEmpDiscard' $cleanNew.Replace('varEmpSaving:false', 'varEmpSaving:true')) $false 'Contractors 8b: Discard in New mode blocked while saving'
+Assert-Eval (Get-GuardFx 'btnEmpDiscard' $clean.Replace('varEmpMode:"Edit"', 'varEmpMode:""')) $false 'Contractors 8b: Discard stays disabled without a record in the form (clean)'
 Test-WriteCounter $save 'Emp' 'Employers' 'Contractors'
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix) $true 'Contractors: after a refused save (Loaded, SaveFailed false, input kept) Save is allowed again (retry)'
 $empPatchErr = Get-Balanced $save ($save.IndexOf('Set(varEmpPatchError,true); Collect(colEmpSaveErrors,') + 'Set(varEmpPatchError,true); Collect'.Length)
@@ -1176,7 +1239,7 @@ Assert-True (([regex]::Matches($pDirty, '<>')).Count -eq $pWritten.Count -and $p
 Assert-True ($pGuards.btnPrjSave.EndsWith('&& ' + $pDirty)) 'Projects: Save requires dirty'
 foreach ($ctl in @('btnPrjHome', 'btnPrjNew', 'galPrjList')) { Assert-True ($pGuards[$ctl].EndsWith('!' + $pDirty)) "Projects: $ctl blocked while dirty (same dirty text)" }
 Assert-True ($pGuards.btnPrjRefresh -ceq ('!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || !' + $pDirty + ')')) 'Projects: Refresh blocked while loading/saving; allowed when clean or after a failed save (H15)'
-Assert-True ($pGuards.btnPrjDiscard -ceq ('!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || ' + $pDirty + ')')) 'Projects: Discard requires dirty or SaveFailed'
+Assert-True ($pGuards.btnPrjDiscard -ceq ('!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && (Coalesce(varPrjSaveFailed,false) || varPrjMode="New" || ' + $pDirty + ')')) 'Projects: Discard requires dirty, New mode (8b) or SaveFailed'
 Assert-True ($pGuards.btnPrjHome -ceq ('!Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !' + $pDirty) -and $pGuards.btnPrjNew -ceq $pGuards.galPrjList) 'Projects: Home = not busy/saving/dirty; New = gallery-selection guard'
 foreach ($k in @('varPrjLoadState="Loaded"', 'IsEmpty(colPrjLoadErrors)', '!Coalesce(varPrjBusy,false)', '!Coalesce(varPrjSaving,false)', '!Coalesce(varPrjSaveFailed,false)')) { Assert-True ($pGuards.btnPrjSave.Contains($k) -and $pGuards.btnPrjNew.Contains($k)) "Projects: Save and New guards contain $k" }
 Assert-True ($pGuards.btnPrjSave.Contains('(varPrjMode="New" || (varPrjMode="Edit" && !IsBlank(varPrjSelectedID)))')) 'Projects: Save guard: New, or Edit with an ID'
@@ -1731,6 +1794,22 @@ foreach ($c in @(@('false', '""', '4', 'first visible row by Project Number (A-1
 }
 Assert-Eval "With({$pItemFix,LangNl:false,T:$tRec,varPrjShowInactive:false,cmpPrjList:{SearchText:`"p-9`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: only a hidden Closed project matches -> no selection (Mode "")'
 Assert-Eval "With({colAdminProjects:Filter(Table({ID:1,Name:`"`",Number:`"`",Customer:`"`",City:`"`",Status:`"`"}),false),LangNl:false,T:$tRec,varPrjShowInactive:false,cmpPrjList:{SearchText:`"`"}},IsBlank(First($pItems).ID))" $true 'Projects auto-select: empty list -> no selection'
+$pNoErr = 'Filter(Table({Message:""}),false)'
+$prjDiscCases = @(@('false', '""', '1', '"Loaded"', $pNoErr, '1', 'previous record visible -> restored'),
+    @('false', '""', '2', '"Loaded"', $pNoErr, '2', 'previous record On hold (always visible) -> restored'),
+    @('false', '""', '3', '"Loaded"', $pNoErr, '4', 'previous record Closed, Show closed off -> first visible row'),
+    @('true', '""', '3', '"Loaded"', $pNoErr, '3', 'previous Closed record shown (Show closed on) -> restored'),
+    @('false', '""', '99', '"Loaded"', $pNoErr, '4', 'previous record no longer in the loaded list -> first visible row'),
+    @('false', '""', 'If(false,0)', '"Loaded"', $pNoErr, '4', 'no previous record -> first visible row'),
+    @('false', '"test-001"', '1', '"Loaded"', $pNoErr, '2', 'previous record hidden by the search text -> first visible row'),
+    @('false', '"nomatch"', '1', '"Loaded"', $pNoErr, 'blank', 'empty visible list -> no selection (Mode "")'),
+    @('false', '""', '1', '"Failed"', $pNoErr, 'blank', 'load not Loaded -> no selection'),
+    @('false', '""', '1', '"Loaded"', 'Table({Message:"x"})', 'blank', 'load errors present -> no selection'))
+Test-DiscardNew 'Prj' 'Projects' $pGuards.btnPrjDiscard $pDirty (PGet 'btnPrjDiscard' 'OnSelect') (PGet 'btnPrjNew' 'OnSelect') $pLoad $pItems 'colAdminProjects' $prjEmpty $pItemFix $prjDiscCases $pAll
+Assert-Eval (PG 'btnPrjDiscard' $pClean.Replace('varPrjMode:"Edit"', 'varPrjMode:"New"')) $true 'Projects 8b: Discard allowed in New mode with a clean form'
+Assert-Eval (PG 'btnPrjDiscard' $pClean.Replace('varPrjMode:"Edit"', 'varPrjMode:"New"').Replace('varPrjSaving:false', 'varPrjSaving:true')) $false 'Projects 8b: Discard in New mode blocked while saving'
+Assert-Eval (PG 'btnPrjDiscard' $pClean.Replace('varPrjMode:"Edit"', 'varPrjMode:"New"').Replace('varPrjBusy:false', 'varPrjBusy:true')) $false 'Projects 8b: Discard in New mode blocked while loading'
+Assert-Eval (PG 'btnPrjDiscard' $pClean.Replace('varPrjMode:"Edit"', 'varPrjMode:""')) $false 'Projects 8b: Discard stays disabled without a record in the form (clean)'
 # Item d: SharePoint refusal (nothing written) keeps Loaded and the input; partial write / verify failure -> Failed
 Test-WriteCounter $pSave 'Prj' 'Projects' 'Projects'
 Assert-Eval (PG 'btnPrjSave' $pFix) $true 'Projects: after a refused save (Loaded, SaveFailed false, input kept) Save is allowed again (retry)'

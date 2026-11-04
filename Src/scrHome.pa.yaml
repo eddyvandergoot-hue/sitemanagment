@@ -90,10 +90,10 @@ Screens:
                       ComponentName: cmpTile
                       Properties:
                         Active: =true
-                        Arrow: =IconArrowWhite
+                        ArrowSvg: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
-                        Icon: =IconTeamWhite
                         IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconTeamWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileProjectTeam.nl),T.homeTileProjectTeam.nl,T.homeTileProjectTeam.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(Screen1); true
@@ -107,10 +107,10 @@ Screens:
                       ComponentName: cmpTile
                       Properties:
                         Active: =true
-                        Arrow: =IconArrowWhite
+                        ArrowSvg: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
-                        Icon: =IconWeeklyHoursWhite
                         IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconWeeklyHoursWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileWeeklyHours.nl),T.homeTileWeeklyHours.nl,T.homeTileWeeklyHours.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value),Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected); Trace("DIAG|Nav|HomeToWeeklyHours",TraceSeverity.Information,{Scenario:"Nav",Step:"HomeToWeeklyHours"}); Navigate(scrHours),Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning)); true
@@ -124,10 +124,10 @@ Screens:
                       ComponentName: cmpTile
                       Properties:
                         Active: =true
-                        Arrow: =IconArrowWhite
+                        ArrowSvg: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
-                        Icon: =IconHoursSummaryWhite
                         IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconHoursSummaryWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileHoursSummary.nl),T.homeTileHoursSummary.nl,T.homeTileHoursSummary.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrWeeklyHours); true
@@ -189,10 +189,10 @@ Screens:
                       ComponentName: cmpTile
                       Properties:
                         Active: =true
-                        Arrow: =IconArrowWhite
+                        ArrowSvg: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
-                        Icon: =IconContractorsWhite
                         IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconContractorsWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileContractors.nl),T.homeTileContractors.nl,T.homeTileContractors.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrContractors); true
@@ -206,10 +206,10 @@ Screens:
                       ComponentName: cmpTile
                       Properties:
                         Active: =true
-                        Arrow: =IconArrowWhite
+                        ArrowSvg: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
-                        Icon: =IconProjectsWhite
                         IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconProjectsWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileProjects.nl),T.homeTileProjects.nl,T.homeTileProjects.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrProjects); true

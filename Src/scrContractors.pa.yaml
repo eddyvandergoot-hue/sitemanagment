@@ -105,7 +105,7 @@ Screens:
                 Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.empMsgReloadBlocked.nl),T.empMsgReloadBlocked.nl,T.empMsgReloadBlocked.en)),
                 If(!Coalesce(varEmpForceRefresh,false) && varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpSaveFailed,false),
                  Trace("DIAG|Contractors|CacheHit",TraceSeverity.Information,{Screen:"Contractors",Rows:CountRows(colAdminEmployers)}),
-                 Set(varEmpBusy,true); Set(varEmpLoadState,"Loading"); Set(varEmpDiagT0,Now());
+                 Set(varEmpBusy,true); Set(varEmpLoadState,"Loading"); Set(varEmpDiagT0,Now()); Set(varEmpPrevSelectedID,Blank());
                  Clear(colEmpLoadErrors); Clear(colEmpEmployersLoadErrors); Clear(colEmpWorkersLoadErrors); Clear(colPendingEmpRaw); Clear(colPendingAdminEmployers); Clear(colPendingEmpModified); Clear(colPendingEmpWorkers);
                  IfError(Refresh(Employers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadEmployers.nl),T.empErrLoadEmployers.nl,T.empErrLoadEmployers.en) & " " & FirstError.Message});false);
                  IfError(Refresh(Workers),Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadWorkers.nl),T.empErrLoadWorkers.nl,T.empErrLoadWorkers.en) & " " & FirstError.Message});false);
@@ -620,7 +620,7 @@ Screens:
           Properties:
             DiscardText: =If(LangNl && !IsBlank(T.empDiscard.nl),T.empDiscard.nl,T.empDiscard.en)
             DiscardEnabled: |-
-              =!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || lblEmpDirty.Text<>"false")
+              =!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || varEmpMode="New" || lblEmpDirty.Text<>"false")
             Height: =68
             HomeText: =If(LangNl && !IsBlank(T.empHome.nl),T.empHome.nl,T.empHome.en)
             HomeEnabled: |-
@@ -629,12 +629,20 @@ Screens:
             NewEnabled: |-
               =varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && lblEmpDirty.Text="false"
             OnDiscard: |-
-              =If(!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || lblEmpDirty.Text<>"false"),
-               Trace("DIAG|Contractors|Discard",TraceSeverity.Information,{Screen:"Contractors",Mode:Coalesce(varEmpMode,""),SaveFailed:Coalesce(varEmpSaveFailed,false)});
+              =If(!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && (Coalesce(varEmpSaveFailed,false) || varEmpMode="New" || lblEmpDirty.Text<>"false"),
+               Trace("DIAG|Contractors|Discard",TraceSeverity.Information,{Screen:"Contractors",Mode:Coalesce(varEmpMode,""),SaveFailed:Coalesce(varEmpSaveFailed,false),PrevID:Coalesce(varEmpPrevSelectedID,0)});
                Clear(colEmpSaveErrors);
                If(Coalesce(varEmpSaveFailed,false),
                 Set(varEmpForceRefresh,true); Select(btnEmpLoad),
-                If(varEmpMode="New",Set(varEmpMode,""); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}));
+                If(varEmpMode="New",
+                 Set(varEmpSelectedID,If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors),With({vis:Filter(ForAll(Sort(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.City,r.Code & If(IsBlank(r.City),""," · " & r.City)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))}),(Coalesce(varEmpShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpEmpList.SearchText)) || Trim(cmpEmpList.SearchText) in Title || Trim(cmpEmpList.SearchText) in Subtitle))},If(!IsBlank(varEmpPrevSelectedID) && !IsBlank(LookUp(vis,ID=varEmpPrevSelectedID).ID),varEmpPrevSelectedID,First(vis).ID)),Blank()));
+                 If(!IsBlank(varEmpSelectedID) && !IsBlank(LookUp(colAdminEmployers,ID=varEmpSelectedID).ID),
+                  Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)); Set(varEmpMode,"Edit"),
+                  Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
+                 );
+                 Set(varEmpPrevSelectedID,Blank());
+                 Trace("DIAG|Contractors|DiscardNew",TraceSeverity.Information,{Screen:"Contractors",SelectedID:Coalesce(varEmpSelectedID,0),Mode:Coalesce(varEmpMode,"")})
+                );
                 Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                 Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadDiscarded.nl),T.admHeadDiscarded.nl,T.admHeadDiscarded.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.empMsgDiscarded.nl),T.empMsgDiscarded.nl,T.empMsgDiscarded.en))
                ),
@@ -644,6 +652,7 @@ Screens:
               =If(!Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && lblEmpDirty.Text="false",Navigate(scrHome))
             OnNew: |-
               =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && lblEmpDirty.Text="false",
+               Set(varEmpPrevSelectedID,If(varEmpMode="Edit" && !IsBlank(varEmpSelectedID),varEmpSelectedID,varEmpMode="New",varEmpPrevSelectedID,Blank()));
                Set(varEmpMode,"New"); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true});
                Clear(colEmpSaveErrors); Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                Trace("DIAG|Contractors|New",TraceSeverity.Information,{Screen:"Contractors"}),

@@ -473,3 +473,17 @@ Alleen de punten 5-8 van TP-HOME-02 opnieuw; opslaan alleen op TEST-records.
 | 6 | Met Tab door de tegels | focusrand 3 px navy #000F41 duidelijk zichtbaar |
 | 7 | Venster ~1366, ~900, ~700, 390 (telefoon) en 360 | tegels 150 / 130 / ~107; minimaal 3 per rij op de telefoon; labels (vooral "Contractors" en "Component library") niet afgekapt of midden in een woord gebroken |
 | 8 | Contractors en Projects: New | statuschip lichtblauw met blauwe tekst "New"; Active groen, Inactive/Closed grijs zoals eerder |
+## TP-HOME-04 Home-tegel als één SVG-afbeelding + Discard in New (OPEN; build homefix2-20261104_215148)
+Voorafgaand: TP-HOME-03 (Eddy 3-11-2026): punt 5 functioneel ok, 7 ok, 8 (New chip) ok, B3 ok; punt 6 (Tab-focus) geen prioriteit, naar de toegankelijkheidsronde. TP-KEYS-01: melding toont sleutels ok (voorbeeld "1|1|20261012 Assignment-ID 1 +17 more"); Eddy controleert de Project Workers-ID's van Friesland Campina (open). Opslaan alleen op TEST-records.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| 1 | Home op ~1366, ~1000 en ~700 px | actieve tegels tonen wit icoon + label + pijl; "Project / team" op 2 regels ("Project /" en "team"); label niet over de pijl |
+| 2 | Hover en ingedrukt op een actieve tegel | hele tegel navy #000F41; pressed donkerder |
+| 3 | Klik op de actieve tegels | navigatie zoals eerder (Weekly hours-guard ongewijzigd) |
+| 4 | Soon-tegels | er is niets veranderd t.o.v. eerder |
+| 5 | Contractors en Projects: New, dan Discard, met een geselecteerd record | hetzelfde record terug, gemarkeerd, formulier gevuld, niet dirty, melding "Discarded." |
+| 6 | Zoals 5, maar record verborgen door Show inactive/closed uit | eerste zichtbare rij geselecteerd |
+| 7 | Zoals 5, maar zoektekst verbergt het record | eerste zichtbare rij geselecteerd |
+| 8 | Lege lijst, New, Discard | geen selectie |
+| 9 | Edit-modus Discard en New + Save | ongewijzigd t.o.v. TP-STEP3-05 |
