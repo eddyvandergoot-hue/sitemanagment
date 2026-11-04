@@ -31,6 +31,12 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Nog niet functioneel getest in Studio: weekkiezer dpHoursWeek: andere dag in dezelfde week bewaart de dag zonder herlaad; overige GEA-kleuren; fail-closed blokkades (rest); Monitor-delegatie; wijziging van een andere gebruiker verschijnt pas na Refresh (vereist TEST-000).
 - Studio-bewijs 26-10-2026 (importcontrole, App checker 141 meldingen, ModernDatePicker 1.0.0 versus Studio 1.0.2): PROJECT_STATUS_ARCHIVE.md.
 
+## Prioriteit (Eddy 4-11-2026, DECISIONS.md H23)
+Doel = documentgeneratie. Volgorde: (1) Eddy test contractoraddr-20261104_221534, dan tag; (2) layout-freeze na die goedkeuring (cosmetica alleen via de backlog hieronder); (3) Workers-scherm (ADMIN_PLAN.md par. 5, wacht op V1-V6); (4) Week Report + PDF/CSV-export; (5) toegankelijkheidsronde + N2/N5. Details: NEXT_COMMANDS.md.
+
+## Backlog cosmetica
+- Home-tegel Tab-focus (TP-HOME-03 punt 6; geen prioriteit).
+
 ## Open items
 - Functionele Studio-tests van de hierboven genoemde niet-geteste onderdelen.
 - Discard: Monitor-spoor DIAG|Week|Discard niet gecontroleerd (stap 6 overgeslagen); Failed-tak (stap 8) pas testbaar met TEST-000.

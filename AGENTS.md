@@ -142,6 +142,7 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
 
 ## Werkwijze
 - Pas bestanden rechtstreeks aan; behoud werkende schermen en functionaliteit; los delegatieproblemen op.
+- Layout-freeze: na goedkeuring van contractoraddr-20261104_221534 alleen cosmetische wijzigingen via "Backlog cosmetica" in PROJECT_STATUS.md, geen aparte buildrondes.
 - Tests in twee niveaus: per wijziging de relevante snelle test; aan het einde van de opdracht eenmaal de volledige set plus pack. Actieve checks: Test-SaveRegression, Test-WeeklyCalculations, Test-GeaColors, Test-Fonts, Test-FooterRow -GeometryOnly, Test-SummaryDates, Test-SummaryStyle, Test-SummaryLabels, Test-Logo, Test-AdminScreens, Test-Components, Test-Layout, Test-HomeIcons, Check-WeeklySource (historische checkpoint-diffs alleen met -HistoricalDiff; oudere scripts zijn geen acceptatietest).
 - Functionele tests met opslaan uitsluitend op project TEST-000 (MS-005); echte projecten alleen leescontroles. TEST-001 (Active = Nee) is alleen-lezen testproject voor "geen periodes en geen uren"; de TEST-prefixregel geldt ook daarvoor.
 - Geen persoonsgegevens in de repo (geen echte medewerkersnamen, telefoon, e-mail); tests en voorbeelden gebruiken synthetische namen of worker-ID's (TEST-000-namen zijn toegestaan).

@@ -90,13 +90,40 @@ Status 31-10-2026 (stap 3: Contractors en Projects op componenten gebouwd in bui
 - 4.5 Voorstel, bevestigen (besluit 11; NIET gebouwd, blijft voorstel): in deze build verbergt Screen1/ddProject Projects met Status Closed (On hold blijft zichtbaar); Hours Summary (ddReportProject) toont alles. Vergt Status in de colProjectsCache-projectie (beide loaders identiek; Test-SaveRegression). Admin-lijst "Show inactive" = Closed tonen.
 
 ## 5. Workers (scrWorkers) - bouw 3
-- Velden: First Name (field_2), Surname (field_3), Worker Name (Title, alleen-lezen, flow MS-017), Worker Code (field_1, alleen-lezen, flow), Trade (dropdown Fitter / Welder / Unknown, default Unknown), Contractor (lookup Employer; dropdown met actieve contractors + de huidige van het item, inactief gemarkeerd; max 500 regels), Language (dropdown, expliciet voorvullen met Nederlands tot de SharePoint-standaard bevestigd is; waarden uit Choices), Active.
-- Patch: `{'First Name': fn, Surname: sn, Title: fn & " " & sn, Trade: {Value}, Employer: {Id, Value}, Language: {Value}, Active}` met fn/sn getrimd; nooit Worker Code. Contractorwissel: info "old hours keep the old contractor". Geen telefoon/e-mail (Worker Contacts/MS-012 buiten v1; later alleen met toegang).
-- Validatie: First Name en Surname verplicht (max 255, niet alleen cijfers); Trade, Contractor (aanwezig in de geladen lijst; nieuwe toewijzing alleen aan actieve contractor), Language verplicht.
-- Duplicaat: WAARSCHUWEN, opslaan alleen met aangevinkt bevestigingsvinkje: server `Filter(Workers, 'First Name' = varWrkSaveFirst && Surname = varWrkSaveSurname)`, daarna lokaal op `Employer.Id` (lookup-ID niet filterbaar) en ID <> eigen.
-- Deactiveren (Active uit) met een open inzetperiode: BLOKKEREN. De melding noemt het/de project(en) en zegt "Uncheck in Project / team first". Detectie: zie par. 8 punt 2 (Project Workers `Active = true`, eenmalige read, fail-closed bij >= 500).
-- 5.5 Voorstel, bevestigen (besluit 11): Screen1-kandidaten verbergen inactieve medewerkers (Active toevoegen aan de colWorkersCache-projectie in beide loaders identiek); Weekly Hours-rijen volgen nog periodes of opgeslagen uren; Hours Summary toont alles. Admin "Show inactive" standaard uit.
-- 5.6 Weekly Hours stale cache (reviewer-blokkade, in deze build oplossen): `btnTileWeeklyHours.OnSelect` (scrHome) en de Weekly Hours-knop van Screen1 krijgen dezelfde extra voorwaarde `Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false)`; ongeldig = `Navigate(Screen1)` (OnVisible herlaadt). Alleen varWorkersCacheReady is onvoldoende (Hours Summary vult colWorkersCache zonder varTeamDataVersion te verhogen). Save week blijft ongewijzigd; controleer bij de bouw ook andere routes naar scrHours. Reviewer verplicht.
+Status: Plan 4-11-2026, wacht op Eddy's OK op stap 1 (test contractoraddr-20261104_221534, DECISIONS.md H23) en antwoorden V1-V6; niet gebouwd.
+
+### 5.1 Scherm en velden
+- scrWorkers op het Admin screen pattern (par. 10) met de vijf componenten: cmpTitleBar "Workers"; cmpMessageBar; cmpListCard (titel "First Surname", subregel "Worker Code · Contractor", zoeken op naam/code/contractor, Show inactive); cmpField-formulier; cmpFooter.
+- GENERAL: First Name*, Surname*, Worker Code (alleen-lezen, flow MS-017, tekst "assigned automatically"). WORK: Trade* (dropdown Choices([@Workers].Trade), New standaard Unknown), Contractor* (dropdown), Language* (dropdown Choices([@Workers].Language), New expliciet "Nederlands"; de metadata-standaard is nog English). Onderste rij: Active-switch + "Last changed in SharePoint".
+- Kolommen (gecontroleerd in samengevoegde metadata): Workers: Title "Worker Name", field_1 Worker Code, field_2 First Name, field_3 Surname, field_6 Trade (keuze, verplicht, standaard Unknown), Employer (lookup), Language (keuze, metadata-standaard English), Active (boolean). Project Workers: Project, Worker (lookups, verplicht), Team (keuze), Active (boolean), AssignmentKey, ProjectKey. Geen telefoon/e-mail (Worker Contacts/MS-012 buiten v1; later alleen met toegang).
+
+### 5.2 Laden en Contractor-dropdown
+- Laden via staging: Workers + Employers (ID, Title, Active); >= 500 rijen op een van beide = Save geblokkeerd (fail-closed), zoals Contractors.
+- Contractor-dropdown: actieve contractors + de huidige contractor van het record (inactief gemarkeerd). cmpField geeft tekst terug; mapping naar ID via de geladen Employers-lijst. Dubbelzinnige getrimde naam (twee werkgevers met dezelfde naam) = blokkade "Fix: Contractor ambiguous" (V2: alternatief is een cmpField-Output SelectedID).
+
+### 5.3 Validatie en Patch
+- Validatie vóór de eerste read/write: First Name/Surname verplicht, max 255, niet alleen cijfers; Trade verplicht en in de lijst; Contractor verplicht, in de geladen lijst, nieuwe toewijzing alleen aan een actieve contractor (ongewijzigde inactieve huidige mag); Language verplicht (bestaande workers met lege Language moeten bij de eerstvolgende save kiezen, V4). Legacy Trade/Language buiten de lijst: N3-regel (ongewijzigd = niet geschreven; nieuw/gewijzigd buiten de lijst = fout).
+- Duplicaat WAARSCHUWEN + bevestigen: server `Filter(Workers, 'First Name' = varWrkSaveFirst && Surname = varWrkSaveSurname)`, lokaal Lower(Trim()) + Employer.Id + ID <> eigen; gevonden = amber "Attention." met de workercode(s); Save pas na bevestigingsswitch ("Save anyway", alleen dan zichtbaar); bevestiging reset bij wijziging van naam of contractor.
+- Deactiveren (Active true -> false) met open inzetperiode = BLOKKEREN: eenmalige read `Filter('Project Workers', Active = true)` (uitzondering op "Project Workers uitsluitend op ProjectKey", V1; vergt Studio-delegatietest), lokaal op Worker.Id; >= 500 rijen of leesfout = deactiveren geblokkeerd. Melding "Blocked." + projecten (eerste 3, Project.Value, "(+n more)") + "Uncheck in Project / team first." Risico: PW Active false met open periode (mismatch) wordt niet gedetecteerd; Screen1 maakt zo'n project al alleen-lezen.
+- Patch: één Patch, vorm via If voor legacy Trade/Language: `{'First Name': fn, Surname: sn, Title: fn & " " & sn, Trade: {Value}, Employer: {Id, Value}, Language: {Value}, Active}` met fn/sn getrimd; nooit Worker Code; Title door de app bij save EN bijgehouden door flow MS-017. Conflictcheck + verify op First Name, Surname, Trade, Employer.Id, Language, Active (niet Title, Worker Code, Modified: flowvelden).
+- Na geverifieerde save: varWorkersCacheReady, varMastersReady, varReportReady false; Refresh(Workers); bij contractorwissel info "Old hours keep the old contractor."
+- Home: Workers-tegel actief (IconWorkersWhite = ruwe SVG uit Assets\Icons\white\icon-workers.svg), navigeert naar scrWorkers.
+- Projects gelijktrekken: "Fix: Country unknown" (nieuwe T-sleutel prjErrCountry) zoals Contractors, vóór de eerste read/write.
+
+### 5.4 H18 in deze build (Save week)
+Alleen bij NIEUWE rijen, na lokale validatie en vóór de eerste write: Refresh(Workers) + Refresh('Project Workers'); herlees `Filter('Project Workers', ProjectKey = <projectsleutel>)` en Workers (alles, <= 500, zelfde projectie als de cache; V6); vergelijk Employer.Id/Trade/Active (Workers) en Team/Active/AssignmentKey (PW) van de betrokken workers met de geladen waarden; elk verschil = nul writes + exact "Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh."; Trace Reads +2. De AGENTS-regel voor het aantal reads van Save week wordt in die build bijgewerkt.
+
+### 5.5 Voorstel, bevestigen (besluit 11; V3)
+Screen1-kandidaten verbergen inactieve medewerkers (Active in de colWorkersCache-projectie, beide loaders identiek). Niet in scope tenzij Eddy het zegt. Weekly Hours-rijen volgen periodes of opgeslagen uren; Hours Summary toont alles; admin "Show inactive" standaard uit.
+
+### 5.6 Weekly Hours stale cache (in deze build oplossen)
+`btnTileWeeklyHours.OnSelect` (scrHome) en de Weekly Hours-knop van Screen1 krijgen de extra voorwaarde `Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false)`; ongeldig = `Navigate(Screen1)` (OnVisible herlaadt). Alleen varWorkersCacheReady is onvoldoende (Hours Summary vult colWorkersCache zonder varTeamDataVersion te verhogen). Controleer ook andere routes naar scrHours. Reviewer verplicht.
+
+### 5.7 Volgorde, tests, open vragen
+- Agents: powerfx-logic (scrWorkers-data, H18, 5.6, Projects) -> reviewer -> powerfx-ui (layout) -> verifier (volledige set + pack).
+- Tests: Test-AdminScreens sectie scrWorkers; Test-SaveRegression H18; Test-Components (hostgebruik); Test-Layout scrWorkers 1366/1000/700; Test-HomeIcons workers wit; Test-GeaColors/Test-Fonts adminScreens incl. scrWorkers; Test-FooterRow. Nieuw TESTPLAN TP-WORKERS-01 op TEST Employer-testworkers (Test Fitter 2 / Test Welder 2 / Test Unknown 2); een nieuwe TEST-worker aanmaken vergt Eddy's OK (V5).
+- Open vragen aan Eddy: V1 uitzondering PW Active=true-read voor de deactiveringscheck (>= 500 actieve PW = deactiveren geblokkeerd); V2 contractor via naam-mapping of cmpField SelectedID; V3 besluit 11 nu of later; V4 bestaande workers met lege Language kiezen bij de eerstvolgende save; V5 mag de test een nieuwe TEST-worker aanmaken; V6 volledige Workers-read in Save week bij nieuwe rijen (~1 read extra).
+- Risico: >= 500 workers blokkeert Contractors, Workers en de workercache. Eddy: huidig aantal workers?
 
 ## 6. Tests (verifier)
 - Nieuw artifacts/Test-AdminScreens.ps1 per scherm: (1) Save-guard in DisplayMode tekstueel gelijk aan de eerste OnSelect-voorwaarde, idem Home/New/Refresh/gallery; (2) loaders zonder Patch/Update/Remove/Collect naar een SharePoint-bron; (3) nergens Remove/RemoveIf op de drie lijsten; (4) elke ClearCollect uit een bron gevolgd door `>=500`-guard; (5) predicaten alleen kolommen + globale vars, `=`/StartsWith, geen Search(); (6) geen Choices() binnen ForAll; (7) Patch-vorm: Trade/Language/Status als `{Value:`, Employer `{Id, Value}`, Workers-Patch zonder Worker Code, Contractors-Patch zonder Contractor Code, Title = getrimde fn & " " & sn; (8) een Patch per Save, daarna verify-read, colAdmin* alleen na verify; (9) cache-invalidatie incl. Refresh; (10) traces zonder namen/FirstError.Message; (11) alle zichtbare teksten via `T.`; (12) kale `ProjectName` ontbreekt.
@@ -113,9 +140,9 @@ Status 31-10-2026 (stap 3: Contractors en Projects op componenten gebouwd in bui
 7. Rechten: zolang MS-021 uitgesteld is, kan iedere appgebruiker met lijstrechten wijzigen; pas in productie sluiten.
 
 ## 8. Open punten
-1. Interne namen/typen staan in par. 1; open: Workers.Language-standaard ("English" in metadata, par. 1 punt d), controle van de waarden uit de oude Email-kolom, en de Status-/Language-waarden uit Choices.
-2. Detectie open periode per medewerker (voor de deactiveringsblokkade): Assignment Periods is alleen op ProjectKey filterbaar. Voorstel, bevestigen: eenmalige read `Filter('Project Workers', Active = true)` (Active = open periode), lokaal op Worker.Id; dit wijkt af van de AGENTS-regel "Project Workers uitsluitend op ProjectKey" en vergt een Studio-delegatietest; bij >= 500 rijen of leesfout wordt deactiveren geblokkeerd.
-3. Besluit 11 timing (Closed in Projects-build, inactief in Workers-build) en het Status/Active-veld in de cacheprojecties: bevestigen.
+1. Interne namen/typen staan in par. 1; open: controle van de waarden uit de oude Email-kolom en de Status-waarden uit Choices. Workers.Language-standaard: zie par. 5 (expliciet "Nederlands", V4).
+2. Detectie open periode per medewerker (deactiveringsblokkade): zie par. 5 (V1).
+3. Besluit 11 timing (Closed in Projects-build, inactief in Workers-build): zie par. 5.5 (V3); het Status/Active-veld in de cacheprojecties blijft te bevestigen.
 4. Contractor deactiveren met actieve medewerkers: waarschuwing (voorstel) of blokkeren.
 5. Of SharePoint-`=` hoofdletterongevoelig vergelijkt (duplicaatnaam): Studio-test.
 6. Worker Contacts (telefoon) buiten v1; volgorde-keuze New/Refresh in de footer is vastgelegd als New, Refresh, Discard changes, Save.
