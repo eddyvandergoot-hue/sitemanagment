@@ -13,7 +13,7 @@ Screens:
       LoadingSpinnerColor: =ColorValue("#0303B8")
       OnVisible: |-
         =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");
-        If(IsBlank(varEmpLoadState),Set(varEmpLoadState,"NotLoaded"); Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}); Set(varEmpActiveDraft,true); Set(varEmpShowInactive,false); Set(varEmpSaveFailed,false));
+        If(IsBlank(varEmpLoadState),Set(varEmpLoadState,"NotLoaded"); Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}); Set(varEmpActiveDraft,true); Set(varEmpShowInactive,false); Set(varEmpSaveFailed,false));
         Trace("DIAG|Contractors|OnVisible",TraceSeverity.Information,{Screen:"Contractors",LoadState:Coalesce(varEmpLoadState,""),Mode:Coalesce(varEmpMode,"")});
         If(varEmpLoadState<>"Loaded" && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && lblEmpDirty.Text="false",Select(btnEmpLoad))
     Children:
@@ -79,7 +79,7 @@ Screens:
           Control: Label@2.5.1
           Properties:
             Text: |-
-              =If((Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(cmpEmpName.Value & "")<>Trim(varEmpEdit.Name & "") || Trim(cmpEmpAddress.Value & "")<>Trim(varEmpEdit.Address & "") || Trim(cmpEmpPostalcode.Value & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(cmpEmpCity.Value & "")<>Trim(varEmpEdit.City & "") || Trim(cmpEmpCountry.Value & "")<>Trim(varEmpEdit.Country & "") || Trim(cmpEmpContactName.Value & "")<>Trim(varEmpEdit.ContactName & "") || Trim(cmpEmpContactEmail.Value & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(cmpEmpContactPhone.Value & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true))),"true","false")
+              =If((Coalesce(varEmpMode,"") in ["New","Edit"] && (Trim(cmpEmpName.Value & "")<>Trim(varEmpEdit.Name & "") || Trim(cmpEmpStreet.Value & "")<>Trim(varEmpEdit.Street & "") || Trim(cmpEmpHouseNumber.Value & "")<>Trim(varEmpEdit.HouseNumber & "") || Trim(cmpEmpPostalcode.Value & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(cmpEmpCity.Value & "")<>Trim(varEmpEdit.City & "") || Trim(cmpEmpCountry.Value & "")<>Trim(varEmpEdit.Country & "") || Trim(cmpEmpContactName.Value & "")<>Trim(varEmpEdit.ContactName & "") || Trim(cmpEmpContactEmail.Value & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(cmpEmpContactPhone.Value & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true))),"true","false")
             Visible: =false
             X: =0
             Y: =0
@@ -115,7 +115,7 @@ Screens:
                   IfError(CountRows(ClearCollect(colPendingEmpWorkers,ForAll(Workers As wrk,{ID:wrk.ID,EmployerID:wrk.Employer.Id,WorkerActive:wrk.Active})))>=0,
                    Collect(colEmpWorkersLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLoadWorkers.nl),T.empErrLoadWorkers.nl,T.empErrLoadWorkers.en) & " " & FirstError.Message});false)
                  );
-                 ClearCollect(colPendingAdminEmployers,ForAll(colPendingEmpRaw As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Address:Trim(emp.Address & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)}));
+                 ClearCollect(colPendingAdminEmployers,ForAll(colPendingEmpRaw As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Street:Trim(emp.Street & ""),HouseNumber:Trim(emp.'House Number' & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country.Value & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)}));
                  ClearCollect(colPendingEmpModified,ForAll(colPendingEmpRaw As emp,{ID:emp.ID,Modified:emp.Modified}));
                  Collect(colEmpLoadErrors,colEmpEmployersLoadErrors,colEmpWorkersLoadErrors);
                  If(CountRows(colPendingEmpRaw)>=500,Collect(colEmpLoadErrors,{Message:If(LangNl && !IsBlank(T.empErrLimitEmployers.nl),T.empErrLimitEmployers.nl,T.empErrLimitEmployers.en)}));
@@ -125,15 +125,15 @@ Screens:
                   If(varEmpMode="Edit" && !IsBlank(LookUp(colAdminEmployers,ID=varEmpSelectedID).ID),
                    Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)),
                    varEmpMode="New" && !Coalesce(varEmpSaveFailed,false),
-                   Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}),
+                   Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}),
                    Set(varEmpSelectedID,First(Filter(ForAll(Sort(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.City,r.Code & If(IsBlank(r.City),""," · " & r.City)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))}),(Coalesce(varEmpShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpEmpList.SearchText)) || Trim(cmpEmpList.SearchText) in Title || Trim(cmpEmpList.SearchText) in Subtitle))).ID);
                    If(!IsBlank(varEmpSelectedID) && !IsBlank(LookUp(colAdminEmployers,ID=varEmpSelectedID).ID),
                     Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)); Set(varEmpMode,"Edit"),
-                    Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
+                    Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
                    )
                   );
                   Set(varEmpSaveFailed,false); Clear(colEmpSaveErrors); Set(varEmpLoadState,"Loaded");
-                  Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
+                  Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                   Set(varEmpLoadedAt,Now());
                   Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadLoaded.nl),T.admHeadLoaded.nl,T.admHeadLoaded.en)); Set(varAdmMsgBody,Substitute(Substitute(If(LangNl && !IsBlank(T.empMsgLoaded.nl),T.empMsgLoaded.nl,T.empMsgLoaded.en),"{0}",Text(CountRows(colAdminEmployers))),"{1}",Text(varEmpLoadedAt,"hh:mm:ss"))),
                   Set(varEmpLoadState,"Failed");
@@ -158,7 +158,7 @@ Screens:
             Font: ="Inter, Arial, sans-serif"
             OnSelect: |-
               =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false),
-               Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
+               Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                Trace("DIAG|Contractors|FormReset",TraceSeverity.Information,{Screen:"Contractors",Mode:Coalesce(varEmpMode,"")}),
                Trace("DIAG|Contractors|FormResetSkipped",TraceSeverity.Information,{Screen:"Contractors",State:Coalesce(varEmpLoadState,"")})
               )
@@ -208,7 +208,7 @@ Screens:
                           =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && lblEmpDirty.Text="false",
                            If(!IsBlank(cmpEmpList.SelectedRowID) && !IsBlank(LookUp(colAdminEmployers,ID=cmpEmpList.SelectedRowID).ID),
                             Set(varEmpSelectedID,cmpEmpList.SelectedRowID); Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)); Set(varEmpMode,"Edit");
-                            Clear(colEmpSaveErrors); Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))
+                            Clear(colEmpSaveErrors); Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))
                            ),
                            Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en))
                           ); true
@@ -371,7 +371,7 @@ Screens:
                               Width: =lblEmpLayout.Width-48
                               X: =24
                               Y: =lblEmpSecGeneral.Y+38+RoundUp(2/lblEmpMetrics.X,0)*74
-                        - cmpEmpAddress:
+                        - cmpEmpStreet:
                             Control: CanvasComponent
                             ComponentName: cmpField
                             Properties:
@@ -379,14 +379,30 @@ Screens:
                                 =varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"]
                               Height: =58
                               HintText: =""
-                              Invalid: =CountIf(colEmpSaveErrors,Field="Address")>0
+                              Invalid: =CountIf(colEmpSaveErrors,Field="Street")>0
                               InputType: ="text"
-                              Label: =If(LangNl && !IsBlank(T.empFieldAddress.nl),T.empFieldAddress.nl,T.empFieldAddress.en)
+                              Label: =If(LangNl && !IsBlank(T.empFieldStreet.nl),T.empFieldStreet.nl,T.empFieldStreet.en)
                               MaxLength: =255
-                              DefaultValue: =varEmpEdit.Address
+                              DefaultValue: =varEmpEdit.Street
                               Width: =lblEmpGrid.Width
                               X: =24
                               Y: =lblEmpSecAddress.Y+30
+                        - cmpEmpHouseNumber:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: |-
+                                =varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colEmpSaveErrors,Field="HouseNumber")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.empFieldHouseNumber.nl),T.empFieldHouseNumber.nl,T.empFieldHouseNumber.en)
+                              MaxLength: =255
+                              DefaultValue: =varEmpEdit.HouseNumber
+                              Width: =lblEmpGrid.Width
+                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecAddress.Y+30+RoundDown(1/lblEmpMetrics.X,0)*74
                         - cmpEmpPostalcode:
                             Control: CanvasComponent
                             ComponentName: cmpField
@@ -401,8 +417,8 @@ Screens:
                               MaxLength: =255
                               DefaultValue: =varEmpEdit.Postalcode
                               Width: =lblEmpGrid.Width
-                              X: =24+Mod(1,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
-                              Y: =lblEmpSecAddress.Y+30+RoundDown(1/lblEmpMetrics.X,0)*74
+                              X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecAddress.Y+30+RoundDown(2/lblEmpMetrics.X,0)*74
                         - cmpEmpCity:
                             Control: CanvasComponent
                             ComponentName: cmpField
@@ -417,8 +433,8 @@ Screens:
                               MaxLength: =255
                               DefaultValue: =varEmpEdit.City
                               Width: =lblEmpGrid.Width
-                              X: =24+Mod(2,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
-                              Y: =lblEmpSecAddress.Y+30+RoundDown(2/lblEmpMetrics.X,0)*74
+                              X: =24+Mod(3,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecAddress.Y+30+RoundDown(3/lblEmpMetrics.X,0)*74
                         - cmpEmpCountry:
                             Control: CanvasComponent
                             ComponentName: cmpField
@@ -428,13 +444,15 @@ Screens:
                               Height: =58
                               HintText: =""
                               Invalid: =CountIf(colEmpSaveErrors,Field="Country")>0
-                              InputType: ="text"
+                              InputType: ="dropdown"
+                              Items: |-
+                                =ShowColumns(Choices([@Employers].Country),Value)
                               Label: =If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en)
                               MaxLength: =255
                               DefaultValue: =varEmpEdit.Country
                               Width: =lblEmpGrid.Width
-                              X: =24+Mod(3,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
-                              Y: =lblEmpSecAddress.Y+30+RoundDown(3/lblEmpMetrics.X,0)*74
+                              X: =24+Mod(4,lblEmpMetrics.X)*(lblEmpGrid.Width+16)
+                              Y: =lblEmpSecAddress.Y+30+RoundDown(4/lblEmpMetrics.X,0)*74
                         - lblEmpSecContact:
                             Control: Label@2.5.1
                             Properties:
@@ -452,7 +470,7 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Width: =lblEmpLayout.Width-48
                               X: =24
-                              Y: =lblEmpSecAddress.Y+38+RoundUp(4/lblEmpMetrics.X,0)*74
+                              Y: =lblEmpSecAddress.Y+38+RoundUp(5/lblEmpMetrics.X,0)*74
                         - cmpEmpContactName:
                             Control: CanvasComponent
                             ComponentName: cmpField
@@ -638,12 +656,12 @@ Screens:
                  Set(varEmpSelectedID,If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors),With({vis:Filter(ForAll(Sort(ForAll(colAdminEmployers As e,{ID:e.ID,Name:e.Name,Code:e.Code,City:e.City,Active:Coalesce(e.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.City,r.Code & If(IsBlank(r.City),""," · " & r.City)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.empInactive.nl),T.empInactive.nl,T.empInactive.en))}),(Coalesce(varEmpShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpEmpList.SearchText)) || Trim(cmpEmpList.SearchText) in Title || Trim(cmpEmpList.SearchText) in Subtitle))},If(!IsBlank(varEmpPrevSelectedID) && !IsBlank(LookUp(vis,ID=varEmpPrevSelectedID).ID),varEmpPrevSelectedID,First(vis).ID)),Blank()));
                  If(!IsBlank(varEmpSelectedID) && !IsBlank(LookUp(colAdminEmployers,ID=varEmpSelectedID).ID),
                   Set(varEmpEdit,LookUp(colAdminEmployers,ID=varEmpSelectedID)); Set(varEmpMode,"Edit"),
-                  Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
+                  Set(varEmpMode,""); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true})
                  );
                  Set(varEmpPrevSelectedID,Blank());
                  Trace("DIAG|Contractors|DiscardNew",TraceSeverity.Information,{Screen:"Contractors",SelectedID:Coalesce(varEmpSelectedID,0),Mode:Coalesce(varEmpMode,"")})
                 );
-                Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
+                Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                 Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadDiscarded.nl),T.admHeadDiscarded.nl,T.admHeadDiscarded.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.empMsgDiscarded.nl),T.empMsgDiscarded.nl,T.empMsgDiscarded.en))
                ),
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en))
@@ -653,8 +671,8 @@ Screens:
             OnNew: |-
               =If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && lblEmpDirty.Text="false",
                Set(varEmpPrevSelectedID,If(varEmpMode="Edit" && !IsBlank(varEmpSelectedID),varEmpSelectedID,varEmpMode="New",varEmpPrevSelectedID,Blank()));
-               Set(varEmpMode,"New"); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Address:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true});
-               Clear(colEmpSaveErrors); Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
+               Set(varEmpMode,"New"); Set(varEmpSelectedID,Blank()); Set(varEmpEdit,{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true});
+               Clear(colEmpSaveErrors); Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                Trace("DIAG|Contractors|New",TraceSeverity.Information,{Screen:"Contractors"}),
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.empMsgActionBlocked.nl),T.empMsgActionBlocked.nl,T.empMsgActionBlocked.en))
               )
@@ -671,16 +689,19 @@ Screens:
                Clear(colEmpSaveErrors); Clear(colEmpPreRaw); Clear(colEmpPre); Clear(colEmpDup); Clear(colEmpPatched); Clear(colEmpVerifyRaw); Clear(colEmpVerify); Clear(colEmpCtlRaw);
                Set(varEmpSaveReads,0); Set(varEmpSaveWrites,0); Set(varEmpSaveCtl,""); Set(varEmpSaveVerified,false); Set(varEmpSaveDupFound,false); Set(varEmpSaveConflict,false); Set(varEmpSaveWorkersRefreshFailed,false); Set(varEmpVerifyDiff,"");
                Set(varEmpSaveMode,varEmpMode); Set(varEmpSaveID,If(varEmpMode="Edit",varEmpSelectedID,Blank())); Set(varEmpPatchedID,Blank());
-               Set(varEmpSaveRec,{Name:Trim(cmpEmpName.Value & ""),Address:Trim(cmpEmpAddress.Value & ""),Postalcode:Trim(cmpEmpPostalcode.Value & ""),City:Trim(cmpEmpCity.Value & ""),Country:Trim(cmpEmpCountry.Value & ""),ContactName:Trim(cmpEmpContactName.Value & ""),ContactEmail:Trim(cmpEmpContactEmail.Value & ""),ContactPhone:Trim(cmpEmpContactPhone.Value & ""),Active:Coalesce(varEmpActiveDraft,true)});
+               Set(varEmpSaveRec,{Name:Trim(cmpEmpName.Value & ""),Street:Trim(cmpEmpStreet.Value & ""),HouseNumber:Trim(cmpEmpHouseNumber.Value & ""),Postalcode:Trim(cmpEmpPostalcode.Value & ""),City:Trim(cmpEmpCity.Value & ""),Country:Trim(cmpEmpCountry.Value & ""),ContactName:Trim(cmpEmpContactName.Value & ""),ContactEmail:Trim(cmpEmpContactEmail.Value & ""),ContactPhone:Trim(cmpEmpContactPhone.Value & ""),Active:Coalesce(varEmpActiveDraft,true)});
                Set(varEmpDupName,varEmpSaveRec.Name); Set(varEmpDupKey,Lower(varEmpSaveRec.Name));
                Set(varEmpSaveRenamed,varEmpSaveMode="Edit" && varEmpEdit.Name<>varEmpSaveRec.Name);
                Set(varEmpSaveWarnWorkers,If(varEmpSaveMode="Edit" && Coalesce(varEmpEdit.Active,true) && !varEmpSaveRec.Active,CountIf(colEmpWorkers,EmployerID=varEmpSaveID && Coalesce(WorkerActive,true)),0));
                If(IsBlank(varEmpSaveRec.Name),Collect(colEmpSaveErrors,{Field:"Name",Message:If(LangNl && !IsBlank(T.empErrNameRequired.nl),T.empErrNameRequired.nl,T.empErrNameRequired.en)}));
                If(Len(varEmpSaveRec.Name)>255,Collect(colEmpSaveErrors,{Field:"Name",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldName.nl),T.empFieldName.nl,T.empFieldName.en))}));
-               If(Len(varEmpSaveRec.Address)>255,Collect(colEmpSaveErrors,{Field:"Address",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldAddress.nl),T.empFieldAddress.nl,T.empFieldAddress.en))}));
+               If(Len(varEmpSaveRec.Street)>255,Collect(colEmpSaveErrors,{Field:"Street",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldStreet.nl),T.empFieldStreet.nl,T.empFieldStreet.en))}));
+               If(Len(varEmpSaveRec.HouseNumber)>255,Collect(colEmpSaveErrors,{Field:"HouseNumber",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldHouseNumber.nl),T.empFieldHouseNumber.nl,T.empFieldHouseNumber.en))}));
                If(Len(varEmpSaveRec.Postalcode)>255,Collect(colEmpSaveErrors,{Field:"Postalcode",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldPostalcode.nl),T.empFieldPostalcode.nl,T.empFieldPostalcode.en))}));
                If(Len(varEmpSaveRec.City)>255,Collect(colEmpSaveErrors,{Field:"City",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldCity.nl),T.empFieldCity.nl,T.empFieldCity.en))}));
-               If(Len(varEmpSaveRec.Country)>255,Collect(colEmpSaveErrors,{Field:"Country",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en))}));
+               Set(varEmpSaveCountryInList,CountIf(Choices([@Employers].Country),Value=varEmpSaveRec.Country)>0);
+               Set(varEmpSaveWriteCountry,!(varEmpSaveMode="Edit" && !IsBlank(varEmpSaveRec.Country) && !varEmpSaveCountryInList && varEmpSaveRec.Country=Trim(varEmpEdit.Country & "")));
+               If(!IsBlank(varEmpSaveRec.Country) && !varEmpSaveCountryInList && !(varEmpSaveMode="Edit" && varEmpSaveRec.Country=Trim(varEmpEdit.Country & "")),Collect(colEmpSaveErrors,{Field:"Country",Message:If(LangNl && !IsBlank(T.empErrCountry.nl),T.empErrCountry.nl,T.empErrCountry.en)}));
                If(Len(varEmpSaveRec.ContactName)>255,Collect(colEmpSaveErrors,{Field:"ContactName",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldContactName.nl),T.empFieldContactName.nl,T.empFieldContactName.en))}));
                If(Len(varEmpSaveRec.ContactEmail)>255,Collect(colEmpSaveErrors,{Field:"ContactEmail",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldContactEmail.nl),T.empFieldContactEmail.nl,T.empFieldContactEmail.en))}));
                If(Len(varEmpSaveRec.ContactPhone)>255,Collect(colEmpSaveErrors,{Field:"ContactPhone",Message:Substitute(If(LangNl && !IsBlank(T.empErrTooLong.nl),T.empErrTooLong.nl,T.empErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.empFieldContactPhone.nl),T.empFieldContactPhone.nl,T.empFieldContactPhone.en))}));
@@ -694,18 +715,18 @@ Screens:
                  Set(varEmpSaveReads,varEmpSaveReads+1);
                  IfError(CountRows(ClearCollect(colEmpPreRaw,Filter(Employers,ID=varEmpSaveID)))>=0,Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrPreRead.nl),T.empErrPreRead.nl,T.empErrPreRead.en)});false);
                  If(IsEmpty(colEmpSaveErrors) && CountRows(colEmpPreRaw)<>1,Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrNotFound.nl),T.empErrNotFound.nl,T.empErrNotFound.en)}));
-                 If(IsEmpty(colEmpSaveErrors),ClearCollect(colEmpPre,ForAll(colEmpPreRaw As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Address:Trim(emp.Address & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)})))
+                 If(IsEmpty(colEmpSaveErrors),ClearCollect(colEmpPre,ForAll(colEmpPreRaw As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Street:Trim(emp.Street & ""),HouseNumber:Trim(emp.'House Number' & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country.Value & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)})))
                 );
                 If(IsEmpty(colEmpSaveErrors),
                  Set(varEmpSaveReads,varEmpSaveReads+1);
-                 IfError(CountRows(ClearCollect(colEmpDup,ForAll(Filter(Employers,Title=varEmpDupName) As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Address:Trim(emp.Address & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)})))>=0,Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrDupRead.nl),T.empErrDupRead.nl,T.empErrDupRead.en)});false);
+                 IfError(CountRows(ClearCollect(colEmpDup,ForAll(Filter(Employers,Title=varEmpDupName) As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Street:Trim(emp.Street & ""),HouseNumber:Trim(emp.'House Number' & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country.Value & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)})))>=0,Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrDupRead.nl),T.empErrDupRead.nl,T.empErrDupRead.en)});false);
                  If(IsEmpty(colEmpSaveErrors) && CountRows(colEmpDup)>=500,Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrDupLimit.nl),T.empErrDupLimit.nl,T.empErrDupLimit.en)}));
                  If(IsEmpty(colEmpSaveErrors) && CountIf(colEmpDup,Lower(Trim(Name))=varEmpDupKey && (varEmpSaveMode="New" || ID<>varEmpSaveID))>0,
                   Set(varEmpSaveDupFound,true); Collect(colEmpSaveErrors,{Field:"Name",Message:If(LangNl && !IsBlank(T.empErrDuplicate.nl),T.empErrDuplicate.nl,T.empErrDuplicate.en)}))
                 );
                 If(IsEmpty(colEmpSaveErrors) && varEmpSaveMode="Edit",
                  With({p:First(colEmpPre)},
-                  If(p.ID<>varEmpSaveID || Trim(p.Name & "")<>Trim(varEmpEdit.Name & "") || Trim(p.Address & "")<>Trim(varEmpEdit.Address & "") || Trim(p.Postalcode & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(p.City & "")<>Trim(varEmpEdit.City & "") || Trim(p.Country & "")<>Trim(varEmpEdit.Country & "") || Trim(p.ContactName & "")<>Trim(varEmpEdit.ContactName & "") || Trim(p.ContactEmail & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(p.ContactPhone & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(p.Active,true)<>Coalesce(varEmpEdit.Active,true),
+                  If(p.ID<>varEmpSaveID || Trim(p.Name & "")<>Trim(varEmpEdit.Name & "") || Trim(p.Street & "")<>Trim(varEmpEdit.Street & "") || Trim(p.HouseNumber & "")<>Trim(varEmpEdit.HouseNumber & "") || Trim(p.Postalcode & "")<>Trim(varEmpEdit.Postalcode & "") || Trim(p.City & "")<>Trim(varEmpEdit.City & "") || Trim(p.Country & "")<>Trim(varEmpEdit.Country & "") || Trim(p.ContactName & "")<>Trim(varEmpEdit.ContactName & "") || Trim(p.ContactEmail & "")<>Trim(varEmpEdit.ContactEmail & "") || Trim(p.ContactPhone & "")<>Trim(varEmpEdit.ContactPhone & "") || Coalesce(p.Active,true)<>Coalesce(varEmpEdit.Active,true),
                    Set(varEmpSaveConflict,true); Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrConflict.nl),T.empErrConflict.nl,T.empErrConflict.en)});
                    Trace("DIAG|Contractors|Conflict",TraceSeverity.Warning,{Screen:"Contractors",ItemID:varEmpSaveID})
                   )
@@ -713,7 +734,7 @@ Screens:
                 );
                 If(IsEmpty(colEmpSaveErrors),
                  Set(varEmpPatchError,false);
-                 IfError(CountRows(ClearCollect(colEmpPatched,Patch(Employers,If(varEmpSaveMode="New",Defaults(Employers),First(colEmpPreRaw)),{Title:varEmpSaveRec.Name,Address:varEmpSaveRec.Address,Postalcode:varEmpSaveRec.Postalcode,City:varEmpSaveRec.City,Country:varEmpSaveRec.Country,'Contact Name':varEmpSaveRec.ContactName,'Contact Email':varEmpSaveRec.ContactEmail,'Contact Phone':varEmpSaveRec.ContactPhone,Active:varEmpSaveRec.Active})))>=0,
+                 IfError(CountRows(ClearCollect(colEmpPatched,If(varEmpSaveWriteCountry,Patch(Employers,If(varEmpSaveMode="New",Defaults(Employers),First(colEmpPreRaw)),{Title:varEmpSaveRec.Name,Street:varEmpSaveRec.Street,'House Number':varEmpSaveRec.HouseNumber,Postalcode:varEmpSaveRec.Postalcode,City:varEmpSaveRec.City,Country:If(IsBlank(varEmpSaveRec.Country),Blank(),{Value:varEmpSaveRec.Country}),'Contact Name':varEmpSaveRec.ContactName,'Contact Email':varEmpSaveRec.ContactEmail,'Contact Phone':varEmpSaveRec.ContactPhone,Active:varEmpSaveRec.Active}),Patch(Employers,If(varEmpSaveMode="New",Defaults(Employers),First(colEmpPreRaw)),{Title:varEmpSaveRec.Name,Street:varEmpSaveRec.Street,'House Number':varEmpSaveRec.HouseNumber,Postalcode:varEmpSaveRec.Postalcode,City:varEmpSaveRec.City,'Contact Name':varEmpSaveRec.ContactName,'Contact Email':varEmpSaveRec.ContactEmail,'Contact Phone':varEmpSaveRec.ContactPhone,Active:varEmpSaveRec.Active}))))>=0,
                   Set(varEmpPatchError,true); Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrSharePoint.nl),T.empErrSharePoint.nl,T.empErrSharePoint.en) & " " & FirstError.Message});false);
                  Set(varEmpPatchedID,First(colEmpPatched).ID);
                  Set(varEmpSaveCtl,If(varEmpPatchError && IsBlank(varEmpPatchedID),"Pending",""));
@@ -728,10 +749,10 @@ Screens:
                   Set(varEmpSaveReads,varEmpSaveReads+1);
                   IfError(CountRows(ClearCollect(colEmpVerifyRaw,Filter(Employers,ID=varEmpPatchedID)))>=0,Collect(colEmpSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.empErrVerify.nl),T.empErrVerify.nl,T.empErrVerify.en)});false)
                  );
-                 If(IsEmpty(colEmpSaveErrors),ClearCollect(colEmpVerify,ForAll(colEmpVerifyRaw As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Address:Trim(emp.Address & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)})));
+                 If(IsEmpty(colEmpSaveErrors),ClearCollect(colEmpVerify,ForAll(colEmpVerifyRaw As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Street:Trim(emp.Street & ""),HouseNumber:Trim(emp.'House Number' & ""),Postalcode:Trim(emp.Postalcode & ""),City:Trim(emp.City & ""),Country:Trim(emp.Country.Value & ""),ContactName:Trim(emp.'Contact Name' & ""),ContactEmail:Trim(emp.'Contact Email' & ""),ContactPhone:Trim(emp.'Contact Phone' & ""),Active:Coalesce(emp.Active,true)})));
                  If(IsEmpty(colEmpSaveErrors),
                   With({v:First(colEmpVerify),rowOk:CountRows(colEmpVerifyRaw)=1 && CountRows(colEmpVerify)=1 && First(colEmpVerify).ID=varEmpPatchedID},
-                   With({d:Filter(Table({F:"Name",L:If(LangNl && !IsBlank(T.empFieldName.nl),T.empFieldName.nl,T.empFieldName.en),D:Trim(v.Name & "")<>Trim(varEmpSaveRec.Name & "")},{F:"Address",L:If(LangNl && !IsBlank(T.empFieldAddress.nl),T.empFieldAddress.nl,T.empFieldAddress.en),D:Trim(v.Address & "")<>Trim(varEmpSaveRec.Address & "")},{F:"Postalcode",L:If(LangNl && !IsBlank(T.empFieldPostalcode.nl),T.empFieldPostalcode.nl,T.empFieldPostalcode.en),D:Trim(v.Postalcode & "")<>Trim(varEmpSaveRec.Postalcode & "")},{F:"City",L:If(LangNl && !IsBlank(T.empFieldCity.nl),T.empFieldCity.nl,T.empFieldCity.en),D:Trim(v.City & "")<>Trim(varEmpSaveRec.City & "")},{F:"Country",L:If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en),D:Trim(v.Country & "")<>Trim(varEmpSaveRec.Country & "")},{F:"ContactName",L:If(LangNl && !IsBlank(T.empFieldContactName.nl),T.empFieldContactName.nl,T.empFieldContactName.en),D:Trim(v.ContactName & "")<>Trim(varEmpSaveRec.ContactName & "")},{F:"ContactEmail",L:If(LangNl && !IsBlank(T.empFieldContactEmail.nl),T.empFieldContactEmail.nl,T.empFieldContactEmail.en),D:Trim(v.ContactEmail & "")<>Trim(varEmpSaveRec.ContactEmail & "")},{F:"ContactPhone",L:If(LangNl && !IsBlank(T.empFieldContactPhone.nl),T.empFieldContactPhone.nl,T.empFieldContactPhone.en),D:Trim(v.ContactPhone & "")<>Trim(varEmpSaveRec.ContactPhone & "")},{F:"Active",L:If(LangNl && !IsBlank(T.empFieldActive.nl),T.empFieldActive.nl,T.empFieldActive.en),D:Coalesce(v.Active,true)<>Coalesce(varEmpSaveRec.Active,true)}),D)},
+                   With({d:Filter(Table({F:"Name",L:If(LangNl && !IsBlank(T.empFieldName.nl),T.empFieldName.nl,T.empFieldName.en),D:Trim(v.Name & "")<>Trim(varEmpSaveRec.Name & "")},{F:"Street",L:If(LangNl && !IsBlank(T.empFieldStreet.nl),T.empFieldStreet.nl,T.empFieldStreet.en),D:Trim(v.Street & "")<>Trim(varEmpSaveRec.Street & "")},{F:"HouseNumber",L:If(LangNl && !IsBlank(T.empFieldHouseNumber.nl),T.empFieldHouseNumber.nl,T.empFieldHouseNumber.en),D:Trim(v.HouseNumber & "")<>Trim(varEmpSaveRec.HouseNumber & "")},{F:"Postalcode",L:If(LangNl && !IsBlank(T.empFieldPostalcode.nl),T.empFieldPostalcode.nl,T.empFieldPostalcode.en),D:Trim(v.Postalcode & "")<>Trim(varEmpSaveRec.Postalcode & "")},{F:"City",L:If(LangNl && !IsBlank(T.empFieldCity.nl),T.empFieldCity.nl,T.empFieldCity.en),D:Trim(v.City & "")<>Trim(varEmpSaveRec.City & "")},{F:"Country",L:If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en),D:Trim(v.Country & "")<>Trim(varEmpSaveRec.Country & "")},{F:"ContactName",L:If(LangNl && !IsBlank(T.empFieldContactName.nl),T.empFieldContactName.nl,T.empFieldContactName.en),D:Trim(v.ContactName & "")<>Trim(varEmpSaveRec.ContactName & "")},{F:"ContactEmail",L:If(LangNl && !IsBlank(T.empFieldContactEmail.nl),T.empFieldContactEmail.nl,T.empFieldContactEmail.en),D:Trim(v.ContactEmail & "")<>Trim(varEmpSaveRec.ContactEmail & "")},{F:"ContactPhone",L:If(LangNl && !IsBlank(T.empFieldContactPhone.nl),T.empFieldContactPhone.nl,T.empFieldContactPhone.en),D:Trim(v.ContactPhone & "")<>Trim(varEmpSaveRec.ContactPhone & "")},{F:"Active",L:If(LangNl && !IsBlank(T.empFieldActive.nl),T.empFieldActive.nl,T.empFieldActive.en),D:Coalesce(v.Active,true)<>Coalesce(varEmpSaveRec.Active,true)}),D)},
                     If(rowOk && IsEmpty(d),
                      Set(varEmpSaveVerified,true),
                      Set(varEmpVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));
@@ -749,7 +770,7 @@ Screens:
                 Set(varEmpEdit,First(colEmpVerify)); Set(varEmpSelectedID,varEmpPatchedID); Set(varEmpMode,"Edit");
                 Set(varWorkersCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
                 If(varEmpSaveRenamed,IfError(Refresh(Workers),Set(varEmpSaveWorkersRefreshFailed,true);false));
-                Reset(cmpEmpName); Reset(cmpEmpAddress); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
+                Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true));
                 If(varEmpSaveWarnWorkers>0 || varEmpSaveWorkersRefreshFailed,
                  Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,Trim(If(LangNl && !IsBlank(T.admMsgSavedPrefix.nl),T.admMsgSavedPrefix.nl,T.admMsgSavedPrefix.en) & " " & If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),"") & If(varEmpSaveWarnWorkers>0," " & Substitute(If(LangNl && !IsBlank(T.empWarnActiveWorkers.nl),T.empWarnActiveWorkers.nl,T.empWarnActiveWorkers.en),"{0}",Text(varEmpSaveWarnWorkers)),"") & If(varEmpSaveWorkersRefreshFailed," " & If(LangNl && !IsBlank(T.empWarnWorkersRefresh.nl),T.empWarnWorkersRefresh.nl,T.empWarnWorkersRefresh.en),""))),
                  Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,If(varEmpSaveRenamed,If(LangNl && !IsBlank(T.empMsgSavedRename.nl),T.empMsgSavedRename.nl,T.empMsgSavedRename.en),""))

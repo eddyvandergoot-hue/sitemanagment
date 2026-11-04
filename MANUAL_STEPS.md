@@ -193,5 +193,6 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-024 — Employers: adresvelden (Street, House Number, Country als keuze)
 
-- **Added/Done:** 4-11-2026 (Eddy meldde: gedaan). List Employers: nieuwe kolommen Street en House Number; Country is nu een keuzekolom zoals bij Projects (was tekst, MS-014). De oude kolom Address blijft in SharePoint tot Eddy goedkeurt. Exacte interne namen en typen: te bevestigen uit de vernieuwde metadata (niet gecontroleerd).
-- **Open (Eddy):** de app met de vernieuwde Employers-gegevensbron opslaan in `Incoming\` (App Id 88e53928-0a0b-49fe-ac52-05833b5ca1e0; nieuwste bestand daar is nu 20261102Components.msapp, dus niet aanwezig). **Dan (Claude):** metadata samenvoegen (alleen gegevensbronnen), daarna Contractors item 9 bouwen (NEXT_COMMANDS.md).
+- **Added/Done:** 4-11-2026 (Eddy meldde: gedaan). List Employers: nieuwe kolommen Street en House Number; Country is nu een keuzekolom zoals bij Projects (was tekst, MS-014). De oude kolom Address blijft in SharePoint tot Eddy goedkeurt. Bevestigd 4-11-2026 uit de metadata: Street (intern Street, tekst), House Number (intern HouseNumber, tekst), Country keuze zonder standaard, Address (tekst) bestaat nog en wordt door de app niet meer gebruikt.
+- **Status:** gedaan en afgerond. Metadata samengevoegd (commit 58dee1b): alleen msapp\References\DataSources.json uit Incoming\20261104.msapp (562352 bytes, SHA-256 29E0DF4215D9194812E7F3B1737548135F1FBEE7703602DFC3F3760A1E79131D); alleen Employers wijzigde, App Id blijft 88e53928. Item 9 gebouwd (PROJECT_STATUS.md).
+- **Open (Eddy):** beslissen over migratie van bestaande Address-waarden naar Street/House Number (niet gekopieerd) en wanneer de kolom Address mag vervallen.

@@ -62,7 +62,7 @@ Write-Output 'PASS title bars and table headers (Weekly Hours and Hours Summary)
 # 30-10-2026 (Projects build): same admin-pattern field rules on scrProjects (error field from colPrjSaveErrors.Field).
 $prjErrField=@{txtPrjName='Name';txtPrjNumber='Number';txtPrjReference='Reference';txtPrjCustomer='Customer';txtPrjStreet='Street';txtPrjHouseNumber='HouseNumber';txtPrjPostalCode='PostalCode';txtPrjCity='City';txtPrjUrl='Url'}
 $prjDdField=@{ddPrjStatus='Status';ddPrjCountry='Country'}
-$empErrField=@{txtEmpName='Name';txtEmpAddress='Address';txtEmpPostalcode='Postalcode';txtEmpCity='City';txtEmpCountry='Country';txtEmpContactName='ContactName';txtEmpContactEmail='ContactEmail';txtEmpContactPhone='ContactPhone'}
+$empErrField=@{}  # txtEmp* inputs were replaced by cmpField components; no such control exists
 foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){
  $c=$indexes[$screen][$name];$p=$c['Properties']
  if($c['Control'] -like 'Classic/DropDown@*' -or $c['Control'] -like 'Classic/TextInput@*'){

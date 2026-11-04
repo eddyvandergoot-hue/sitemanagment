@@ -693,7 +693,7 @@ $msaprZip=[IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Manag
 try { $dsReader=New-Object IO.StreamReader(($msaprZip.Entries | Where-Object FullName -eq 'msapp\References\DataSources.json').Open()); $dsJson=$dsReader.ReadToEnd() | ConvertFrom-Json; $dsReader.Dispose() } finally { $msaprZip.Dispose() }
 $usedColumns=@{
  'Workers'=@('ID','First Name','Surname','Employer','Trade','Active')
- 'Employers'=@('ID','Title','Employer Code','Address','Postalcode','City','Country','Contact Name','Contact Email','Contact Phone','Active','Modified')
+ 'Employers'=@('ID','Title','Employer Code','Street','House Number','Postalcode','City','Country','Contact Name','Contact Email','Contact Phone','Active','Modified')
  'Projects'=@('ID','Title','Project Number','Project Reference','Customer Name','Status','Street','House Number','Postal Code','City','Country','Project Leader','Site Managers','ProjectHomeSite URL','Modified')
  'Hours'=@('ID','Title','EntryKey','Work Date','Assignment','Employer','Team','Trade','Hours','Modified')
  'Project Workers'=@('ID','Title','ProjectKey','AssignmentKey','Project','Worker','Team','Active')

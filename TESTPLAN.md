@@ -473,7 +473,22 @@ Alleen de punten 5-8 van TP-HOME-02 opnieuw; opslaan alleen op TEST-records.
 | 6 | Met Tab door de tegels | focusrand 3 px navy #000F41 duidelijk zichtbaar |
 | 7 | Venster ~1366, ~900, ~700, 390 (telefoon) en 360 | tegels 150 / 130 / ~107; minimaal 3 per rij op de telefoon; labels (vooral "Contractors" en "Component library") niet afgekapt of midden in een woord gebroken |
 | 8 | Contractors en Projects: New | statuschip lichtblauw met blauwe tekst "New"; Active groen, Inactive/Closed grijs zoals eerder |
-## TP-HOME-04 Home-tegel als één SVG-afbeelding + Discard in New (OPEN; build homefix2-20261104_215148)
+## TP-CONTR-ADDR-01 Contractors-adresvelden (OPEN; build contractoraddr-20261104_221534, bevat ook TP-HOME-04)
+Alleen TEST-gegevens (TEST Employer / een TEST-contractor). Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\contractoraddr-20261104_221534\SiteManagement_ContractorAddr_20261104_221534.msapp, SHA-256 43E62C462FB7DA74D12C0453E5DB14F7B8A11DC4EE04C1A6FF75EC4C90EA2DF5.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| a | Contractors op ~1366, ~1000 en ~700 px | ADDRESS: Street, House Number, Postal Code, City, Country (dropdown); CONTACT: Name, Email, Phone; niets overlapt of knipt |
+| b | Bestaande contractor selecteren | Street en House Number leeg; Country toont de huidige waarde |
+| c | Edit: Street + House Number invullen, Country kiezen, Save | "Saved."; waarden in SharePoint; SP-kolom Address ongewijzigd |
+| d | Country leegmaken op een bestaand record, Save | Country leeg in SharePoint (zo niet: Failed + melding = bevinding) |
+| e | Contractor met oude Country-waarde buiten de keuzelijst: ander veld wijzigen, Save | opgeslagen; Country ongewijzigd |
+| f | New contractor | Country standaard leeg; opslaan met Street, House Number, Country werkt |
+| g | Ongeldig Email | "Fix: Email invalid", rode rand, niets opgeslagen |
+| h | Conflict: record in SharePoint wijzigen, daarna in de app opslaan | exact "Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh." |
+| i | Discard, Refresh, New + Discard | zoals TP-HOME-04 (5-9) |
+
+## TP-HOME-04 Home-tegel als één SVG-afbeelding + Discard in New (OPEN; build homefix2-20261104_215148, vervangen door contractoraddr-20261104_221534; test op de nieuwe build)
 Voorafgaand: TP-HOME-03 (Eddy 3-11-2026): punt 5 functioneel ok, 7 ok, 8 (New chip) ok, B3 ok; punt 6 (Tab-focus) geen prioriteit, naar de toegankelijkheidsronde. TP-KEYS-01: melding toont sleutels ok (voorbeeld "1|1|20261012 Assignment-ID 1 +17 more"); Eddy controleert de Project Workers-ID's van Friesland Campina (open). Opslaan alleen op TEST-records.
 
 | # | Actie | Verwacht |
