@@ -90,7 +90,7 @@ Status 31-10-2026 (stap 3: Contractors en Projects op componenten gebouwd in bui
 - 4.5 Voorstel, bevestigen (besluit 11; NIET gebouwd, blijft voorstel): in deze build verbergt Screen1/ddProject Projects met Status Closed (On hold blijft zichtbaar); Hours Summary (ddReportProject) toont alles. Vergt Status in de colProjectsCache-projectie (beide loaders identiek; Test-SaveRegression). Admin-lijst "Show inactive" = Closed tonen.
 
 ## 5. Workers (scrWorkers) - bouw 3
-Status: Plan 4-11-2026, V1-V6 beantwoord door Eddy 5-11-2026 (par. 5.7); wacht alleen nog op Eddy's OK op stap 1 (test + tag contractoraddr-20261104_221534, DECISIONS.md H23); niet gebouwd.
+Status: Plan 4-11-2026, V1-V6 beantwoord door Eddy 5-11-2026 (par. 5.7); stap 1 goedgekeurd door Eddy 7-11-2026 (tag approved-20261107-contractoraddr, DECISIONS.md H23); Workers-build nu aan de beurt; niet gebouwd.
 
 ### 5.1 Scherm en velden
 - scrWorkers op het Admin screen pattern (par. 10) met de vijf componenten: cmpTitleBar "Workers"; cmpMessageBar; cmpListCard (titel "First Surname", subregel "Worker Code · Contractor", zoeken op naam/code/contractor, Show inactive); cmpField-formulier; cmpFooter.
@@ -122,7 +122,7 @@ Screen1-kandidaten verbergen inactieve medewerkers (Active in de colWorkersCache
 ### 5.7 Volgorde, tests, open vragen
 - Agents: powerfx-logic (scrWorkers-data, H18, 5.6, Projects) -> reviewer -> powerfx-ui (layout) -> verifier (volledige set + pack).
 - Tests: Test-AdminScreens sectie scrWorkers; Test-SaveRegression H18; Test-Components (hostgebruik); Test-Layout scrWorkers 1366/1000/700; Test-HomeIcons workers wit; Test-GeaColors/Test-Fonts adminScreens incl. scrWorkers; Test-FooterRow. Nieuw TESTPLAN TP-WORKERS-01 op TEST Employer-testworkers (Test Fitter 2 / Test Welder 2 / Test Unknown 2); een nieuwe TEST-worker aanmaken vergt Eddy's OK (V5).
-- Besluiten Eddy 5-11-2026: V1 akkoord: één read `Filter('Project Workers', Active = true)` voor de deactiveringscheck (aantallen ver onder 500; >= 500 blijft fail-closed blokkeren); V2 akkoord: contractor via naam-mapping (dubbele namen blokkeert Contractors al; ambigu blijft fail-closed blokkeren), geen cmpField-wijziging; V3 later, niet in deze build (eerst Workers zelf); V4 akkoord: lege Language moet bij de eerstvolgende save gekozen worden; V5 ja: de test mag een nieuwe TEST-worker aanmaken onder TEST Employer, naam begint met "TEST"; V6 akkoord: volledige Workers-read in Save week bij nieuwe rijen. Aantal workers volgens Eddy ver onder 500.
+- Besluiten Eddy 5-11-2026: V1 akkoord: één read `Filter('Project Workers', Active = true)` voor de deactiveringscheck (aantallen ver onder 500; >= 500 blijft fail-closed blokkeren); V2 akkoord: contractor via naam-mapping (dubbele namen blokkeert Contractors al; ambigu blijft fail-closed blokkeren), geen cmpField-wijziging; V3 later, niet in deze build (eerst Workers zelf); V4 akkoord: lege Language moet bij de eerstvolgende save gekozen worden; V5 ja: de test mag een nieuwe TEST-worker aanmaken onder TEST Employer, naam begint met "TEST"; V6 akkoord: volledige Workers-read in Save week bij nieuwe rijen. Aantal workers volgens Eddy ver onder 500: 23 (incl. testrecords, 7-11-2026).
 - Risico: >= 500 workers blokkeert Contractors, Workers en de workercache. Eddy: huidig aantal workers?
 
 ## 6. Tests (verifier)

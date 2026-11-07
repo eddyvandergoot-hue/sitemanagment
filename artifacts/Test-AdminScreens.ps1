@@ -1949,4 +1949,26 @@ Assert-Eval "With({$pLoadEnv},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdm
 foreach ($id in 1, 2, 3) { Assert-Eval "With({$pLoadEnv},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdminProjects,ID=$id)},With({$(Prj-Inputs '')},$pLblDirtyFx)))" 'false' "Projects: dirty false after selecting row $id (row 2: Status Archived outside Choices shown as-is, blank Country)" }
 Assert-Eval "With({varPrjMode:`"New`",varPrjEdit:{ID:Blank(),Name:`"`",Number:`"`",Reference:`"`",Customer:`"`",Status:`"Active`",Street:`"`",HouseNumber:`"`",PostalCode:`"`",City:`"`",Country:`"Netherlands`",Leader:`"`",SiteManager:`"`",Url:`"`"}},With({$(Prj-Inputs '')},$pLblDirtyFx))" 'false' 'Projects: dirty false after New (Status Active, Country Netherlands preselected)'
 Assert-Eval "With({$pLoadEnv},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdminProjects,ID=1)},With({$(Prj-Inputs $emptyQ)},$pLblDirtyFx)))" 'true' 'Projects: dirty true when the Status dropdown shows no selection while Active was loaded'
+# 07-11-2026 (Eddy, after 3 empty Employers records EMP-007/008/009 of 4-11): Save with an empty name (New and Edit, spaces only too)
+# is blocked with zero reads/writes, on every path: the name error is collected before the one gate that encloses every SharePoint
+# read and every Patch; double click = second OnSave sees varXxxSaving (set as first action) or, after a successful New, Edit + clean;
+# Save after Discard needs mode New/Edit and lblXxxDirty "true" again (Discard resets the inputs and leaves New).
+function Get-RawOnSave([string]$scr) { $raw = [IO.File]::ReadAllText((Join-Path $srcDir "$scr.pa.yaml")); $a = $raw.IndexOf('OnSave: |-'); $b = $raw.IndexOf('RefreshText:', $a); return ($raw.Substring($a + 10, $b - $a - 10).Trim().TrimStart('=') -replace "`r", '') }
+foreach ($ns in @(@('Emp', (Get-RawOnSave 'scrContractors'), 'Employers', 'empErrNameRequired', 2), @('Prj', (Get-RawOnSave 'scrProjects'), 'Projects', 'prjErrNameRequired', 4))) {
+    $p = $ns[0]; $sv = [string]$ns[1]; $list = $ns[2]; $key = $ns[3]; $nPatch = $ns[4]
+    $outer = Get-Balanced $sv 2; $oArgs = Split-Args $outer.Substring(1, $outer.Length - 2)
+    $g = $oArgs[0].Trim(); $body = $oArgs[1]
+    foreach ($k in @("!Coalesce(var${p}Saving,false)", "!Coalesce(var${p}Busy,false)", "!Coalesce(var${p}SaveFailed,false)", "(var${p}Mode=`"New`" || (var${p}Mode=`"Edit`" && !IsBlank(var${p}SelectedID)))", "lbl${p}Dirty.Text=`"true`"")) { Assert-True ($g.Contains($k)) "${list}: Save guard contains $k (double click / Save after Discard blocked)" }
+    Assert-True ($body.TrimStart().StartsWith("Set(var${p}Saving,true);")) "${list}: varXxxSaving is set as the very first action of Save (second click blocked)"
+    Assert-True ($sv.Contains("Name:Trim(cmp${p}Name.Value & `"`")")) "${list}: save name = Trim(cmp${p}Name.Value & `"`") (spaces only = blank)"
+    $req = "If(IsBlank(var${p}SaveRec.Name),Collect(col${p}SaveErrors,{Field:`"Name`",Message:" + (TT0 $key) + '}));'
+    $iReq = $sv.IndexOf($req); $gateTxt = "If(IsEmpty(col${p}SaveErrors),"; $iGate = $sv.IndexOf("`n" + (' ' * 15) + $gateTxt)
+    Assert-True ($iReq -gt 0 -and $iGate -gt $iReq) "${list}: empty-name error (Field Name, T.$key) is collected before the read/write gate"
+    $gStart = $iGate + 1 + 15 + 2; $gate = Get-Balanced $sv $gStart; $gEnd = $gStart + $gate.Length
+    $io = [regex]::Matches($sv, "Refresh\(|Patch\(|Filter\(($list|Employers|Projects|Workers|'Assignment Periods'|'Project Workers'),")
+    $outside = @($io | Where-Object { ($_.Index -lt $gStart -or $_.Index -ge $gEnd) -and !($_.Value -eq 'Refresh(' -and $sv.Substring($_.Index, 16) -eq 'Refresh(Workers)' -and $_.Index -gt $gEnd) })
+    Assert-True ($io.Count -gt 0 -and $outside.Count -eq 0) "${list}: every SharePoint read and every Patch lies inside If(IsEmpty(col${p}SaveErrors),...) (zero writes on a validation error)"
+    Assert-True (([regex]::Matches($gate, "Patch\($list,")).Count -eq $nPatch -and ([regex]::Matches($sv, "Title:var${p}SaveRec\.Name")).Count -eq $nPatch) "${list}: all $nPatch Patch shapes write Title = the validated var${p}SaveRec.Name"
+    Assert-Eval "With({var${p}SaveRec:{Name:Trim(`"   `" & `"`")}},Text(IsBlank(var${p}SaveRec.Name)))" 'true' "${list}: a name of spaces only counts as empty"
+}
 Write-Output 'PASS Test-AdminScreens (Projects): static structure only. Studio import, binding (Choices/[@Projects], Hyperlink URL, person DisplayName), delegation (Monitor), SharePoint case-sensitivity of ''Project Number'' = and functional tests NOT verified.'

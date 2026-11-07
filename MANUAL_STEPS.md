@@ -20,6 +20,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-020 | 27-10-2026 | Done 28-10-2026 (Eddy, Studio regression PASS) |
 | MS-021 | 27-10-2026 | Postponed to go-live |
 | MS-022 | 27-10-2026 | Done 27-10-2026 (reported by Eddy) |
+| MS-025 | 7-11-2026 | OPEN (Eddy) |
+| MS-026 | 7-11-2026 | Done 7-11-2026 (Eddy) |
 
 ---
 
@@ -119,6 +121,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Flow:** "Workers - Worker Name sync". Trigger: SharePoint "When an item is created or modified" on Workers, with trigger condition `Title <> trim(field_2 + " " + field_3)`. Action: "Update item" with Id + Title only; Title = `trim(First Name + " " + Surname)`. Trade and Active are not touched.
 - **Internal names (Workers):** First Name = field_2, Surname = field_3, Trade = field_6.
 - **Extension, Done 27-10-2026 (Eddy):** the same flow also fills Worker Code (internal field_1) = `WKR-` + ID padded to 3 digits (e.g. WKR-007) when empty. Trigger condition is now: Title mismatch OR field_1 empty. Existing empty codes are filled on the next edit of the item. The app never writes Worker Code.
+- **Update 7-11-2026 (MS-026):** since First Name and Surname are required, the "Update item" also passes First Name + Surname from the trigger; test run Succeeded.
 - **Done when:** a new or edited worker gets the correct Title without a loop (satisfied).
 
 ## MS-018 — Assignment Periods: From required
@@ -136,6 +139,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Where:** Power Automate, site https://geacloud.sharepoint.com/sites/GEASiteManagment, list Employers.
 - **Reason:** Employer Code (internal name EmployerCode1) is unique but no longer required (MS-009 correction); the flow gives every employer a code.
 - **Flow:** on create/modify of an Employers item, when Employer Code is empty, "Update item" with Id + Employer Code only = `EMP-` + SharePoint item ID padded to 3 digits (e.g. EMP-007). Flow name "Employers - Employer Code"; trigger condition `empty(EmployerCode1)`, so the update does not retrigger itself. Employer Code: not required, unique; Title = Employer Name. Title (Employer Name) is not touched.
+- **Update 7-11-2026 (MS-026):** since Title (Employer Name) is required, the "Update item" also passes Title from the trigger. The flow in Power Automate is now named "Employers - Employers code".
 - **Done when:** a new employer without a code gets `EMP-` + 3-digit ID, no loop (satisfied 27-10-2026, Eddy).
 
 ## MS-013 — Projects cleanup and new columns
@@ -196,3 +200,19 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Added/Done:** 4-11-2026 (Eddy meldde: gedaan). List Employers: nieuwe kolommen Street en House Number; Country is nu een keuzekolom zoals bij Projects (was tekst, MS-014). De oude kolom Address blijft in SharePoint tot Eddy goedkeurt. Bevestigd 4-11-2026 uit de metadata: Street (intern Street, tekst), House Number (intern HouseNumber, tekst), Country keuze zonder standaard, Address (tekst) bestaat nog en wordt door de app niet meer gebruikt.
 - **Status:** gedaan en afgerond. Metadata samengevoegd (commit 58dee1b): alleen msapp\References\DataSources.json uit Incoming\20261104.msapp (562352 bytes, SHA-256 29E0DF4215D9194812E7F3B1737548135F1FBEE7703602DFC3F3760A1E79131D); alleen Employers wijzigde, App Id blijft 88e53928. Item 9 gebouwd (PROJECT_STATUS.md).
 - **Open (Eddy):** beslissen over migratie van bestaande Address-waarden naar Street/House Number (niet gekopieerd) en wanneer de kolom Address mag vervallen.
+
+## MS-025 — Power Automate: ongebruikte flows uitzetten
+
+- **Added:** 7-11-2026. **Status:** OPEN (Eddy).
+- **Reason:** Power Automate heeft 5 flows. In gebruik: "Employers - Employers code" (MS-019, SharePoint-trigger) en "Workers - Worker Name sync" (MS-017, SharePoint-trigger). Niet gebruikt volgens controle van Src + Site Managment_VS.msapr: GetWeeklyHoursData (Instant, Power Apps-trigger; nergens een verwijzing), SiteHoursConnector (Instant; nergens een verwijzing) en "Recurrence -> FlowConfig,Current KW" (Scheduled; geen lijst FlowConfig onder de gegevensbronnen en geen verwijzing naar FlowConfig/Current KW: de app leest geen data uit deze flow). Gegevensbronnen van de app: alleen Projects, Employers, Workers, Project Workers, Hours, Assignment Periods (+2 statische voorbeelden) en één legacy-flowbron "PowerAppV2 -> LastID init,BatchCount init,ReportHours Init" (FlowNameId 523dd121-144a-47d6-90d8-45e78243ae72), geregistreerd in de .msapr-metadata maar in Src nooit aangeroepen (.Run).
+- **Stappen (Eddy):** zet GetWeeklyHoursData, SiteHoursConnector en "Recurrence -> FlowConfig,Current KW" UIT (niet verwijderen). Controleer eerst in de URL/details van elke flow of het ID 523dd121-144a-47d6-90d8-45e78243ae72 is (de geregistreerde legacy-flow kan hernoemd zijn); uitzetten blijft veilig omdat de app hem nooit uitvoert, maar noteer het. Na het uitzetten: app eenmaal openen in Studio (geen fout verwacht) en Weekly Hours laden + Hours Summary draaien als leescontrole.
+- **Later, apart besluit (niet nu):** de legacy-flowbron uit de app verwijderen.
+- **Done when:** Eddy meldt de drie flows uit en de leescontrole zonder fouten.
+
+## MS-026 — Verplichte kolommen (Employers, Projects, Workers)
+
+- **Added/Done:** 7-11-2026 (Eddy). **Status:** Done.
+- **Reason:** voorkomt lege records via SharePoint-raster/snelbewerking (incident lege Employers-records, PROJECT_STATUS.md).
+- **Instellingen ("Require that this column contains information" = Yes):** Employers Title (Employer Name); Projects Title (Project Name); Workers First Name + Surname.
+- **Flows:** MS-017 (hernoemd "Workers - Worker Name sync") geeft in "Update item" First Name + Surname door uit de trigger; testrun Succeeded. MS-019 ("Employers - Employers code") geeft Title door uit de trigger.
+- **App impact:** geen (de app valideert deze velden al vóór opslaan). Metadata-refresh later meenemen (verplicht-vlaggen).
