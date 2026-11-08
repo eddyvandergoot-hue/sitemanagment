@@ -174,5 +174,33 @@ foreach($case in @(@(320,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(19
  Write-Output "PASS scrProjects footer (cmpFooter) $w x $h : one row $rowW wide, Y 14/40 px, 12 px gaps (New/Refresh/Discard/Save), Save ends at row-40, bar anchored at the bottom, body between message bar and footer."
 }
 
+# 08-11-2026 (Workers build): scrWorkers footer = cmpFooter instance (68 px, anchored at the bottom); geometry pinned on the instance and the component definition, evaluated numerically.
+$ci=$indexes['scrWorkers']; $inst=$ci['cmpWrkFooter']['Properties']
+if($ci['cmpWrkFooter']['Control'] -ne 'CanvasComponent' -or $ci['cmpWrkFooter']['ComponentName'] -ne 'cmpFooter' -or $inst['X'] -ne '=0' -or $inst['Y'] -ne '=Parent.Height-Self.Height' -or $inst['Width'] -ne '=Parent.Width' -or $inst['Height'] -ne '=68'){throw 'scrWorkers cmpWrkFooter instance geometry (X 0, Y Parent.Height-Self.Height, Width Parent.Width, Height 68)'}
+$fd=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/Components/cmpFooter.pa.yaml')))['ComponentDefinitions']['cmpFooter']
+$fi=@{}; Index-RegressionControls $fd['Children'] $fi
+if($fd['Properties']['Height'] -ne '=68' -or $fd['Properties']['Fill'] -ne '=Color.White' -or $fi['lblCmpFooterMetrics']['Properties']['X'] -ne '=40' -or $fi['lblCmpFooterMetrics']['Properties']['Width'] -ne '=12' -or $fi['lblCmpFooterMetrics']['Properties']['Height'] -ne '=40'){throw 'cmpFooter metrics (X 40, gap 12, button height 40, bar 68 white)'}
+$bw=@{Home=110;New=90;Refresh=110;Discard=188;Save=140}
+foreach($b in $bw.Keys){ $bp=$fi["btnCmp$b"]['Properties']; if($bp['Width'] -ne ('='+$bw[$b]) -or $bp['Height'] -ne '=lblCmpFooterMetrics.Height' -or $bp['Y'] -ne '=(Parent.Height-Self.Height)/2'){throw "cmpFooter btnCmp$b width/height/Y"} }
+if($fi['btnCmpHome']['Properties']['X'] -ne '=lblCmpFooterMetrics.X' -or $fi['btnCmpNew']['Properties']['X'] -ne '=btnCmpRefresh.X-lblCmpFooterMetrics.Width-Self.Width' -or $fi['btnCmpRefresh']['Properties']['X'] -ne '=btnCmpDiscard.X-lblCmpFooterMetrics.Width-Self.Width' -or $fi['btnCmpDiscard']['Properties']['X'] -ne '=btnCmpSave.X-lblCmpFooterMetrics.Width-Self.Width' -or $fi['btnCmpSave']['Properties']['X'] -ne '=Parent.Width-lblCmpFooterMetrics.X-Self.Width'){throw 'cmpFooter button X chain (Home 40; New, Refresh, Discard, Save right-aligned with 12 px gaps)'}
+$rowKids=@($fi['conCmpFooterRow']['Children'] | ForEach-Object {@($_.Keys)[0]})
+if(($rowKids -join ',') -ne 'btnCmpHome,icoCmpHome,btnCmpNew,btnCmpRefresh,btnCmpDiscard,btnCmpSave'){throw "cmpFooter: all buttons are direct children of one row (Home icon right after Home): $($rowKids -join ',')"}
+if($fi['icoCmpHome']['Properties']['Icon'] -ne '=Icon.Home' -or $fi['icoCmpHome']['Properties']['OnSelect'] -ne '=Select(btnCmpHome)' -or $fi['recCmpFooterLine']['Properties']['Fill'] -ne '=ColorValue("#DCDCDC")' -or $fi['recCmpFooterLine']['Properties']['Y'] -ne '=0' -or $fi['recCmpFooterLine']['Properties']['Height'] -ne '=1'){throw 'cmpFooter Home icon / 1 px #DCDCDC top line'}
+if($fi['conCmpFooter']['Properties']['LayoutWrap'] -ne '=false' -or $fi['conCmpFooter']['Properties']['LayoutOverflowX'] -ne '=LayoutOverflow.Scroll' -or $fi['conCmpFooterRow']['Properties']['Width'] -ne '=Max(Parent.Width,2*lblCmpFooterMetrics.X+btnCmpHome.Width+btnCmpNew.Width+btnCmpRefresh.Width+btnCmpDiscard.Width+btnCmpSave.Width+4*lblCmpFooterMetrics.Width)'){throw 'cmpFooter single row, scroll, minimum row width'}
+$minRow=2*40+($bw.Values | Measure-Object -Sum).Sum+4*12
+if($minRow -ne 766){throw "Contractors minimum footer row width changed ($minRow; unchanged by step 3a: 80 + 638 button widths + 48 gaps = 766; AGENTS still says 746)"}
+# screen layout formulas (title 60, message bar 40/0 from varAdmMsgKind, body above the footer)
+if($ci['cmpWrkMsgBar']['Properties']['Y'] -ne '=cmpWrkTitle.Y+cmpWrkTitle.Height' -or $ci['cmpWrkMsgBar']['Properties']['Height'] -ne '=If(IsBlank(varAdmMsgKind),0,40)' -or $ci['cmpWrkMsgBar']['Properties']['Width'] -ne '=cmpWrkTitle.Width' -or $ci['cmpWrkMsgBar']['Properties']['X'] -ne '=cmpWrkTitle.X'){throw 'cmpWrkMsgBar not directly under the title bar at full title width with Height = If(IsBlank(varAdmMsgKind),0,40) (host variable, not the own BarHeight output)'}
+if($ci['conWrkBody']['Properties']['Y'] -ne '=cmpWrkMsgBar.Y+cmpWrkMsgBar.Height' -or $ci['conWrkBody']['Properties']['Height'] -ne '=Max(0,cmpWrkFooter.Y-Self.Y)'){throw 'conWrkBody not directly under the message bar / above the footer'}
+foreach($case in @(@(320,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){
+ $w=$case[0];$h=$case[1]; $rowW=[Math]::Max($w,$minRow)
+ $x=@{Save=$rowW-40-140}; $x.Discard=$x.Save-12-188; $x.Refresh=$x.Discard-12-110; $x.New=$x.Refresh-12-90; $x.Home=40
+ if($x.Home+110+12 -gt $x.New){ if($w -ge $minRow){throw "Home/New overlap at $w"} }
+ if($w -ge $minRow -and ($x.New-$x.Home-110 -lt 12)){throw "Home-New gap under 12 at $w"}
+ if($w -eq $minRow -and ($x.New-$x.Home-110 -ne 12)){throw "At the minimum width all gaps are 12"}
+ foreach($mh in 0,40){ $bodyY=60+$mh; $footerY=$h-68; if($bodyY -gt $footerY){continue}; if($footerY-$bodyY -lt 0){throw "Body behind footer at $w x $h"} }
+ Write-Output "PASS scrWorkers footer (cmpFooter) $w x $h : one row $rowW wide, Y 14/40 px, 12 px gaps (New/Refresh/Discard/Save), Save ends at row-40, bar anchored at the bottom, body between message bar and footer."
+}
+
 if(@($indexes['scrHome'].Keys | Where-Object {$indexes['scrHome'][$_]['Control'] -like 'Classic/Button@*' -and $_ -notlike 'btnTile*'}).Count){throw 'Home has a non-tile button (no footer on Home)'}
 Write-Output 'PASS Home screen has no footer/action row; Home button is first (X=40) in each footer, 12 px before the next navigation button, OnSelect If(<guard>,Navigate(scrHome)) with the same guard as its DisplayMode (guard values: Test-SaveRegression.ps1).'

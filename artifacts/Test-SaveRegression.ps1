@@ -6,7 +6,7 @@ $regressionOptions=New-Object Microsoft.PowerFx.ParserOptions
 $regressionOptions.Culture=[Globalization.CultureInfo]::GetCultureInfo('en-US')
 function Index-RegressionControls($entries,$index){foreach($entry in $entries){$name=@($entry.Keys)[0];$index[$name]=$entry[$name];Index-RegressionControls $entry[$name]['Children'] $index}}
 $indexes=@{};$count=0
-foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects')){
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers')){
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  if($screen -ne 'scrWeeklyHours'){Check-Node $doc $screen}
  $index=@{};Index-RegressionControls $doc['Screens'][$screen]['Children'] $index;$indexes[$screen]=$index
@@ -110,6 +110,8 @@ Write-Output 'PASS staged loads, dirty gates, explicit removals, no automatic ex
 $baseDir=Join-Path $projectRoot 'checkpoints\save-batch-20261021_222721'
 function Assert-True($cond,$label){ if(!$cond){throw "FAIL $label"}; Write-Output "PASS $label" }
 function Count-Of($text,$literal){ ([regex]::Matches($text,[regex]::Escape($literal))).Count }
+function Get-ParenAt([string]$text,[int]$start){ $depth=0;$inS=$false; for($j=$start;$j -lt $text.Length;$j++){ $ch=$text[$j]; if($ch -eq '"'){$inS=-not $inS;continue}; if($inS){continue}; if($ch -eq '('){$depth++}elseif($ch -eq ')'){$depth--; if($depth -eq 0){return $text.Substring($start+1,$j-$start-1)}} }; throw "FAIL unbalanced at $start" }
+function Split-TopArgs([string]$inner){ $out=@();$depth=0;$inS=$false;$last=0; for($j=0;$j -lt $inner.Length;$j++){ $ch=$inner[$j]; if($ch -eq '"'){$inS=-not $inS;continue}; if($inS){continue}; if($ch -in @('(','{','[')){$depth++}elseif($ch -in @(')','}',']')){$depth--}elseif($ch -eq ',' -and $depth -eq 0){$out+=$inner.Substring($last,$j-$last);$last=$j+1} }; $out+=$inner.Substring($last); return ,$out }
 # 22-10-2026 week picker: in the Save week guard the two dropdown checks (ISO year, KW) became one week check. The checkpoint guard with
 # exactly this rewrite must equal the current guard byte for byte; fixtures below prove a different picked week blocks.
 $weekGuardRewrite=@("varWeekLoadedISOYear=Value(ddHoursYear.Selected.Value),`nvarWeekLoadedKW=Value(ddHoursWeek.Selected.Value),","varLoadedWeekMonday=varHoursWeekMonday,")
@@ -184,6 +186,91 @@ Assert-Regression ($fx.Replace('HourValue:8','HourValue:7.5')+$hoursPredFull+')'
 Assert-Regression ('With({existing:{HourID:Blank(),HourValue:Blank()},c:{OldHours:8}},'+$hoursPredFull+')') $true 'Row deleted by someone else blocks'
 Assert-Regression ('With({existing:{HourID:Blank(),HourValue:Blank()},c:{OldHours:Blank()}},'+$hoursPredFull+')') $false 'New cell without stored row passes'
 Assert-Regression 'CountRows(Filter(Table({IsNew:true},{IsNew:false},{IsNew:true}),!IsNew))+CountRows(Filter(Table({IsNew:true},{IsNew:false},{IsNew:true}),IsNew))' 3 'Plan split covers every change once'
+# H18 (DECISIONS.md H18, ADMIN_PLAN 5.4, V6; Workers build 08-11-2026): only when the write plan has NEW rows, after the local validation
+# and the pre-read and before the first write: Refresh(Workers) + Refresh('Project Workers'), re-read Project Workers of the project
+# (ProjectKey = global text) and all Workers (same projection as colWorkersCache); compare the involved worker (Employer.Id, Trade; the
+# cache has no Active) and assignment (Team, Active, AssignmentKey, worker, project) with the loaded values; any difference, 500+ rows or
+# read error = zero writes + the exact conflict message. Each re-read counts in varDiagSaveReads (Trace DIAG|SaveWeek|End Reads +2).
+$h18Head='If(IsEmpty(colHoursErrors) && CountRows(colHoursWritePlan) = CountRows(colHoursChanges) && CountIf(colHoursWritePlan,IsNew) > 0,'
+$h18Msg='Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.'
+$iH18=$week.IndexOf($h18Head)
+Assert-True ($iH18 -gt 0 -and (Count-Of $week $h18Head) -eq 1) 'H18: one stale-cache check, gated on new rows in the write plan (existing-row corrections are not re-checked)'
+Assert-True ($iH18 -gt $week.IndexOf('ClearCollect(colSaveCheckRaw') -and $iH18 -gt $week.IndexOf('Assignment, Employer, Team of Trade ontbreekt.') -and $iH18 -gt $week.IndexOf('geen periode in deze week; nieuwe dag niet toegestaan') -and $iH18 -lt $week.IndexOf('Set(varDiagSaveWrites,varDiagSaveWrites+1)') -and $iH18 -lt $week.IndexOf('Patch(Hours,')) 'H18: after the local validation, the pre-read and the write plan, before the write counter and the first Patch'
+$h18=$week.Substring($iH18, $week.IndexOf('If(IsEmpty(colHoursErrors) && CountRows(colHoursWritePlan) = CountRows(colHoursChanges),',$iH18+10)-$iH18)
+$cacheProj="ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})"
+$freshProj=$cacheProj.Replace('Trade:worker.Trade})','Trade:worker.Trade,Active:worker.Active})')
+foreach($needle in @('Set(varSaveFreshProjectKey,Text(varWeekLoadedProjectID));','IfError(Refresh(Workers),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"ReadError");false);',"IfError(Refresh('Project Workers'),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,`"ReadError`");false);","ClearCollect(colSaveFreshPW,ForAll(Filter('Project Workers',ProjectKey=varSaveFreshProjectKey) As pw,","ClearCollect(colSaveFreshWorkers,$freshProj)",'If(!varSaveStaleConflict && (CountRows(colSaveFreshPW)>=500 || CountRows(colSaveFreshWorkers)>=500),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"Limit"));','If(varSaveStaleConflict,Set(varSaveStaleReason,If(CountIf(colHoursWritePlan As n,n.IsNew && !Coalesce(LookUp(colSaveFreshWorkers,ID=LookUp(colWeekAssignments,ID=n.AssignmentID).Worker.Id).Active,true))>0,"Inactive","Diff")))','Trace("DIAG|SaveWeek|Stale",TraceSeverity.Warning,{Scenario:"SaveWeek",Step:"Stale",Reason:varSaveStaleReason,','Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"'+$h18Msg+'"});','Set(varWorkersCacheReady,false); Set(varMastersReady,false);')){
+ Assert-True ($h18.Contains($needle)) "H18 contains: $needle"
+}
+Assert-True ((Count-Of $h18 'Set(varSaveStaleReason,"ReadError")') -eq 4 -and (Count-Of $h18 'Set(varSaveStaleReason,"Limit")') -eq 1 -and (Count-Of $h18 ',"Inactive","Diff")') -eq 1 -and $week.Contains('Set(varSaveStaleConflict,false); Set(varSaveStaleReason,"");')) 'H18: Trace DIAG|SaveWeek|Stale Reason = ReadError (4 read steps) | Limit | Inactive | Diff, reset at the start of every Save; message text unchanged'
+Assert-True ($h18.Contains('!Coalesce(freshWorker.Active,true) ||') -and $week -notmatch 'ClearCollect\(colWorkersCache' -and ([string]$indexes.Screen1['btnReadTeam']['Properties']['OnSelect']).Contains($cacheProj) -and !([string]$indexes.Screen1['btnReadTeam']['Properties']['OnSelect']).Contains('Active:worker.Active')) 'H18: Active only in the fresh H18 projection (colSaveFreshWorkers); colWorkersCache projection unchanged; a worker deactivated in SharePoint blocks new rows'
+Assert-True ($h18.IndexOf('Set(varSaveFreshProjectKey') -lt $h18.IndexOf("Filter('Project Workers'") -and $h18 -notmatch "Filter\('Project Workers',[^)]*(StartsWith|\|\|)" -and $h18 -notmatch 'Patch\(|Remove|UpdateIf|\bCollect\(colWorkersCache|ClearCollect\(colWorkersCache|ClearCollect\(colWeek') 'H18: global ProjectKey set before the read; no StartsWith/OR; no write and no change of the loaded caches (only flags invalidated)'
+Assert-True ((Count-Of $h18 'Set(varDiagSaveReads,varDiagSaveReads+1);') -eq 2 -and $week.Contains('Reads:Coalesce(varDiagSaveReads,0)')) 'H18: each of the two re-reads counts in varDiagSaveReads (DIAG|SaveWeek|End Reads +2)'
+Assert-True ($week.Contains('Clear(colSaveFreshPW); Clear(colSaveFreshWorkers); Set(varSaveStaleConflict,false);') -and $week.IndexOf('Set(varSaveStaleConflict,false);') -lt $week.IndexOf('IfError(')) 'H18: flag and staging reset at the start of every Save'
+$h18Notify='!IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0 && Coalesce(varSaveStaleConflict, false),'
+Assert-True ($week.Contains($h18Notify) -and $week.IndexOf($h18Notify) -lt $week.IndexOf('!IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0,') -and $week.Substring($week.IndexOf($h18Notify),300).Contains('"'+$h18Msg+'"')) 'H18: zero writes + the exact conflict message (own Notify branch before the generic Not saved branch)'
+$iPwRef=$h18.IndexOf("IfError(Refresh('Project Workers'),"); $pwGate=$h18.LastIndexOf('If(!varSaveStaleConflict,',$iPwRef)
+Assert-True ($pwGate -gt $h18.IndexOf('IfError(Refresh(Workers),') -and $h18.Substring($pwGate,$iPwRef-$pwGate) -notmatch ';' -and $h18.IndexOf("Filter('Project Workers'") -gt $iPwRef) "H18: Refresh('Project Workers') and its read only run when Refresh(Workers) succeeded (inside If(!varSaveStaleConflict,...)); reads counted only for executed reads"
+$rsAt=$h18.IndexOf('Set(varSaveStaleReason,If(CountIf('); $rsFx=(Split-TopArgs (Get-ParenAt $h18 ($rsAt+3)))[1]
+$iStale=$h18.IndexOf('Set(varSaveStaleConflict,CountIf(colHoursWritePlan As n,')
+Assert-True ($iStale -gt 0) 'H18: stale predicate = CountIf over the write plan'
+$staleFx='CountIf('+(Get-ParenAt $h18 ($iStale+'Set(varSaveStaleConflict,CountIf'.Length))+')>0'
+Assert-True ($staleFx -notmatch "\b(Workers|Hours|Employers)\s*[,)]|'Project Workers'") 'H18: comparison runs on local collections only (no remote LookUp in the loop)'
+$h18Fix='varWeekLoadedProjectID:7,colHoursWritePlan:Table({IsNew:true,AssignmentID:12,EmployerID:3,TeamValue:"2",TradeValue:"Fitter"},{IsNew:false,AssignmentID:13,EmployerID:If(false,0),TeamValue:"2",TradeValue:""}),'+
+ 'colWeekAssignments:Table({ID:12,Worker:{Id:1},Team:{Value:"2"},Active:true,AssignmentKey:"7|1"},{ID:13,Worker:{Id:2},Team:{Value:"2"},Active:true,AssignmentKey:"7|2"}),'+
+ 'colSaveFreshPW:Table({ID:12,WorkerID:1,ProjectID:7,TeamValue:"2",Active:true,AssignmentKey:"7|1"},{ID:13,WorkerID:2,ProjectID:7,TeamValue:"3",Active:false,AssignmentKey:"7|2"}),'+
+ 'colSaveFreshWorkers:Table({ID:1,Employer:{Id:3,Value:"A"},Trade:{Value:"Fitter"},Active:true},{ID:2,Employer:{Id:9,Value:"B"},Trade:{Value:"Welder"},Active:false}),'+
+ 'colWorkersCache:Table({ID:1,Employer:{Id:3,Value:"A"},Trade:{Value:"Fitter"}},{ID:2,Employer:{Id:4,Value:"B"},Trade:{Value:"Welder"}})'
+foreach($c in @(
+ @('','','',$false,'nothing changed for the new row (differences only on the existing-row worker/assignment are ignored)'),
+ @('colSaveFreshWorkers:Table({ID:1,Employer:{Id:3,','colSaveFreshWorkers:Table({ID:1,Employer:{Id:5,','',$true,'contractor of the worker changed in SharePoint'),
+ @('Trade:{Value:"Fitter"},Active:true},{ID:2','Trade:{Value:"Fitter"},Active:false},{ID:2','',$true,'worker deactivated in SharePoint (fresh Active false)'),
+ @('Trade:{Value:"Fitter"},Active:true},{ID:2','Trade:{Value:"Fitter"},Active:If(false,true)},{ID:2','',$false,'blank Active in SharePoint counts as active'),
+ @('colSaveFreshWorkers:Table({ID:1,Employer:{Id:3,Value:"A"},Trade:{Value:"Fitter"},','colSaveFreshWorkers:Table({ID:1,Employer:{Id:3,Value:"A"},Trade:{Value:"Welder"},','',$true,'trade of the worker changed in SharePoint'),
+ @('colSaveFreshPW:Table({ID:12,WorkerID:1,ProjectID:7,TeamValue:"2"','colSaveFreshPW:Table({ID:12,WorkerID:1,ProjectID:7,TeamValue:"4"','',$true,'team of the assignment changed in SharePoint'),
+ @('colSaveFreshPW:Table({ID:12,WorkerID:1,ProjectID:7,TeamValue:"2",Active:true','colSaveFreshPW:Table({ID:12,WorkerID:1,ProjectID:7,TeamValue:"2",Active:false','',$true,'assignment deactivated in SharePoint'),
+ @('Active:true,AssignmentKey:"7|1"},{ID:13,WorkerID:2','Active:true,AssignmentKey:"7|9"},{ID:13,WorkerID:2','',$true,'AssignmentKey changed in SharePoint'),
+ @('colSaveFreshPW:Table({ID:12,','colSaveFreshPW:Table({ID:14,','',$true,'assignment no longer in the fresh read'),
+ @('colSaveFreshWorkers:Table({ID:1,','colSaveFreshWorkers:Table({ID:3,','',$true,'worker no longer in the fresh read'),
+ @('colWorkersCache:Table({ID:1,','colWorkersCache:Table({ID:8,','',$true,'worker missing in the loaded cache (fail closed)'),
+ @('colHoursWritePlan:Table({IsNew:true,AssignmentID:12,EmployerID:3','colHoursWritePlan:Table({IsNew:true,AssignmentID:12,EmployerID:4','',$true,'planned Employer differs from the fresh worker'),
+ @('colHoursWritePlan:Table({IsNew:true,','colHoursWritePlan:Table({IsNew:false,','',$false,'no new row in the plan -> nothing compared'))){
+ $fx=if($c[0]){$h18Fix.Replace($c[0],$c[1])}else{$h18Fix}
+ if($c[0]){ Assert-True ($fx -ne $h18Fix) "H18 fixture replaced: $($c[4])" }
+ Assert-Regression ('With({'+$fx+'},'+$staleFx+')') $c[3] "H18 stale check: $($c[4]) -> conflict=$($c[3])"
+ if($c[3]){ Assert-Regression ('With({'+$fx+'},'+$rsFx+')') $(if($c[4] -like 'worker deactivated*'){'Inactive'}else{'Diff'}) "H18 trace reason: $($c[4]) -> $(if($c[4] -like 'worker deactivated*'){'Inactive'}else{'Diff'})" }
+}
+# H18 recovery (08-11-2026): after a stale-cache conflict (or any admin save) varWorkersCacheReady/varMastersReady are false. The Weekly
+# Hours week loader (btnReadWeek: Refresh, Discard after Failed, week change, OnVisible) then re-reads Workers with the colWorkersCache
+# projection into staging (Refresh first, 500 guard, error = Failed), replaces colWorkersCache only in the fully successful commit and sets
+# varWorkersCacheReady true (varMastersReady stays for Screen1: projects/team choices are not used on scrHours). A dirty week never loads.
+$rw=([string]$indexes.scrHours['btnReadWeek']['Properties']['OnSelect']).Trim()
+$rwArgs=Split-TopArgs (Get-ParenAt $rw 3)
+$rwDirty='JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))'
+Assert-True ($rwArgs.Count -eq 3 -and $rwArgs[0].Trim() -ceq $rwDirty -and $rwArgs[1] -notmatch 'Workers|colWorkersCache|Refresh\(' -and $rwArgs[2].Contains('ClearCollect(colPendingWeekWorkers,')) 'Week loader: a dirty week only warns (no read, no cache change); the worker reload lies in the non-dirty branch'
+$rwFlag='Set(varPendingWeekReloadWorkers,!Coalesce(varWorkersCacheReady,false) || !Coalesce(varMastersReady,false));'
+$rwRead="ClearCollect(colPendingWeekWorkers,$cacheProj)"
+$rwCommit='If(varPendingWeekReloadWorkers,ClearCollect(colWorkersCache,colPendingWeekWorkers); Set(varWorkersCacheReady,true));'
+Assert-True ($rw.Contains('Clear(colPendingWeekWorkers); '+$rwFlag) -and $rw.Contains('If(varPendingWeekReloadWorkers && IsEmpty(colWeekLoadErrors),') -and $rw.Contains($rwRead) -and $rw.Contains('If(CountRows(colPendingWeekWorkers)>=500,Collect(colWeekLoadErrors,') -and $rw.Contains('Collect(colWeekLoadErrors,{Message:"Workers: " & FirstError.Message})')) 'Week loader: stale flags -> Refresh(Workers) + direct read with the colWorkersCache projection into staging, 500 guard, read error -> load error (Failed)'
+$iRwRef=$rw.IndexOf('IfError(Refresh(Workers),'); $iRwRead=$rw.IndexOf($rwRead)
+Assert-True ($iRwRef -gt $rw.IndexOf($rwFlag) -and $iRwRead -gt $iRwRef) 'Week loader: Refresh(Workers) before the worker read (connector cache, H16)'
+$iRwCommit=$rw.IndexOf($rwCommit); $iRwAssign=$rw.IndexOf('ClearCollect(colWeekAssignments,colPendingWeekAssignments)'); $iRwGate=$rw.LastIndexOf('If(IsEmpty(colWeekLoadErrors),',$iRwAssign)
+Assert-True ($iRwCommit -gt $iRwAssign -and $iRwGate -gt $iRwRead -and $rw.Substring($iRwGate,$iRwCommit-$iRwGate) -notmatch '"Failed"' -and $iRwCommit -lt $rw.IndexOf('Set(varWeekLoadState,"Loaded")')) 'Week loader: colWorkersCache replaced and varWorkersCacheReady set only in the fully successful commit (with the week rows), before Loaded'
+$hoursAll=(@($indexes.scrHours.Keys | ForEach-Object { $n=$_; @($indexes.scrHours[$n]['Properties'].Keys) | ForEach-Object { [string]$indexes.scrHours[$n]['Properties'][$_] } }) -join "`n")
+Assert-True ((Count-Of $hoursAll 'ClearCollect(colWorkersCache,') -eq 1 -and $hoursAll -notmatch 'Set\(varMastersReady,true\)' -and $hoursAll -notmatch 'Set\(varWorkersCacheReady,true\)(?!\))' ) 'scrHours: colWorkersCache is only replaced by that commit; varMastersReady is never set true on scrHours (Screen1 reloads projects/team choices)'
+$rwFlagFx=$rwFlag.Substring('Set(varPendingWeekReloadWorkers,'.Length,$rwFlag.Length-'Set(varPendingWeekReloadWorkers,'.Length-2)
+foreach($c in @(@('true','true',$false,'valid caches -> no worker read'),@('false','true',$true,'worker cache invalidated (admin save / H18) -> reload'),@('true','false',$true,'masters invalidated -> reload workers'),@('Blank()','Blank()',$true,'cold flags -> reload'))){
+ Assert-Regression ('With({varWorkersCacheReady:'+$c[0]+',varMastersReady:'+$c[1]+'},'+$rwFlagFx+')') $c[2] "Week loader reload flag: $($c[3])"
+}
+$rwHitAt=$rw.IndexOf('If(!Coalesce(varWeekForceRefresh,false) && varWeekLoadState="Loaded"')
+$rwHit=(Split-TopArgs (Get-ParenAt $rw ($rwHitAt+2)))[0]
+Assert-True ($rwHit.Contains('&& Coalesce(varWorkersCacheReady,false) && Coalesce(varMastersReady,false)')) 'Week loader: no cache hit while the worker/master cache flags are invalid'
+$rwHitFix='varWeekForceRefresh:false,varWeekLoadState:"Loaded",varWeekReady:true,colWeekLoadErrors:Filter(Table({Message:""}),false),varWeekLoadedProjectID:7,varProject:{Id:7},ddProject:{Selected:{Id:7}},varWeekLoadedTeam:"2",varTeam:{Value:"2"},ddTeam:{Selected:{Value:"2"}},varLoadedWeekMonday:Date(2026,10,26),varHoursWeekMonday:Date(2026,10,26),varWeekLoadedTeamVersion:3,varTeamDataVersion:3,varWorkersCacheReady:true,varMastersReady:true'
+Assert-Regression ('With({'+$rwHitFix+'},'+$rwHit+')') $true 'Week loader: same week, valid caches -> cache hit (no read)'
+foreach($fl in 'varWorkersCacheReady','varMastersReady'){ Assert-Regression ('With({'+$rwHitFix.Replace($fl+':true',$fl+':false')+'},'+$rwHit+')') $false "Week loader: same week but $fl false -> real load (worker cache reloaded)" }
+$rfOs=([string]$indexes.scrHours['btnRefreshWeek']['Properties']['OnSelect']).Trim(); $dcOs=([string]$indexes.scrHours['btnDiscardWeek']['Properties']['OnSelect']).Trim()
+Assert-True ($rfOs.StartsWith('=If(Coalesce(varWeekLoading,false) || Coalesce(varWeekSaving,false) || '+$rwDirty+',Notify(') -and $rfOs.EndsWith('Set(varWeekForceRefresh,true); Select(btnReadWeek))') -and $dcOs.Contains('If(varWeekLoadState="Failed",') -and $dcOs.Contains('Set(varWeekForceRefresh,true);') -and $dcOs.Contains('Select(btnReadWeek)')) 'H18 message path: Discard (local in Loaded; forced reload in Failed) then Refresh (blocked while the week is dirty) runs the forced week loader, which reloads the stale worker cache'
+Assert-True ($rw.Contains("IfError(Refresh('Project Workers'),") -and $rw.Contains("Filter('Project Workers',ProjectKey=varPendingHoursProjectKey && Team.Value=varPendingHoursTeam)") -and $rw.IndexOf("IfError(Refresh('Project Workers'),") -lt $rw.IndexOf("Filter('Project Workers',") -and $rw.Contains('ClearCollect(colWeekAssignments,colPendingWeekAssignments)')) 'Week loader: every real load re-reads Project Workers (Refresh first, ProjectKey + team) and replaces colWeekAssignments, so the assignment side is never stale after a worker-cache reload'
 
 $teamSave=$indexes.Screen1['btnAddtoTeam']['Properties']['OnSelect']
 Assert-True ($teamSave -notmatch "LookUp\(\s*'Project Workers'") 'Save team has no remote LookUp per person/removal'
@@ -361,7 +448,7 @@ foreach($name in $homeIdx.Keys){foreach($prop in @($homeIdx[$name]['Properties']
  $homeSets=@([regex]::Matches($fx,'\bSet\(\s*(\w+)\s*,') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
  Assert-True (@($homeSets | Where-Object { $_ -notin @('varProject','varTeam') }).Count -eq 0) "scrHome.$name.$prop sets no state other than varProject/varTeam"
  foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($false) "scrHome.$name.$prop uses no Select (cmpTile raises OnSelect itself; navigation tiles hold Navigate only) ($($sel.Groups[1].Value))" }
- foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
+ foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
 }}
 Assert-True ($homeOn -gt 0) "scrHome event formulas checked: $homeOn"
 # Non-event properties (Text, Visible, DisplayMode, layout...) on scrHome must not read SharePoint either.
@@ -377,7 +464,15 @@ $gotoDm=$indexes.Screen1['btnGotoHours']['Properties']['DisplayMode'].Trim()
 $navSuffix=',DisplayMode.Edit,DisplayMode.Disabled)'
 Assert-True ($gotoDm.StartsWith('=If(') -and $gotoDm.EndsWith($navSuffix)) 'btnGotoHours DisplayMode shape If(<pred>,Edit,Disabled)'
 $gotoPred=$gotoDm.Substring(4,$gotoDm.Length-4-$navSuffix.Length)
-Assert-True ($gotoPred -ceq 'varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value') 'Screen1 btnGotoHours guard unchanged'
+# 08-11-2026 (Workers build, ADMIN_PLAN 5.6): Weekly Hours also requires valid master/worker caches (an admin save sets
+# varMastersReady/varWorkersCacheReady false; Hours Summary refills only colWorkersCache, so both flags are required).
+$gotoPredOld='varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value'
+$cacheCond=' && Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false)'
+Assert-True ($gotoPred -ceq ($gotoPredOld+$cacheCond)) 'Screen1 btnGotoHours guard = loaded team guard + valid master/worker caches (5.6)'
+$gotoOs=([string]$indexes.Screen1['btnGotoHours']['Properties']['OnSelect']).Trim()
+Assert-True ($gotoOs.StartsWith('=If('+$gotoPred+',')) 'Screen1 btnGotoHours: the DisplayMode guard is also the first OnSelect condition (fail-closed parity, 5.6)'
+$gotoArgs=Split-TopArgs (Get-ParenAt $gotoOs 3)
+Assert-True ($gotoArgs.Count -eq 3 -and $gotoArgs[1].Contains('Navigate(scrHours, ScreenTransition.Fade)') -and $gotoArgs[2] -notmatch 'Navigate\(' -and $gotoArgs[2].Contains('Notify(')) 'Screen1 btnGotoHours: navigation only inside the guard; otherwise a warning, no navigation'
 $tileLoaded=$gotoPred+' && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value)'
 $tile=([string]$homeIdx['cmpTileWeeklyHours']['Properties']['OnSelect']).Trim()
 $tileElse=',Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning)); true'
@@ -385,8 +480,17 @@ Assert-True ($tile.StartsWith('=If('+$tileLoaded+',') -and $tile.EndsWith($tileE
 $tileThen=$tile.Substring(('=If('+$tileLoaded+',').Length);$tileThen=$tileThen.Substring(0,$tileThen.Length-$tileElse.Length)
 Assert-True ($tileThen.StartsWith('Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected);') -and $tileThen.EndsWith('Navigate(scrHours)') -and (Count-Of $tileThen 'Navigate(') -eq 1 -and $tileThen -notmatch 'Notify\(') 'Weekly Hours tile loaded branch: same varProject/varTeam as btnGotoHours, then Navigate(scrHours) only'
 Assert-True ($tile -notmatch 'Select\(') 'Weekly Hours tile does not trigger a load (scrHours.OnVisible loads)'
-$navFx='With({varTeamLoadState:"Loaded",varTeamDirty:false,varSelectionBusy:false,varSaving:false,varTeamLoadedProjectID:7,varTeamLoadedTeam:"2",ddProject:{Selected:{Id:7}},ddTeam:{Selected:{Value:"2"}}},'
+$navFx='With({varTeamLoadState:"Loaded",varTeamDirty:false,varSelectionBusy:false,varSaving:false,varTeamLoadedProjectID:7,varTeamLoadedTeam:"2",varMastersReady:true,varWorkersCacheReady:true,ddProject:{Selected:{Id:7}},ddTeam:{Selected:{Value:"2"}}},'
 Assert-Regression ($navFx+$tileLoaded+')') $true 'Tile: loaded matching selection -> scrHours'
+# 5.6 stale cache: after an admin save (varMastersReady/varWorkersCacheReady false) Weekly Hours is not opened; the tile goes to Screen1 (its OnVisible reloads)
+foreach($flag in @('varMastersReady','varWorkersCacheReady')){ foreach($v in @('false','Blank()')){
+ Assert-Regression ($navFx.Replace($flag+':true',$flag+':'+$v)+$tileLoaded+')') $false "Tile 5.6: $flag $v (cache invalidated by an admin save) -> Screen1"
+ Assert-Regression ($navFx.Replace($flag+':true',$flag+':'+$v)+$gotoPred+')') $false "Screen1 Weekly Hours button 5.6: $flag $v -> disabled / no navigation"
+}}
+Assert-Regression ($navFx.Replace('varMastersReady:true','varMastersReady:false')+$tileLoaded+')') $false 'Tile 5.6: Hours Summary refilled only colWorkersCache (varWorkersCacheReady true, varMastersReady false) -> Screen1'
+Assert-Regression ($navFx+$gotoPred+')') $true 'Screen1 Weekly Hours button 5.6: loaded team and valid caches -> allowed'
+$scrHoursNav=@(foreach($scr in $indexes.Keys){ foreach($n in $indexes[$scr].Keys){ foreach($pp in @($indexes[$scr][$n]['Properties'].Keys)){ if(([string]$indexes[$scr][$n]['Properties'][$pp]) -match '\bNavigate\(\s*scrHours\b'){ "$scr.$n.$pp" } } } }) | Sort-Object
+Assert-True (($scrHoursNav -join ',') -ceq 'Screen1.btnGotoHours.OnSelect,scrHome.cmpTileWeeklyHours.OnSelect') "Only two routes open Weekly Hours, both behind the 5.6 cache condition ($($scrHoursNav -join ', '))"
 foreach($state in @('"NotLoaded"','"Loading"','"Failed"','Blank()')){ Assert-Regression ($navFx.Replace('varTeamLoadState:"Loaded"','varTeamLoadState:'+$state)+$tileLoaded+')') $false "Tile: team state $state -> Screen1 + Notify" }
 foreach($flag in @('varTeamDirty','varSelectionBusy','varSaving')){ Assert-Regression ($navFx.Replace($flag+':false',$flag+':true')+$tileLoaded+')') $false "Tile: $flag -> Screen1 + Notify" }
 Assert-Regression ($navFx.Replace('ddProject:{Selected:{Id:7}}','ddProject:{Selected:{Id:8}}')+$tileLoaded+')') $false 'Tile: dropdown project differs from loaded -> Screen1'
@@ -409,7 +513,8 @@ Assert-True ($h1 -notmatch 'varTeamLoadState|varTeamLoaded|ddProject|ddTeam') 'S
 foreach($case in @(@('false','false','false',$true,'idle'),@('Blank()','Blank()','Blank()',$true,'cold start / failed load'),@('true','false','false',$false,'saving'),@('false','true','false',$false,'loading'),@('false','false','true',$false,'unsaved team selection'))){
  Assert-Regression ('With({varSaving:'+$case[0]+',varSelectionBusy:'+$case[1]+',varTeamDirty:'+$case[2]+'},'+$h1+')') $case[3] "Screen1 Home: $($case[4]) -> allowed=$($case[3])"
 }
-foreach($sib in @('btnGotoHours','btnGotoHoursSummary')){ Assert-True (([string]$indexes.Screen1[$sib]['Properties']['DisplayMode']).Trim() -ceq $gotoDm) "Screen1 $sib DisplayMode unchanged (requires Loaded)" }
+Assert-True (([string]$indexes.Screen1['btnGotoHoursSummary']['Properties']['DisplayMode']).Trim() -ceq ('=If('+$gotoPredOld+$navSuffix)) 'Screen1 btnGotoHoursSummary DisplayMode unchanged (requires Loaded; Hours Summary loads its own masters)'
+Assert-True ($gotoDm -ceq ('=If('+$gotoPredOld+$cacheCond+$navSuffix)) 'Screen1 btnGotoHours DisplayMode = sibling guard + cache condition (5.6)'
 $h2=$homeButtons[1][2].Replace($weekClean,'!isDirty')
 $sibWeek=([string]$indexes.scrHours['btnWeeklyProjectTeam']['Properties']['DisplayMode']).Trim().Substring(1).Replace($weekDirty,'isDirty').Replace('DisplayMode.Edit','true').Replace('DisplayMode.Disabled','false')
 foreach($l in @('false','true')){foreach($s in @('false','true')){foreach($d in @('false','true')){
@@ -692,7 +797,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $msaprZip=[IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Managment_VS.msapr'))
 try { $dsReader=New-Object IO.StreamReader(($msaprZip.Entries | Where-Object FullName -eq 'msapp\References\DataSources.json').Open()); $dsJson=$dsReader.ReadToEnd() | ConvertFrom-Json; $dsReader.Dispose() } finally { $msaprZip.Dispose() }
 $usedColumns=@{
- 'Workers'=@('ID','First Name','Surname','Employer','Trade','Active')
+ 'Workers'=@('ID','First Name','Surname','Employer','Trade','Active','Worker Name','Worker Code','Language','Modified')
  'Employers'=@('ID','Title','Employer Code','Street','House Number','Postalcode','City','Country','Contact Name','Contact Email','Contact Phone','Active','Modified')
  'Projects'=@('ID','Title','Project Number','Project Reference','Customer Name','Status','Street','House Number','Postal Code','City','Country','Project Leader','Site Managers','ProjectHomeSite URL','Modified')
  'Hours'=@('ID','Title','EntryKey','Work Date','Assignment','Employer','Team','Trade','Hours','Modified')
@@ -710,8 +815,8 @@ $apMeta=($dsJson.DataSources | Where-Object Name -eq 'Assignment Periods').DataE
 $apText=($apMeta.PSObject.Properties | ForEach-Object { [string]$_.Value }) -join ''
 foreach($col in @('From','Till')){ Assert-True ($apText -match ('"'+$col+'":\{[^{}]*"format":"date"[,}]')) "Metadata: Assignment Periods.$col has format date (date only)" }
 # Contractors build (28-10-2026): only scrContractors reads/writes Employers; Employer Code (internal EmployerCode1) is only read in its projection, never written (flow MS-019).
-$srcNonAdmin=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | Where-Object Name -ne 'scrContractors.pa.yaml' | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
-Assert-True ($srcNonAdmin -notmatch "\bEmployers\b\s*[,)]" -and $srcAll -notmatch "EmployerCode1") 'Only scrContractors reads the Employers list; internal name EmployerCode1 not used'
+$srcNonAdmin=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | Where-Object Name -notin @('scrContractors.pa.yaml','scrWorkers.pa.yaml') | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
+Assert-True ($srcNonAdmin -notmatch "\bEmployers\b\s*[,)]" -and $srcAll -notmatch "EmployerCode1") 'Only scrContractors and scrWorkers (contractor dropdown: ID, Title, Active) read the Employers list; internal name EmployerCode1 not used'
 Assert-True (([regex]::Matches($srcAll,"'Employer Code'")).Count -eq ([regex]::Matches($srcAll,"emp\.'Employer Code'")).Count) "Employer Code only read as emp.'Employer Code' in the Contractors projection (never a Patch field)"
 Assert-True ($srcAll -notmatch "\b(?:Remove|RemoveIf|Clear)\(\s*(?:Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\b") 'No Remove/RemoveIf/Clear on SharePoint lists anywhere in Src'
 # Connector cache (TP-CONTRACTORS-01 step 12, 29-10-2026): every SharePoint read in a behaviour formula of the approved
@@ -747,8 +852,11 @@ foreach($exp in @(
  @('Screen1.btnMigrateConfirm.OnSelect','Hours',3,'Migration confirm Hours check reads'),
  @('scrHours.btnReadWeek.OnSelect','Hours',8,'Week load Hours (week batch + 7 day batches)'),
  @('scrHours.btnReadWeek.OnSelect',"'Project Workers'",1,'Week load Project Workers'),
+ @('scrHours.btnReadWeek.OnSelect','Workers',1,'Week load worker-cache reload (only with invalidated flags)'),
  @('scrHours.btnReadWeek.OnSelect',"'Assignment Periods'",1,'Week load Assignment Periods'),
  @('scrHours.btnSaveWeek.OnSelect','Hours',16,'Save week pre-read + verify read (week batch + 7 day batches each)'),
+ @('scrHours.btnSaveWeek.OnSelect','Workers',1,'Save week H18 re-read of Workers (only with new rows)'),
+ @('scrHours.btnSaveWeek.OnSelect',"'Project Workers'",1,'Save week H18 re-read of Project Workers (only with new rows)'),
  @('scrWeeklyHours.btnLoadReport.OnSelect','Hours',5,'Hours Summary Hours reads (batch, first/last, month/day paging)'),
  @('scrWeeklyHours.btnLoadReport.OnSelect',"'Project Workers'",1,'Hours Summary Project Workers read'),
  @('scrWeeklyHours.btnLoadReport.OnSelect',"'Assignment Periods'",1,'Hours Summary Assignment Periods read'))){

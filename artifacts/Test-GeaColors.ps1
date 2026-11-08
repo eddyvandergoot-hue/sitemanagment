@@ -9,7 +9,7 @@ $old=@('#7040A0','#593080','#194296','#123273','#E8EDF5','#EEE7F5','#193F83','#E
 $src=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
 foreach($o in $old){ $c=([regex]::Matches($src,[regex]::Escape($o),'IgnoreCase')).Count; if($c){throw "Old colour literal $o still present ($c x)"} }
 # 30-10-2026 (admin pattern spec): extra literals allowed ONLY on the admin-pattern screens (scrContractors; later scrProjects/scrWorkers).
-$adminScreens=@('scrContractors','scrProjects')
+$adminScreens=@('scrContractors','scrProjects','scrWorkers')
 $adminTokens=@('F5F6F8','9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4','F29400')
 $bad=@()
 foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse){
@@ -43,7 +43,7 @@ foreach($a in $assign){
  foreach($kv in @($roles[$a[2]].GetEnumerator())+@($disabled.GetEnumerator())){ if($p[$kv.Key] -ne $kv.Value){throw "$($a[0]).$($a[1]).$($kv.Key) = $($p[$kv.Key]) (expected $($kv.Value) for $($a[2]))"} }
 }
 # 30-10-2026 (admin pattern spec): emulated switches on admin screens = Classic/Button track (#0303B8 on / #B4B4B4 off) + white knob button.
-$switches=@(,@('scrContractors','btnEmpActiveSwitch','btnEmpActiveKnob','Coalesce(varEmpActiveDraft,true)'))
+$switches=@(@('scrContractors','btnEmpActiveSwitch','btnEmpActiveKnob','Coalesce(varEmpActiveDraft,true)'),@('scrWorkers','btnWrkActiveSwitch','btnWrkActiveKnob','Coalesce(varWrkActiveDraft,true)'),@('scrWorkers','btnWrkSaveAnywaySwitch','btnWrkSaveAnywayKnob','Coalesce(varWrkDupConfirmed,false)'))
 foreach($s in $switches){
  $tp=$indexes[$s[0]][$s[1]]['Properties'];$kp=$indexes[$s[0]][$s[2]]['Properties']
  $track='=If('+$s[3]+',ColorValue("#0303B8"),ColorValue("#B4B4B4"))'
@@ -51,7 +51,7 @@ foreach($s in $switches){
  foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){if($kp[$k] -ne $W){throw "Switch knob $($s[2]).$k must be white"}}
 }
 $switchNames=@($switches | ForEach-Object { $_[1]; $_[2] })
-foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ if($indexes[$screen][$name]['Control'] -like 'Classic/Button@*' -and $indexes[$screen][$name]['Properties']['Visible'] -ne '=false' -and $name -notlike 'btnTile*' -and !($screen -in $adminScreens -and ($name -in $switchNames -or $name -in @('btnEmpRowInactive','btnEmpFormChip','btnPrjRowStatus','btnPrjFormChip'))) -and !($assign | Where-Object { $_[1] -eq $name })){throw "Visible button without GEA role: $screen.$name"} }}
+foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ if($indexes[$screen][$name]['Control'] -like 'Classic/Button@*' -and $indexes[$screen][$name]['Properties']['Visible'] -ne '=false' -and $name -notlike 'btnTile*' -and !($screen -in $adminScreens -and ($name -in $switchNames -or $name -in @('btnEmpRowInactive','btnEmpFormChip','btnPrjRowStatus','btnPrjFormChip','btnWrkFormChip'))) -and !($assign | Where-Object { $_[1] -eq $name })){throw "Visible button without GEA role: $screen.$name"} }}
 Write-Output 'PASS buttons: navigation #0303B8/white (hover/pressed #000F41); primary Save/Save team/Contractors Save #1AFF80 with #000F41 text (hover/pressed #18DD6E, never white text); secondary Refresh/arrows white with 1px #0303B8 border and text (hover #D5EDFF); disabled #E6E6E6/#787878.'
 
 foreach($t in @(@('Screen1','lblProjectTeamTitle'),@('scrHours','lblWeeklyHoursEntryTitle'),@('scrWeeklyHours','lblWeeklyHoursTitle'),@('scrWeeklyHours','lblReportProjectDetails'))){$p=$indexes[$t[0]][$t[1]]['Properties'];if($p['Fill'] -ne (CV '#0303B8') -or $p['Color'] -ne $W){throw "Title bar $($t[1])"}}
@@ -118,9 +118,14 @@ $pc=$indexes.scrProjects['btnPrjFormChip']['Properties']; $pcf='=If(Coalesce(var
 foreach($n in 'lblPrjSecGeneral','lblPrjSecAddress','lblPrjSecPeople','lblPrjSecLinks'){ if($indexes.scrProjects[$n]['Properties']['Color'] -ne (CV '#0303B8')){throw "Section header $n must be #0303B8"} }; if($indexes.scrProjects['lblPrjFormTitle']['Properties']['Color'] -ne (CV '#000F41')){throw 'Project form title #000F41'}
 if($indexes.scrProjects['lblPrjModified']['Properties']['Color'] -ne (CV '#787878')){throw 'lblPrjModified colour'}
 Write-Output 'PASS Projects form: fields white/#9B9B9B with red error border, dropdowns GEA style with red error border, read-only person fields #F0F0F0 without border, chip green (Active) / grey, row chip grey, red stars, blue section headers.'
+# 08-11-2026 (Workers build): same admin form colours on scrWorkers (chip from the saved Active, New light blue; blue section headers; grey "Last changed").
+$wc=$indexes.scrWorkers['btnWrkFormChip']['Properties']; $wcf='=If(Coalesce(varWrkMode,"")="New",ColorValue("#D5EDFF"),Coalesce(varWrkEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $wcc='=If(Coalesce(varWrkMode,"")="New",ColorValue("#0303B8"),Coalesce(varWrkEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))'; foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){ if($wc[$k] -ne $wcf){throw "Workers chip $k"} }; foreach($k in 'Color','HoverColor','PressedColor','DisabledColor'){ if($wc[$k] -ne $wcc){throw "Workers chip $k"} }; if($wc['DisplayMode'] -ne '=DisplayMode.Disabled'){throw 'Workers chip must be static'}
+foreach($n in 'lblWrkSecGeneral','lblWrkSecWork'){ if($indexes.scrWorkers[$n]['Properties']['Color'] -ne (CV '#0303B8')){throw "Section header $n must be #0303B8"} }; if($indexes.scrWorkers['lblWrkFormTitle']['Properties']['Color'] -ne (CV '#000F41')){throw 'Workers form title #000F41'}
+if($indexes.scrWorkers['lblWrkModified']['Properties']['Color'] -ne (CV '#787878') -or $indexes.scrWorkers['lblWrkActiveState']['Properties']['Color'] -ne (CV '#000000') -or $indexes.scrWorkers['lblWrkSaveAnywayState']['Properties']['Color'] -ne (CV '#000000')){throw 'Workers label colours (Last changed #787878, switch labels black)'}
+Write-Output 'PASS Workers form: chip green (Active) / grey / light blue New, blue section headers, Navy form title, Last changed #787878, switch tracks #0303B8/#B4B4B4 with white knobs (Active, Save anyway), switch labels black.'
 Write-Output 'PASS admin form A2: fields white/#9B9B9B (hover #5A5A5A, focus #0303B8), invalid #DB1E28, read-only code #F0F0F0 without border, chip green/grey, red star, blue section headers.'
 # 29-10-2026 (Eddy): grey text #787878 is allowed ONLY for scrContractors.lblEmpModified (small meta line); everywhere else text stays black/white.
-foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ $c=$indexes[$screen][$name]; if($c['Control'] -like 'Label@*' -and $c['Properties']['Color'] -eq (CV '#787878') -and -not (($screen -eq 'scrContractors' -and $name -eq 'lblEmpModified') -or ($screen -eq 'scrProjects' -and $name -eq 'lblPrjModified')) -and $name -notlike 'lblTileSub*'){throw "Grey text #787878 not allowed: $screen.$name"} }}
+foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ $c=$indexes[$screen][$name]; if($c['Control'] -like 'Label@*' -and $c['Properties']['Color'] -eq (CV '#787878') -and -not (($screen -eq 'scrContractors' -and $name -eq 'lblEmpModified') -or ($screen -eq 'scrProjects' -and $name -eq 'lblPrjModified') -or ($screen -eq 'scrWorkers' -and $name -eq 'lblWrkModified')) -and $name -notlike 'lblTileSub*'){throw "Grey text #787878 not allowed: $screen.$name"} }}
 if($indexes.scrContractors['lblEmpModified']['Properties']['Color'] -ne (CV '#787878')){throw 'lblEmpModified colour'}
 Write-Output 'PASS inputs/dropdowns/date pickers #F0F0F0 with 1px #DCDCDC border, hover/focus border #0303B8, selection #0303B8/white; dropdown row hover/pressed #D5EDFF/#000F41, chevron states; week total cells #D5EDFF/#000F41; errors #DB1E28, body black.'
 
@@ -128,8 +133,8 @@ Write-Output 'PASS inputs/dropdowns/date pickers #F0F0F0 with 1px #DCDCDC border
 # Active tiles show the white icon variant and arrow; Soon tiles the grey variant, no OnSelect; cmpTile colours are checked in the component section below.
 $homeIdx=$indexes['scrHome']
 if($homeIdx['conHomeScroll']['Properties']['Fill'] -ne '=Color.White'){throw 'Home content must be white'}
-$activeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','Contractors','Projects')
-$soonTiles=@('WeekReport','Workers','StockOverview','Locations','Requests','Viewer3D','PIDTracker','ComponentLibrary','KnowledgeBase')
+$activeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','Contractors','Projects','Workers')
+$soonTiles=@('WeekReport','StockOverview','Locations','Requests','Viewer3D','PIDTracker','ComponentLibrary','KnowledgeBase')
 $tileSet=@($homeIdx.Keys | Where-Object { $homeIdx[$_]['Control'] -eq 'CanvasComponent' -and $homeIdx[$_]['ComponentName'] -eq 'cmpTile' } | Sort-Object)
 $tileExpected=@(($activeTiles+$soonTiles) | ForEach-Object { 'cmpTile'+$_ } | Sort-Object)
 if(($tileSet -join ',') -ne ($tileExpected -join ',')){throw "scrHome tile set changed: found [$($tileSet -join ', ')], expected [$($tileExpected -join ', ')]"}
@@ -141,7 +146,7 @@ foreach($h in 'TeamHours','MasterData','Inventory','CadTools','Knowledge'){
  if($homeIdx['lblHomeHeader'+$h]['Properties']['Color'] -ne (CV '#000F41') -or $homeIdx['lblHomeHeader'+$h]['Properties']['Size'] -ne '=16'){throw "Home header $h colour/size"}
  if($homeIdx['recHomeLine'+$h]['Properties']['Fill'] -ne (CV '#0303B8') -or $homeIdx['recHomeLine'+$h]['Properties']['Height'] -ne '=2'){throw "Home header line $h"}
 }
-foreach($pair in @(@('cmpTileProjectTeam','=Navigate(Screen1); true'),@('cmpTileHoursSummary','=Navigate(scrWeeklyHours); true'),@('cmpTileContractors','=Navigate(scrContractors); true'),@('cmpTileProjects','=Navigate(scrProjects); true'))){if($homeIdx[$pair[0]]['Properties']['OnSelect'] -ne $pair[1]){throw "Home navigation $($pair[0])"}}
+foreach($pair in @(@('cmpTileProjectTeam','=Navigate(Screen1); true'),@('cmpTileHoursSummary','=Navigate(scrWeeklyHours); true'),@('cmpTileContractors','=Navigate(scrContractors); true'),@('cmpTileProjects','=Navigate(scrProjects); true'),@('cmpTileWorkers','=Navigate(scrWorkers); true'))){if($homeIdx[$pair[0]]['Properties']['OnSelect'] -ne $pair[1]){throw "Home navigation $($pair[0])"}}
 # Weekly Hours tile: conditional navigation (loaded -> scrHours, else Screen1 + Notify); exact logic checked in Test-SaveRegression.ps1.
 $tileWh=[string]$homeIdx['cmpTileWeeklyHours']['Properties']['OnSelect'];if(!$tileWh.StartsWith('=If(') -or !$tileWh.Contains('Navigate(scrHours)') -or !$tileWh.Contains('Navigate(Screen1)')){throw 'Home navigation cmpTileWeeklyHours'}
 # cmpTile component colours (TP-HOME-02 fixes, Eddy 3-11-2026): background rectangle #0303B8 active / #E6E6E6 Soon; label white / #6B6B6B; SOON #5A5A5A.
@@ -156,4 +161,4 @@ foreach($i in 'imgCmpTileIcon'){ if($tc[$i]['Properties']['HoverFill'] -ne '=Col
 # TP-HOME-03 item 5: an active tile is ONE Image (imgCmpTile): Fill #0303B8, HoverFill #000F41 (whole tile), PressedFill darker, focus 3 px #000F41; no overlay.
 $ti2=$tc['imgCmpTile']['Properties']
 if($ti2['Fill'] -ne (CV '#0303B8') -or $ti2['HoverFill'] -ne (CV '#000F41') -or $ti2['PressedFill'] -ne '=ColorFade(ColorValue("#000F41"),-0.4)' -or $ti2['FocusedBorderColor'] -ne (CV '#000F41') -or $ti2['FocusedBorderThickness'] -ne '=3'){throw 'cmpTile.imgCmpTile colours: Fill #0303B8, HoverFill #000F41, PressedFill ColorFade(#000F41,-0.4), focus 3 px #000F41'}
-Write-Output 'PASS Home tiles (cmpTile): 5 active (white icon + arrow, OnSelect, navigation only) and 9 Soon (grey icon, no arrow, no OnSelect); headers #000F41 16 with 2 px #0303B8 line; active tile = one Image (imgCmpTile) Fill #0303B8 / HoverFill #000F41 / PressedFill ColorFade(#000F41,-0.4), focus 3 px #000F41, Soon #E6E6E6 / #6B6B6B / SOON #5A5A5A, radius 0.'
+Write-Output 'PASS Home tiles (cmpTile): 6 active (white icon + arrow, OnSelect, navigation only) and 8 Soon (grey icon, no arrow, no OnSelect); headers #000F41 16 with 2 px #0303B8 line; active tile = one Image (imgCmpTile) Fill #0303B8 / HoverFill #000F41 / PressedFill ColorFade(#000F41,-0.4), focus 3 px #000F41, Soon #E6E6E6 / #6B6B6B / SOON #5A5A5A, radius 0.'

@@ -1,0 +1,877 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+#
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+#
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrWorkers:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      LoadingSpinnerColor: =ColorValue("#0303B8")
+      OnVisible: |-
+        =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");
+        If(IsBlank(varWrkLoadState),Set(varWrkLoadState,"NotLoaded"); Set(varWrkMode,""); Set(varWrkSelectedID,Blank()); Set(varWrkEdit,{ID:Blank(),FirstName:"",Surname:"",Code:"",Trade:"",EmployerID:Blank(),EmployerName:"",Contractor:"",Language:"",Active:true}); Set(varWrkActiveDraft,true); Set(varWrkShowInactive,false); Set(varWrkSaveFailed,false); Set(varWrkDupPendingKey,""); Set(varWrkDupConfirmed,false); Set(varWrkNewTrade,""); Set(varWrkNewLanguage,""));
+        Trace("DIAG|Workers|OnVisible",TraceSeverity.Information,{Screen:"Workers",LoadState:Coalesce(varWrkLoadState,""),Mode:Coalesce(varWrkMode,"")});
+        If(!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && lblWrkDirty.Text="false",Set(varWrkForceRefresh,true); Select(btnWrkLoad))
+    Children:
+      - cmpWrkTitle:
+          Control: CanvasComponent
+          ComponentName: cmpTitleBar
+          Properties:
+            Busy: =Coalesce(varWrkBusy,false) || Coalesce(varWrkSaving,false) || varWrkLoadState="Loading"
+            BusyLabel: =If(LangNl && !IsBlank(T.wrkBusy.nl),T.wrkBusy.nl,T.wrkBusy.en)
+            Height: =60
+            Logo: =GEA_logo_white
+            Title: =If(LangNl && !IsBlank(T.wrkTitle.nl),T.wrkTitle.nl,T.wrkTitle.en)
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - cmpWrkMsgBar:
+          Control: CanvasComponent
+          ComponentName: cmpMessageBar
+          Properties:
+            Body: =varAdmMsgBody
+            CloseLabel: =If(LangNl && !IsBlank(T.admMsgClose.nl),T.admMsgClose.nl,T.admMsgClose.en)
+            Head: =varAdmMsgHead
+            Height: =If(IsBlank(varAdmMsgKind),0,40)
+            Kind: =varAdmMsgKind
+            OnClose: =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")
+            Width: =cmpWrkTitle.Width
+            X: =cmpWrkTitle.X
+            Y: =cmpWrkTitle.Y+cmpWrkTitle.Height
+      - lblWrkLayout:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =If(Parent.Width>=1000,1,0)
+            Y: =If(Self.X=1,408,24)
+            Width: =If(Self.X=1,Max(0,Parent.Width-448),Parent.Width-64)
+            Height: =If(Self.X=1,24,500)
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - lblWrkMetrics:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =If(lblWrkLayout.Width-48>=572,3,If(lblWrkLayout.Width-48>=376,2,1))
+            Y: =lblWrkModified.Y+lblWrkModified.Height+24
+            Width: =If(lblWrkLayout.X=1,Self.Height-48,452)
+            Height: =If(lblWrkLayout.X=1,Max(conWrkBody.Height,Self.Y+48,568),lblWrkLayout.Height+Self.Y+24)
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - lblWrkGrid:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =lblWrkMetrics.X
+            Y: =74
+            Width: =(lblWrkLayout.Width-48-16*(lblWrkMetrics.X-1))/lblWrkMetrics.X
+            Height: =36
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - lblWrkDirty:
+          Control: Label@2.5.1
+          Properties:
+            Text: |-
+              =If((Coalesce(varWrkMode,"") in ["New","Edit"] && (Trim(cmpWrkFirstName.Value & "")<>Trim(varWrkEdit.FirstName & "") || Trim(cmpWrkSurname.Value & "")<>Trim(varWrkEdit.Surname & "") || Trim(cmpWrkTrade.Value & "")<>Trim(varWrkEdit.Trade & "") || Trim(cmpWrkContractor.Value & "")<>Trim(varWrkEdit.Contractor & "") || Trim(cmpWrkLanguage.Value & "")<>Trim(varWrkEdit.Language & "") || Coalesce(varWrkActiveDraft,true)<>Coalesce(varWrkEdit.Active,true))),"true","false")
+            Visible: =false
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - lblWrkDupKey:
+          Control: Label@2.5.1
+          Properties:
+            Text: |-
+              =Lower(Trim(cmpWrkFirstName.Value & "")) & "|" & Lower(Trim(cmpWrkSurname.Value & "")) & "|" & Lower(Trim(cmpWrkContractor.Value & ""))
+            Visible: =false
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - btnWrkLoad:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Load"
+            Visible: =false
+            DisplayMode: =DisplayMode.Edit
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            Font: ="Inter, Arial, sans-serif"
+            OnSelect: |-
+              =If(Coalesce(varWrkBusy,false) || Coalesce(varWrkSaving,false),
+               Trace("DIAG|Workers|LoadSkipped",TraceSeverity.Information,{Screen:"Workers",Reason:"Busy"}),
+               If(lblWrkDirty.Text<>"false" && !Coalesce(varWrkSaveFailed,false),
+                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrkMsgReloadBlocked.nl),T.wrkMsgReloadBlocked.nl,T.wrkMsgReloadBlocked.en)),
+                If(!Coalesce(varWrkForceRefresh,false) && varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkSaveFailed,false),
+                 Trace("DIAG|Workers|CacheHit",TraceSeverity.Information,{Screen:"Workers",Rows:CountRows(colAdminWorkers)}),
+                 Set(varWrkBusy,true); Set(varWrkLoadState,"Loading"); Set(varWrkDiagT0,Now()); Set(varWrkPrevSelectedID,Blank());
+                 Clear(colWrkLoadErrors); Clear(colWrkWorkersLoadErrors); Clear(colWrkEmployersLoadErrors); Clear(colPendingWrkRaw); Clear(colPendingWrkEmployers); Clear(colPendingAdminWorkers); Clear(colPendingWrkModified);
+                 IfError(Refresh(Workers),Collect(colWrkLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLoadWorkers.nl),T.wrkErrLoadWorkers.nl,T.wrkErrLoadWorkers.en) & " " & FirstError.Message});false);
+                 IfError(Refresh(Employers),Collect(colWrkLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLoadEmployers.nl),T.wrkErrLoadEmployers.nl,T.wrkErrLoadEmployers.en) & " " & FirstError.Message});false);
+                 Concurrent(
+                  IfError(CountRows(ClearCollect(colPendingWrkRaw,Workers))>=0,
+                   Collect(colWrkWorkersLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLoadWorkers.nl),T.wrkErrLoadWorkers.nl,T.wrkErrLoadWorkers.en) & " " & FirstError.Message});false),
+                  IfError(CountRows(ClearCollect(colPendingWrkEmployers,ForAll(Employers As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Active:Coalesce(emp.Active,true)})))>=0,
+                   Collect(colWrkEmployersLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLoadEmployers.nl),T.wrkErrLoadEmployers.nl,T.wrkErrLoadEmployers.en) & " " & FirstError.Message});false)
+                 );
+                 ClearCollect(colPendingAdminWorkers,ForAll(colPendingWrkRaw As w,With({e:LookUp(colPendingWrkEmployers,ID=w.Employer.Id)},{ID:w.ID,FirstName:Trim(w.'First Name' & ""),Surname:Trim(w.Surname & ""),Code:Trim(w.'Worker Code' & ""),Trade:Trim(w.Trade.Value & ""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value & ""),Contractor:If(IsBlank(w.Employer.Id),"",IsBlank(e.ID),Trim(w.Employer.Value & ""),Coalesce(e.Active,true),e.Name,e.Name & If(LangNl && !IsBlank(T.wrkInactiveSuffix.nl),T.wrkInactiveSuffix.nl,T.wrkInactiveSuffix.en)),Language:Trim(w.Language.Value & ""),Active:Coalesce(w.Active,true)})));
+                 ClearCollect(colPendingWrkModified,ForAll(colPendingWrkRaw As w,{ID:w.ID,Modified:w.Modified}));
+                 Set(varPendingWrkNewTrade,IfError(If(CountIf(Choices([@Workers].Trade),Value="Unknown")>0,"Unknown",""),""));
+                 Set(varPendingWrkNewLanguage,IfError(If(CountIf(Choices([@Workers].Language),Value="Nederlands")>0,"Nederlands",""),""));
+                 Collect(colWrkLoadErrors,colWrkWorkersLoadErrors,colWrkEmployersLoadErrors);
+                 If(CountRows(colPendingWrkRaw)>=500,Collect(colWrkLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLimitWorkers.nl),T.wrkErrLimitWorkers.nl,T.wrkErrLimitWorkers.en)}));
+                 If(CountRows(colPendingWrkEmployers)>=500,Collect(colWrkLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLimitEmployers.nl),T.wrkErrLimitEmployers.nl,T.wrkErrLimitEmployers.en)}));
+                 If(IsEmpty(colWrkLoadErrors),
+                  ClearCollect(colAdminWorkers,colPendingAdminWorkers); ClearCollect(colWrkEmployers,colPendingWrkEmployers); ClearCollect(colWrkModified,colPendingWrkModified);
+                  Set(varWrkNewTrade,varPendingWrkNewTrade); Set(varWrkNewLanguage,varPendingWrkNewLanguage);
+                  If(varWrkMode="Edit" && !IsBlank(LookUp(colAdminWorkers,ID=varWrkSelectedID).ID),
+                   Set(varWrkEdit,LookUp(colAdminWorkers,ID=varWrkSelectedID)),
+                   varWrkMode="New" && !Coalesce(varWrkSaveFailed,false),
+                   Set(varWrkEdit,{ID:Blank(),FirstName:"",Surname:"",Code:"",Trade:varWrkNewTrade & "",EmployerID:Blank(),EmployerName:"",Contractor:"",Language:varWrkNewLanguage & "",Active:true}),
+                   Set(varWrkSelectedID,First(Filter(ForAll(Sort(ForAll(colAdminWorkers As w,{ID:w.ID,Name:Trim(w.FirstName & " " & w.Surname),Code:w.Code,Contractor:w.EmployerName,Active:Coalesce(w.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.Contractor,r.Code & If(IsBlank(r.Contractor),""," · " & r.Contractor)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.wrkInactive.nl),T.wrkInactive.nl,T.wrkInactive.en))}),(Coalesce(varWrkShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpWrkList.SearchText)) || Trim(cmpWrkList.SearchText) in Title || Trim(cmpWrkList.SearchText) in Subtitle))).ID);
+                   If(!IsBlank(varWrkSelectedID) && !IsBlank(LookUp(colAdminWorkers,ID=varWrkSelectedID).ID),
+                    Set(varWrkEdit,LookUp(colAdminWorkers,ID=varWrkSelectedID)); Set(varWrkMode,"Edit"),
+                    Set(varWrkMode,""); Set(varWrkSelectedID,Blank()); Set(varWrkEdit,{ID:Blank(),FirstName:"",Surname:"",Code:"",Trade:"",EmployerID:Blank(),EmployerName:"",Contractor:"",Language:"",Active:true})
+                   )
+                  );
+                  Set(varWrkSaveFailed,false); Clear(colWrkSaveErrors); Set(varWrkLoadState,"Loaded");
+                  Set(varWrkDupPendingKey,""); Set(varWrkDupConfirmed,false);
+                  Reset(cmpWrkFirstName); Reset(cmpWrkSurname); Reset(cmpWrkTrade); Reset(cmpWrkContractor); Reset(cmpWrkLanguage); Set(varWrkActiveDraft,Coalesce(varWrkEdit.Active,true));
+                  Set(varWrkLoadedAt,Now());
+                  Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadLoaded.nl),T.admHeadLoaded.nl,T.admHeadLoaded.en)); Set(varAdmMsgBody,Substitute(Substitute(If(LangNl && !IsBlank(T.wrkMsgLoaded.nl),T.wrkMsgLoaded.nl,T.wrkMsgLoaded.en),"{0}",Text(CountRows(colAdminWorkers))),"{1}",Text(varWrkLoadedAt,"hh:mm:ss"))),
+                  Set(varWrkLoadState,"Failed");
+                  Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotLoaded.nl),T.admHeadNotLoaded.nl,T.admHeadNotLoaded.en)); Set(varAdmMsgBody,Substitute(If(LangNl && !IsBlank(T.wrkMsgLoadFailed.nl),T.wrkMsgLoadFailed.nl,T.wrkMsgLoadFailed.en),"{0}",With({n:CountRows(colWrkLoadErrors)-1},First(colWrkLoadErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.wrkMsgMore.nl),T.wrkMsgMore.nl,T.wrkMsgMore.en),"{0}",Text(n)),""))))
+                 );
+                 Set(varWrkForceRefresh,false); Set(varWrkBusy,false);
+                 Trace("DIAG|Workers|LoadEnd",TraceSeverity.Information,{Screen:"Workers",ElapsedMs:DateDiff(varWrkDiagT0,Now(),TimeUnit.Milliseconds),Rows:CountRows(colPendingAdminWorkers),Contractors:CountRows(colPendingWrkEmployers),Errors:CountRows(colWrkLoadErrors),State:varWrkLoadState});
+                 If(varWrkLoadState="Loaded",Select(btnWrkFormReset))
+                )
+               )
+              )
+      - btnWrkFormReset:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Reset"
+            Visible: =false
+            DisplayMode: =DisplayMode.Edit
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            Font: ="Inter, Arial, sans-serif"
+            OnSelect: |-
+              =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false),
+               Reset(cmpWrkFirstName); Reset(cmpWrkSurname); Reset(cmpWrkTrade); Reset(cmpWrkContractor); Reset(cmpWrkLanguage); Set(varWrkActiveDraft,Coalesce(varWrkEdit.Active,true));
+               Trace("DIAG|Workers|FormReset",TraceSeverity.Information,{Screen:"Workers",Mode:Coalesce(varWrkMode,"")}),
+               Trace("DIAG|Workers|FormResetSkipped",TraceSeverity.Information,{Screen:"Workers",State:Coalesce(varWrkLoadState,"")})
+              )
+      - conWrkBody:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            X: =0
+            Y: =cmpWrkMsgBar.Y+cmpWrkMsgBar.Height
+            Width: =Parent.Width
+            Height: =Max(0,cmpWrkFooter.Y-Self.Y)
+            Fill: =Color.Transparent
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Start
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutWrap: =false
+            LayoutOverflowX: =LayoutOverflow.Hide
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+          Children:
+            - conWrkCanvas:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =lblWrkMetrics.Height
+                  FillPortions: =0
+                  Fill: =Color.Transparent
+                Children:
+                  - cmpWrkList:
+                      Control: CanvasComponent
+                      ComponentName: cmpListCard
+                      Properties:
+                        CountFormat: =If(LangNl && !IsBlank(T.wrkCount.nl),T.wrkCount.nl,T.wrkCount.en)
+                        Enabled: |-
+                          =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && lblWrkDirty.Text="false"
+                        Height: =lblWrkMetrics.Width
+                        Items: |-
+                          =ForAll(Sort(ForAll(colAdminWorkers As w,{ID:w.ID,Name:Trim(w.FirstName & " " & w.Surname),Code:w.Code,Contractor:w.EmployerName,Active:Coalesce(w.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.Contractor,r.Code & If(IsBlank(r.Contractor),""," · " & r.Contractor)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.wrkInactive.nl),T.wrkInactive.nl,T.wrkInactive.en))})
+                        OffText: =If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en)
+                        OnText: =If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en)
+                        OnSelectRow: |-
+                          =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && lblWrkDirty.Text="false",
+                           If(!IsBlank(cmpWrkList.SelectedRowID) && !IsBlank(LookUp(colAdminWorkers,ID=cmpWrkList.SelectedRowID).ID),
+                            Set(varWrkSelectedID,cmpWrkList.SelectedRowID); Set(varWrkEdit,LookUp(colAdminWorkers,ID=varWrkSelectedID)); Set(varWrkMode,"Edit");
+                            Clear(colWrkSaveErrors); Set(varWrkDupPendingKey,""); Set(varWrkDupConfirmed,false); Reset(cmpWrkFirstName); Reset(cmpWrkSurname); Reset(cmpWrkTrade); Reset(cmpWrkContractor); Reset(cmpWrkLanguage); Set(varWrkActiveDraft,Coalesce(varWrkEdit.Active,true))
+                           ),
+                           Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrkMsgActionBlocked.nl),T.wrkMsgActionBlocked.nl,T.wrkMsgActionBlocked.en))
+                          ); true
+                        OnToggleShowInactive: |-
+                          =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && lblWrkDirty.Text="false",Set(varWrkShowInactive,!Coalesce(varWrkShowInactive,false))); true
+                        SearchHint: =If(LangNl && !IsBlank(T.wrkSearchHint.nl),T.wrkSearchHint.nl,T.wrkSearchHint.en)
+                        SelectedID: =Coalesce(varWrkSelectedID,0)
+                        ShowInactive: =Coalesce(varWrkShowInactive,false)
+                        ShowInactiveLabel: =If(LangNl && !IsBlank(T.wrkShowInactive.nl),T.wrkShowInactive.nl,T.wrkShowInactive.en)
+                        Width: =If(lblWrkLayout.X=1,360,Parent.Width-64)
+                        X: =24
+                        Y: =24
+                  - conWrkFormCard:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        X: =lblWrkLayout.Y
+                        Y: =lblWrkLayout.Height
+                        Width: =lblWrkLayout.Width
+                        Height: =If(lblWrkLayout.X=1,lblWrkMetrics.Height-48,lblWrkMetrics.Y)
+                        Fill: =Color.White
+                        BorderThickness: =0
+                        DropShadow: =DropShadow.Light
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                      Children:
+                        - lblWrkFormTitle:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000F41")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =30
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =22
+                              Text: =Switch(Coalesce(varWrkMode,""),"New",If(LangNl && !IsBlank(T.wrkNewWorker.nl),T.wrkNewWorker.nl,T.wrkNewWorker.en),"Edit",If(LangNl && !IsBlank(T.wrkFormDetails.nl),T.wrkFormDetails.nl,T.wrkFormDetails.en),If(LangNl && !IsBlank(T.wrkNoSelection.nl),T.wrkNoSelection.nl,T.wrkNoSelection.en))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =Max(0,Parent.Width-48-84)
+                              X: =24
+                              Y: =24
+                        - btnWrkFormChip:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =Color.Transparent
+                              BorderThickness: =0
+                              Color: =If(Coalesce(varWrkMode,"")="New",ColorValue("#0303B8"),Coalesce(varWrkEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =If(Coalesce(varWrkMode,"")="New",ColorValue("#0303B8"),Coalesce(varWrkEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              DisabledFill: =If(Coalesce(varWrkMode,"")="New",ColorValue("#D5EDFF"),Coalesce(varWrkEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              DisplayMode: =DisplayMode.Disabled
+                              Fill: =If(Coalesce(varWrkMode,"")="New",ColorValue("#D5EDFF"),Coalesce(varWrkEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =24
+                              HoverBorderColor: =Color.Transparent
+                              HoverColor: =If(Coalesce(varWrkMode,"")="New",ColorValue("#0303B8"),Coalesce(varWrkEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              HoverFill: =If(Coalesce(varWrkMode,"")="New",ColorValue("#D5EDFF"),Coalesce(varWrkEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =Color.Transparent
+                              PressedColor: =If(Coalesce(varWrkMode,"")="New",ColorValue("#0303B8"),Coalesce(varWrkEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))
+                              PressedFill: =If(Coalesce(varWrkMode,"")="New",ColorValue("#D5EDFF"),Coalesce(varWrkEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              Size: =12
+                              Text: =If(Coalesce(varWrkMode,"")="New",If(LangNl && !IsBlank(T.admChipNew.nl),T.admChipNew.nl,T.admChipNew.en),Coalesce(varWrkEdit.Active,true),If(LangNl && !IsBlank(T.wrkFieldActive.nl),T.wrkFieldActive.nl,T.wrkFieldActive.en),If(LangNl && !IsBlank(T.wrkInactive.nl),T.wrkInactive.nl,T.wrkInactive.en))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =Coalesce(varWrkMode,"") in ["New","Edit"]
+                              Width: =72
+                              X: =Parent.Width-24-Self.Width
+                              Y: =lblWrkFormTitle.Y+(lblWrkFormTitle.Height-Self.Height)/2
+                        - lblWrkFormDivider:
+                            Control: Label@2.5.1
+                            Properties:
+                              Fill: =ColorValue("#EDEDED")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =1
+                              Size: =12
+                              Text: =""
+                              Width: =lblWrkLayout.Width-48
+                              X: =24
+                              Y: =lblWrkFormTitle.Y+lblWrkFormTitle.Height+16
+                        - lblWrkSecGeneral:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Bold
+                              Height: =18
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =12
+                              Text: =If(LangNl && !IsBlank(T.wrkSecGeneral.nl),T.wrkSecGeneral.nl,T.wrkSecGeneral.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =lblWrkLayout.Width-48
+                              X: =24
+                              Y: =lblWrkFormDivider.Y+1+20
+                        - cmpWrkFirstName:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: |-
+                                =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colWrkSaveErrors,Field="FirstName")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.wrkFieldFirstName.nl),T.wrkFieldFirstName.nl,T.wrkFieldFirstName.en)
+                              MaxLength: =255
+                              OnChange: |-
+                                =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"],Set(varWrkDupConfirmed,false)); true
+                              Required: =true
+                              DefaultValue: =varWrkEdit.FirstName
+                              Width: =lblWrkGrid.Width
+                              X: =24
+                              Y: =lblWrkSecGeneral.Y+30
+                        - cmpWrkSurname:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: |-
+                                =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colWrkSaveErrors,Field="Surname")>0
+                              InputType: ="text"
+                              Label: =If(LangNl && !IsBlank(T.wrkFieldSurname.nl),T.wrkFieldSurname.nl,T.wrkFieldSurname.en)
+                              MaxLength: =255
+                              OnChange: |-
+                                =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"],Set(varWrkDupConfirmed,false)); true
+                              Required: =true
+                              DefaultValue: =varWrkEdit.Surname
+                              Width: =lblWrkGrid.Width
+                              X: =24+Mod(1,lblWrkMetrics.X)*(lblWrkGrid.Width+16)
+                              Y: =lblWrkSecGeneral.Y+30+RoundDown(1/lblWrkMetrics.X,0)*74
+                        - cmpWrkCode:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: =false
+                              Height: =58
+                              HintText: =""
+                              InputType: ="readonly"
+                              Label: =If(LangNl && !IsBlank(T.wrkFieldCode.nl),T.wrkFieldCode.nl,T.wrkFieldCode.en)
+                              MaxLength: =255
+                              DefaultValue: |-
+                                =If(Coalesce(varWrkMode,"")="Edit" && !IsBlank(varWrkEdit.Code),varWrkEdit.Code,Coalesce(varWrkMode,"") in ["New","Edit"],If(LangNl && !IsBlank(T.wrkCodeAuto.nl),T.wrkCodeAuto.nl,T.wrkCodeAuto.en),"")
+                              Width: =lblWrkGrid.Width
+                              X: =24+Mod(2,lblWrkMetrics.X)*(lblWrkGrid.Width+16)
+                              Y: =lblWrkSecGeneral.Y+30+RoundDown(2/lblWrkMetrics.X,0)*74
+                        - lblWrkSecWork:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Bold
+                              Height: =18
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =12
+                              Text: =If(LangNl && !IsBlank(T.wrkSecWork.nl),T.wrkSecWork.nl,T.wrkSecWork.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =lblWrkLayout.Width-48
+                              X: =24
+                              Y: =lblWrkSecGeneral.Y+38+RoundUp(3/lblWrkMetrics.X,0)*74
+                        - cmpWrkTrade:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: |-
+                                =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colWrkSaveErrors,Field="Trade")>0
+                              InputType: ="dropdown"
+                              Items: |-
+                                =ShowColumns(Choices([@Workers].Trade),Value)
+                              Label: =If(LangNl && !IsBlank(T.wrkFieldTrade.nl),T.wrkFieldTrade.nl,T.wrkFieldTrade.en)
+                              MaxLength: =255
+                              Required: =true
+                              DefaultValue: =varWrkEdit.Trade
+                              Width: =lblWrkGrid.Width
+                              X: =24
+                              Y: =lblWrkSecWork.Y+30
+                        - cmpWrkContractor:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: |-
+                                =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colWrkSaveErrors,Field="Contractor")>0
+                              InputType: ="dropdown"
+                              Items: |-
+                                =Sort(ForAll(Filter(colWrkEmployers,Coalesce(Active,true) && !IsBlank(Name)) As e,{Value:e.Name}),Lower(Value),SortOrder.Ascending)
+                              Label: =If(LangNl && !IsBlank(T.wrkFieldContractor.nl),T.wrkFieldContractor.nl,T.wrkFieldContractor.en)
+                              MaxLength: =255
+                              OnChange: |-
+                                =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"],Set(varWrkDupConfirmed,false)); true
+                              Required: =true
+                              DefaultValue: =varWrkEdit.Contractor
+                              Width: =lblWrkGrid.Width
+                              X: =24+Mod(1,lblWrkMetrics.X)*(lblWrkGrid.Width+16)
+                              Y: =lblWrkSecWork.Y+30+RoundDown(1/lblWrkMetrics.X,0)*74
+                        - cmpWrkLanguage:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: |-
+                                =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]
+                              Height: =58
+                              HintText: =""
+                              Invalid: =CountIf(colWrkSaveErrors,Field="Language")>0
+                              InputType: ="dropdown"
+                              Items: |-
+                                =ShowColumns(Choices([@Workers].Language),Value)
+                              Label: =If(LangNl && !IsBlank(T.wrkFieldLanguage.nl),T.wrkFieldLanguage.nl,T.wrkFieldLanguage.en)
+                              MaxLength: =255
+                              Required: =true
+                              DefaultValue: =varWrkEdit.Language
+                              Width: =lblWrkGrid.Width
+                              X: =24+Mod(2,lblWrkMetrics.X)*(lblWrkGrid.Width+16)
+                              Y: =lblWrkSecWork.Y+30+RoundDown(2/lblWrkMetrics.X,0)*74
+                        - btnWrkActiveSwitch:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =Color.Transparent
+                              BorderThickness: =0
+                              Color: =Color.White
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =Color.White
+                              DisabledFill: =If(Coalesce(varWrkActiveDraft,true),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              DisplayMode: |-
+                                =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
+                              Fill: =If(Coalesce(varWrkActiveDraft,true),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =24
+                              HoverBorderColor: =Color.Transparent
+                              HoverColor: =Color.White
+                              HoverFill: =If(Coalesce(varWrkActiveDraft,true),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              OnSelect: |-
+                                =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"],
+                                 Set(varWrkActiveDraft,!Coalesce(varWrkActiveDraft,true))
+                                )
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =Color.Transparent
+                              PressedColor: =Color.White
+                              PressedFill: =If(Coalesce(varWrkActiveDraft,true),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              Size: =12
+                              Text: =""
+                              Tooltip: =If(Coalesce(varWrkActiveDraft,true),If(LangNl && !IsBlank(T.wrkFieldActive.nl),T.wrkFieldActive.nl,T.wrkFieldActive.en),If(LangNl && !IsBlank(T.wrkInactive.nl),T.wrkInactive.nl,T.wrkInactive.en))
+                              Width: =44
+                              X: =24
+                              Y: =lblWrkSecWork.Y+38+RoundUp(3/lblWrkMetrics.X,0)*74+If(btnWrkSaveAnywaySwitch.Visible,36,0)
+                        - btnWrkActiveKnob:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =Color.Transparent
+                              BorderThickness: =0
+                              Color: =Color.White
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =Color.White
+                              DisabledFill: =Color.White
+                              DisplayMode: =btnWrkActiveSwitch.DisplayMode
+                              Fill: =Color.White
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =18
+                              HoverBorderColor: =Color.Transparent
+                              HoverColor: =Color.White
+                              HoverFill: =Color.White
+                              OnSelect: =Select(btnWrkActiveSwitch)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =Color.Transparent
+                              PressedColor: =Color.White
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Size: =12
+                              Text: =""
+                              Tooltip: =If(Coalesce(varWrkActiveDraft,true),If(LangNl && !IsBlank(T.wrkFieldActive.nl),T.wrkFieldActive.nl,T.wrkFieldActive.en),If(LangNl && !IsBlank(T.wrkInactive.nl),T.wrkInactive.nl,T.wrkInactive.en))
+                              Width: =18
+                              X: =btnWrkActiveSwitch.X+If(Coalesce(varWrkActiveDraft,true),btnWrkActiveSwitch.Width-Self.Width-3,3)
+                              Y: =btnWrkActiveSwitch.Y+3
+                        - lblWrkActiveState:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =24
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =12
+                              Text: =If(Coalesce(varWrkActiveDraft,true),If(LangNl && !IsBlank(T.wrkFieldActive.nl),T.wrkFieldActive.nl,T.wrkFieldActive.en),If(LangNl && !IsBlank(T.wrkInactive.nl),T.wrkInactive.nl,T.wrkInactive.en))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =80
+                              X: =24+44+12
+                              Y: =btnWrkActiveSwitch.Y
+                        - lblWrkModified:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =If(lblWrkLayout.Width-48>=480,Align.Right,Align.Left)
+                              Color: =ColorValue("#787878")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =24
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =12
+                              Text: |-
+                                =With({m:LookUp(colWrkModified,ID=varWrkSelectedID).Modified},If(Coalesce(varWrkMode,"")="Edit" && !IsBlank(varWrkSelectedID) && !IsBlank(m),Substitute(If(LangNl && !IsBlank(T.wrkLastChanged.nl),T.wrkLastChanged.nl,T.wrkLastChanged.en),"{0}",Text(m,"dd-mm-yyyy") & " " & Text(m,"hh:mm")),""))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =If(lblWrkLayout.Width-48>=480,lblWrkLayout.Width-48-152,lblWrkLayout.Width-48)
+                              X: =If(lblWrkLayout.Width-48>=480,24+lblWrkLayout.Width-48-Self.Width,24)
+                              Y: =If(lblWrkLayout.Width-48>=480,btnWrkActiveSwitch.Y,btnWrkActiveSwitch.Y+32)
+                        - btnWrkSaveAnywaySwitch:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =Color.Transparent
+                              BorderThickness: =0
+                              Color: =Color.White
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =Color.White
+                              DisabledFill: =If(Coalesce(varWrkDupConfirmed,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              DisplayMode: |-
+                                =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"],DisplayMode.Edit,DisplayMode.Disabled)
+                              Fill: =If(Coalesce(varWrkDupConfirmed,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =24
+                              HoverBorderColor: =Color.Transparent
+                              HoverColor: =Color.White
+                              HoverFill: =If(Coalesce(varWrkDupConfirmed,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              OnSelect: |-
+                                =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"],
+                                 If(!IsBlank(varWrkDupPendingKey) && varWrkDupPendingKey=lblWrkDupKey.Text,Set(varWrkDupConfirmed,!Coalesce(varWrkDupConfirmed,false)),Set(varWrkDupConfirmed,false))
+                                )
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =Color.Transparent
+                              PressedColor: =Color.White
+                              PressedFill: =If(Coalesce(varWrkDupConfirmed,false),ColorValue("#0303B8"),ColorValue("#B4B4B4"))
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              Size: =12
+                              Text: =""
+                              Tooltip: |-
+                                =If(LangNl && !IsBlank(T.wrkSaveAnyway.nl),T.wrkSaveAnyway.nl,T.wrkSaveAnyway.en) & ": " & If(Coalesce(varWrkDupConfirmed,false),If(LangNl && !IsBlank(T.admOn.nl),T.admOn.nl,T.admOn.en),If(LangNl && !IsBlank(T.admOff.nl),T.admOff.nl,T.admOff.en))
+                              Visible: =Coalesce(varWrkMode,"") in ["New","Edit"] && !IsBlank(varWrkDupPendingKey) && varWrkDupPendingKey=lblWrkDupKey.Text
+                              Width: =44
+                              X: =24
+                              Y: =lblWrkSecWork.Y+38+RoundUp(3/lblWrkMetrics.X,0)*74
+                        - btnWrkSaveAnywayKnob:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =Color.Transparent
+                              BorderThickness: =0
+                              Color: =Color.White
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =Color.White
+                              DisabledFill: =Color.White
+                              DisplayMode: =btnWrkSaveAnywaySwitch.DisplayMode
+                              Fill: =Color.White
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =18
+                              HoverBorderColor: =Color.Transparent
+                              HoverColor: =Color.White
+                              HoverFill: =Color.White
+                              OnSelect: =Select(btnWrkSaveAnywaySwitch)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =Color.Transparent
+                              PressedColor: =Color.White
+                              PressedFill: =Color.White
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Size: =12
+                              Text: =""
+                              Tooltip: =btnWrkSaveAnywaySwitch.Tooltip
+                              Visible: =btnWrkSaveAnywaySwitch.Visible
+                              Width: =18
+                              X: =btnWrkSaveAnywaySwitch.X+If(Coalesce(varWrkDupConfirmed,false),btnWrkSaveAnywaySwitch.Width-Self.Width-3,3)
+                              Y: =btnWrkSaveAnywaySwitch.Y+3
+                        - lblWrkSaveAnywayState:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =24
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              Size: =12
+                              Text: =If(LangNl && !IsBlank(T.wrkSaveAnyway.nl),T.wrkSaveAnyway.nl,T.wrkSaveAnyway.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =btnWrkSaveAnywaySwitch.Visible
+                              Width: =Max(0,lblWrkLayout.Width-48-56)
+                              X: =24+44+12
+                              Y: =btnWrkSaveAnywaySwitch.Y
+      - cmpWrkFooter:
+          Control: CanvasComponent
+          ComponentName: cmpFooter
+          Properties:
+            DiscardText: =If(LangNl && !IsBlank(T.wrkDiscard.nl),T.wrkDiscard.nl,T.wrkDiscard.en)
+            DiscardEnabled: |-
+              =!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && (Coalesce(varWrkSaveFailed,false) || varWrkMode="New" || lblWrkDirty.Text<>"false")
+            Height: =68
+            HomeText: =If(LangNl && !IsBlank(T.wrkHome.nl),T.wrkHome.nl,T.wrkHome.en)
+            HomeEnabled: |-
+              =!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && lblWrkDirty.Text="false"
+            NewText: =If(LangNl && !IsBlank(T.wrkNew.nl),T.wrkNew.nl,T.wrkNew.en)
+            NewEnabled: |-
+              =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && lblWrkDirty.Text="false"
+            OnDiscard: |-
+              =If(!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && (Coalesce(varWrkSaveFailed,false) || varWrkMode="New" || lblWrkDirty.Text<>"false"),
+               Trace("DIAG|Workers|Discard",TraceSeverity.Information,{Screen:"Workers",Mode:Coalesce(varWrkMode,""),SaveFailed:Coalesce(varWrkSaveFailed,false),PrevID:Coalesce(varWrkPrevSelectedID,0)});
+               Clear(colWrkSaveErrors);
+               If(Coalesce(varWrkSaveFailed,false),
+                Set(varWrkForceRefresh,true); Select(btnWrkLoad),
+                If(varWrkMode="New",
+                 Set(varWrkSelectedID,If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors),With({vis:Filter(ForAll(Sort(ForAll(colAdminWorkers As w,{ID:w.ID,Name:Trim(w.FirstName & " " & w.Surname),Code:w.Code,Contractor:w.EmployerName,Active:Coalesce(w.Active,true)}),Lower(Name),SortOrder.Ascending) As r,{ID:r.ID,Title:r.Name,Subtitle:If(IsBlank(r.Code),r.Contractor,r.Code & If(IsBlank(r.Contractor),""," · " & r.Contractor)),Inactive:!r.Active,ChipText:If(r.Active,"",If(LangNl && !IsBlank(T.wrkInactive.nl),T.wrkInactive.nl,T.wrkInactive.en))}),(Coalesce(varWrkShowInactive,false) || !Inactive) && (IsBlank(Trim(cmpWrkList.SearchText)) || Trim(cmpWrkList.SearchText) in Title || Trim(cmpWrkList.SearchText) in Subtitle))},If(!IsBlank(varWrkPrevSelectedID) && !IsBlank(LookUp(vis,ID=varWrkPrevSelectedID).ID),varWrkPrevSelectedID,First(vis).ID)),Blank()));
+                 If(!IsBlank(varWrkSelectedID) && !IsBlank(LookUp(colAdminWorkers,ID=varWrkSelectedID).ID),
+                  Set(varWrkEdit,LookUp(colAdminWorkers,ID=varWrkSelectedID)); Set(varWrkMode,"Edit"),
+                  Set(varWrkMode,""); Set(varWrkSelectedID,Blank()); Set(varWrkEdit,{ID:Blank(),FirstName:"",Surname:"",Code:"",Trade:"",EmployerID:Blank(),EmployerName:"",Contractor:"",Language:"",Active:true})
+                 );
+                 Set(varWrkPrevSelectedID,Blank());
+                 Trace("DIAG|Workers|DiscardNew",TraceSeverity.Information,{Screen:"Workers",SelectedID:Coalesce(varWrkSelectedID,0),Mode:Coalesce(varWrkMode,"")})
+                );
+                Reset(cmpWrkFirstName); Reset(cmpWrkSurname); Reset(cmpWrkTrade); Reset(cmpWrkContractor); Reset(cmpWrkLanguage); Set(varWrkActiveDraft,Coalesce(varWrkEdit.Active,true));
+                Set(varWrkDupPendingKey,""); Set(varWrkDupConfirmed,false);
+                Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadDiscarded.nl),T.admHeadDiscarded.nl,T.admHeadDiscarded.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrkMsgDiscarded.nl),T.wrkMsgDiscarded.nl,T.wrkMsgDiscarded.en))
+               ),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrkMsgActionBlocked.nl),T.wrkMsgActionBlocked.nl,T.wrkMsgActionBlocked.en))
+              )
+            OnHome: |-
+              =If(!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && lblWrkDirty.Text="false",Navigate(scrHome))
+            OnNew: |-
+              =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && lblWrkDirty.Text="false",
+               Set(varWrkPrevSelectedID,If(varWrkMode="Edit" && !IsBlank(varWrkSelectedID),varWrkSelectedID,varWrkMode="New",varWrkPrevSelectedID,Blank()));
+               Set(varWrkMode,"New"); Set(varWrkSelectedID,Blank()); Set(varWrkEdit,{ID:Blank(),FirstName:"",Surname:"",Code:"",Trade:varWrkNewTrade & "",EmployerID:Blank(),EmployerName:"",Contractor:"",Language:varWrkNewLanguage & "",Active:true});
+               Clear(colWrkSaveErrors); Set(varWrkDupPendingKey,""); Set(varWrkDupConfirmed,false); Reset(cmpWrkFirstName); Reset(cmpWrkSurname); Reset(cmpWrkTrade); Reset(cmpWrkContractor); Reset(cmpWrkLanguage); Set(varWrkActiveDraft,Coalesce(varWrkEdit.Active,true));
+               Trace("DIAG|Workers|New",TraceSeverity.Information,{Screen:"Workers"}),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrkMsgActionBlocked.nl),T.wrkMsgActionBlocked.nl,T.wrkMsgActionBlocked.en))
+              )
+            OnRefresh: |-
+              =If(!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && (Coalesce(varWrkSaveFailed,false) || lblWrkDirty.Text="false"),
+               Trace("DIAG|Workers|Refresh",TraceSeverity.Information,{Screen:"Workers",SaveFailed:Coalesce(varWrkSaveFailed,false)});
+               If(Coalesce(varWrkSaveFailed,false),Clear(colWrkSaveErrors));
+               Set(varWrkForceRefresh,true); Select(btnWrkLoad),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrkMsgActionBlocked.nl),T.wrkMsgActionBlocked.nl,T.wrkMsgActionBlocked.en))
+              )
+            OnSave: |-
+              =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && (varWrkMode="New" || (varWrkMode="Edit" && !IsBlank(varWrkSelectedID))) && lblWrkDirty.Text="true",
+               Set(varWrkSaving,true); Set(varWrkDiagT0,Now());
+               Clear(colWrkSaveErrors); Clear(colWrkPreRaw); Clear(colWrkPre); Clear(colWrkDup); Clear(colWrkDupLocal); Clear(colWrkEmpMatch); Clear(colWrkActivePW); Clear(colWrkEmpCheck); Clear(colWrkPatched); Clear(colWrkVerifyRaw); Clear(colWrkVerify); Clear(colWrkCtlRaw);
+               Set(varWrkSaveReads,0); Set(varWrkSaveWrites,0); Set(varWrkSaveCtl,""); Set(varWrkSaveVerified,false); Set(varWrkSaveDupFound,false); Set(varWrkSaveDupCodes,""); Set(varWrkSaveConflict,false); Set(varWrkSaveDeactBlocked,false); Set(varWrkSaveDeactUnchecked,false); Set(varWrkSaveRefreshFailed,false); Set(varWrkVerifyDiff,"");
+               Set(varWrkSaveMode,varWrkMode); Set(varWrkSaveID,If(varWrkMode="Edit",varWrkSelectedID,Blank())); Set(varWrkPatchedID,Blank());
+               Set(varWrkSaveRec,{FirstName:Trim(cmpWrkFirstName.Value & ""),Surname:Trim(cmpWrkSurname.Value & ""),Trade:Trim(cmpWrkTrade.Value & ""),Contractor:Trim(cmpWrkContractor.Value & ""),Language:Trim(cmpWrkLanguage.Value & ""),Active:Coalesce(varWrkActiveDraft,true)});
+               Set(varWrkSaveFirst,varWrkSaveRec.FirstName); Set(varWrkSaveSurname,varWrkSaveRec.Surname);
+               Set(varWrkSaveDupKey,Lower(varWrkSaveRec.FirstName) & "|" & Lower(varWrkSaveRec.Surname) & "|" & Lower(varWrkSaveRec.Contractor));
+               Set(varWrkSaveDupOk,Coalesce(varWrkDupConfirmed,false) && !IsBlank(varWrkDupPendingKey) && varWrkDupPendingKey=varWrkSaveDupKey);
+               Set(varWrkSaveDeactivate,varWrkSaveMode="Edit" && Coalesce(varWrkEdit.Active,true) && !varWrkSaveRec.Active);
+               If(IsBlank(varWrkSaveRec.FirstName),Collect(colWrkSaveErrors,{Field:"FirstName",Message:If(LangNl && !IsBlank(T.wrkErrFirstNameRequired.nl),T.wrkErrFirstNameRequired.nl,T.wrkErrFirstNameRequired.en)}));
+               If(Len(varWrkSaveRec.FirstName)>255,Collect(colWrkSaveErrors,{Field:"FirstName",Message:Substitute(If(LangNl && !IsBlank(T.wrkErrTooLong.nl),T.wrkErrTooLong.nl,T.wrkErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.wrkFieldFirstName.nl),T.wrkFieldFirstName.nl,T.wrkFieldFirstName.en))}));
+               If(!IsBlank(varWrkSaveRec.FirstName) && IsMatch(varWrkSaveRec.FirstName,"[0-9]+"),Collect(colWrkSaveErrors,{Field:"FirstName",Message:Substitute(If(LangNl && !IsBlank(T.wrkErrDigits.nl),T.wrkErrDigits.nl,T.wrkErrDigits.en),"{0}",If(LangNl && !IsBlank(T.wrkFieldFirstName.nl),T.wrkFieldFirstName.nl,T.wrkFieldFirstName.en))}));
+               If(IsBlank(varWrkSaveRec.Surname),Collect(colWrkSaveErrors,{Field:"Surname",Message:If(LangNl && !IsBlank(T.wrkErrSurnameRequired.nl),T.wrkErrSurnameRequired.nl,T.wrkErrSurnameRequired.en)}));
+               If(Len(varWrkSaveRec.Surname)>255,Collect(colWrkSaveErrors,{Field:"Surname",Message:Substitute(If(LangNl && !IsBlank(T.wrkErrTooLong.nl),T.wrkErrTooLong.nl,T.wrkErrTooLong.en),"{0}",If(LangNl && !IsBlank(T.wrkFieldSurname.nl),T.wrkFieldSurname.nl,T.wrkFieldSurname.en))}));
+               If(!IsBlank(varWrkSaveRec.Surname) && IsMatch(varWrkSaveRec.Surname,"[0-9]+"),Collect(colWrkSaveErrors,{Field:"Surname",Message:Substitute(If(LangNl && !IsBlank(T.wrkErrDigits.nl),T.wrkErrDigits.nl,T.wrkErrDigits.en),"{0}",If(LangNl && !IsBlank(T.wrkFieldSurname.nl),T.wrkFieldSurname.nl,T.wrkFieldSurname.en))}));
+               If(Len(varWrkSaveRec.FirstName)<=255 && Len(varWrkSaveRec.Surname)<=255 && Len(varWrkSaveRec.FirstName & " " & varWrkSaveRec.Surname)>255,Collect(colWrkSaveErrors,{Field:"Surname",Message:If(LangNl && !IsBlank(T.wrkErrNameTooLong.nl),T.wrkErrNameTooLong.nl,T.wrkErrNameTooLong.en)}));
+               Set(varWrkSaveTradeInList,CountIf(Choices([@Workers].Trade),Value=varWrkSaveRec.Trade)>0);
+               Set(varWrkSaveWriteTrade,!(varWrkSaveMode="Edit" && !IsBlank(varWrkSaveRec.Trade) && !varWrkSaveTradeInList && varWrkSaveRec.Trade=Trim(varWrkEdit.Trade & "")));
+               If(IsBlank(varWrkSaveRec.Trade),Collect(colWrkSaveErrors,{Field:"Trade",Message:If(LangNl && !IsBlank(T.wrkErrTradeRequired.nl),T.wrkErrTradeRequired.nl,T.wrkErrTradeRequired.en)}),!varWrkSaveTradeInList && !(varWrkSaveMode="Edit" && varWrkSaveRec.Trade=Trim(varWrkEdit.Trade & "")),Collect(colWrkSaveErrors,{Field:"Trade",Message:If(LangNl && !IsBlank(T.wrkErrTradeUnknown.nl),T.wrkErrTradeUnknown.nl,T.wrkErrTradeUnknown.en)}));
+               Set(varWrkSaveLanguageInList,CountIf(Choices([@Workers].Language),Value=varWrkSaveRec.Language)>0);
+               Set(varWrkSaveWriteLanguage,!(varWrkSaveMode="Edit" && !IsBlank(varWrkSaveRec.Language) && !varWrkSaveLanguageInList && varWrkSaveRec.Language=Trim(varWrkEdit.Language & "")));
+               If(IsBlank(varWrkSaveRec.Language),Collect(colWrkSaveErrors,{Field:"Language",Message:If(LangNl && !IsBlank(T.wrkErrLanguageRequired.nl),T.wrkErrLanguageRequired.nl,T.wrkErrLanguageRequired.en)}),!varWrkSaveLanguageInList && !(varWrkSaveMode="Edit" && varWrkSaveRec.Language=Trim(varWrkEdit.Language & "")),Collect(colWrkSaveErrors,{Field:"Language",Message:If(LangNl && !IsBlank(T.wrkErrLanguageUnknown.nl),T.wrkErrLanguageUnknown.nl,T.wrkErrLanguageUnknown.en)}));
+               Set(varWrkSaveContractorChanged,varWrkSaveMode<>"Edit" || varWrkSaveRec.Contractor<>Trim(varWrkEdit.Contractor & ""));
+               ClearCollect(colWrkEmpMatch,If(varWrkSaveContractorChanged,Filter(colWrkEmployers,!IsBlank(varWrkSaveRec.Contractor) && Lower(Trim(Name & ""))=Lower(varWrkSaveRec.Contractor)),Filter(colWrkEmployers,!IsBlank(varWrkEdit.EmployerID) && ID=varWrkEdit.EmployerID)));
+               If(IsBlank(varWrkSaveRec.Contractor),Collect(colWrkSaveErrors,{Field:"Contractor",Message:If(LangNl && !IsBlank(T.wrkErrContractorRequired.nl),T.wrkErrContractorRequired.nl,T.wrkErrContractorRequired.en)}),CountRows(colWrkEmpMatch)=0,Collect(colWrkSaveErrors,{Field:"Contractor",Message:If(LangNl && !IsBlank(T.wrkErrContractorUnknown.nl),T.wrkErrContractorUnknown.nl,T.wrkErrContractorUnknown.en)}),CountRows(colWrkEmpMatch)>1,Collect(colWrkSaveErrors,{Field:"Contractor",Message:If(LangNl && !IsBlank(T.wrkErrContractorAmbiguous.nl),T.wrkErrContractorAmbiguous.nl,T.wrkErrContractorAmbiguous.en)}),varWrkSaveContractorChanged && !Coalesce(First(colWrkEmpMatch).Active,true),Collect(colWrkSaveErrors,{Field:"Contractor",Message:If(LangNl && !IsBlank(T.wrkErrContractorInactive.nl),T.wrkErrContractorInactive.nl,T.wrkErrContractorInactive.en)}));
+               Set(varWrkSaveEmp,If(CountRows(colWrkEmpMatch)=1,{ID:First(colWrkEmpMatch).ID,Name:First(colWrkEmpMatch).Name},{ID:Blank(),Name:""}));
+               Set(varWrkSaveContractorMoved,varWrkSaveMode="Edit" && !IsBlank(varWrkSaveEmp.ID) && varWrkSaveEmp.ID<>varWrkEdit.EmployerID);
+               Set(varWrkSaveEmpID,varWrkSaveEmp.ID);
+               Set(varWrkSaveDupNeeded,varWrkSaveMode<>"Edit" || Lower(varWrkSaveRec.FirstName)<>Lower(Trim(varWrkEdit.FirstName & "")) || Lower(varWrkSaveRec.Surname)<>Lower(Trim(varWrkEdit.Surname & "")) || Lower(varWrkSaveRec.Contractor)<>Lower(Trim(varWrkEdit.Contractor & "")));
+               If(IsEmpty(colWrkSaveErrors) && varWrkSaveDupNeeded,
+                ClearCollect(colWrkDupLocal,Filter(colAdminWorkers,Lower(Trim(FirstName & ""))=Lower(varWrkSaveRec.FirstName) && Lower(Trim(Surname & ""))=Lower(varWrkSaveRec.Surname) && EmployerID=varWrkSaveEmp.ID && (varWrkSaveMode="New" || ID<>varWrkSaveID)));
+                If(!IsEmpty(colWrkDupLocal) && !varWrkSaveDupOk,
+                 Set(varWrkSaveDupFound,true); Set(varWrkSaveDupCodes,Concat(colWrkDupLocal,If(IsBlank(Code),"ID " & Text(ID),Code),", "));
+                 Collect(colWrkSaveErrors,{Field:"Dup",Message:Substitute(If(LangNl && !IsBlank(T.wrkWarnDuplicate.nl),T.wrkWarnDuplicate.nl,T.wrkWarnDuplicate.en),"{0}",varWrkSaveDupCodes)}))
+               );
+               If(IsEmpty(colWrkSaveErrors),
+                IfError(Refresh(Workers),Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrPreRead.nl),T.wrkErrPreRead.nl,T.wrkErrPreRead.en)});false);
+                If(IsEmpty(colWrkSaveErrors) && varWrkSaveMode="Edit",
+                 Set(varWrkSaveReads,varWrkSaveReads+1);
+                 IfError(CountRows(ClearCollect(colWrkPreRaw,Filter(Workers,ID=varWrkSaveID)))>=0,Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrPreRead.nl),T.wrkErrPreRead.nl,T.wrkErrPreRead.en)});false);
+                 If(IsEmpty(colWrkSaveErrors) && CountRows(colWrkPreRaw)<>1,Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrNotFound.nl),T.wrkErrNotFound.nl,T.wrkErrNotFound.en)}));
+                 If(IsEmpty(colWrkSaveErrors),ClearCollect(colWrkPre,ForAll(colWrkPreRaw As w,With({e:LookUp(colWrkEmployers,ID=w.Employer.Id)},{ID:w.ID,FirstName:Trim(w.'First Name' & ""),Surname:Trim(w.Surname & ""),Code:Trim(w.'Worker Code' & ""),Trade:Trim(w.Trade.Value & ""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value & ""),Contractor:If(IsBlank(w.Employer.Id),"",IsBlank(e.ID),Trim(w.Employer.Value & ""),Coalesce(e.Active,true),e.Name,e.Name & If(LangNl && !IsBlank(T.wrkInactiveSuffix.nl),T.wrkInactiveSuffix.nl,T.wrkInactiveSuffix.en)),Language:Trim(w.Language.Value & ""),Active:Coalesce(w.Active,true)}))))
+                );
+                If(IsEmpty(colWrkSaveErrors) && varWrkSaveDupNeeded,
+                 Set(varWrkSaveReads,varWrkSaveReads+1);
+                 IfError(CountRows(ClearCollect(colWrkDup,ForAll(Filter(Workers,'First Name'=varWrkSaveFirst && Surname=varWrkSaveSurname) As w,With({e:LookUp(colWrkEmployers,ID=w.Employer.Id)},{ID:w.ID,FirstName:Trim(w.'First Name' & ""),Surname:Trim(w.Surname & ""),Code:Trim(w.'Worker Code' & ""),Trade:Trim(w.Trade.Value & ""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value & ""),Contractor:If(IsBlank(w.Employer.Id),"",IsBlank(e.ID),Trim(w.Employer.Value & ""),Coalesce(e.Active,true),e.Name,e.Name & If(LangNl && !IsBlank(T.wrkInactiveSuffix.nl),T.wrkInactiveSuffix.nl,T.wrkInactiveSuffix.en)),Language:Trim(w.Language.Value & ""),Active:Coalesce(w.Active,true)}))))>=0,Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrDupRead.nl),T.wrkErrDupRead.nl,T.wrkErrDupRead.en)});false);
+                 If(IsEmpty(colWrkSaveErrors) && CountRows(colWrkDup)>=500,Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrDupLimit.nl),T.wrkErrDupLimit.nl,T.wrkErrDupLimit.en)}));
+                 If(IsEmpty(colWrkSaveErrors) && !varWrkSaveDupOk && CountIf(colWrkDup,Lower(FirstName)=Lower(varWrkSaveRec.FirstName) && Lower(Surname)=Lower(varWrkSaveRec.Surname) && EmployerID=varWrkSaveEmp.ID && (varWrkSaveMode="New" || ID<>varWrkSaveID))>0,
+                  Set(varWrkSaveDupFound,true); Set(varWrkSaveDupCodes,Concat(Filter(colWrkDup,Lower(FirstName)=Lower(varWrkSaveRec.FirstName) && Lower(Surname)=Lower(varWrkSaveRec.Surname) && EmployerID=varWrkSaveEmp.ID && (varWrkSaveMode="New" || ID<>varWrkSaveID)),If(IsBlank(Code),"ID " & Text(ID),Code),", "));
+                  Collect(colWrkSaveErrors,{Field:"Dup",Message:Substitute(If(LangNl && !IsBlank(T.wrkWarnDuplicate.nl),T.wrkWarnDuplicate.nl,T.wrkWarnDuplicate.en),"{0}",varWrkSaveDupCodes)}))
+                );
+                If(IsEmpty(colWrkSaveErrors) && varWrkSaveMode="Edit",
+                 With({p:First(colWrkPre)},
+                  If(p.ID<>varWrkSaveID || Trim(p.FirstName & "")<>Trim(varWrkEdit.FirstName & "") || Trim(p.Surname & "")<>Trim(varWrkEdit.Surname & "") || Trim(p.Trade & "")<>Trim(varWrkEdit.Trade & "") || Coalesce(p.EmployerID,0)<>Coalesce(varWrkEdit.EmployerID,0) || Trim(p.Language & "")<>Trim(varWrkEdit.Language & "") || Coalesce(p.Active,true)<>Coalesce(varWrkEdit.Active,true),
+                   Set(varWrkSaveConflict,true); Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrConflict.nl),T.wrkErrConflict.nl,T.wrkErrConflict.en)});
+                   Trace("DIAG|Workers|Conflict",TraceSeverity.Warning,{Screen:"Workers",ItemID:varWrkSaveID})
+                  )
+                 )
+                );
+                If(IsEmpty(colWrkSaveErrors) && varWrkSaveDeactivate,
+                 IfError(Refresh('Project Workers'),Set(varWrkSaveDeactUnchecked,true);false);
+                 If(!varWrkSaveDeactUnchecked,
+                  Set(varWrkSaveReads,varWrkSaveReads+1);
+                  IfError(CountRows(ClearCollect(colWrkActivePW,ForAll(Filter('Project Workers',Active=true) As pw,{ID:pw.ID,WorkerID:pw.Worker.Id,ProjectID:pw.Project.Id,ProjectTitle:Trim(pw.Project.Value & "")})))>=0,Set(varWrkSaveDeactUnchecked,true);false)
+                 );
+                 If(!varWrkSaveDeactUnchecked && CountRows(colWrkActivePW)>=500,Set(varWrkSaveDeactUnchecked,true));
+                 If(varWrkSaveDeactUnchecked,
+                  Set(varWrkSaveDeactBlocked,true); Collect(colWrkSaveErrors,{Field:"Active",Message:If(LangNl && !IsBlank(T.wrkErrDeactCheck.nl),T.wrkErrDeactCheck.nl,T.wrkErrDeactCheck.en)}),
+                  CountIf(colWrkActivePW,WorkerID=varWrkSaveID)>0,
+                  Set(varWrkSaveDeactBlocked,true);
+                  Collect(colWrkSaveErrors,{Field:"Active",Message:Substitute(If(LangNl && !IsBlank(T.wrkErrDeactActive.nl),T.wrkErrDeactActive.nl,T.wrkErrDeactActive.en),"{0}",With({lnk:Sort(Filter(colWrkActivePW,WorkerID=varWrkSaveID),Lower(ProjectTitle),SortOrder.Ascending)},Concat(FirstN(lnk,3),If(IsBlank(ProjectTitle),Substitute(If(LangNl && !IsBlank(T.wrkProjectId.nl),T.wrkProjectId.nl,T.wrkProjectId.en),"{0}",Text(ProjectID)),ProjectTitle),", ") & If(CountRows(lnk)>3,Substitute(If(LangNl && !IsBlank(T.wrkMsgMore.nl),T.wrkMsgMore.nl,T.wrkMsgMore.en),"{0}",Text(CountRows(lnk)-3)),"")))})
+                 )
+                );
+                If(IsEmpty(colWrkSaveErrors) && varWrkSaveContractorChanged,
+                 IfError(Refresh(Employers),Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrPreRead.nl),T.wrkErrPreRead.nl,T.wrkErrPreRead.en)});false);
+                 If(IsEmpty(colWrkSaveErrors),
+                  Set(varWrkSaveReads,varWrkSaveReads+1);
+                  IfError(CountRows(ClearCollect(colWrkEmpCheck,ForAll(Filter(Employers,ID=varWrkSaveEmpID) As emp,{ID:emp.ID,Active:Coalesce(emp.Active,true)})))>=0,Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrPreRead.nl),T.wrkErrPreRead.nl,T.wrkErrPreRead.en)});false)
+                 );
+                 If(IsEmpty(colWrkSaveErrors) && (CountRows(colWrkEmpCheck)<>1 || !Coalesce(First(colWrkEmpCheck).Active,true)),Collect(colWrkSaveErrors,{Field:"Contractor",Message:If(CountRows(colWrkEmpCheck)<>1,If(LangNl && !IsBlank(T.wrkErrContractorUnknown.nl),T.wrkErrContractorUnknown.nl,T.wrkErrContractorUnknown.en),If(LangNl && !IsBlank(T.wrkErrContractorInactive.nl),T.wrkErrContractorInactive.nl,T.wrkErrContractorInactive.en))}))
+                );
+                If(IsEmpty(colWrkSaveErrors),
+                 Set(varWrkPatchError,false);
+                 IfError(CountRows(ClearCollect(colWrkPatched,If(varWrkSaveWriteTrade && varWrkSaveWriteLanguage,Patch(Workers,If(varWrkSaveMode="New",Defaults(Workers),First(colWrkPreRaw)),{'First Name':varWrkSaveRec.FirstName,Surname:varWrkSaveRec.Surname,'Worker Name':varWrkSaveRec.FirstName & " " & varWrkSaveRec.Surname,Trade:{Value:varWrkSaveRec.Trade},Employer:{Id:varWrkSaveEmp.ID,Value:varWrkSaveEmp.Name},Language:{Value:varWrkSaveRec.Language},Active:varWrkSaveRec.Active}),varWrkSaveWriteTrade,Patch(Workers,If(varWrkSaveMode="New",Defaults(Workers),First(colWrkPreRaw)),{'First Name':varWrkSaveRec.FirstName,Surname:varWrkSaveRec.Surname,'Worker Name':varWrkSaveRec.FirstName & " " & varWrkSaveRec.Surname,Trade:{Value:varWrkSaveRec.Trade},Employer:{Id:varWrkSaveEmp.ID,Value:varWrkSaveEmp.Name},Active:varWrkSaveRec.Active}),varWrkSaveWriteLanguage,Patch(Workers,If(varWrkSaveMode="New",Defaults(Workers),First(colWrkPreRaw)),{'First Name':varWrkSaveRec.FirstName,Surname:varWrkSaveRec.Surname,'Worker Name':varWrkSaveRec.FirstName & " " & varWrkSaveRec.Surname,Employer:{Id:varWrkSaveEmp.ID,Value:varWrkSaveEmp.Name},Language:{Value:varWrkSaveRec.Language},Active:varWrkSaveRec.Active}),Patch(Workers,If(varWrkSaveMode="New",Defaults(Workers),First(colWrkPreRaw)),{'First Name':varWrkSaveRec.FirstName,Surname:varWrkSaveRec.Surname,'Worker Name':varWrkSaveRec.FirstName & " " & varWrkSaveRec.Surname,Employer:{Id:varWrkSaveEmp.ID,Value:varWrkSaveEmp.Name},Active:varWrkSaveRec.Active}))))>=0,
+                  Set(varWrkPatchError,true); Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrSharePoint.nl),T.wrkErrSharePoint.nl,T.wrkErrSharePoint.en) & " " & FirstError.Message});false);
+                 Set(varWrkPatchedID,First(colWrkPatched).ID);
+                 Set(varWrkSaveCtl,If(varWrkPatchError && IsBlank(varWrkPatchedID),"Pending",""));
+                 If(varWrkSaveCtl="Pending",IfError(Refresh(Workers),Set(varWrkSaveCtl,"ReadFailed");false));
+                 If(varWrkSaveCtl="Pending" && varWrkSaveMode="Edit",Set(varWrkSaveReads,varWrkSaveReads+1); IfError(CountRows(ClearCollect(colWrkCtlRaw,Filter(Workers,ID=varWrkSaveID)))>=0,Set(varWrkSaveCtl,"ReadFailed");false));
+                 If(varWrkSaveCtl="Pending" && varWrkSaveMode="New",Set(varWrkSaveReads,varWrkSaveReads+1); IfError(CountRows(ClearCollect(colWrkCtlRaw,Filter(Workers,'First Name'=varWrkSaveFirst && Surname=varWrkSaveSurname)))>=0,Set(varWrkSaveCtl,"ReadFailed");false));
+                 If(varWrkSaveCtl="Pending",Set(varWrkSaveCtl,If(CountRows(colWrkCtlRaw)>=500,"ReadFailed",varWrkSaveMode="Edit",If(CountRows(colWrkCtlRaw)=1 && First(colWrkCtlRaw).Modified=First(colWrkPreRaw).Modified,"NoWrite","PossibleWrite"),If(CountIf(colWrkCtlRaw,!(ID in ShowColumns(colWrkDup,ID)))=0,"NoWrite","PossibleWrite"))));
+                 Set(varWrkSaveWrites,If(varWrkPatchError && IsBlank(varWrkPatchedID) && varWrkSaveCtl="NoWrite",0,1));
+                 If(IsEmpty(colWrkSaveErrors) && (IsBlank(varWrkPatchedID) || (varWrkSaveMode="Edit" && varWrkPatchedID<>varWrkSaveID)),Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrPatch.nl),T.wrkErrPatch.nl,T.wrkErrPatch.en)}));
+                 If(IsEmpty(colWrkSaveErrors),IfError(Refresh(Workers),Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrVerify.nl),T.wrkErrVerify.nl,T.wrkErrVerify.en)});false));
+                 If(IsEmpty(colWrkSaveErrors),
+                  Set(varWrkSaveReads,varWrkSaveReads+1);
+                  IfError(CountRows(ClearCollect(colWrkVerifyRaw,Filter(Workers,ID=varWrkPatchedID)))>=0,Collect(colWrkSaveErrors,{Field:"",Message:If(LangNl && !IsBlank(T.wrkErrVerify.nl),T.wrkErrVerify.nl,T.wrkErrVerify.en)});false)
+                 );
+                 If(IsEmpty(colWrkSaveErrors),ClearCollect(colWrkVerify,ForAll(colWrkVerifyRaw As w,With({e:LookUp(colWrkEmployers,ID=w.Employer.Id)},{ID:w.ID,FirstName:Trim(w.'First Name' & ""),Surname:Trim(w.Surname & ""),Code:Trim(w.'Worker Code' & ""),Trade:Trim(w.Trade.Value & ""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value & ""),Contractor:If(IsBlank(w.Employer.Id),"",IsBlank(e.ID),Trim(w.Employer.Value & ""),Coalesce(e.Active,true),e.Name,e.Name & If(LangNl && !IsBlank(T.wrkInactiveSuffix.nl),T.wrkInactiveSuffix.nl,T.wrkInactiveSuffix.en)),Language:Trim(w.Language.Value & ""),Active:Coalesce(w.Active,true)}))));
+                 If(IsEmpty(colWrkSaveErrors),
+                  With({v:First(colWrkVerify),rowOk:CountRows(colWrkVerifyRaw)=1 && CountRows(colWrkVerify)=1 && First(colWrkVerify).ID=varWrkPatchedID},
+                   With({d:Filter(Table({F:"FirstName",L:If(LangNl && !IsBlank(T.wrkFieldFirstName.nl),T.wrkFieldFirstName.nl,T.wrkFieldFirstName.en),D:Trim(v.FirstName & "")<>Trim(varWrkSaveRec.FirstName & "")},{F:"Surname",L:If(LangNl && !IsBlank(T.wrkFieldSurname.nl),T.wrkFieldSurname.nl,T.wrkFieldSurname.en),D:Trim(v.Surname & "")<>Trim(varWrkSaveRec.Surname & "")},{F:"Trade",L:If(LangNl && !IsBlank(T.wrkFieldTrade.nl),T.wrkFieldTrade.nl,T.wrkFieldTrade.en),D:Trim(v.Trade & "")<>Trim(varWrkSaveRec.Trade & "")},{F:"Contractor",L:If(LangNl && !IsBlank(T.wrkFieldContractor.nl),T.wrkFieldContractor.nl,T.wrkFieldContractor.en),D:Coalesce(v.EmployerID,0)<>Coalesce(varWrkSaveEmp.ID,0)},{F:"Language",L:If(LangNl && !IsBlank(T.wrkFieldLanguage.nl),T.wrkFieldLanguage.nl,T.wrkFieldLanguage.en),D:Trim(v.Language & "")<>Trim(varWrkSaveRec.Language & "")},{F:"Active",L:If(LangNl && !IsBlank(T.wrkFieldActive.nl),T.wrkFieldActive.nl,T.wrkFieldActive.en),D:Coalesce(v.Active,true)<>Coalesce(varWrkSaveRec.Active,true)}),D)},
+                    If(rowOk && IsEmpty(d),
+                     Set(varWrkSaveVerified,true),
+                     Set(varWrkVerifyDiff,If(rowOk,Concat(d,F,","),"Rows"));
+                     Collect(colWrkSaveErrors,{Field:"",Message:If(rowOk,Substitute(If(LangNl && !IsBlank(T.wrkErrVerifyFields.nl),T.wrkErrVerifyFields.nl,T.wrkErrVerifyFields.en),"{0}",Concat(d,L,", ")),If(LangNl && !IsBlank(T.wrkErrVerify.nl),T.wrkErrVerify.nl,T.wrkErrVerify.en))});
+                     Trace("DIAG|Workers|VerifyMismatch",TraceSeverity.Warning,{Screen:"Workers",ItemID:Coalesce(varWrkPatchedID,0),Rows:CountRows(colWrkVerifyRaw),Fields:varWrkVerifyDiff})
+                    )
+                   )
+                  )
+                 )
+                )
+               );
+               If(varWrkSaveVerified && IsEmpty(colWrkSaveErrors),
+                RemoveIf(colAdminWorkers,ID=varWrkPatchedID); Collect(colAdminWorkers,First(colWrkVerify));
+                RemoveIf(colWrkModified,ID=varWrkPatchedID); Collect(colWrkModified,{ID:varWrkPatchedID,Modified:First(colWrkVerifyRaw).Modified});
+                Set(varWrkEdit,First(colWrkVerify)); Set(varWrkSelectedID,varWrkPatchedID); Set(varWrkMode,"Edit");
+                Set(varWorkersCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);
+                IfError(Refresh(Workers),Set(varWrkSaveRefreshFailed,true);false);
+                Set(varWrkDupPendingKey,""); Set(varWrkDupConfirmed,false);
+                Reset(cmpWrkFirstName); Reset(cmpWrkSurname); Reset(cmpWrkTrade); Reset(cmpWrkContractor); Reset(cmpWrkLanguage); Set(varWrkActiveDraft,Coalesce(varWrkEdit.Active,true));
+                If(varWrkSaveContractorMoved || varWrkSaveRefreshFailed,
+                 Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,Trim(If(LangNl && !IsBlank(T.admMsgSavedPrefix.nl),T.admMsgSavedPrefix.nl,T.admMsgSavedPrefix.en) & If(varWrkSaveContractorMoved," " & If(LangNl && !IsBlank(T.wrkMsgOldHours.nl),T.wrkMsgOldHours.nl,T.wrkMsgOldHours.en),"") & If(varWrkSaveRefreshFailed," " & If(LangNl && !IsBlank(T.wrkWarnRefresh.nl),T.wrkWarnRefresh.nl,T.wrkWarnRefresh.en),""))),
+                 Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadSaved.nl),T.admHeadSaved.nl,T.admHeadSaved.en)); Set(varAdmMsgBody,"")
+                );
+                Select(btnWrkFormReset),
+                varWrkSaveWrites=0 && varWrkSaveDupFound,
+                Set(varWrkDupPendingKey,varWrkSaveDupKey); Set(varWrkDupConfirmed,false);
+                Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,LookUp(colWrkSaveErrors,Field="Dup").Message),
+                varWrkSaveWrites=0 && varWrkSaveDeactBlocked,
+                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,LookUp(colWrkSaveErrors,Field="Active").Message),
+                varWrkSaveWrites=0,
+                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotSaved.nl),T.admHeadNotSaved.nl,T.admHeadNotSaved.en)); Set(varAdmMsgBody,With({n:CountRows(colWrkSaveErrors)-1},First(colWrkSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.wrkMsgMore.nl),T.wrkMsgMore.nl,T.wrkMsgMore.en),"{0}",Text(n)),""))),
+                Set(varWrkSaveFailed,true); Set(varWrkLoadState,"Failed");
+                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotSaved.nl),T.admHeadNotSaved.nl,T.admHeadNotSaved.en)); Set(varAdmMsgBody,With({n:CountRows(colWrkSaveErrors)-1},First(colWrkSaveErrors).Message & If(n>0,Substitute(If(LangNl && !IsBlank(T.wrkMsgMore.nl),T.wrkMsgMore.nl,T.wrkMsgMore.en),"{0}",Text(n)),"")) & " " & If(varWrkSaveMode="New",If(LangNl && !IsBlank(T.wrkMsgSaveFailedNew.nl),T.wrkMsgSaveFailedNew.nl,T.wrkMsgSaveFailedNew.en),If(LangNl && !IsBlank(T.wrkMsgSaveFailed.nl),T.wrkMsgSaveFailed.nl,T.wrkMsgSaveFailed.en)))
+               );
+               Set(varWrkSaving,false);
+               Trace("DIAG|Workers|SaveEnd",TraceSeverity.Information,{Screen:"Workers",Mode:varWrkSaveMode,ItemID:Coalesce(varWrkPatchedID,varWrkSaveID,0),ElapsedMs:DateDiff(varWrkDiagT0,Now(),TimeUnit.Milliseconds),Reads:varWrkSaveReads,Writes:varWrkSaveWrites,Verified:varWrkSaveVerified,DupFound:varWrkSaveDupFound,DupConfirmed:varWrkSaveDupOk,Conflict:varWrkSaveConflict,DeactBlocked:varWrkSaveDeactBlocked,Errors:CountRows(colWrkSaveErrors),ControlRead:varWrkSaveCtl}),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrkMsgActionBlocked.nl),T.wrkMsgActionBlocked.nl,T.wrkMsgActionBlocked.en))
+              )
+            RefreshText: =If(LangNl && !IsBlank(T.wrkRefresh.nl),T.wrkRefresh.nl,T.wrkRefresh.en)
+            RefreshEnabled: |-
+              =!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && (Coalesce(varWrkSaveFailed,false) || lblWrkDirty.Text="false")
+            SaveText: =If(LangNl && !IsBlank(T.wrkSave.nl),T.wrkSave.nl,T.wrkSave.en)
+            SaveEnabled: |-
+              =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && (varWrkMode="New" || (varWrkMode="Edit" && !IsBlank(varWrkSelectedID))) && lblWrkDirty.Text="true"
+            Width: =Parent.Width
+            X: =0
+            Y: =Parent.Height-Self.Height

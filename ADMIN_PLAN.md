@@ -90,7 +90,7 @@ Status 31-10-2026 (stap 3: Contractors en Projects op componenten gebouwd in bui
 - 4.5 Voorstel, bevestigen (besluit 11; NIET gebouwd, blijft voorstel): in deze build verbergt Screen1/ddProject Projects met Status Closed (On hold blijft zichtbaar); Hours Summary (ddReportProject) toont alles. Vergt Status in de colProjectsCache-projectie (beide loaders identiek; Test-SaveRegression). Admin-lijst "Show inactive" = Closed tonen.
 
 ## 5. Workers (scrWorkers) - bouw 3
-Status: Plan 4-11-2026, V1-V6 beantwoord door Eddy 5-11-2026 (par. 5.7); stap 1 goedgekeurd door Eddy 7-11-2026 (tag approved-20261107-contractoraddr, DECISIONS.md H23); Workers-build nu aan de beurt; niet gebouwd.
+Status: GEBOUWD 8-11-2026 (scrWorkers, H18 in Save week, 5.6, Projects "Country unknown", Home Workers-tegel actief; build workers-20261108_014223, PROJECT_STATUS.md); technisch gecontroleerd; wacht op Studio-test TP-WORKERS-01 (TESTPLAN.md); niet functioneel getest, niet goedgekeurd. Plan 4-11-2026, V1-V6 beantwoord door Eddy 5-11-2026 (par. 5.7).
 
 ### 5.1 Scherm en velden
 - scrWorkers op het Admin screen pattern (par. 10) met de vijf componenten: cmpTitleBar "Workers"; cmpMessageBar; cmpListCard (titel "First Surname", subregel "Worker Code · Contractor", zoeken op naam/code/contractor, Show inactive); cmpField-formulier; cmpFooter.

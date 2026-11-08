@@ -1,4 +1,4 @@
-# Layout test for the admin screens scrContractors and scrProjects (31-10-2026, step 3b).
+# Layout test for the admin screens scrContractors and scrProjects (31-10-2026, step 3b) and scrWorkers (08-11-2026, Workers build).
 # Evaluates every X/Y/Width/Height formula of the screen tree in the Power Fx interpreter (same approach as Test-FooterRow/Test-AdminScreens:
 # Parent./Self. are bound, sibling and global rectangles are published as variables, several passes until stable) at screen widths 1366, 1000
 # and 700 (height 768) and with the message bar hidden and shown. Checks, per container:
@@ -45,7 +45,8 @@ function Walk-Children($children, $parentRect, $parentProps, $state) {
         if ($auto) { $r.X = 0; $r.Y = $cursorY; $cursorY += $r.Height }
         $extra = ''
         if ($ctl['ComponentName'] -eq 'cmpMessageBar') { $extra = ',BarHeight:' + $(if ($state.Kind -in @('Error', 'Warning', 'Success')) { 40 } else { 0 }) }
-        Publish-Var $name ('{X:' + $r.X + ',Y:' + $r.Y + ',Width:' + $r.Width + ',Height:' + $r.Height + ',Visible:true' + $extra + '}')
+        $visLit = $(if ($name -in @('btnWrkSaveAnywaySwitch','btnWrkSaveAnywayKnob','lblWrkSaveAnywayState') -and $state.ContainsKey('Any') -and -not $state.Any) { 'false' } else { 'true' })
+        Publish-Var $name ('{X:' + $r.X + ',Y:' + $r.Y + ',Width:' + $r.Width + ',Height:' + $r.Height + ',Visible:' + $visLit + $extra + '}')
         if ($ctl['Children']) {
             $cp = @{ IsAuto = ($ctl['Variant'] -eq 'AutoLayout'); ScrollY = ([string]$props['LayoutOverflowY'] -eq '=LayoutOverflow.Scroll') }
             Walk-Children $ctl['Children'] $r $cp $state
@@ -60,6 +61,7 @@ function Collect-Checks($children, $parentName, $parentRect, $scrollParent, $ctx
         $vis = $true
         if ($props.ContainsKey('Visible')) { $vf = ([string]$props['Visible']).Trim(); if ($vf -eq '=false') { $vis = $false } elseif ($vf -ne '=true') { $vis = Eval-Bool $vf } }
         if ($ctl['ComponentName'] -eq 'cmpField') { Assert-True ((-not $props.ContainsKey('Visible')) -or ([string]$props['Visible']).Trim() -eq '=true') "$label : $name (cmpField) has no Visible formula (always rendered)" }
+        if ($name -in @('btnWrkSaveAnywaySwitch','btnWrkSaveAnywayKnob','lblWrkSaveAnywayState') -and $state.ContainsKey('Any')) { $vis = [bool]$state.Any }   # Visible formula depends on runtime state; the test drives it explicitly (row shown / hidden)
         if (-not $vis) { continue }
         $r = $state.Rects[$name]
         # size 0 controls (message bar without message) take no space and are not checked
@@ -69,7 +71,7 @@ function Collect-Checks($children, $parentName, $parentRect, $scrollParent, $ctx
         if ($r.X + $r.Width -gt $parentRect.Width + 0.01) { throw "FAIL $label : $name exceeds the width of $parentName (X+W=$($r.X + $r.Width) > $($parentRect.Width))" }
         if (-not $scrollParent -and $r.Y + $r.Height -gt $parentRect.Height + 0.01) { throw "FAIL $label : $name exceeds the height of $parentName (Y+H=$($r.Y + $r.Height) > $($parentRect.Height))" }
     }
-    $allowedOverlap = @('btnEmpActiveSwitch|btnEmpActiveKnob')   # knob lies on its switch track by design
+    $allowedOverlap = @('btnEmpActiveSwitch|btnEmpActiveKnob', 'btnWrkActiveSwitch|btnWrkActiveKnob', 'btnWrkSaveAnywaySwitch|btnWrkSaveAnywayKnob')   # knob lies on its switch track by design
     for ($i = 0; $i -lt $kids.Count; $i++) {
         for ($j = $i + 1; $j -lt $kids.Count; $j++) {
             $a = $kids[$i].R; $b = $kids[$j].R
@@ -90,7 +92,8 @@ function Collect-Checks($children, $parentName, $parentRect, $scrollParent, $ctx
 
 $screens = @(
     @{ Name = 'scrContractors'; P = 'Emp'; Mode = 'varEmpMode' },
-    @{ Name = 'scrProjects'; P = 'Prj'; Mode = 'varPrjMode' }
+    @{ Name = 'scrProjects'; P = 'Prj'; Mode = 'varPrjMode' },
+    @{ Name = 'scrWorkers'; P = 'Wrk'; Mode = 'varWrkMode' }
 )
 $H = 768
 foreach ($s in $screens) {
@@ -100,11 +103,14 @@ foreach ($s in $screens) {
     Index-Names $children
     $p = $s.P
     foreach ($W in 1366, 1000, 700) {
+        # string states, not $null: foreach over $null runs zero times and silently skipped scrContractors/scrProjects
+        foreach ($anyMode in $(if ($s.Name -eq 'scrWorkers') { @('visible', 'hidden') } else { @('na') })) {
+        $anyState = $(if ($anyMode -eq 'na') { $null } else { $anyMode -eq 'visible' })
         foreach ($kind in '', 'Error') {
-            $label = "$($s.Name) $W x $H (message '$kind')"
-            $state = @{ Rects = @{}; Errors = @{}; Kind = $kind }
+            $label = "$($s.Name) $W x $H (message '$kind'" + $(if ($null -ne $anyState) { ", Save anyway row $anyMode" } else { "" }) + ")"
+            $state = @{ Rects = @{}; Errors = @{}; Kind = $kind }; if ($null -ne $anyState) { $state.Any = $anyState }
             Publish-Var 'varAdmMsgKind' ('"' + $kind + '"')
-            Publish-Var $s.Mode '"Edit"'; Publish-Var 'varEmpActiveDraft' 'true'; Publish-Var 'varEmpShowInactive' 'false'; Publish-Var 'varPrjShowInactive' 'false'
+            Publish-Var $s.Mode '"Edit"'; Publish-Var 'varEmpActiveDraft' 'true'; Publish-Var 'varEmpShowInactive' 'false'; Publish-Var 'varPrjShowInactive' 'false'; Publish-Var 'varWrkActiveDraft' 'true'; Publish-Var 'varWrkShowInactive' 'false'; Publish-Var 'varWrkDupConfirmed' 'false'
             Publish-Var "var${p}Edit" '{Active:true,Status:"Active",Name:"A",Number:"N"}'
             $screenRect = @{ X = 0; Y = 0; Width = $W; Height = $H }
             for ($pass = 0; $pass -lt 8; $pass++) { $state.Errors = @{}; Walk-Children $children $screenRect $null $state }
@@ -128,6 +134,9 @@ foreach ($s in $screens) {
             Assert-True (($formR.X + $formR.Width) -le ($bodyR.Width - 40 + 0.01) -and ($listR.X + $listR.Width) -le ($bodyR.Width - 40 + 0.01)) "$label : cards keep 24 px margin plus a 16 px scrollbar reserve at the right edge"
             foreach ($f in $fields) { $fr = $state.Rects[$f]; $inL = $fr.X + 1 - 2; $inR = $fr.X + $fr.Width - 1 + 2; if ($inL -lt 0 -or $inR -gt $formR.Width - 16) { throw "FAIL $label : input of $f (incl. 2 px border) leaves the card ($inL..$inR of $($formR.Width))" } }
             Write-Output "PASS $label : $($script:layoutChecked) visible controls inside their parents, no sibling overlaps, $($fields.Count) cmpField instances always rendered inside the card padding (columns: $([math]::Round($state.Rects["lbl${p}Grid"].Width,1)) px)."
+            if ($s.Name -eq 'scrWorkers') { $sa = $state.Rects["btnWrkSaveAnywaySwitch"]; $ac = $state.Rects["btnWrkActiveSwitch"]; $md = $state.Rects["lblWrkModified"]; $sg = $state.Rects["lblWrkSecWork"]; $lastField = $state.Rects["cmpWrkLanguage"]
+                Assert-True (($sa.Y -ge $lastField.Y + $lastField.Height + 16 - 0.01) -and $(if ($anyState) { $ac.Y -ge $sa.Y + $sa.Height + 12 - 0.01 } else { $ac.Y -eq $sa.Y }) -and ($md.Y + $md.Height + 24 -le $formR.Height + 0.01)) "$label : Save anyway row below the last field row, Active/Last changed row directly below it (or in its place when hidden), form card ends 24 px below the last row" }
+        }
         }
     }
 }
@@ -172,4 +181,4 @@ foreach ($c in @(@(1366, 768), @(1280, 720), @(1000, 768), @(999, 768), @(900, 7
     $contentH = $y - 32 + 32
     Write-Output "PASS $label : $($script:layoutChecked) visible controls inside their parents, no sibling overlaps; five categories stacked with gap 32, content height $contentH vs viewport $($Hh - 60) ($(if ($contentH -gt $Hh - 60) { 'scrolls' } else { 'fits' }))."
 }
-Write-Output 'Test-Layout covers: bounds (X>=0, Y>=0, right edge inside the parent; bottom edge inside the parent except in the scrolling body), sibling overlaps among visible controls and instances, no Visible formula on cmpField instances, the title/message bar/body/footer stack and the two-card arrangement, for scrContractors and scrProjects at 1366, 1000 and 700 x 768 with and without a message. NOT covered: component internals (see Test-Components/Test-FooterRow), text clipping and rendering in Studio.'
+Write-Output 'Test-Layout covers: bounds (X>=0, Y>=0, right edge inside the parent; bottom edge inside the parent except in the scrolling body), sibling overlaps among visible controls and instances, no Visible formula on cmpField instances, the title/message bar/body/footer stack and the two-card arrangement, for scrContractors, scrProjects and scrWorkers at 1366, 1000 and 700 x 768 with and without a message. NOT covered: component internals (see Test-Components/Test-FooterRow), text clipping and rendering in Studio.'

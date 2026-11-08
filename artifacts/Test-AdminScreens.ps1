@@ -52,7 +52,7 @@ function Apply-DirtyLabel($map, [string]$p, [string]$scr) {
     $d = $lblFx.Substring(4, $lblFx.Length - 4 - $tail.Length)
     # N1 (03-11-2026, fail-closed): "clean" only when the label literally says "false"; every blocking / Discard-permitting read is
     # <>"false" (blank or unexpected = dirty); Save requires the literal "true" (blank or unexpected = no Save).
-    $scrN = if ($p -eq 'Emp') { 'scrContractors' } else { 'scrProjects' }
+    $scrN = if ($p -eq 'Emp') { 'scrContractors' } elseif ($p -eq 'Prj') { 'scrProjects' } else { 'scrWorkers' }
     $cleanRef = "lbl${p}Dirty.Text=`"false`""; $dirtyRef = "lbl${p}Dirty.Text<>`"false`""; $saveRef = "lbl${p}Dirty.Text=`"true`""
     $expByRef = [ordered]@{
         $cleanRef = @("cmp${p}Footer.HomeEnabled", "cmp${p}Footer.OnHome", "cmp${p}Footer.NewEnabled", "cmp${p}Footer.OnNew", "cmp${p}Footer.RefreshEnabled", "cmp${p}Footer.OnRefresh", "cmp${p}List.Enabled", "cmp${p}List.OnSelectRow", "cmp${p}List.OnToggleShowInactive", "$scrN.OnVisible") | Sort-Object
@@ -70,9 +70,11 @@ function Apply-DirtyLabel($map, [string]$p, [string]$scr) {
     # Fixtures with the label value itself (blank / unexpected text = fail-closed), on the real guard texts before expansion
     $gfx = "var${p}LoadState:`"Loaded`",col${p}LoadErrors:Filter(Table({Message:`"`"}),false),var${p}Busy:false,var${p}Saving:false,var${p}SaveFailed:false,var${p}Mode:`"Edit`",var${p}SelectedID:5"
     $gfxFailed = $gfx.Replace("var${p}SaveFailed:false", "var${p}SaveFailed:true").Replace("var${p}LoadState:`"Loaded`"", "var${p}LoadState:`"Failed`"")
-    $visCond = "var${p}LoadState<>`"Loaded`" && !Coalesce(var${p}Busy,false) && !Coalesce(var${p}Saving,false) && $cleanRef"
+    # Workers (08-11-2026): OnVisible always reloads fresh when idle and clean (forced load; H16), so its condition has no LoadState term.
+    $visCond = if ($p -eq 'Wrk') { "!Coalesce(var${p}Busy,false) && !Coalesce(var${p}Saving,false) && $cleanRef" } else { "var${p}LoadState<>`"Loaded`" && !Coalesce(var${p}Busy,false) && !Coalesce(var${p}Saving,false) && $cleanRef" }
+    $visAct = if ($p -eq 'Wrk') { "Set(var${p}ForceRefresh,true); Select(btn${p}Load)" } else { "Select(btn${p}Load)" }
     $loadCond = "$dirtyRef && !Coalesce(var${p}SaveFailed,false)"
-    Assert-True (([string]$map["$scrN.OnVisible"]).Contains("If($visCond,Select(btn${p}Load))") -and ([string]$map["btn${p}Load.OnSelect"]).Contains("If($loadCond,")) "${scr}: OnVisible auto-loads only when the label says ""false""; the loader refuses unless the label says ""false"" (or after a failed save)"
+    Assert-True (([string]$map["$scrN.OnVisible"]).Contains("If($visCond,$visAct)") -and ([string]$map["btn${p}Load.OnSelect"]).Contains("If($loadCond,")) "${scr}: OnVisible auto-loads only when the label says ""false""; the loader refuses unless the label says ""false"" (or after a failed save)"
     $gExpr = [ordered]@{ Home = ([string]$map["cmp${p}Footer.HomeEnabled"]).Trim().Substring(1); New = ([string]$map["cmp${p}Footer.NewEnabled"]).Trim().Substring(1); Refresh = ([string]$map["cmp${p}Footer.RefreshEnabled"]).Trim().Substring(1); List = ([string]$map["cmp${p}List.Enabled"]).Trim().Substring(1); Discard = ([string]$map["cmp${p}Footer.DiscardEnabled"]).Trim().Substring(1); Save = ([string]$map["cmp${p}Footer.SaveEnabled"]).Trim().Substring(1); AutoLoad = $visCond; LoadBlocked = $loadCond }
     #                    label       Home   New    Refresh List   Discard Save   AutoLoad LoadBlocked
     $gCases = @(@('"false"', $true, $true, $true, $true, $false, $false, $true, $false),
@@ -89,7 +91,7 @@ function Apply-DirtyLabel($map, [string]$p, [string]$scr) {
         }
         foreach ($g in @(@('Refresh', $true), @('Discard', $true), @('LoadBlocked', $false), @('Save', $false), @('New', $false))) { Assert-Eval "With({$gfxFailed,lbl${p}Dirty:{Text:$($c[0])}},$($gExpr[$g[0]]))" $g[1] "${scr} N1: after a failed save, label $($c[0]) -> $($g[0]) $(if ($g[1]) { 'allowed (Refresh = Discard, H15)' } else { 'not allowed / not blocking' })" }
     }
-    $cv = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -cmatch "\bcmp${p}\w+\.Value\b" -and $_ -notin @("lbl${p}Dirty.Text", "cmp${p}Footer.OnSave") })
+    $cv = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -cmatch "\bcmp${p}\w+\.Value\b" -and $_ -notin @("lbl${p}Dirty.Text", "cmp${p}Footer.OnSave", $(if ($p -eq 'Wrk') { 'lblWrkDupKey.Text' } else { 'lbl-none' })) })
     Assert-True ($cv.Count -eq 0) "${scr}: cmpField Value is read only by lbl${p}Dirty and the Save record (cmp${p}Footer.OnSave) ($($cv -join ', '))"
     # Expand the label reference for the behavioural checks below: clean = !<dirty>, dirty / Save = <dirty> (same results as the label for its two real values)
     foreach ($k in $readers) { $map[$k] = ([string]$map[$k]).Replace($dirtyRef, $d).Replace($saveRef, $d).Replace($cleanRef, '!' + $d) }
@@ -1020,7 +1022,7 @@ function Test-AutoSelect([string]$load, [string]$itemsFx, [string]$defaultFx, [s
 # filtered Items text as the loader auto-select - and fills varPSelectedID/varPEdit/Mode with the loader's own branch; empty visible list
 # or a load that is not Loaded (or has load errors) = no selection (Mode ""). Local only: no Patch/Refresh/Remove/Collect/Select.
 # The loader clears var<P>PrevSelectedID at the start of every real load (Refresh, Discard after a failed save), so no stale ID survives.
-function Test-DiscardNew([string]$p, [string]$scr, [string]$guard, [string]$dirtyFx, [string]$onDiscard, [string]$onNew, [string]$load, [string]$itemsFx, [string]$col, [string]$emptySnap, [string]$colFix, $cases, $map) {
+function Test-DiscardNew([string]$p, [string]$scr, [string]$guard, [string]$dirtyFx, [string]$onDiscard, [string]$onNew, [string]$load, [string]$itemsFx, [string]$col, [string]$emptySnap, [string]$colFix, $cases, $map, [string]$firstField = 'Name') {
     $prev = "var${p}PrevSelectedID"
     $expGuard = "!Coalesce(var${p}Busy,false) && !Coalesce(var${p}Saving,false) && (Coalesce(var${p}SaveFailed,false) || var${p}Mode=`"New`" || $dirtyFx)"
     Assert-True ($guard -ceq $expGuard) "$scr 8b: DiscardEnabled = not busy/saving and (SaveFailed or Mode New or dirty)"
@@ -1053,7 +1055,7 @@ function Test-DiscardNew([string]$p, [string]$scr, [string]$guard, [string]$dirt
     $bN = Norm $branch
     Assert-True ($bN.Contains((Norm ($selSet + ';' + $fill + ";Set($prev,Blank());"))) -and (Norm $load).Contains((Norm $fill))) "$scr 8b: Discard New branch fills the form with the loader's own auto-select branch (same text), then clears $prev"
     $after = $dN.Substring($dN.IndexOf((Norm $branch)) + (Norm $branch).Length)
-    Assert-True ($after.StartsWith(';Reset(cmp' + $p + 'Name);') -and $after.Contains('Set(varAdmMsgKind,"Success");')) "$scr 8b: after the New branch the form components are reset and the Discarded message is shown (shared with Edit-mode Discard)"
+    Assert-True ($after.StartsWith(';Reset(cmp' + $p + $firstField + ');') -and $after.Contains('Set(varAdmMsgKind,"Success");')) "$scr 8b: after the New branch the form components are reset and the Discarded message is shown (shared with Edit-mode Discard)"
     foreach ($c in $cases) {
         $fx = "With({$colFix,LangNl:false,T:$tRec,var${p}ShowInactive:$($c[0]),cmp${p}List:{SearchText:$($c[1])},${prev}:$($c[2]),var${p}LoadState:$($c[3]),col${p}LoadErrors:$($c[4])},With({x:$selArg},If(IsBlank(x),`"blank`",Text(x))))"
         Assert-Eval $fx $c[5] "$scr 8b: Discard in New mode: $($c[6]) -> $($c[5])"
@@ -1926,6 +1928,17 @@ foreach ($c in @(@('"Edit"', '"Archived"', '"Belgium"', '"Archived"', '"Belgium"
     $ws = $c[5].StartsWith('true'); $wc = $c[5].EndsWith('true'); $si = if ($ws -and $wc) { 1 } elseif ($ws) { 3 } elseif ($wc) { 5 } else { 6 }
     Assert-True (($pShape[$si].Contains('Status') -eq $ws) -and ($pShape[$si].Contains('Country') -eq $wc)) "Projects N3: $($c[6]) -> Patch record (shape $si) has Status: $ws, Country: $wc"
 }
+# 08-11-2026 (Workers build, ADMIN_PLAN 5.3): Projects like Contractors: a NEW or CHANGED Country outside Choices([@Projects].Country)
+# is an error on field Country (T.prjErrCountry "Fix: Country unknown"), decided in the local validation before the first read/write;
+# an unchanged legacy value stays accepted and is not written (N3 shape above).
+$pCoTxt = 'If(!IsBlank(varPrjSaveRec.Country) && !varPrjSaveCountryInList && !(varPrjSaveMode="Edit" && varPrjSaveRec.Country=Trim(varPrjEdit.Country & "")),Collect(colPrjSaveErrors,{Field:"Country",Message:' + (TT0 'prjErrCountry') + '}));'
+$iPCo = $pSaveN.IndexOf((Norm $pCoTxt)); $iPFirstIO = $pSaveN.IndexOf('If(IsEmpty(colPrjSaveErrors),IfError(Refresh(Projects),'); $iPIn = $pSaveN.IndexOf('Set(varPrjSaveCountryInList,')
+Assert-True ($iPCo -gt $iPIn -and $iPIn -gt 0 -and $iPFirstIO -gt $iPCo -and ([regex]::Matches($pSave, [regex]::Escape('{Field:"Country",Message:'))).Count -eq 1) 'Projects: unknown Country -> error on field Country (T.prjErrCountry) after the in-list flag, before the first read/write'
+Assert-Eval "With({LangNl:false,T:$tRec},T.prjErrCountry.en & `"|`" & T.prjErrCountry.nl)" 'Fix: Country unknown|' 'Projects: T.prjErrCountry = "Fix: Country unknown" (nl empty)'
+$pCoCond = (Split-Args (Get-Balanced $pCoTxt 2).Substring(1, (Get-Balanced $pCoTxt 2).Length - 2))[0]
+foreach ($c in @(@('"Edit"', '"Belgium"', '"Belgium"', $false, 'legacy value outside the list unchanged: accepted (not written, N3)'), @('"Edit"', '"Belgium"', '"Atlantis"', $true, 'changed to another unknown value: error'), @('"Edit"', '"Netherlands"', '"Germany"', $false, 'changed to a list value: accepted'), @('"Edit"', '"Germany"', '""', $false, 'cleared: accepted (written as Blank())'), @('"New"', '""', '"Belgium"', $true, 'New with an unknown value: error'), @('"New"', '""', '"Netherlands"', $false, 'New with a list value: accepted'))) {
+    Assert-Eval "With({chC:$chC,varPrjSaveMode:$($c[0]),varPrjEdit:{Country:$($c[1])},varPrjSaveRec:{Country:$($c[2])}},With({varPrjSaveCountryInList:$($pInC.Replace('Choices([@Projects].Country)', 'chC'))},$pCoCond))" $c[3] "Projects Country: $($c[4]) -> error=$($c[3])"
+}
 # Item e: Project Name stays required (validation present, red star)
 Assert-True ($pSaveN.Contains('If(IsBlank(varPrjSaveRec.Name),Collect(colPrjSaveErrors,{Field:"Name"') -and (PGet 'cmpPrjName' 'Required') -eq '=true') 'Projects e: Project Name required (validation + required field)'
 # Item f: varPrjEdit (saved status source for the chip) only from the loaded list, the verify read or the empty/New snapshot
@@ -1972,3 +1985,361 @@ foreach ($ns in @(@('Emp', (Get-RawOnSave 'scrContractors'), 'Employers', 'empEr
     Assert-Eval "With({var${p}SaveRec:{Name:Trim(`"   `" & `"`")}},Text(IsBlank(var${p}SaveRec.Name)))" 'true' "${list}: a name of spaces only counts as empty"
 }
 Write-Output 'PASS Test-AdminScreens (Projects): static structure only. Studio import, binding (Choices/[@Projects], Hyperlink URL, person DisplayName), delegation (Monitor), SharePoint case-sensitivity of ''Project Number'' = and functional tests NOT verified.'
+# =====================================================================================================================
+# Build 3 (08-11-2026): Workers (scrWorkers, list Workers; ADMIN_PLAN.md par. 5, decisions V1-V6). Same admin pattern as Contractors;
+# fields First Name*, Surname*, Worker Code (read-only, flow MS-017), Trade*, Contractor* (Employer lookup via the loaded Employers),
+# Language*, Active. Rules: validation before IO, duplicate warning + "Save anyway", deactivation blocked by an active Project Workers
+# link, N3 for legacy Trade/Language, one Patch, conflict + verify. Proves source structure only (no Studio import/binding/delegation).
+# =====================================================================================================================
+$wScreen = 'scrWorkers'
+$wDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir "$wScreen.pa.yaml")))
+$script:formulas = 0; $script:failures = 0
+Check-Node $wDoc $wScreen
+if ($script:failures -gt 0) { throw 'FAIL Power Fx syntax in scrWorkers' }
+Assert-True $true "Workers: Power Fx syntax: $script:formulas formulas in scrWorkers parsed"
+$formulas = [string]$appDoc['App']['Properties']['Formulas']
+$script:names = @{}; $script:controlCount = 0
+foreach ($entry in $wDoc['Screens'][$wScreen]['Children']) { Check-Control $entry }
+Assert-True ($script:controlCount -gt 0) "Workers: control templates/properties valid ($script:controlCount controls)"
+$wIdx = @{}; Index-Controls $wDoc['Screens'][$wScreen]['Children'] $wIdx
+$wScreenProps = $wDoc['Screens'][$wScreen]['Properties']
+$wAll = @{}
+foreach ($n in $wIdx.Keys) { foreach ($pp in $wIdx[$n]['Properties'].Keys) { $wAll["$n.$pp"] = ([string]$wIdx[$n]['Properties'][$pp]) } }
+foreach ($pp in $wScreenProps.Keys) { $wAll["$wScreen.$pp"] = [string]$wScreenProps[$pp] }
+$wRawOnSelect = @{}; foreach ($k in @($wAll.Keys)) { $wRawOnSelect[$k] = $wAll[$k] }
+Apply-DirtyLabel $wAll 'Wrk' 'Workers'; $wDirtyFromLbl = $script:lastDirty
+# compatibility layer (same as Contractors/Projects): footer/list/message-bar handlers under their historical control names
+$wFooterMap = [ordered]@{ btnWrkHome = 'Home'; btnWrkNew = 'New'; btnWrkRefresh = 'Refresh'; btnWrkDiscard = 'Discard'; btnWrkSave = 'Save' }
+Assert-True ($wIdx['cmpWrkFooter']['Control'] -eq 'CanvasComponent' -and $wIdx['cmpWrkFooter']['ComponentName'] -eq 'cmpFooter' -and $wIdx['cmpWrkTitle']['ComponentName'] -eq 'cmpTitleBar' -and $wIdx['cmpWrkMsgBar']['ComponentName'] -eq 'cmpMessageBar' -and $wIdx['cmpWrkList']['ComponentName'] -eq 'cmpListCard') 'Workers: title bar, message bar, list card and footer are the admin components (cmpTitleBar, cmpMessageBar, cmpListCard, cmpFooter)'
+foreach ($k in $wFooterMap.Keys) {
+    $v = $wFooterMap[$k]; $en = ([string]$wAll["cmpWrkFooter.${v}Enabled"]).Trim(); $os = ([string]$wAll["cmpWrkFooter.On$v"]).Trim()
+    Assert-True ($en.StartsWith('=') -and $en.Length -gt 3 -and $os.StartsWith('=If(' + $en.Substring(1) + ',')) "Workers: cmpWrkFooter.On$v starts with the same guard text as ${v}Enabled (fail-closed)"
+    $wAll["$k.OnSelect"] = $wAll["cmpWrkFooter.On$v"]; $wAll["$k.DisplayMode"] = '=If(' + $en.Substring(1) + ',DisplayMode.Edit,DisplayMode.Disabled)'
+    $wAll.Remove("cmpWrkFooter.On$v"); $wAll.Remove("cmpWrkFooter.${v}Enabled")
+}
+$wlEn = ([string]$wAll['cmpWrkList.Enabled']).Trim()
+Assert-True (([string]$wAll['cmpWrkList.OnSelectRow']).Trim().StartsWith('=If(' + $wlEn.Substring(1) + ',') -and ([string]$wAll['cmpWrkList.OnToggleShowInactive']).Trim().StartsWith('=If(' + $wlEn.Substring(1) + ',')) 'Workers: cmpWrkList.Enabled is the first If-condition of OnSelectRow and OnToggleShowInactive'
+$wAll['galWrkList.OnSelect'] = $wAll['cmpWrkList.OnSelectRow']; $wAll['galWrkList.DisplayMode'] = '=If(' + $wlEn.Substring(1) + ',DisplayMode.Edit,DisplayMode.Disabled)'; $wAll['galWrkList.Items'] = $wAll['cmpWrkList.Items']
+foreach ($rm in 'cmpWrkList.OnSelectRow', 'cmpWrkList.Enabled', 'cmpWrkList.Items', 'cmpWrkList.OnToggleShowInactive', 'cmpWrkMsgBar.OnClose') { $wAll.Remove($rm) }
+$wText = ($wAll.Values) -join "`n"
+function WProp([string]$ctl, [string]$prop) { $v = $wAll["$ctl.$prop"]; if ($null -eq $v) { throw "FAIL missing $ctl.$prop" }; return ([string]$v).Trim() }
+function TTw([string]$k) { return "If(LangNl && !IsBlank(T.$k.nl),T.$k.nl,T.$k.en)" }
+
+# (W1) Identical fail-closed guard in DisplayMode and as first OnSelect condition ------------------------------------
+$wGuards = @{}
+foreach ($ctl in @('btnWrkSave', 'btnWrkHome', 'btnWrkNew', 'btnWrkRefresh', 'btnWrkDiscard', 'galWrkList')) {
+    $dm = WProp $ctl 'DisplayMode'; $os = WProp $ctl 'OnSelect'; $sfx = ',DisplayMode.Edit,DisplayMode.Disabled)'
+    $g = $dm.Substring(4, $dm.Length - 4 - $sfx.Length)
+    Assert-True ($dm.StartsWith('=If(') -and $dm.EndsWith($sfx) -and $os.StartsWith('=If(' + $g + ',')) "Workers: $ctl OnSelect starts with the same guard text as DisplayMode"
+    $wGuards[$ctl] = $g
+}
+$wDirty = Get-Balanced $wGuards.btnWrkSave $wGuards.btnWrkSave.IndexOf('(Coalesce(varWrkMode,"") in ["New","Edit"]')
+Assert-True ($wDirty -ceq $wDirtyFromLbl) 'Workers: dirty text in the Save guard = the lblWrkDirty text (one source)'
+foreach ($f in @('FirstName', 'Surname', 'Trade', 'Contractor', 'Language')) { Assert-True ($wDirty.Contains("Trim(cmpWrk$f.Value & """")<>Trim(varWrkEdit.$f & """")")) "Workers: dirty compares cmpWrk$f.Value with varWrkEdit.$f, both sides Trim(x & """")" }
+Assert-True ($wDirty.Contains('Coalesce(varWrkActiveDraft,true)<>Coalesce(varWrkEdit.Active,true)') -and ([regex]::Matches($wDirty, '<>')).Count -eq 6 -and $wDirty -notmatch 'Code|Modified|DupConfirmed|DupKey') 'Workers: dirty covers exactly First Name, Surname, Trade, Contractor, Language and the Active draft (not Worker Code, Modified or the Save anyway switch)'
+Assert-True ($wGuards.btnWrkSave.EndsWith('&& ' + $wDirty) -and $wGuards.btnWrkSave.Contains('(varWrkMode="New" || (varWrkMode="Edit" && !IsBlank(varWrkSelectedID)))')) 'Workers: Save requires dirty and New, or Edit with an ID'
+foreach ($ctl in @('btnWrkHome', 'btnWrkNew', 'galWrkList')) { Assert-True ($wGuards[$ctl].EndsWith('!' + $wDirty)) "Workers: $ctl blocked while dirty (same dirty text)" }
+Assert-True ($wGuards.btnWrkRefresh -ceq ('!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && (Coalesce(varWrkSaveFailed,false) || !' + $wDirty + ')')) 'Workers: Refresh blocked while loading/saving; allowed when clean or after a failed save (H15)'
+Assert-True ($wGuards.btnWrkHome -ceq ('!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !' + $wDirty) -and $wGuards.btnWrkNew -ceq $wGuards.galWrkList -and (WProp 'btnWrkHome' 'OnSelect') -ceq ('=If(' + $wGuards.btnWrkHome + ',Navigate(scrHome))')) 'Workers: Home = not busy/saving/dirty and navigates only to scrHome; New = list-selection guard'
+foreach ($k in @('varWrkLoadState="Loaded"', 'IsEmpty(colWrkLoadErrors)', '!Coalesce(varWrkBusy,false)', '!Coalesce(varWrkSaving,false)', '!Coalesce(varWrkSaveFailed,false)')) { Assert-True ($wGuards.btnWrkSave.Contains($k) -and $wGuards.btnWrkNew.Contains($k)) "Workers: Save and New guards contain $k" }
+$wSnap = '{ID:5,FirstName:"Test",Surname:"Fitter 2",Code:"WKR-005",Trade:"Fitter",EmployerID:3,EmployerName:"TEST Employer",Contractor:"TEST Employer",Language:"Nederlands",Active:true}'
+$wBase = 'varWrkLoadState:"Loaded",colWrkLoadErrors:Filter(Table({Message:""}),false),varWrkBusy:false,varWrkSaving:false,varWrkSaveFailed:false,varWrkMode:"Edit",varWrkSelectedID:5,varWrkEdit:' + $wSnap + ','
+function WIn([string]$fn, [string]$sn, [string]$tr, [string]$co, [string]$la, [string]$act) { return "cmpWrkFirstName:{Value:$fn},cmpWrkSurname:{Value:$sn},cmpWrkTrade:{Value:$tr},cmpWrkContractor:{Value:$co},cmpWrkLanguage:{Value:$la},varWrkActiveDraft:$act" }
+$wClean = $wBase + (WIn '"Test"' '"Fitter 2"' '"Fitter"' '"TEST Employer"' '"Nederlands"' 'true')
+function WG([string]$name, [string]$fixture) { return 'With({' + $fixture + '},' + $wGuards[$name] + ')' }
+Assert-Eval (WG 'btnWrkSave' $wClean) $false 'Workers: Save blocked when clean'
+foreach ($c in @(@('cmpWrkFirstName:{Value:"Test"}', 'cmpWrkFirstName:{Value:"Tess"}', 'First Name'), @('cmpWrkSurname:{Value:"Fitter 2"}', 'cmpWrkSurname:{Value:"Welder 2"}', 'Surname'), @('cmpWrkTrade:{Value:"Fitter"}', 'cmpWrkTrade:{Value:"Welder"}', 'Trade'), @('cmpWrkContractor:{Value:"TEST Employer"}', 'cmpWrkContractor:{Value:"Other"}', 'Contractor'), @('cmpWrkLanguage:{Value:"Nederlands"}', 'cmpWrkLanguage:{Value:"English"}', 'Language'), @('varWrkActiveDraft:true', 'varWrkActiveDraft:false', 'Active'))) {
+    $fx = $wClean.Replace($c[0], $c[1]); Assert-True ($fx -ne $wClean) "Workers fixture: $($c[2]) changed"
+    Assert-Eval (WG 'btnWrkSave' $fx) $true "Workers: Save allowed when only $($c[2]) changed (dirty)"
+    Assert-Eval (WG 'btnWrkHome' $fx) $false "Workers: Home blocked when $($c[2]) changed"
+}
+Assert-Eval (WG 'btnWrkSave' $wClean.Replace('cmpWrkFirstName:{Value:"Test"}', 'cmpWrkFirstName:{Value:" Test "}')) $false 'Workers: only spaces around a name are not dirty (Trim on both sides)'
+$wDirtyFix = $wClean.Replace('cmpWrkFirstName:{Value:"Test"}', 'cmpWrkFirstName:{Value:"Tess"}')
+foreach ($s in @('"NotLoaded"', '"Loading"', '"Failed"', 'Blank()')) { Assert-Eval (WG 'btnWrkSave' $wDirtyFix.Replace('varWrkLoadState:"Loaded"', "varWrkLoadState:$s")) $false "Workers: Save blocked: load state $s" }
+foreach ($fl in @('varWrkBusy', 'varWrkSaving', 'varWrkSaveFailed')) { Assert-Eval (WG 'btnWrkSave' $wDirtyFix.Replace("${fl}:false", "${fl}:true")) $false "Workers: Save blocked: $fl" }
+Assert-Eval (WG 'btnWrkSave' $wDirtyFix.Replace('Filter(Table({Message:""}),false)', 'Table({Message:"x"})')) $false 'Workers: Save blocked: load errors present'
+Assert-Eval (WG 'btnWrkSave' $wDirtyFix.Replace('varWrkSelectedID:5', 'varWrkSelectedID:Blank()')) $false 'Workers: Save blocked: Edit without ID'
+Assert-Eval (WG 'btnWrkRefresh' $wDirtyFix.Replace('varWrkSaveFailed:false', 'varWrkSaveFailed:true')) $true 'Workers: Refresh allowed after a failed save (= Discard, H15)'
+Assert-Eval (WG 'btnWrkDiscard' $wClean.Replace('varWrkMode:"Edit"', 'varWrkMode:"New"')) $true 'Workers 8b: Discard allowed in New mode with a clean form'
+Assert-Eval (WG 'galWrkList' $wClean) $true 'Workers: list selection allowed when Loaded and clean'
+Assert-Eval (WG 'galWrkList' $wDirtyFix) $false 'Workers: list selection blocked while dirty'
+
+# (W2) Form fields: cmpField instances bound to varWrkEdit, edit guard, red border, dropdown items ------------------------
+$wFieldEnabled = '=varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]'
+$wFields = [ordered]@{ cmpWrkFirstName = @('FirstName', 'text', 'wrkFieldFirstName'); cmpWrkSurname = @('Surname', 'text', 'wrkFieldSurname'); cmpWrkTrade = @('Trade', 'dropdown', 'wrkFieldTrade'); cmpWrkContractor = @('Contractor', 'dropdown', 'wrkFieldContractor'); cmpWrkLanguage = @('Language', 'dropdown', 'wrkFieldLanguage') }
+$wCardKids = @($wIdx['conWrkFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
+foreach ($k in $wFields.Keys) {
+    $ip = $wIdx[$k]['Properties']; $f = $wFields[$k]
+    Assert-True ($wIdx[$k]['ComponentName'] -eq 'cmpField' -and $wCardKids -ccontains $k -and -not $ip.ContainsKey('Visible') -and ([string]$ip['Height']).Trim() -eq '=58') "Workers: $k is a cmpField, direct child of the form card, always rendered, height 58"
+    Assert-True (([string]$ip['DefaultValue']).Trim() -ceq "=varWrkEdit.$($f[0])" -and ([string]$ip['Enabled']).Trim() -ceq $wFieldEnabled -and ([string]$ip['Invalid']).Trim() -ceq ('=CountIf(colWrkSaveErrors,Field="' + $f[0] + '")>0') -and ([string]$ip['InputType']).Trim() -ceq ('="' + $f[1] + '"') -and ([string]$ip['Required']).Trim() -eq '=true' -and ([string]$ip['Label']).Trim() -ceq ('=' + (TTw $f[2]))) "Workers: $k DefaultValue varWrkEdit.$($f[0]), edit guard, red border via colWrkSaveErrors.Field=""$($f[0])"", InputType $($f[1]), required star, label T.$($f[2])"
+}
+Assert-True ((WProp 'cmpWrkTrade' 'Items') -ceq '=ShowColumns(Choices([@Workers].Trade),Value)' -and (WProp 'cmpWrkLanguage' 'Items') -ceq '=ShowColumns(Choices([@Workers].Language),Value)') 'Workers: Trade and Language dropdowns = ShowColumns(Choices([@Workers].<column>),Value) (identifier column, SharePoint values not translated)'
+$wCoItems = (WProp 'cmpWrkContractor' 'Items').TrimStart('=')
+Assert-Eval "With({colWrkEmployers:Table({ID:1,Name:`"Beta`",Active:true},{ID:2,Name:`"alpha`",Active:true},{ID:3,Name:`"Gamma`",Active:false},{ID:4,Name:`"`",Active:true},{ID:5,Name:`"Delta`",Active:If(false,true)})},Concat($wCoItems,Value,`",`"))" 'alpha,Beta,Delta' 'Workers: Contractor dropdown = active contractors with a name, sorted (inactive ones only appear as the current value of a record)'
+$wCode = $wIdx['cmpWrkCode']['Properties']
+Assert-True (([string]$wCode['Enabled']).Trim() -eq '=false' -and ([string]$wCode['InputType']).Trim() -ceq '="readonly"' -and -not $wCode.ContainsKey('Invalid') -and -not $wCode.ContainsKey('OnChange')) 'Workers: Worker Code is a read-only cmpField (never edited)'
+$wCodeFx = ([string]$wCode['DefaultValue']).Trim().TrimStart('=')
+foreach ($c in @(@('"Edit"', '"WKR-005"', 'WKR-005', 'Edit with a code shows the code'), @('"Edit"', '""', 'assigned automatically', 'Edit without a code (flow MS-017 not yet run)'), @('"New"', '""', 'assigned automatically', 'New'), @('""', '""', '', 'no record in the form'))) {
+    Assert-Eval "With({LangNl:false,T:$tRec,varWrkMode:$($c[0]),varWrkEdit:{Code:$($c[1])}},$wCodeFx)" $c[2] "Workers: Worker Code shows '$($c[2])': $($c[3])"
+}
+Assert-Eval "With({$($wBase -replace ',$', '')},$($wFieldEnabled.Substring(1)))" $true 'Workers: fields editable when Loaded, idle, Edit'
+foreach ($m in @('""', 'If(false,"x")')) { Assert-Eval "With({$(($wBase -replace ',$', '') -replace 'varWrkMode:"Edit"', "varWrkMode:$m")},$($wFieldEnabled.Substring(1)))" $false "Workers: no record in the form (Mode $m): fields Disabled" }
+$wChoices = @($wAll.Keys | Where-Object { $wAll[$_] -match '\bChoices\(' } | Sort-Object)
+Assert-True (($wChoices -join ',') -ceq 'btnWrkLoad.OnSelect,btnWrkSave.OnSelect,cmpWrkLanguage.Items,cmpWrkTrade.Items' -and @($wAll.Values | Where-Object { $_ -match 'ForAll\([^;]*\bChoices\(' }).Count -eq 0) "Workers: Choices() only in the dropdown Items, the loader (New defaults) and Save (in-list flags), never inside ForAll ($($wChoices -join ', '))"
+Assert-True ($wText -notmatch '\bNotify\(' -and $wText -notmatch 'DisplayMode\.View' -and $wText -notmatch '\bSearch\(') 'Workers: no Notify (message bar only), no DisplayMode.View, no Search()'
+
+# (W3) Loader: staging, Refresh first, two independent reads, 500 guards, commit only without errors ------------------
+$wLoad = WProp 'btnWrkLoad' 'OnSelect'; $wLoadN = Norm $wLoad
+foreach ($k in @('btnWrkLoad.OnSelect', "$wScreen.OnVisible")) { Assert-True ($wAll[$k] -notmatch '\b(Patch|Update|UpdateIf|Remove|RemoveIf|SubmitForm|Defaults)\s*\(' -and $wAll[$k] -notmatch "\b(?:Collect|ClearCollect)\(\s*(?:Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\b") "Workers: $k has no Patch/Update/Remove/Defaults and does not Collect into a SharePoint list" }
+Assert-True ($wLoad.Contains('If(' + $wDirty + ' && !Coalesce(varWrkSaveFailed,false),') -and $wLoad.Contains('If(!Coalesce(varWrkForceRefresh,false) && varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkSaveFailed,false),')) 'Workers: loader refuses to reload over unsaved input (except after a failed save) and reuses a valid list unless forced'
+Assert-True ($wAll["$wScreen.OnVisible"].Contains('If(!Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !' + $wDirty + ',Set(varWrkForceRefresh,true); Select(btnWrkLoad))')) 'Workers: OnVisible reloads fresh (forced) when idle and clean: contractor/worker changes made elsewhere are always read (H16)'
+$iWConc = $wLoad.IndexOf('Concurrent(')
+Assert-True ($wLoad.IndexOf('IfError(Refresh(Workers),') -lt $iWConc -and $wLoad.IndexOf('IfError(Refresh(Employers),') -lt $iWConc -and $wLoad.IndexOf('IfError(Refresh(Workers),') -gt 0 -and $wLoad -notmatch 'If\(Coalesce\(varWrkForceRefresh,false\),') 'Workers: every load refreshes the Workers and Employers connector cache first (H16)'
+$wConc = Get-Balanced $wLoad $iWConc; $wBr = Split-Args $wConc.Substring('Concurrent('.Length, $wConc.Length - 'Concurrent('.Length - 1)
+Assert-True ($wBr.Count -eq 2 -and $wBr[0].Contains('ClearCollect(colPendingWrkRaw,Workers)') -and $wBr[0].Contains('Collect(colWrkWorkersLoadErrors,') -and $wBr[0] -notmatch 'colWrkEmployersLoadErrors|colWrkLoadErrors\b' -and $wBr[1].Contains('ClearCollect(colPendingWrkEmployers,ForAll(Employers As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Active:Coalesce(emp.Active,true)}))') -and $wBr[1].Contains('Collect(colWrkEmployersLoadErrors,') -and $wBr[1] -notmatch 'colWrkWorkersLoadErrors|colWrkLoadErrors\b') 'Workers: two Concurrent reads (Workers; Employers ID/Title/Active), each with its own error collection'
+$iWMerge = $wLoadN.IndexOf('Collect(colWrkLoadErrors,colWrkWorkersLoadErrors,colWrkEmployersLoadErrors)'); $iWLw = $wLoadN.IndexOf('If(CountRows(colPendingWrkRaw)>=500,Collect(colWrkLoadErrors,'); $iWLe = $wLoadN.IndexOf('If(CountRows(colPendingWrkEmployers)>=500,Collect(colWrkLoadErrors,')
+$iWGate = $wLoadN.IndexOf('If(IsEmpty(colWrkLoadErrors),ClearCollect(colAdminWorkers,colPendingAdminWorkers);ClearCollect(colWrkEmployers,colPendingWrkEmployers);ClearCollect(colWrkModified,colPendingWrkModified);Set(varWrkNewTrade,varPendingWrkNewTrade);Set(varWrkNewLanguage,varPendingWrkNewLanguage);')
+Assert-True ($iWMerge -gt 0 -and $iWLw -gt $iWMerge -and $iWLe -gt $iWMerge -and $iWGate -gt $iWLw -and $iWGate -gt $iWLe -and $wLoadN.IndexOf('Set(varWrkLoadState,"Loaded")') -gt $iWGate) 'Workers: errors merged, 500 guards on Workers AND Employers, staging committed (list, contractors, Modified, New defaults) only without errors, then Loaded'
+Assert-True (([regex]::Matches($wText, 'ClearCollect\(colAdminWorkers,')).Count -eq 1 -and ([regex]::Matches($wText, 'ClearCollect\(colWrkEmployers,')).Count -eq 1) 'Workers: colAdminWorkers and colWrkEmployers are only replaced by the loader staging step'
+Assert-True ($wLoad.Contains('Set(varPendingWrkNewTrade,IfError(If(CountIf(Choices([@Workers].Trade),Value="Unknown")>0,"Unknown",""),""));') -and $wLoad.Contains('Set(varPendingWrkNewLanguage,IfError(If(CountIf(Choices([@Workers].Language),Value="Nederlands")>0,"Nederlands",""),""));')) 'Workers: New defaults Trade "Unknown" and Language "Nederlands" only when that value exists in Choices (else empty: the user must choose; nothing invented)'
+$wNewSnap = '{ID:Blank(),FirstName:"",Surname:"",Code:"",Trade:varWrkNewTrade & "",EmployerID:Blank(),EmployerName:"",Contractor:"",Language:varWrkNewLanguage & "",Active:true}'
+Assert-True ($wLoad.Contains("Set(varWrkEdit,$wNewSnap)") -and (WProp 'btnWrkNew' 'OnSelect').Contains("Set(varWrkEdit,$wNewSnap);")) 'Workers: New snapshot (OnNew and reload in New mode) = empty fields, Trade/Language defaults, Active true'
+$wProjAt = $wLoad.IndexOf('ClearCollect(colPendingAdminWorkers,'); $wProjCall = Get-Balanced $wLoad ($wProjAt + 'ClearCollect'.Length); $wProj = $wProjCall.Substring('(colPendingAdminWorkers,'.Length, $wProjCall.Length - '(colPendingAdminWorkers,'.Length - 1)
+$wRawFix = "colPendingWrkRaw:Table({ID:1,'First Name':`" Ann `",Surname:`"Test`",'Worker Code':`"WKR-001`",Trade:{Value:`"Fitter`"},Employer:{Id:3,Value:`"TEST Employer`"},Language:{Value:`"Nederlands`"},Active:true},{ID:2,'First Name':`"Bob`",Surname:`"Test`",'Worker Code':`"`",Trade:{Value:`"F`"},Employer:{Id:4,Value:`"Old Co`"},Language:{Value:`"English`"},Active:false},{ID:3,'First Name':`"Cy`",Surname:`"Test`",'Worker Code':`"WKR-003`",Trade:{Value:`"Welder`"},Employer:{Id:9,Value:`"Ghost`"},Language:{Value:`"English`"},Active:true},{ID:4,'First Name':`"Di`",Surname:`"Test`",'Worker Code':If(false,`"x`"),Trade:If(false,{Value:`"x`"}),Employer:If(false,{Id:0,Value:`"x`"}),Language:If(false,{Value:`"x`"}),Active:If(false,true)}),colPendingWrkEmployers:Table({ID:3,Name:`"TEST Employer`",Active:true},{ID:4,Name:`"Old Co`",Active:false})"
+Assert-Eval "With({LangNl:false,T:$tRec,$wRawFix},Concat($wProj,Text(ID) & `":`" & FirstName & `"/`" & Code & `"/`" & Trade & `"/`" & Text(Coalesce(EmployerID,0)) & `"/`" & Contractor & `"/`" & Language & `"/`" & Text(Active),`"|`"))" '1:Ann/WKR-001/Fitter/3/TEST Employer/Nederlands/true|2:Bob//F/4/Old Co (inactive)/English/false|3:Cy/WKR-003/Welder/9/Ghost/English/true|4:Di///0///true' 'Workers: loader projection: trimmed fields, legacy Trade kept as-is, Contractor = loaded name (+ " (inactive)"), unknown employer keeps the lookup value, blanks normalized, blank Active = active'
+foreach ($k in @('btnWrkNew.OnSelect', 'btnWrkDiscard.OnSelect', 'btnWrkLoad.OnSelect', "$wScreen.OnVisible")) { Assert-True ($wAll[$k] -notmatch 'Nederlands"\s*,\s*EmployerID|Trade:"Unknown"') "Workers: $k does not hard-code Trade/Language in a snapshot (defaults come from Choices via the loader)" }
+$wItemsAll = (WProp 'galWrkList' 'Items').TrimStart('=')
+$wSorted = 'Sort' + (Get-Balanced $wItemsAll ($wItemsAll.IndexOf('Sort(ForAll(') + 4))
+Assert-True ($wItemsAll.StartsWith('ForAll(' + $wSorted + ' As r,{ID:r.ID,Title:r.Name,Subtitle:')) 'Workers: cmpListCard Items = all rows sorted, projected to ID, Title, Subtitle, Inactive, ChipText (no host filter)'
+$wPred = $lcPredC.Replace('txtSearch.Text', 'cmpWrkList.SearchText').Replace('cmpListCard.ShowInactive', 'Coalesce(varWrkShowInactive,false)')
+$wItems = 'Filter(' + $wItemsAll + ',' + $wPred + ')'
+$wEmpty = '{ID:Blank(),FirstName:"",Surname:"",Code:"",Trade:"",EmployerID:Blank(),EmployerName:"",Contractor:"",Language:"",Active:true}'
+Test-AutoSelect $wLoad $wItems $null (WProp 'galWrkList' 'OnSelect') 'Wrk' 'colAdminWorkers' $wEmpty $wDirty 'Workers'
+$wSelFix = 'colAdminWorkers:Table({ID:1,FirstName:"Zed",Surname:"Test",Code:"WKR-001",EmployerName:"TEST Employer",Active:true},{ID:2,FirstName:"alpha",Surname:"Test",Code:"WKR-002",EmployerName:"",Active:false},{ID:3,FirstName:"Bob",Surname:"Test",Code:"",EmployerName:"Delft Co",Active:If(false,true)})'
+foreach ($c in @(@('false', '""', '3', 'first active row by "First Surname" (inactive alpha hidden; blank Active = active)'), @('true', '""', '2', 'Show inactive on: alpha first'), @('false', '"zed t"', '1', 'search on the name'), @('false', '"wkr-00"', '1', 'search on the worker code'), @('false', '"delft"', '3', 'search on the contractor'))) {
+    Assert-Eval "With({$wSelFix,LangNl:false,T:$tRec,varWrkShowInactive:$($c[0]),cmpWrkList:{SearchText:$($c[1])}},Text(First($wItems).ID))" $c[2] "Workers list: $($c[3]) -> ID $($c[2])"
+}
+Assert-Eval "With({$wSelFix,LangNl:false,T:$tRec,varWrkShowInactive:false,cmpWrkList:{SearchText:`"`"}},Concat($wItems,Title & `" = `" & Subtitle,`"; `"))" ('Bob Test = Delft Co; Zed Test = WKR-001 ' + [char]0x00B7 + ' TEST Employer') 'Workers list rows: title "First Surname", subtitle "Worker Code - Contractor" (code or contractor alone when the other is blank)'
+
+# (W4) Every SharePoint read in a behaviour formula is preceded by Refresh(<list>) in the same branch -------------------
+$wBeh = @{}
+foreach ($pp in $wScreenProps.Keys) { if ($pp -like 'On*') { $wBeh["$wScreen.$pp"] = [string]$wScreenProps[$pp] } }
+Get-BehaviourFormulas $wDoc['Screens'][$wScreen]['Children'] $wScreen $wBeh
+$wSp = @()
+foreach ($k in ($wBeh.Keys | Sort-Object)) { foreach ($r in (Test-RefreshBeforeReads $wBeh[$k])) { $wSp += $r; Assert-True ($r.Status -eq 'Refreshed') "Workers: $k : read of $($r.Source) (formula line $($r.Line)) preceded by Refresh($($r.Source)) in the same branch [$($r.Status)]" } }
+Assert-True (@($wSp | Where-Object Source -eq 'Workers').Count -eq 6 -and @($wSp | Where-Object Source -eq 'Employers').Count -eq 2 -and @($wSp | Where-Object Source -eq "'Project Workers'").Count -eq 1) "Workers: SharePoint reads: 6 x Workers (load, pre-read, duplicate, control read Edit/New, verify), 2 x Employers (load, re-read of a newly assigned contractor), 1 x Project Workers (deactivation check)"
+# (W5) Server predicates: column = global variable (or the one constant Active=true, V1); 500 / exact-one guard after each read
+$wFilters = 0
+foreach ($k in $wAll.Keys) {
+    foreach ($m in [regex]::Matches($wAll[$k], "\b(Filter|LookUp)\(\s*(Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\s*,")) {
+        $wFilters++
+        $call = Get-Balanced $wAll[$k] ($m.Index + $m.Groups[1].Value.Length); $pred = (Split-Args $call.Substring(1, $call.Length - 2))[1].Trim()
+        Assert-True ($m.Groups[1].Value -eq 'Filter' -and ($pred -match '^ID=var\w+$' -or $pred -ceq "'First Name'=varWrkSaveFirst && Surname=varWrkSaveSurname" -or ($m.Groups[2].Value -eq "'Project Workers'" -and $pred -ceq 'Active=true'))) "Workers: $k : server predicate '$pred' on $($m.Groups[2].Value) uses columns + global variables only (Active=true on Project Workers: decision V1)"
+    }
+}
+Assert-True ($wFilters -eq 7) "Workers: server predicates checked: $wFilters (pre-read, duplicate, control Edit/New, verify, deactivation, contractor re-read)"
+foreach ($k in $wAll.Keys) {
+    foreach ($m in [regex]::Matches($wAll[$k], '\b(?:ClearCollect|Collect)\(\s*(\w+)\s*,')) {
+        $call = Get-Balanced $wAll[$k] ($m.Index + $m.Value.IndexOf('(')); $arg = $call.Substring($m.Value.Length - $m.Value.IndexOf('('))
+        if ($arg -notmatch "(?<![\w.'])(?:Employers|Workers|Projects|Hours)\b(?!\.)|'(?:Project Workers|Assignment Periods)'") { continue }
+        if ($arg.TrimStart().StartsWith('If(varWrkSaveWriteTrade && varWrkSaveWriteLanguage,Patch(Workers,')) { continue }
+        $col = $m.Groups[1].Value; $after = $wAll[$k].Substring($m.Index)
+        Assert-True ($after.Contains("CountRows($col)>=500") -or $after.Contains("CountRows($col)<>1") -or $after.Contains("CountRows($col)=1")) "Workers: $k : SharePoint read into $col is followed by a 500 guard (or exact-one check for an ID read)"
+    }
+}
+
+# (W6) Save: all local validation before the one gate that encloses every SharePoint read and the Patch -------------------
+$wSave = WProp 'btnWrkSave' 'OnSelect'; $wSaveN = Norm $wSave
+$wSv = Get-RawOnSave 'scrWorkers'
+$wGateTxt = "If(IsEmpty(colWrkSaveErrors),`n" + (' ' * 16) + 'IfError(Refresh(Workers),'
+$iWG = $wSv.IndexOf("`n" + (' ' * 15) + $wGateTxt)
+Assert-True ($iWG -gt 0 -and ([regex]::Matches($wSv, [regex]::Escape($wGateTxt))).Count -eq 1) 'Workers: one read/write gate If(IsEmpty(colWrkSaveErrors), IfError(Refresh(Workers),...) ...)'
+$wGStart = $iWG + 1 + 15 + 2; $wGate = Get-Balanced $wSv $wGStart; $wGEnd = $wGStart + $wGate.Length
+$wIo = [regex]::Matches($wSv, "Refresh\(|Patch\(|Filter\((Workers|Employers|Projects|'Assignment Periods'|'Project Workers'),")
+$wOut = @($wIo | Where-Object { ($_.Index -lt $wGStart -or $_.Index -ge $wGEnd) -and !($_.Value -eq 'Refresh(' -and $wSv.Substring($_.Index, 16) -eq 'Refresh(Workers)' -and $_.Index -gt $wGEnd) })
+Assert-True ($wIo.Count -gt 8 -and $wOut.Count -eq 0) 'Workers: every SharePoint read and the Patch lie inside the gate (only the cache Refresh(Workers) after a verified save follows it)'
+Assert-True (([regex]::Matches($wGate, 'Patch\(Workers,')).Count -eq 4 -and ([regex]::Matches($srcAll, '\bPatch\(\s*Workers\b')).Count -eq 4) 'Workers: the 4 Patch(Workers) shapes are all inside the gate (no other Patch(Workers) in Src)'
+foreach ($fv in @('{Field:"FirstName"', '{Field:"Surname"', '{Field:"Trade"', '{Field:"Language"', '{Field:"Contractor"')) {
+    $all1 = @([regex]::Matches($wSv, [regex]::Escape($fv)) | ForEach-Object { $_.Index })
+    $iEc = $wSv.IndexOf('If(IsEmpty(colWrkSaveErrors) && varWrkSaveContractorChanged,'); $eEc = $iEc + (Get-Balanced $wSv ($iEc + 2)).Length + 2
+    Assert-True ($all1.Count -ge 1 -and @($all1 | Where-Object { $_ -gt $iWG -and !($fv -eq '{Field:"Contractor"' -and $_ -gt $iEc -and $_ -lt $eEc) }).Count -eq 0) "Workers: every $fv error is collected in the local validation before the gate (Contractor also by the server re-read of a new assignment)"
+}
+Assert-True ($wSave.Contains('Set(varWrkSaving,true);') -and $wSave.IndexOf('Set(varWrkSaving,true);') -lt $wSave.IndexOf('Clear(colWrkSaveErrors);') -and $wSave.Contains('FirstName:Trim(cmpWrkFirstName.Value & ""),Surname:Trim(cmpWrkSurname.Value & ""),Trade:Trim(cmpWrkTrade.Value & ""),Contractor:Trim(cmpWrkContractor.Value & ""),Language:Trim(cmpWrkLanguage.Value & ""),Active:Coalesce(varWrkActiveDraft,true)')) 'Workers: varWrkSaving set first (double click blocked); save record = trimmed field values + Active draft'
+$wLocalDup = $wSv.Substring($wSv.IndexOf('ClearCollect(colWrkDupLocal,'), $iWG - $wSv.IndexOf('ClearCollect(colWrkDupLocal,'))
+Assert-True ($wLocalDup -notmatch 'Refresh\(|Filter\((Workers|Employers)|Patch\(') 'Workers: the local duplicate pre-check (before the gate) reads only the loaded list'
+function WBal([string]$needle) { $i = $wSave.IndexOf($needle); if ($i -lt 0) { throw "FAIL missing $needle" }; return Get-Balanced $wSave ($i + 2) }
+function WFlag([string]$name) { $b = Get-Balanced $wSave ($wSave.IndexOf("Set($name,") + 3); return $b.Substring($name.Length + 2, $b.Length - $name.Length - 3) }
+# names: required, max 255, not digits only, First Name + " " + Surname <= 255
+$wDig = (Split-Args (WBal 'If(!IsBlank(varWrkSaveRec.FirstName) && IsMatch(').Substring(1, (WBal 'If(!IsBlank(varWrkSaveRec.FirstName) && IsMatch(').Length - 2))[0]
+Assert-True ($wDig -ceq '!IsBlank(varWrkSaveRec.FirstName) && IsMatch(varWrkSaveRec.FirstName,"[0-9]+")') 'Workers: digits-only rule = IsMatch(<name>,"[0-9]+") (IsMatch matches the complete text by default)'
+foreach ($c in @(@('123', $true, 'digits only'), @('Jan2', $false, 'letters and digits'), @('12 34', $false, 'digits with a space'), @('Anna', $false, 'letters'))) { Assert-True ([regex]::IsMatch($c[0], '^(?:[0-9]+)$') -eq $c[1]) "Workers: First Name '$($c[0])' -> digits-only error $($c[1]) ($($c[2]); complete-match semantics simulated with .NET regex, the local interpreter has no IsMatch)" }
+Assert-True ($wSave.Contains('If(IsBlank(varWrkSaveRec.FirstName),Collect(colWrkSaveErrors,{Field:"FirstName",Message:' + (TTw 'wrkErrFirstNameRequired') + '}));') -and $wSave.Contains('If(IsBlank(varWrkSaveRec.Surname),Collect(colWrkSaveErrors,{Field:"Surname",Message:' + (TTw 'wrkErrSurnameRequired') + '}));') -and $wSave.Contains('If(Len(varWrkSaveRec.FirstName)>255,') -and $wSave.Contains('If(Len(varWrkSaveRec.Surname)>255,') -and $wSave.Contains('If(!IsBlank(varWrkSaveRec.Surname) && IsMatch(varWrkSaveRec.Surname,"[0-9]+"),')) 'Workers: First Name and Surname required ("Fix: First Name empty" / "Fix: Surname empty"), max 255, not digits only'
+$wLen = (Split-Args (WBal 'If(Len(varWrkSaveRec.FirstName)<=255').Substring(1, (WBal 'If(Len(varWrkSaveRec.FirstName)<=255').Length - 2))[0]
+Assert-Eval "With({varWrkSaveRec:{FirstName:Concat(Sequence(200),`"a`"),Surname:Concat(Sequence(60),`"b`")}},$wLen)" $true 'Workers: First Name + Surname longer than 255 together -> error (Worker Name must fit)'
+Assert-Eval "With({varWrkSaveRec:{FirstName:Concat(Sequence(200),`"a`"),Surname:Concat(Sequence(54),`"b`")}},$wLen)" $false 'Workers: exactly 255 together -> accepted'
+Assert-Eval "With({varWrkSaveRec:{FirstName:Trim(`"   `" & `"`")}},Text(IsBlank(varWrkSaveRec.FirstName)))" 'true' 'Workers: a name of spaces only counts as empty'
+# Trade / Language: required, in the list; N3 = unchanged legacy value outside Choices accepted and not written
+$chT = 'Table({Value:"Fitter"},{Value:"Welder"},{Value:"Unknown"})'; $chL = 'Table({Value:"Nederlands"},{Value:"English"})'
+foreach ($col in @(@('Trade', $chT, '"F"', '"Fitter"', '"W"'), @('Language', $chL, '"Deutsch"', '"English"', '"Polski"'))) {
+    $cn = $col[0]; $inFx = "CountIf(Choices([@Workers].$cn),Value=varWrkSaveRec.$cn)>0"
+    Assert-True ($wSave.Contains("Set(varWrkSave${cn}InList,$inFx);")) "Workers: $cn in-list flag = CountIf(Choices([@Workers].$cn),Value=<save value>)>0"
+    $wfFx = WFlag "varWrkSaveWrite$cn"
+    Assert-True ($wfFx -ceq "!(varWrkSaveMode=`"Edit`" && !IsBlank(varWrkSaveRec.$cn) && !varWrkSaveTradeInList && varWrkSaveRec.$cn=Trim(varWrkEdit.$cn & `"`"))".Replace('varWrkSaveTradeInList', "varWrkSave${cn}InList")) "Workers N3: write flag for $cn = not (Edit, non-blank, outside the list, unchanged)"
+    $ifc = WBal "If(IsBlank(varWrkSaveRec.$cn),Collect(colWrkSaveErrors,{Field:`"$cn`""; $ifa = Split-Args $ifc.Substring(1, $ifc.Length - 2)
+    Assert-True ($ifa.Count -eq 4 -and $ifa[1].Contains((TTw "wrkErr${cn}Required")) -and $ifa[3].Contains((TTw "wrkErr${cn}Unknown"))) "Workers: $cn empty -> ""Fix: $cn empty"", new/changed value outside the list -> ""Fix: $cn unknown"" (field $cn)"
+    foreach ($c in @(@('"Edit"', $col[2], $col[2], 'false|false/false', 'legacy value outside the list unchanged: accepted, not written'), @('"Edit"', $col[2], $col[3], 'false|false/true', 'legacy value changed to a list value: written'), @('"Edit"', $col[2], $col[4], 'false|true/true', 'changed to another unknown value: error'), @('"Edit"', $col[3], '""', 'true|true/true', 'emptied (or legacy blank, V4): "empty" error first'), @('"New"', '""', $col[2], 'false|true/true', 'New with an unknown value: error'), @('"New"', '""', $col[3], 'false|false/true', 'New with a list value: accepted, written'))) {
+        $fx = "With({ch:$($col[1]),varWrkSaveMode:$($c[0]),varWrkEdit:{${cn}:$($c[1])},varWrkSaveRec:{${cn}:$($c[2])}},With({varWrkSave${cn}InList:CountIf(ch,Value=varWrkSaveRec.$cn)>0},Text(IsBlank(varWrkSaveRec.$cn)) & `"|`" & Text($($ifa[2])) & `"/`" & Text($wfFx)))"
+        Assert-Eval $fx $c[3] "Workers $cn : $($c[4]) -> empty|unknown/write = $($c[3])"
+    }
+}
+# Contractor mapping: unchanged = by ID (inactive current allowed); changed/New = by Lower(Trim(name)) in the loaded Employers
+$wCcFx = WFlag 'varWrkSaveContractorChanged'
+$wMatchAt = $wSave.IndexOf('ClearCollect(colWrkEmpMatch,'); $wMatchCall = Get-Balanced $wSave ($wMatchAt + 'ClearCollect'.Length); $wMatchFx = $wMatchCall.Substring('(colWrkEmpMatch,'.Length, $wMatchCall.Length - '(colWrkEmpMatch,'.Length - 1)
+$wCoChain = WBal 'If(IsBlank(varWrkSaveRec.Contractor),Collect(colWrkSaveErrors,{Field:"Contractor"'
+$wCoChainR = 'If' + [regex]::Replace($wCoChain, 'Collect\(colWrkSaveErrors,\{Field:"Contractor",Message:If\(LangNl && !IsBlank\(T\.(\w+)\.nl\),T\.\w+\.nl,T\.\w+\.en\)\}\)', '"$1"')
+Assert-True (([regex]::Matches($wCoChainR, '"wrkErrContractor(Required|Unknown|Ambiguous|Inactive)"')).Count -eq 4 -and $wCoChainR -notmatch 'Collect\(') 'Workers: contractor errors: empty, unknown, ambiguous, inactive (field Contractor)'
+$wEmpFix = 'colWrkEmployers:Table({ID:3,Name:"TEST Employer",Active:true},{ID:4,Name:"Old Co",Active:false},{ID:5,Name:"Twin",Active:true},{ID:6,Name:"Twin",Active:true})'
+$wEmpSetFx = WFlag 'varWrkSaveEmp'
+foreach ($c in @(@('"Edit"', '"Old Co (inactive)"', '4', '"Old Co (inactive)"', 'ok|4', 'unchanged inactive current contractor: allowed (matched by ID)'),
+                @('"Edit"', '"Old Co (inactive)"', '4', '"TEST Employer"', 'ok|3', 'changed to an active contractor: mapped to its ID'),
+                @('"Edit"', '"TEST Employer"', '3', '"Old Co"', 'wrkErrContractorInactive|4', 'changed to an inactive contractor: blocked'),
+                @('"Edit"', '"TEST Employer"', '3', '"Twin"', 'wrkErrContractorAmbiguous|0', 'two contractors with the same trimmed name: "Fix: Contractor ambiguous"'),
+                @('"New"', '""', 'If(false,0)', '""', 'wrkErrContractorRequired|0', 'New without contractor: "Fix: Contractor empty"'),
+                @('"New"', '""', 'If(false,0)', '"Nobody"', 'wrkErrContractorUnknown|0', 'name not in the loaded list: "Fix: Contractor unknown"'),
+                @('"New"', '""', 'If(false,0)', '"test employer"', 'ok|3', 'name matched case-insensitively'),
+                @('"Edit"', '"Ghost"', '9', '"Ghost"', 'wrkErrContractorUnknown|0', 'unchanged contractor that is no longer in the loaded list: unknown'))) {
+    $fx = "With({$wEmpFix,varWrkSaveMode:$($c[0]),varWrkEdit:{Contractor:$($c[1]),EmployerID:$($c[2])},varWrkSaveRec:{Contractor:$($c[3])}},With({varWrkSaveContractorChanged:$wCcFx},With({colWrkEmpMatch:$wMatchFx},With({varWrkSaveEmp:$wEmpSetFx},Coalesce($wCoChainR,`"ok`") & `"|`" & Text(Coalesce(varWrkSaveEmp.ID,0))))))"
+    Assert-Eval $fx $c[4] "Workers contractor: $($c[5]) -> $($c[4])"
+}
+Assert-True ($wSave.IndexOf('ClearCollect(colWrkEmpMatch,') -lt $iWG -and $wMatchFx -notmatch '\bEmployers\b') 'Workers: contractor mapping on the loaded Employers list only, before the gate'
+
+# (W7) Patch: one write step, 4 record shapes for N3 (Trade/Language), never Worker Code; Worker Name = First Name + " " + Surname
+$wSelAt = $wSave.IndexOf('ClearCollect(colWrkPatched,If(')
+Assert-True ($wSelAt -gt 0 -and ([regex]::Matches($wSave, 'ClearCollect\(colWrkPatched,')).Count -eq 1) 'Workers: exactly one ClearCollect(colWrkPatched, If(<shape>, Patch, ...)) write step'
+$wSel = Get-Balanced $wSave ($wSelAt + 'ClearCollect(colWrkPatched,If'.Length); $wSelArgs = Split-Args $wSel.Substring(1, $wSel.Length - 2)
+Assert-True ($wSelArgs.Count -eq 7 -and $wSelArgs[0].Trim() -ceq 'varWrkSaveWriteTrade && varWrkSaveWriteLanguage' -and $wSelArgs[2].Trim() -ceq 'varWrkSaveWriteTrade' -and $wSelArgs[4].Trim() -ceq 'varWrkSaveWriteLanguage') 'Workers: If(Trade && Language, P1, Trade, P2, Language, P3, P4): exactly one Patch runs'
+$wShape = @{}; $wSi = @{ 1 = 1; 2 = 3; 3 = 5; 4 = 6 }
+foreach ($si in 1, 2, 3, 4) {
+    $sp = $wSelArgs[$wSi[$si]].Trim(); $sa = Split-Args $sp.Substring('Patch('.Length, $sp.Length - 'Patch('.Length - 1)
+    Assert-True ($sp.StartsWith('Patch(Workers,') -and $sa.Count -eq 3 -and $sa[1].Trim() -ceq 'If(varWrkSaveMode="New",Defaults(Workers),First(colWrkPreRaw))') "Workers: shape $si : Patch(Workers, Defaults for New / the pre-read record for Edit, ...)"
+    $sr = $sa[2].Trim(); $wShape[$si] = [ordered]@{}; foreach ($a in (Split-Args $sr.Substring(1, $sr.Length - 2))) { $kv = $a -split ':', 2; $wShape[$si][$kv[0].Trim()] = $kv[1].Trim() }
+}
+$wShapeExp = @{ 1 = "'First Name',Surname,'Worker Name',Trade,Employer,Language,Active"; 2 = "'First Name',Surname,'Worker Name',Trade,Employer,Active"; 3 = "'First Name',Surname,'Worker Name',Employer,Language,Active"; 4 = "'First Name',Surname,'Worker Name',Employer,Active" }
+foreach ($si in 1, 2, 3, 4) {
+    Assert-True ((@($wShape[$si].Keys) -join ',') -ceq $wShapeExp[$si]) "Workers: shape $si writes exactly $($wShapeExp[$si]) (never Worker Code, field_1, Modified)"
+    foreach ($kk in @($wShape[$si].Keys)) { Assert-True ($wShape[$si][$kk] -ceq $wShape[1][$kk]) "Workers: shape $si writes $kk identically to shape 1" }
+}
+Assert-True ($wShape[1]["'First Name'"] -ceq 'varWrkSaveRec.FirstName' -and $wShape[1]['Surname'] -ceq 'varWrkSaveRec.Surname' -and $wShape[1]["'Worker Name'"] -ceq 'varWrkSaveRec.FirstName & " " & varWrkSaveRec.Surname' -and $wShape[1]['Trade'] -ceq '{Value:varWrkSaveRec.Trade}' -and $wShape[1]['Employer'] -ceq '{Id:varWrkSaveEmp.ID,Value:varWrkSaveEmp.Name}' -and $wShape[1]['Language'] -ceq '{Value:varWrkSaveRec.Language}' -and $wShape[1]['Active'] -ceq 'varWrkSaveRec.Active') 'Workers: Patch values: trimmed names, Worker Name = First Name & " " & Surname (as flow MS-017), Trade/Language {Value}, Employer {Id, Value} from the loaded list, Active'
+Assert-True ($srcAll -notmatch "'Worker Code'\s*:" -and $wSel -notmatch "Worker Code|field_\d|Title\s*:|Code\s*:|\bChoices\(") 'Workers: Worker Code (field_1, flow MS-017) is never written; no Choices() in a Patch record'
+$wWtFx = WFlag 'varWrkSaveWriteTrade'; $wWlFx = WFlag 'varWrkSaveWriteLanguage'
+foreach ($c in @(@('"Edit"', '"F"', '"Deutsch"', '"F"', '"Deutsch"', 4, 'legacy Trade and Language unchanged: neither written'), @('"Edit"', '"F"', '"English"', '"Fitter"', '"English"', 1, 'Trade changed to a list value, Language in the list: both written'), @('"Edit"', '"Fitter"', '"Deutsch"', '"Fitter"', '"Deutsch"', 2, 'legacy Language unchanged: Language not written'), @('"Edit"', '"F"', '"English"', '"F"', '"English"', 3, 'legacy Trade unchanged: Trade not written'), @('"New"', '""', '""', '"Unknown"', '"Nederlands"', 1, 'New: both written'))) {
+    $fx = "With({chT:$chT,chL:$chL,varWrkSaveMode:$($c[0]),varWrkEdit:{Trade:$($c[1]),Language:$($c[2])},varWrkSaveRec:{Trade:$($c[3]),Language:$($c[4])}},With({varWrkSaveTradeInList:CountIf(chT,Value=varWrkSaveRec.Trade)>0,varWrkSaveLanguageInList:CountIf(chL,Value=varWrkSaveRec.Language)>0},With({varWrkSaveWriteTrade:$wWtFx,varWrkSaveWriteLanguage:$wWlFx},If($($wSelArgs[0]),1,$($wSelArgs[2]),2,$($wSelArgs[4]),3,4))))"
+    Assert-Eval $fx $c[5] "Workers N3: $($c[6]) -> shape $($c[5])"
+    Assert-True (($wShape[$c[5]].Contains('Trade')) -eq ($c[5] -in 1, 2) -and ($wShape[$c[5]].Contains('Language')) -eq ($c[5] -in 1, 3)) "Workers N3: shape $($c[5]) has Trade: $($c[5] -in 1, 2), Language: $($c[5] -in 1, 3)"
+}
+
+# (W8) Duplicate: WARN + confirm ("Save anyway"), never block silently; nothing written without the confirmation ------------
+Assert-True ($wSave.Contains("ClearCollect(colWrkDup,ForAll(Filter(Workers,'First Name'=varWrkSaveFirst && Surname=varWrkSaveSurname) As w,") -and $wSave.IndexOf('Set(varWrkSaveFirst,varWrkSaveRec.FirstName); Set(varWrkSaveSurname,varWrkSaveRec.Surname);') -lt $wSave.IndexOf("Filter(Workers,'First Name'") -and $wSave.Contains('If(IsEmpty(colWrkSaveErrors) && CountRows(colWrkDup)>=500,')) 'Workers: server duplicate read Filter(Workers, First Name = global && Surname = global), 500 guard'
+$wDupCond = (Split-Args (WBal 'If(IsEmpty(colWrkSaveErrors) && !varWrkSaveDupOk && CountIf(colWrkDup,').Substring(1, (WBal 'If(IsEmpty(colWrkSaveErrors) && !varWrkSaveDupOk && CountIf(colWrkDup,').Length - 2))[0]
+$wDupCondL = $wDupCond.Replace('IsEmpty(colWrkSaveErrors) && ', '')
+$wDupRows = 'colWrkDup:Table({ID:5,FirstName:"Test",Surname:"Fitter 2",Code:"WKR-005",EmployerID:3},{ID:7,FirstName:"TEST",Surname:"fitter 2",Code:"",EmployerID:3},{ID:8,FirstName:"Test",Surname:"Fitter 2",Code:"WKR-008",EmployerID:4})'
+foreach ($c in @(@('"Edit"', '5', '3', 'false', $true, 'same name (other case) and contractor, other ID -> warning'), @('"Edit"', '5', '9', 'false', $false, 'same name, other contractor -> no warning'), @('"New"', 'If(false,0)', '4', 'false', $true, 'New with the name and contractor of ID 8 -> warning'), @('"Edit"', '5', '3', 'true', $false, 'confirmed with Save anyway -> no warning, save proceeds'))) {
+    Assert-Eval "With({$wDupRows,varWrkSaveMode:$($c[0]),varWrkSaveID:$($c[1]),varWrkSaveEmp:{ID:$($c[2])},varWrkSaveDupOk:$($c[3]),varWrkSaveRec:{FirstName:`"Test`",Surname:`"Fitter 2`"}},$wDupCondL)" $c[4] "Workers duplicate: $($c[5])"
+}
+Assert-True ($wSave.Contains('Collect(colWrkSaveErrors,{Field:"Dup",Message:Substitute(' + (TTw 'wrkWarnDuplicate') + ',"{0}",varWrkSaveDupCodes)})') -and ([regex]::Matches($wSave, [regex]::Escape('{Field:"Dup"'))).Count -eq 2) 'Workers: duplicate (local pre-check and server read) collected as Field "Dup" with the worker code(s): nothing is written'
+$wDokFx = WFlag 'varWrkSaveDupOk'
+foreach ($c in @(@('true', '"test|fitter 2|test employer"', $true, 'confirmed for the same name and contractor'), @('true', '"test|fitter 2|other"', $false, 'confirmed for another contractor'), @('false', '"test|fitter 2|test employer"', $false, 'not confirmed'), @('true', '""', $false, 'no pending warning'))) {
+    Assert-Eval "With({varWrkDupConfirmed:$($c[0]),varWrkDupPendingKey:$($c[1]),varWrkSaveDupKey:`"test|fitter 2|test employer`"},$wDokFx)" $c[2] "Workers Save anyway: $($c[3]) -> confirmation used = $($c[2])"
+}
+$wKeyLbl = ([string]$wIdx['lblWrkDupKey']['Properties']['Text']).Trim().TrimStart('='); $wKeySave = WFlag 'varWrkSaveDupKey'
+Assert-Eval "With({cmpWrkFirstName:{Value:`" Test `"},cmpWrkSurname:{Value:`"Fitter 2`"},cmpWrkContractor:{Value:`"TEST Employer `"}},With({varWrkSaveRec:{FirstName:Trim(cmpWrkFirstName.Value & `"`"),Surname:Trim(cmpWrkSurname.Value & `"`"),Contractor:Trim(cmpWrkContractor.Value & `"`")}},Text(($wKeyLbl)=($wKeySave)) & `"|`" & ($wKeyLbl)))" 'true|test|fitter 2|test employer' 'Workers: the switch key (lblWrkDupKey, from the inputs) equals the save key (name and contractor, Lower/Trim)'
+$wOutDup = 'varWrkSaveWrites=0 && varWrkSaveDupFound,' + "`n" + (' ' * 16) + 'Set(varWrkDupPendingKey,varWrkSaveDupKey); Set(varWrkDupConfirmed,false);'
+Assert-True ($wSv.Contains($wOutDup) -and $wSave.Contains('Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,' + (TTw 'admHeadAttention') + '); Set(varAdmMsgBody,LookUp(colWrkSaveErrors,Field="Dup").Message),')) 'Workers: duplicate outcome = amber "Attention." with the codes; the pending key is set and the confirmation cleared (state stays Loaded, input kept)'
+$wVisSw = ([string]$wIdx['btnWrkSaveAnywaySwitch']['Properties']['Visible']).Trim()
+Assert-True ($wVisSw -ceq '=Coalesce(varWrkMode,"") in ["New","Edit"] && !IsBlank(varWrkDupPendingKey) && varWrkDupPendingKey=lblWrkDupKey.Text' -and ([string]$wIdx['btnWrkSaveAnywayKnob']['Properties']['Visible']).Trim() -eq '=btnWrkSaveAnywaySwitch.Visible' -and ([string]$wIdx['lblWrkSaveAnywayState']['Properties']['Visible']).Trim() -eq '=btnWrkSaveAnywaySwitch.Visible') 'Workers: "Save anyway" switch only visible after a duplicate warning for exactly the shown name and contractor'
+foreach ($c in @(@('"test|fitter 2|test employer"', '"test|fitter 2|test employer"', $true), @('"test|fitter 2|test employer"', '"test|fitter 3|test employer"', $false), @('""', '"||"', $false))) { Assert-Eval "With({varWrkMode:`"Edit`",varWrkDupPendingKey:$($c[0]),lblWrkDupKey:{Text:$($c[1])}},$($wVisSw.TrimStart('=')))" $c[2] "Workers: Save anyway visible = $($c[2]) (pending $($c[0]), shown $($c[1]))" }
+$wSwOs = ([string]$wIdx['btnWrkSaveAnywaySwitch']['Properties']['OnSelect']).Trim()
+Assert-True ($wSwOs.StartsWith('=If(' + $wFieldEnabled.Substring(1) + ',') -and ([string]$wIdx['btnWrkSaveAnywaySwitch']['Properties']['DisplayMode']).Trim() -ceq ('=If(' + $wFieldEnabled.Substring(1) + ',DisplayMode.Edit,DisplayMode.Disabled)') -and $wSwOs.Contains('If(!IsBlank(varWrkDupPendingKey) && varWrkDupPendingKey=lblWrkDupKey.Text,Set(varWrkDupConfirmed,!Coalesce(varWrkDupConfirmed,false)),Set(varWrkDupConfirmed,false))')) 'Workers: Save anyway switch: same edit guard in DisplayMode and OnSelect; toggles only for the warned name/contractor, else stays off'
+foreach ($k in 'cmpWrkFirstName', 'cmpWrkSurname', 'cmpWrkContractor') { Assert-True (([string]$wIdx[$k]['Properties']['OnChange']).Trim() -ceq ('=If(' + $wFieldEnabled.Substring(1) + ',Set(varWrkDupConfirmed,false)); true')) "Workers: $k.OnChange resets the Save anyway confirmation (name or contractor changed)" }
+$wConfSets = @(Get-SetValues $wText 'varWrkDupConfirmed' | Sort-Object)
+Assert-True (($wConfSets -join '|') -ceq '!Coalesce(varWrkDupConfirmed,false)|false' -or ($wConfSets -join '|') -ceq 'false|!Coalesce(varWrkDupConfirmed,false)') "Workers: varWrkDupConfirmed is only switched by the Save anyway switch, otherwise reset to false ($($wConfSets -join ' | '))"
+foreach ($k in @('btnWrkLoad.OnSelect', 'btnWrkNew.OnSelect', 'btnWrkDiscard.OnSelect', 'galWrkList.OnSelect', 'btnWrkSave.OnSelect')) { Assert-True ($wAll[$k].Contains('Set(varWrkDupPendingKey,""); Set(varWrkDupConfirmed,false);')) "Workers: $k clears the duplicate warning and the confirmation" }
+
+# (W9) Deactivation blocked while the worker has an active Project Workers link (V1: one read Active=true, local match) -------
+$wDeFx = WFlag 'varWrkSaveDeactivate'
+foreach ($c in @(@('"Edit"', 'true', 'false', $true, 'active -> inactive'), @('"Edit"', 'false', 'false', $false, 'already inactive'), @('"Edit"', 'false', 'true', $false, 'reactivation'), @('"Edit"', 'If(false,true)', 'false', $true, 'blank Active (= active) -> inactive'), @('"New"', 'true', 'false', $false, 'New record'))) { Assert-Eval "With({varWrkSaveMode:$($c[0]),varWrkEdit:{Active:$($c[1])},varWrkSaveRec:{Active:$($c[2])}},$wDeFx)" $c[3] "Workers deactivation check needed: $($c[4]) -> $($c[3])" }
+$wDeBlk = WBal 'If(IsEmpty(colWrkSaveErrors) && varWrkSaveDeactivate,'
+Assert-True ($wDeBlk.Contains("IfError(Refresh('Project Workers'),Set(varWrkSaveDeactUnchecked,true);false);") -and $wDeBlk.Contains("ClearCollect(colWrkActivePW,ForAll(Filter('Project Workers',Active=true) As pw,{ID:pw.ID,WorkerID:pw.Worker.Id,ProjectID:pw.Project.Id,ProjectTitle:Trim(pw.Project.Value & `"`")}))") -and $wDeBlk.Contains('If(!varWrkSaveDeactUnchecked && CountRows(colWrkActivePW)>=500,Set(varWrkSaveDeactUnchecked,true));') -and ([regex]::Matches($srcAll, [regex]::Escape("Filter('Project Workers',Active=true)"))).Count -eq 1) 'Workers: deactivation = Refresh + ONE read Filter(Project Workers, Active=true) (V1 exception, only place in Src), lookup ID matched locally; read error or 500+ rows = blocked'
+Assert-True ($wSave.IndexOf('If(IsEmpty(colWrkSaveErrors) && varWrkSaveDeactivate,') -lt $wSave.IndexOf('ClearCollect(colWrkPatched,') -and $wSave.IndexOf('If(IsEmpty(colWrkSaveErrors) && varWrkSaveDeactivate,') -gt $wSave.IndexOf('With({p:First(colWrkPre)},')) 'Workers: deactivation check after the conflict check, before the Patch'
+$wDeMsgAt = $wDeBlk.IndexOf('Collect(colWrkSaveErrors,{Field:"Active",Message:Substitute('); $wDeMsgRec = Get-Balanced $wDeBlk ($wDeMsgAt + 'Collect'.Length); $wDeMsg = (Split-Args $wDeMsgRec.Substring(1, $wDeMsgRec.Length - 2))[1].Trim(); $wDeMsg = $wDeMsg.Substring('{Field:"Active",Message:'.Length, $wDeMsg.Length - '{Field:"Active",Message:'.Length - 1)
+$wPwFix = 'colWrkActivePW:Table({ID:11,WorkerID:5,ProjectID:1,ProjectTitle:"Beta"},{ID:12,WorkerID:5,ProjectID:2,ProjectTitle:"alpha"},{ID:13,WorkerID:6,ProjectID:3,ProjectTitle:"Other"})'
+Assert-Eval "With({LangNl:false,T:$tRec,varWrkSaveID:5,$wPwFix},$wDeMsg)" 'Still active in Project / team: alpha, Beta. Uncheck in Project / team first.' 'Workers: blocked deactivation names the projects (sorted)'
+Assert-Eval "With({LangNl:false,T:$tRec,varWrkSaveID:5,colWrkActivePW:ForAll(Sequence(5),{ID:Value,WorkerID:5,ProjectID:Value,ProjectTitle:`"P`" & Text(Value)})},$wDeMsg)" 'Still active in Project / team: P1, P2, P3 (+2 more). Uncheck in Project / team first.' 'Workers: blocked deactivation shows the first 3 projects and "(+n more)"'
+Assert-True ($wDeBlk.Contains('CountIf(colWrkActivePW,WorkerID=varWrkSaveID)>0,') -and $wDeBlk.Contains('Collect(colWrkSaveErrors,{Field:"Active",Message:' + (TTw 'wrkErrDeactCheck') + '})') -and $wSave.Contains('varWrkSaveWrites=0 && varWrkSaveDeactBlocked,') -and $wSave.Contains('Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,' + (TTw 'admHeadBlocked') + '); Set(varAdmMsgBody,LookUp(colWrkSaveErrors,Field="Active").Message),')) 'Workers: deactivation outcome = red "Blocked." with the projects or "could not be checked"; nothing written'
+
+# Reviewer 08-11-2026 (non-blocking 3): a NEW contractor assignment (or New) is re-read by ID inside the gate before the Patch:
+# not exactly 1 row, read error or Active false = zero writes with the unknown/inactive error on field Contractor; counted as a read.
+$wEcBlk = WBal 'If(IsEmpty(colWrkSaveErrors) && varWrkSaveContractorChanged,'
+Assert-True ($wSave.IndexOf('Set(varWrkSaveEmpID,varWrkSaveEmp.ID);') -gt 0 -and $wSave.IndexOf('Set(varWrkSaveEmpID,varWrkSaveEmp.ID);') -lt $wSave.IndexOf('IfError(Refresh(Workers),Collect(colWrkSaveErrors') -and $wEcBlk.Contains('IfError(Refresh(Employers),') -and $wEcBlk.Contains('Set(varWrkSaveReads,varWrkSaveReads+1);') -and $wEcBlk.Contains('ClearCollect(colWrkEmpCheck,ForAll(Filter(Employers,ID=varWrkSaveEmpID) As emp,{ID:emp.ID,Active:Coalesce(emp.Active,true)}))')) 'Workers: newly assigned contractor re-read by ID (global var set before the gate, Refresh first, counted in the reads)'
+$iEcAt = $wSave.IndexOf('If(IsEmpty(colWrkSaveErrors) && varWrkSaveContractorChanged,')
+Assert-True ($iEcAt -gt $wSave.IndexOf('If(IsEmpty(colWrkSaveErrors) && varWrkSaveDeactivate,') -and $iEcAt -lt $wSave.IndexOf('ClearCollect(colWrkPatched,')) 'Workers: contractor re-read after the deactivation check, directly before the Patch'
+$wEcDec = WBal 'If(IsEmpty(colWrkSaveErrors) && (CountRows(colWrkEmpCheck)<>1'
+$wEcArgs = Split-Args $wEcDec.Substring(1, $wEcDec.Length - 2)
+$wEcMsg = [regex]::Match($wEcArgs[1], 'Message:(If\(CountRows.*)\}\)\s*$').Groups[1].Value
+foreach ($c in @(@('Table({ID:3,Active:true})', 'false', '', 'active, one row: no error'), @('Table({ID:3,Active:false})', 'true', 'Fix: Contractor inactive', 'deactivated meanwhile in SharePoint'), @('Filter(Table({ID:3,Active:true}),false)', 'true', 'Fix: Contractor unknown', 'no longer in SharePoint'), @('Table({ID:3,Active:true},{ID:3,Active:true})', 'true', 'Fix: Contractor unknown', 'not exactly one row'))) {
+    $cond = $wEcArgs[0].Replace('IsEmpty(colWrkSaveErrors) && ', '')
+    Assert-Eval "With({LangNl:false,T:$tRec,colWrkEmpCheck:$($c[0])},Text($cond) & `"|`" & If($cond,$wEcMsg,`"`"))" ($c[1] + '|' + $c[2]) "Workers contractor re-read: $($c[3]) -> error $($c[1]) $($c[2])"
+}
+Assert-True (([regex]::Matches($wEcBlk, [regex]::Escape('{Field:"",Message:' + (TTw 'wrkErrPreRead') + '}'))).Count -eq 2 -and $wEcBlk.Contains('IfError(Refresh(Employers),Collect(colWrkSaveErrors,{Field:"",Message:' + (TTw 'wrkErrPreRead') + '});false);') -and ([regex]::Matches($wEcBlk, 'wrkErrContractorUnknown\.en')).Count -eq 1 -and ([regex]::Matches($wEcBlk, 'wrkErrContractorInactive\.en')).Count -eq 1 -and $wEcBlk -notmatch 'Patch\(') 'Workers: re-read Refresh/read errors = T.wrkErrPreRead (Field ""); unknown only for not exactly 1 row, inactive for Active false (field Contractor); no write in the block'
+# Reviewer 08-11-2026 (non-blocking 4): duplicate check (local, server read, Save anyway) only for New or a changed name/contractor
+$wDnFx = WFlag 'varWrkSaveDupNeeded'
+foreach ($c in @(@('"Edit"', '"Test"', '"Fitter 2"', '"TEST Employer"', $false, 'Edit, name and contractor unchanged'), @('"Edit"', '"test"', '"FITTER 2"', '"test employer"', $false, 'Edit, only case differs'), @('"Edit"', '"Tess"', '"Fitter 2"', '"TEST Employer"', $true, 'Edit, First Name changed'), @('"Edit"', '"Test"', '"Welder 2"', '"TEST Employer"', $true, 'Edit, Surname changed'), @('"Edit"', '"Test"', '"Fitter 2"', '"Other"', $true, 'Edit, contractor changed'), @('"New"', '"Test"', '"Fitter 2"', '"TEST Employer"', $true, 'New'))) {
+    Assert-Eval "With({varWrkSaveMode:$($c[0]),varWrkEdit:$wSnap,varWrkSaveRec:{FirstName:$($c[1]),Surname:$($c[2]),Contractor:$($c[3])}},$wDnFx)" $c[4] "Workers duplicate check needed: $($c[5]) -> $($c[4])"
+}
+Assert-True ($wSaveN.Contains((Norm 'If(IsEmpty(colWrkSaveErrors) && varWrkSaveDupNeeded,ClearCollect(colWrkDupLocal,')) -and $wSaveN.Contains((Norm 'If(IsEmpty(colWrkSaveErrors) && varWrkSaveDupNeeded,Set(varWrkSaveReads,varWrkSaveReads+1);IfError(CountRows(ClearCollect(colWrkDup,')) -and $wSave.IndexOf('Set(varWrkSaveDupNeeded,') -lt $wSave.IndexOf('ClearCollect(colWrkDupLocal,')) 'Workers: local duplicate pre-check and server duplicate read only when the duplicate check is needed (unchanged Edit = no read, no warning)'
+# Reviewer 08-11-2026 (non-blocking 9): blank project title -> "Project ID <Project.Id>"
+Assert-Eval "With({LangNl:false,T:$tRec,varWrkSaveID:5,colWrkActivePW:Table({ID:11,WorkerID:5,ProjectID:7,ProjectTitle:`"`"},{ID:12,WorkerID:5,ProjectID:8,ProjectTitle:`"Beta`"})},$wDeMsg)" 'Still active in Project / team: Project ID 7, Beta. Uncheck in Project / team first.' 'Workers: blocked deactivation shows "Project ID <Project.Id>" when the project title is blank'# (W10) Conflict check (pre-read vs loaded snapshot) and verify (read-back vs save record) on the app-written fields -----------
+$wConfIf = Get-Balanced $wSave ($wSave.IndexOf('If(p.ID<>varWrkSaveID') + 2); $wConfCond = (Split-Args $wConfIf.Substring(1, $wConfIf.Length - 2))[0]
+Assert-True ($wConfIf.Contains('Collect(colWrkSaveErrors,{Field:"",Message:' + (TTw 'wrkErrConflict') + '})') -and $wConfCond -notmatch 'Code|Modified|EmployerName|Contractor\b') 'Workers: conflict -> exact conflict message; compares the written fields only (not Worker Code, Modified, the lookup text)'
+Assert-Eval "With({LangNl:false,T:$tRec},T.wrkErrConflict.en)" 'Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.' 'Workers: conflict message text exact (AGENTS)'
+$wPre = '{ID:5,FirstName:"Test",Surname:"Fitter 2",Code:"WKR-005",Trade:"Fitter",EmployerID:3,EmployerName:"TEST Employer",Contractor:"TEST Employer",Language:"Nederlands",Active:true}'
+foreach ($c in @(@('', '', $false, 'unchanged'), @('FirstName:"Test"', 'FirstName:"Tess"', $true, 'First Name'), @('Surname:"Fitter 2"', 'Surname:"Fitter 3"', $true, 'Surname'), @('Trade:"Fitter"', 'Trade:"Welder"', $true, 'Trade'), @('EmployerID:3', 'EmployerID:4', $true, 'Employer.Id'), @('Language:"Nederlands"', 'Language:"English"', $true, 'Language'), @('Active:true', 'Active:false', $true, 'Active'), @('Code:"WKR-005"', 'Code:"WKR-099"', $false, 'Worker Code (flow field)'), @('EmployerName:"TEST Employer"', 'EmployerName:"Renamed"', $false, 'contractor renamed (lookup text)'))) {
+    $pf = if ($c[0]) { $wPre.Replace($c[0], $c[1]) } else { $wPre }
+    Assert-Eval "With({p:$pf,varWrkEdit:$wPre,varWrkSaveID:5},$wConfCond)" $c[2] "Workers conflict: another user changed $($c[3]) -> conflict=$($c[2])"
+}
+$wTbl = Get-Balanced $wSave ($wSave.IndexOf('With({d:Filter(Table(') + 'With({d:Filter'.Length)
+$wTblFx = (Split-Args $wTbl.Substring(1, $wTbl.Length - 2))[0]
+Assert-Eval "With({LangNl:false,T:$tRec,v:$wPre,varWrkSaveRec:{FirstName:`"Test`",Surname:`"Fitter 2`",Trade:`"Fitter`",Language:`"Nederlands`",Active:true},varWrkSaveEmp:{ID:3,Name:`"TEST Employer`"}},Concat($wTblFx,F,`",`"))" 'FirstName,Surname,Trade,Contractor,Language,Active' 'Workers verify covers exactly First Name, Surname, Trade, Contractor (Employer.Id), Language, Active'
+$wPreMoved = $wPre.Replace('EmployerID:3', 'EmployerID:4').Replace('Code:"WKR-005"', 'Code:""')
+Assert-Eval "With({LangNl:false,T:$tRec,v:$wPreMoved,varWrkSaveRec:{FirstName:`"Test`",Surname:`"Fitter 2`",Trade:`"Fitter`",Language:`"Nederlands`",Active:true},varWrkSaveEmp:{ID:3,Name:`"TEST Employer`"}},Concat(Filter($wTblFx,D),L,`",`"))" 'Contractor' 'Workers verify: a different Employer.Id fails (label Contractor); Worker Code is not compared'
+# (W11) write counter, control read and outcome (shared helper, same rules as Contractors/Projects)
+Test-WriteCounter $wSave 'Wrk' 'Workers' 'Workers'
+# (W12) 8b: Discard in New mode returns to the previous record (shared helper)
+$wDiscCases = @(@('false', '""', '1', '"Loaded"', $noErr, '1', 'previous record visible -> restored'), @('false', '""', '2', '"Loaded"', $noErr, '3', 'previous record inactive, Show inactive off -> first visible row'), @('true', '""', '2', '"Loaded"', $noErr, '2', 'previous inactive record shown (Show inactive on) -> restored'), @('false', '""', '99', '"Loaded"', $noErr, '3', 'previous record no longer in the loaded list -> first visible row'), @('false', '""', 'If(false,0)', '"Loaded"', $noErr, '3', 'no previous record -> first visible row'), @('false', '"delft"', '1', '"Loaded"', $noErr, '3', 'previous record hidden by the search text -> first visible row'), @('false', '"nomatch"', '1', '"Loaded"', $noErr, 'blank', 'empty visible list -> no selection (Mode "")'), @('false', '""', '1', '"Failed"', $noErr, 'blank', 'load not Loaded -> no selection'), @('false', '""', '1', '"Loaded"', 'Table({Message:"x"})', 'blank', 'load errors present -> no selection'))
+Test-DiscardNew 'Wrk' 'Workers' $wGuards.btnWrkDiscard $wDirty (WProp 'btnWrkDiscard' 'OnSelect') (WProp 'btnWrkNew' 'OnSelect') $wLoad $wItems 'colAdminWorkers' $wEmpty $wSelFix $wDiscCases $wAll 'FirstName'
+$wEditSets = Get-SetValues $wText 'varWrkEdit'
+Assert-True (@($wEditSets | Where-Object { $_ -notmatch '^(LookUp\(colAdminWorkers,ID=varWrkSelectedID\)|First\(colWrkVerify\)|\{ID:Blank\(\),.*Active:true\})$' }).Count -eq 0) "Workers: varWrkEdit only from the loaded list, the verify read or the empty/New snapshot ($($wEditSets -join ' | '))"
+
+# (W13) After a verified save: local list from the verify read only, caches invalidated, contractor-change information ----------
+$wOk = WBal 'If(varWrkSaveVerified && IsEmpty(colWrkSaveErrors),'
+Assert-True ($wOk.Contains('RemoveIf(colAdminWorkers,ID=varWrkPatchedID); Collect(colAdminWorkers,First(colWrkVerify));') -and $wOk.Contains('Set(varWrkEdit,First(colWrkVerify));') -and $wSave.IndexOf('RemoveIf(colAdminWorkers') -gt $wSave.IndexOf('ClearCollect(colWrkVerifyRaw')) 'Workers: the list and the snapshot are updated only from the verify read'
+Assert-True ($wOk.Contains('Set(varWorkersCacheReady,false); Set(varMastersReady,false); Set(varReportReady,false); Set(varReportValid,false);') -and $wOk.Contains('IfError(Refresh(Workers),Set(varWrkSaveRefreshFailed,true);false);')) 'Workers: verified save invalidates the worker/master/report caches (2.7) and refreshes the Workers connector'
+$wMvFx = WFlag 'varWrkSaveContractorMoved'
+foreach ($c in @(@('"Edit"', '3', '5', $true, 'contractor changed'), @('"Edit"', '3', '3', $false, 'same contractor'), @('"New"', 'If(false,0)', '3', $false, 'New worker'))) { Assert-Eval "With({varWrkSaveMode:$($c[0]),varWrkEdit:{EmployerID:$($c[1])},varWrkSaveEmp:{ID:$($c[2])}},$wMvFx)" $c[3] "Workers: contractor moved = $($c[3]) ($($c[4]))" }
+$wMsgAt = $wOk.IndexOf('Set(varAdmMsgBody,Trim('); $wMsgSet = Get-Balanced $wOk ($wMsgAt + 3); $wMsgFx = $wMsgSet.Substring('(varAdmMsgBody,'.Length, $wMsgSet.Length - '(varAdmMsgBody,'.Length - 1)
+Assert-Eval "With({LangNl:false,T:$tRec,varWrkSaveContractorMoved:true,varWrkSaveRefreshFailed:false},$wMsgFx)" 'Saved. Old hours keep the old contractor.' 'Workers: contractor change -> amber "Attention." body "Saved. Old hours keep the old contractor."'
+Assert-True ($wOk.Contains('If(varWrkSaveContractorMoved || varWrkSaveRefreshFailed,') -and $wOk.Contains('Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,' + (TTw 'admHeadAttention') + ');') -and $wOk.Contains('Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,' + (TTw 'admHeadSaved') + '); Set(varAdmMsgBody,"")')) 'Workers: saved with information = amber Attention (body starts with Saved.), else green Saved.'
+
+# (W14) Texts via T (English, nl empty), traces without names, no Remove on SharePoint lists, Home tile -----------------------
+$wKeys = @([regex]::Matches($wText, '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+Assert-True ($wKeys.Count -ge 50) "Workers: $($wKeys.Count) T keys used"
+foreach ($k in $wKeys) { Assert-Eval "With({T:$tRec},!IsBlank(T.$k.en) && IsBlank(T.$k.nl))" $true "Workers: T.$k exists with English text (nl empty)" }
+$wLits = @(@($wIdx.Keys) | Where-Object { $wIdx[$_]['Properties'].ContainsKey('Text') -and $wIdx[$_]['Control'] -like 'Label@*' } | Where-Object { ([string]$wIdx[$_]['Properties']['Text']).Trim() -match '^="[^"]+"$' })
+Assert-True ($wLits.Count -eq 0) "Workers: no hard-coded visible label text (all through T) ($($wLits -join ', '))"
+$wTraces = @([regex]::Matches($wText, 'Trace\("DIAG\|Workers\|\w+",TraceSeverity\.\w+,\{[^{}]*\}\)') | ForEach-Object { $_.Value })
+Assert-True ($wTraces.Count -ge 10 -and @($wTraces | Where-Object { $_ -match 'FirstName|Surname|Contractor:|varWrkSaveRec|FirstError|DupCodes|DupKey' }).Count -eq 0 -and ([regex]::Matches($wText, 'Trace\(')).Count -eq $wTraces.Count) "Workers: $($wTraces.Count) traces DIAG|Workers|* with IDs, counts and flags only (no names, codes or SharePoint messages)"
+Assert-True ($wText -notmatch "\b(?:Remove|RemoveIf|Clear|Update|UpdateIf)\(\s*(?:Workers|Employers|'Project Workers')\b" -and $wText -notmatch '\.Run\(') 'Workers: no Remove/Clear/Update on SharePoint lists, no flow call (deactivate = Active false)'
+$hIdx = @{}; Index-Controls ($builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrHome.pa.yaml'))))['Screens']['scrHome']['Children'] $hIdx
+Assert-True (([string]$hIdx['cmpTileWorkers']['Properties']['Active']).Trim() -eq '=true' -and ([string]$hIdx['cmpTileWorkers']['Properties']['OnSelect']).Trim() -ceq '=Navigate(scrWorkers); true' -and ([string]$hIdx['cmpTileWorkers']['Properties']['IconSvg']).Trim() -ceq '=IconWorkersWhite') 'Home: Workers tile active (white icon) and navigates to scrWorkers'
+Assert-True (@([IO.File]::ReadAllText((Join-Path $srcDir '_EditorState.pa.yaml')) -split "`n" | Where-Object { $_.Trim() -eq '- scrWorkers' }).Count -eq 1) 'Workers: scrWorkers registered in _EditorState ScreensOrder'
+Write-Output 'PASS Test-AdminScreens (Workers): static structure only. Studio import, binding (Choices([@Workers].Trade/Language), Worker Name display name, Employer lookup Patch), delegation (Filter Project Workers Active=true, Workers First Name/Surname =), SharePoint case-sensitivity and functional tests NOT verified.'

@@ -359,6 +359,12 @@ foreach ($sf in $scrFiles) {
                 Assert-True (($act -eq '=true' -and $hasOn -and ([string]$i.Props['OnSelect']).Trim().EndsWith('; true')) -or ($act -eq '=false' -and -not $hasOn)) "${sn}: $($i.Name) cmpTile: Active true has an OnSelect handler ending in ; true (Studio component shape), Active false (Soon) has none"
                 Assert-True (($i.Props['Width'] -eq $i.Props['Height']) -and $i.Props.ContainsKey('Label') -and (($act -eq '=true' -and $i.Props.ContainsKey('IconSvg') -and $i.Props.ContainsKey('ArrowSvg') -and -not $i.Props.ContainsKey('Icon') -and -not $i.Props.ContainsKey('Arrow')) -or ($act -eq '=false' -and $i.Props.ContainsKey('Icon') -and -not $i.Props.ContainsKey('ArrowSvg')))) "${sn}: $($i.Name) cmpTile: square (Width = Height), Label passed; active passes IconSvg + ArrowSvg (no Icon/Arrow), Soon passes Icon (no ArrowSvg)"
             }
+            # 08-11-2026 (Workers build): an optional cmpField OnChange handler follows the component contract: it starts with the same
+            # edit guard as the Enabled input and ends with "; true" (event ReturnType Boolean, Studio component shape).
+            if ($i.Comp -eq 'cmpField' -and @($i.Props.Keys) -contains 'OnChange') {
+                $en = ([string]$i.Props['Enabled']).Trim(); $oc = ([string]$i.Props['OnChange']).Trim()
+                Assert-True ($en.StartsWith('=') -and $en -ne '=false' -and $oc.StartsWith('=If(' + $en.Substring(1) + ',') -and $oc.EndsWith('; true')) "${sn}: $($i.Name).OnChange starts with If(<Enabled>, and ends with ; true (cmpField contract)"
+            }
             $req = switch ($i.Comp) { 'cmpFooter' { @('OnHome', 'OnNew', 'OnRefresh', 'OnDiscard', 'OnSave') } 'cmpListCard' { @('OnSelectRow', 'OnToggleShowInactive') } 'cmpMessageBar' { @('OnClose') } default { @() } }
             foreach ($ev in $req) {
                 Assert-True ((@($i.Props.Keys) -contains $ev) -and ([string]$i.Props[$ev]).Trim().Length -gt 1) "${sn}: $($i.Name).$ev is set on the instance (name equal to the $($i.Comp) definition; the definition Default =false is only a fallback)"

@@ -143,6 +143,9 @@ foreach($entry in $contractorsYaml['Screens']['scrContractors']['Children']) { C
 # Projects build (30-10-2026): admin screen scrProjects, same templates as scrContractors.
 $projectsYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrProjects.pa.yaml')))
 foreach($entry in $projectsYaml['Screens']['scrProjects']['Children']) { Check-Control $entry }
+# Workers build (08-11-2026): admin screen scrWorkers, same templates as scrContractors/scrProjects.
+$workersYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrWorkers.pa.yaml')))
+foreach($entry in $workersYaml['Screens']['scrWorkers']['Children']) { Check-Control $entry }
 # Every screen file: validate all CanvasComponent instances (also in screens that Check-Control does not walk completely).
 function Check-Instances($entries, $where) {
     foreach($entry in $entries) {

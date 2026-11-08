@@ -2,7 +2,7 @@
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Test-SaveRegression.ps1')
 $font='="Inter, Arial, sans-serif"'
-$technical=@('btnApplyTeamWeek','lblHomeMetrics','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid','btnPrjLoad','btnPrjFormReset','lblPrjLayout','lblPrjMetrics','lblPrjGrid')
+$technical=@('btnApplyTeamWeek','lblHomeMetrics','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid','btnPrjLoad','btnPrjFormReset','lblPrjLayout','lblPrjMetrics','lblPrjGrid','btnWrkLoad','btnWrkFormReset','lblWrkLayout','lblWrkMetrics','lblWrkGrid')
 $textTypes='^(Label@|Classic/Button@|Classic/DropDown@|Classic/TextInput@|Classic/CheckBox@|ModernDatePicker@)'
 $homeTiles=@()
 $semibold=@{
@@ -11,9 +11,10 @@ $semibold=@{
  'scrHours'=@('lblWeeklyHoursEntryTitle','lblHeaderWorker','lblHeaderMon','lblHeaderTue','lblHeaderWed','lblHeaderThu','lblHeaderFri','lblHeaderSat','lblHeaderSun','lblHeaderTotal','btnHomeHours','btnWeeklyProjectTeam','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')
  'scrContractors'=@('lblEmpFormTitle')  # 30-10-2026 step 3a: title, labels, list rows and footer buttons live in the components (checked in the component section below)
  'scrProjects'=@('lblPrjFormTitle')  # step 3b: title, labels, list rows and footer buttons live in the components
+ 'scrWorkers'=@('lblWrkFormTitle')  # Workers build 08-11-2026: same admin pattern (components)
  'scrWeeklyHours'=@('lblWeeklyHoursTitle','lblReportNameHeader','lblReportEmployerHeader','lblReportWeekHeader','btnHomeSummary','btnSummaryProjectTeam','btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')
 }
-$bold=@{'scrContractors'=@('lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact');'scrProjects'=@('lblPrjSecGeneral','lblPrjSecAddress','lblPrjSecPeople','lblPrjSecLinks');'scrHome'=@();'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
+$bold=@{'scrContractors'=@('lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact');'scrProjects'=@('lblPrjSecGeneral','lblPrjSecAddress','lblPrjSecPeople','lblPrjSecLinks');'scrWorkers'=@('lblWrkSecGeneral','lblWrkSecWork');'scrHome'=@();'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
 # Conditional weights: Screen1 selection feedback; Hours Summary values that show an en dash (Normal) for 0 and Bold otherwise.
 $conditional=@{
  'Screen1'=@{'Subtitle4'='=If(ThisItem.IsSelected, FontWeight.Semibold, FontWeight.Normal)'}
@@ -21,10 +22,11 @@ $conditional=@{
  'scrHome'=@{}
  'scrContractors'=@{}
  'scrProjects'=@{}
+ 'scrWorkers'=@{}
  'scrWeeklyHours'=@{'lblReportWorkerTotal'='=If(ThisItem.PeriodTotal=0,FontWeight.Normal,FontWeight.Bold)';'lblReportTotalWeekHours'='=If(ThisItem.WeekSum=0,FontWeight.Normal,FontWeight.Bold)';'lblReportTotalRowValue'='=If(Sum(colReportRows,PeriodTotal)=0,FontWeight.Normal,FontWeight.Bold)'}
 }
 $fonts=0;$checked=0
-foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects')){
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers')){
  $new=$indexes[$screen]
  foreach($name in $new.Keys){
   $b=$new[$name]['Properties'];$type=[string]$new[$name]['Control']

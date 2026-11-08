@@ -633,25 +633,27 @@ Screens:
                         DisabledBorderColor: =ColorValue("#E6E6E6")
                         DisabledColor: =ColorValue("#787878")
                         DisabledFill: =ColorValue("#E6E6E6")
-                        DisplayMode: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value,DisplayMode.Edit,DisplayMode.Disabled)
+                        DisplayMode: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false),DisplayMode.Edit,DisplayMode.Disabled)
                         Fill: =ColorValue("#0303B8")
                         Font: ="Inter, Arial, sans-serif"
                         HoverBorderColor: =ColorValue("#000F41")
                         HoverColor: =Color.White
                         HoverFill: =ColorValue("#000F41")
                         OnSelect: |-
-                          =If(
+                          =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false),
+                          If(
                               IsBlank(ddProject.Selected.Id),
                               Notify("Selecteer eerst een project.", NotificationType.Warning),
-                          
+
                               IsBlank(ddTeam.Selected.Value),
                               Notify("Selecteer eerst een team.", NotificationType.Warning),
-                          
+
                               Set(varProject, ddProject.Selected);
                               Set(varTeam, ddTeam.Selected);
                               Trace("DIAG|Nav|ToWeeklyHours",TraceSeverity.Information,{Scenario:"Nav",Step:"ToWeeklyHours"});
                               Navigate(scrHours, ScreenTransition.Fade)
-                          )
+                          ),
+                          Notify("Weekly Hours not available: Project / team is busy, has unsaved changes or must be reloaded (click Refresh).",NotificationType.Warning))
                         PressedBorderColor: =ColorValue("#000F41")
                         PressedColor: =Color.White
                         PressedFill: =ColorValue("#000F41")

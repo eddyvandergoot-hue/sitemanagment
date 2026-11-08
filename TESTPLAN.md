@@ -25,6 +25,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
 | TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | PASS op build components-20261030_150632 (eerder FAIL 132104 PA2231, 135641 cmpListCard) | 30-10-2026 | Eddy |
 | TP-STEP3-01 | Stap 3: Contractors en Projects op componenten (layout 1-7, Reset, regressie) | OPEN (build components-20261031_074310) | - | Eddy |
+| TP-WORKERS-01 | Workers-scherm, H18 in Save week, Weekly Hours-cache (build workers-20261108_014223) | OPEN | - | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -502,3 +503,27 @@ Voorafgaand: TP-HOME-03 (Eddy 3-11-2026): punt 5 functioneel ok, 7 ok, 8 (New ch
 | 7 | Zoals 5, maar zoektekst verbergt het record | eerste zichtbare rij geselecteerd |
 | 8 | Lege lijst, New, Discard | geen selectie |
 | 9 | Edit-modus Discard en New + Save | ongewijzigd t.o.v. TP-STEP3-05 |
+
+## TP-WORKERS-01 Workers-scherm, H18 en Weekly Hours-cache (OPEN; build workers-20261108_014223, 8-11-2026)
+Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-20261108_014223\SiteManagement_Workers_20261108_014223.msapp, 174058 bytes, SHA-256 97DC194310735EABB412362D3C8701733BF4B3B608E8EA59DD493B0427B3479A. Alleen TEST-gegevens: TEST Employer; bestaande testworkers Test Fitter 2 / Test Welder 2 / Test Unknown 2; een nieuwe worker met een naam die met "TEST" begint (V5); opslaan in Weekly Hours alleen op TEST-000. Technisch gecontroleerd, niet functioneel getest.
+
+| # | Actie | Verwacht |
+|---|---|---|
+| a | Workers op ~1366, ~1000 en ~700 px | lijstkaart en formulier volgens het Admin screen pattern; niets overlapt of knipt |
+| b | Lijst, zoeken (naam/code/contractor), Show inactive | telling klopt; inactieve workers alleen met Show inactive; eerste rij automatisch geselecteerd |
+| c | Bestaande testworker selecteren | velden gevuld; Worker Code alleen-lezen |
+| d | Trade, Language en Contractor wijzigen, Save | "Saved."; waarden in SharePoint; Title bijgewerkt (First + Surname); oude Hours behouden de oude contractor-/trade-gegevens |
+| e | First Name leegmaken, Save | foutmelding, rode rand, nul writes |
+| f | Naam met alleen cijfers, Save | geblokkeerd met melding, nul writes |
+| g | New worker "TEST..." onder TEST Employer: standaardwaarden zien, opslaan | Trade Unknown en Language Nederlands (als die waarden bestaan); opgeslagen; Worker Code pas na Refresh gevuld (flow MS-017) |
+| h | New met dezelfde First Name + Surname + Contractor als een bestaande worker | amber "Attention." met workercode; Save pas na "Save anyway" |
+| i | Worker met een actieve Project Workers-koppeling deactiveren, Save | "Blocked." met projectlijst (eerste 3, "(+n more)"); niets opgeslagen |
+| j | Worker zonder actieve koppeling deactiveren, Save | opgeslagen; chip Inactive |
+| k | Conflict: record in SharePoint wijzigen, daarna in de app opslaan | exact "Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh." |
+| l | New, dan Discard (met geselecteerd record) | vorig record terug, niet dirty, "Discarded." |
+| m | Home: tegel Workers | actief, opent scrWorkers |
+| n | Projects: Country met een bestaande afwijkende waarde, wijzigen naar een waarde buiten de lijst (alleen als er een legacy-waarde is, anders overslaan) | "Fix: Country unknown", nul writes |
+| o | H18 op TEST-000: week laden; in SharePoint Trade of Team van een TEST-worker wijzigen; nieuwe dag toevoegen, Save | exact conflictmelding, nul writes |
+| p | Na o: Discard, Refresh (Project / team), opnieuw invoeren, Save | opgeslagen |
+| q | Verouderde cache: Workers-save, dan Home, tegel Weekly hours | landt op Project / team (herlaadt); daarna werkt Weekly Hours |
+| r | Monitor: delegatie van `Filter('Project Workers', Active = true)` en `'First Name' =` | geen delegatiewaarschuwing |

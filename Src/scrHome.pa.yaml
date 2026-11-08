@@ -113,7 +113,7 @@ Screens:
                         IconSvg: =IconWeeklyHoursWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileWeeklyHours.nl),T.homeTileWeeklyHours.nl,T.homeTileWeeklyHours.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
-                        OnSelect: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value),Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected); Trace("DIAG|Nav|HomeToWeeklyHours",TraceSeverity.Information,{Scenario:"Nav",Step:"HomeToWeeklyHours"}); Navigate(scrHours),Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning)); true
+                        OnSelect: =If(varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false) && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value),Set(varProject,ddProject.Selected); Set(varTeam,ddTeam.Selected); Trace("DIAG|Nav|HomeToWeeklyHours",TraceSeverity.Information,{Scenario:"Nav",Step:"HomeToWeeklyHours"}); Navigate(scrHours),Navigate(Screen1); Notify("Choose project and team first",NotificationType.Warning)); true
                         Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
@@ -222,12 +222,14 @@ Screens:
                       Control: CanvasComponent
                       ComponentName: cmpTile
                       Properties:
-                        Active: =false
+                        Active: =true
+                        ArrowSvg: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
-                        Icon: =IconWorkersGrey
                         IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconWorkersWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileWorkers.nl),T.homeTileWorkers.nl,T.homeTileWorkers.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        OnSelect: =Navigate(scrWorkers); true
                         Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width

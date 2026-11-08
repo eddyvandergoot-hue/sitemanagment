@@ -561,7 +561,7 @@ Screens:
               If(!varWeekLoading && !varWeekSaving,
                If(!Coalesce(varWeekForceRefresh,false) && varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && IsEmpty(colWeekLoadErrors) && !IsBlank(varWeekLoadedProjectID) &&
                 varWeekLoadedProjectID=Coalesce(varProject.Id,ddProject.Selected.Id) && varWeekLoadedTeam=Coalesce(varTeam.Value,ddTeam.Selected.Value) &&
-                varLoadedWeekMonday=varHoursWeekMonday && Coalesce(varWeekLoadedTeamVersion,-1)=Coalesce(varTeamDataVersion,0),
+                varLoadedWeekMonday=varHoursWeekMonday && Coalesce(varWeekLoadedTeamVersion,-1)=Coalesce(varTeamDataVersion,0) && Coalesce(varWorkersCacheReady,false) && Coalesce(varMastersReady,false),
                 Trace("DIAG|Week|CacheHit",TraceSeverity.Information,{Scenario:"Week",Step:"CacheHit",ProjectID:varWeekLoadedProjectID,Team:varWeekLoadedTeam,Year:varWeekLoadedISOYear,KW:varWeekLoadedKW,Rows:CountRows(colWeekRows)}); Clear(colHoursErrors),
                Set(varWeekLoading,true); Set(varWeekLoadState,"Loading"); Set(varWeekReady,false); Set(varPendingWeekKeyIssue,false);
                Set(varDiagWeekT0,Now()); Trace("DIAG|Week|Start",TraceSeverity.Information,{Scenario:"Week",Step:"Start",Monday:Coalesce(Text(varHoursWeekMonday,"yyyy-mm-dd"),""),ProjectID:Coalesce(varProject.Id,ddProject.Selected.Id,0),Team:Coalesce(varTeam.Value,ddTeam.Selected.Value,""),Forced:Coalesce(varWeekForceRefresh,false)});
@@ -578,6 +578,15 @@ Screens:
                  IfError(Refresh(Hours),Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
                  IfError(Refresh('Project Workers'),Collect(colWeekLoadErrors,{Message:FirstError.Message});false);
                  IfError(Refresh('Assignment Periods'),Collect(colWeekLoadErrors,{Message:"Assignment Periods: " & FirstError.Message});false);
+                 Clear(colPendingWeekWorkers); Set(varPendingWeekReloadWorkers,!Coalesce(varWorkersCacheReady,false) || !Coalesce(varMastersReady,false));
+                 If(varPendingWeekReloadWorkers && IsEmpty(colWeekLoadErrors),
+                  IfError(Refresh(Workers),Collect(colWeekLoadErrors,{Message:"Workers: " & FirstError.Message});false);
+                  If(IsEmpty(colWeekLoadErrors),
+                   IfError(CountRows(ClearCollect(colPendingWeekWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})))>=0,
+                    Collect(colWeekLoadErrors,{Message:"Workers: " & FirstError.Message});false)
+                  );
+                  If(CountRows(colPendingWeekWorkers)>=500,Collect(colWeekLoadErrors,{Message:"500 medewerkers geladen; medewerkerslijst mogelijk onvolledig. Laden gestopt."}))
+                 );
                  If(IsEmpty(colWeekLoadErrors),
                   IfError(CountRows(ClearCollect(colPendingWeekTeamAssignments,
                    Filter('Project Workers',ProjectKey=varPendingHoursProjectKey && Team.Value=varPendingHoursTeam)))>=0,
@@ -690,6 +699,7 @@ Screens:
                  );
                  If(IsEmpty(colWeekLoadErrors),
                   ClearCollect(colWeekAssignments,colPendingWeekAssignments); ClearCollect(colWeekKeys,colPendingWeekKeys);
+                  If(varPendingWeekReloadWorkers,ClearCollect(colWorkersCache,colPendingWeekWorkers); Set(varWorkersCacheReady,true));
               ClearCollect(colWeekStored,colPendingWeekStored); ClearCollect(colWeekRows,colPendingWeekRows); ClearCollect(colWeekOriginal,colPendingWeekOriginal);
               Set(varHoursProjectID,varPendingHoursProjectID); Set(varHoursProjectKey,varPendingHoursProjectKey); Set(varHoursTeam,varPendingHoursTeam);
               Set(varWeekMonday,varPendingWeekMonday); Set(varLoadedWeekMonday,varPendingWeekMonday); Set(varWeekKeyIssue,varPendingWeekKeyIssue);
@@ -987,6 +997,7 @@ Screens:
                           Set(varDiagSaveT0,Now()); Set(varDiagSaveReads,0); Set(varDiagSaveWrites,0);
                           Clear(colSaveCheckRaw); Clear(colSaveCheck); Clear(colHoursWritePlan);
                           Clear(colHoursPatchedExisting); Clear(colHoursPatchedNew); Clear(colSaveVerifyRaw); Clear(colSaveVerify);
+                          Clear(colSaveFreshPW); Clear(colSaveFreshWorkers); Set(varSaveStaleConflict,false); Set(varSaveStaleReason,"");
                           
                           IfError(
                               ForAll(
@@ -1226,6 +1237,48 @@ Screens:
                                           )
                                       );
                           
+                                      If(IsEmpty(colHoursErrors) && CountRows(colHoursWritePlan) = CountRows(colHoursChanges) && CountIf(colHoursWritePlan,IsNew) > 0,
+                                          Set(varSaveFreshProjectKey,Text(varWeekLoadedProjectID));
+                                          IfError(Refresh(Workers),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"ReadError");false);
+                                          If(!varSaveStaleConflict,
+                                              IfError(Refresh('Project Workers'),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"ReadError");false);
+                                              If(!varSaveStaleConflict,
+                                                  Set(varDiagSaveReads,varDiagSaveReads+1);
+                                                  IfError(CountRows(ClearCollect(colSaveFreshPW,ForAll(Filter('Project Workers',ProjectKey=varSaveFreshProjectKey) As pw,{ID:pw.ID,WorkerID:pw.Worker.Id,ProjectID:pw.Project.Id,TeamValue:pw.Team.Value,Active:pw.Active,AssignmentKey:pw.AssignmentKey})))>=0,Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"ReadError");false)
+                                              )
+                                          );
+                                          If(!varSaveStaleConflict,
+                                              Set(varDiagSaveReads,varDiagSaveReads+1);
+                                              IfError(CountRows(ClearCollect(colSaveFreshWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade,Active:worker.Active})))>=0,Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"ReadError");false)
+                                          );
+                                          If(!varSaveStaleConflict && (CountRows(colSaveFreshPW)>=500 || CountRows(colSaveFreshWorkers)>=500),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"Limit"));
+                                          If(!varSaveStaleConflict,
+                                              Set(varSaveStaleConflict,CountIf(colHoursWritePlan As n,n.IsNew && With({loaded:LookUp(colWeekAssignments,ID=n.AssignmentID)},With({fresh:LookUp(colSaveFreshPW,ID=n.AssignmentID),freshWorker:LookUp(colSaveFreshWorkers,ID=loaded.Worker.Id),cachedWorker:LookUp(colWorkersCache,ID=loaded.Worker.Id)},
+                                                  IsBlank(loaded.ID) ||
+                                                  CountIf(colSaveFreshPW,ID=n.AssignmentID)<>1 ||
+                                                  Coalesce(fresh.WorkerID,0)<>Coalesce(loaded.Worker.Id,0) ||
+                                                  Coalesce(fresh.ProjectID,0)<>Coalesce(varWeekLoadedProjectID,0) ||
+                                                  (fresh.TeamValue & "")<>(loaded.Team.Value & "") ||
+                                                  (fresh.TeamValue & "")<>(n.TeamValue & "") ||
+                                                  Coalesce(fresh.Active,false)<>Coalesce(loaded.Active,false) ||
+                                                  (fresh.AssignmentKey & "")<>(loaded.AssignmentKey & "") ||
+                                                  CountIf(colSaveFreshWorkers,ID=loaded.Worker.Id)<>1 ||
+                                                  !Coalesce(freshWorker.Active,true) ||
+                                                  IsBlank(cachedWorker.ID) ||
+                                                  Coalesce(freshWorker.Employer.Id,0)<>Coalesce(cachedWorker.Employer.Id,0) ||
+                                                  Coalesce(freshWorker.Employer.Id,0)<>Coalesce(n.EmployerID,0) ||
+                                                  (freshWorker.Trade.Value & "")<>(cachedWorker.Trade.Value & "") ||
+                                                  (freshWorker.Trade.Value & "")<>(n.TradeValue & "")
+                                              )))>0);
+                                              If(varSaveStaleConflict,Set(varSaveStaleReason,If(CountIf(colHoursWritePlan As n,n.IsNew && !Coalesce(LookUp(colSaveFreshWorkers,ID=LookUp(colWeekAssignments,ID=n.AssignmentID).Worker.Id).Active,true))>0,"Inactive","Diff")))
+                                          );
+                                          If(varSaveStaleConflict,
+                                              Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh."});
+                                              Set(varWorkersCacheReady,false); Set(varMastersReady,false);
+                                              Trace("DIAG|SaveWeek|Stale",TraceSeverity.Warning,{Scenario:"SaveWeek",Step:"Stale",Reason:varSaveStaleReason,NewRows:CountIf(colHoursWritePlan,IsNew),FreshAssignments:CountRows(colSaveFreshPW),FreshWorkers:CountRows(colSaveFreshWorkers)})
+                                          )
+                                      );
+
                                       If(IsEmpty(colHoursErrors) && CountRows(colHoursWritePlan) = CountRows(colHoursChanges),
                                           With({existingRows:Filter(colHoursWritePlan,!IsNew),newRows:Filter(colHoursWritePlan,IsNew)},
                                               If(!IsEmpty(existingRows),
@@ -1322,6 +1375,13 @@ Screens:
                                           Text(CountRows(colHoursWritten)) &
                                           " dagregistratie(s).",
                                           NotificationType.Success
+                                      ),
+
+                                      !IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0 && Coalesce(varSaveStaleConflict, false),
+                                      Notify(
+                                          "Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh.",
+                                          NotificationType.Error,
+                                          15000
                                       ),
 
                                       !IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0,
