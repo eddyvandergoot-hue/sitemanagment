@@ -1,88 +1,91 @@
-# Week Report + export: plan (9-11-2026, niet gebouwd)
+# Week Report + export: plan (9-11-2026; besluiten Eddy 9-11-2026; fase A in bouw)
 
-Status: PLAN, wacht op Eddy's antwoorden (par. 9). Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md H4/H5 en E1-E5, NEXT_COMMANDS.md par. 5/6 (oudere opzet, dit plan vervangt die). Er wordt niets gebouwd voordat Eddy de beslispunten beantwoordt.
+Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md H4/H5, E1-E5 en W1-W5 (9-11-2026). Dit plan vervangt NEXT_COMMANDS.md par. 5/6.
 
 ## 1. Doel en afbakening
-- Week Report (H4): officieel weekoverzicht van één project, één ISO-week, per contractor; Mon t/m Sun per medewerker, alle teams, alleen-lezen. Basis voor PDF + CSV per project + contractor (E1).
+- Week Report (H4): officieel weekoverzicht van één project, één ISO-week, per contractor; Mon t/m Sun per medewerker, alle teams, alleen-lezen. Basis voor PDF + CSV per project + contractor + week (E1).
 - Hours Summary (H5) blijft het periode-overzicht; krijgt alleen een CSV-export (E1), geen PDF.
-- Alle bestanden worden in de app opgebouwd (E3); de flow is een generieke bestandsschrijver zonder bedrijfslogica; geen e-mail (E4); PDF in Arial (E5).
-- Niet in scope: Excel-export, automatische verzending, nieuwe SharePoint-kolommen, wijziging van Hours-gegevens. Week Report schrijft nooit naar Hours, Workers, Employers of Projects.
+- Bestandsinhoud wordt in de app opgebouwd (E3); flow = generieke bestandsschrijver (par. 6.5); geen e-mail (E4); PDF in Arial (E5).
+- Niet in scope: Excel-export, automatische verzending, wijziging van gegevens. Week Report schrijft nooit naar een lijst.
 
 ## 2. Fasering (elke fase eigen build + Studio-test, tag pas na Eddy's OK)
-1. Fase A, scherm (geen export): scrWeekReport alleen-lezen + Home-tegel "Week report" actief + TEST-regel (par. 7). Studio-test TP-WEEKREPORT-01.
-2. Fase B, export-proef: Eddy maakt bibliotheek Exports en de flow (MS-items, par. 8) en voegt de flow toe aan de app in Studio; daarna een minimale proef-export (één CSV + één PDF van TEST-000) om flowcontract, PDF-opmaak en downloadlink te bewijzen. Studio-test TP-EXPORT-01.
-3. Fase C, Week Report-export: PDF + CSV per contractor. Studio-test TP-EXPORT-02.
-4. Fase D, Hours Summary-export: CSV van de gekozen periode (zelfde CSV-formule). Studio-test TP-EXPORT-03.
-Fase B kan parallel aan fase A voorbereid worden zodra Eddy de flow heeft; de app-kant van de export komt pas na fase A.
+1. Fase A, scherm (geen export): scrWeekReport alleen-lezen, Home-tegel "Week report" actief, TEST-regel, codes met fallback, rapporttaal (zonder Employers.Report Language tot MS-027 is samengevoegd). Studio-test TP-WEEKREPORT-01.
+2. Fase B, export-proef: na MS-029 (flow) en MS-030 (flow in de app): één CSV + één PDF van TEST-000 (flowcontract, PDF-opmaak, link). TP-EXPORT-01.
+3. Fase C, Week Report-export: PDF (tweetalig, teksten uit Translations, par. 6.3) + CSV per contractor; Report Language van Employers; vereist de metadata-refresh na MS-027 + MS-028. TP-EXPORT-02.
+4. Fase D, Hours Summary-export: CSV van de gekozen periode (zelfde CSV-formule). TP-EXPORT-03.
 
-## 3. Scherm scrWeekReport (Admin screen pattern)
-- Componenten: cmpTitleBar (titel "Week Report", spinner tijdens laden/export), cmpMessageBar (geen Notify), cmpField voor Project en Contractor (dropdowns), pagina #F5F6F8, witte kaarten (radius 8, DropShadow.Light, marges 24). Teksten uit `T` (sleutels `wr*`).
-- Selectiekaart bovenaan: Week (ModernDatePicker@1.0.2 + label "YYYY KWxx", gedrag als dpHoursWeek: gekozen dag blijft zichtbaar, geen Load-knop, OnChange laadt bij andere week), Project (cmpField dropdown uit colProjectsCache), Contractor ("All contractors" + contractors die in de geladen week voorkomen).
-  - Week-veld: cmpField kent geen datum. Voorstel: eerst een Studio-proef met ModernDatePicker binnen cmpField (InputType "date"); lukt dat niet, dan een hand-gebouwde datumkiezer met cmpField-stijl als gedocumenteerde uitzondering op "geen hand-gebouwd veld" (beslispunt B6).
-- Tabelkaart: kolommen Name | Contractor | Trade | Mon..Sun (kop dag + dd-mm) | Week total; totaalrij per dag + eindtotaal; stijl als Hours Summary (kop #0303B8 wit Semibold, zebra, lijnen #DCDCDC, 0 = "–", uren gecentreerd, hele uren zonder komma/punt, max 2 decimalen). Bij "All contractors" gegroepeerd per contractor met subtotaal per contractor.
-- Footer: cmpFooter heeft vaste knoppen (Home, New, Refresh, Discard, Save) en past niet. Voorstel: nieuw component cmpReportFooter (Home links; rechts weekpijlen 48, Refresh secundair, Export groen primair), zelfde maten als cmpFooter (h68, knoppen h40 Y14). Alternatief: cmpFooter uitbreiden met Visible-inputs (raakt de goedgekeurde beheerschermen; afgeraden). Beslispunt B7.
-- Guards (zelfde voorwaarde in DisplayMode/Enabled en als eerste OnSelect-voorwaarde): Home/weekpijlen/Refresh niet tijdens laden of export; Export alleen bij geldig rapport (par. 6.4).
+## 3. Scherm scrWeekReport (fase A)
+- Admin screen pattern: cmpTitleBar ("Week Report"; spinner tijdens laden), cmpMessageBar (geen Notify), cmpField-dropdowns Project en Contractor, pagina #F5F6F8, witte kaarten; teksten uit `T` (sleutels `wr*`; app-UI Engels).
+- Weekkiezer (B6): hetzelfde patroon als dpHoursWeek op Weekly Hours (ModernDatePicker@1.0.2, "dd-mm-yyyy", StartOfWeek.Monday, 256 px, gekozen dag blijft zichtbaar, label "Week" + "YYYY KWxx" ernaast, OnChange laadt alleen bij een andere week, geen Load-knop, geen Reset na gewone keuze). Gedocumenteerde uitzondering op "geen hand-gebouwd veld"; geen nieuw component. Standaard = week van vandaag; eigen variabelen (varWr*), los van Screen1/Weekly Hours.
+- Project: colProjectsCache-achtige eigen read van Projects (alle projecten, TEST inbegrepen, B5). Contractor: "All contractors" + contractors die in de geladen week voorkomen.
+- Tabelkaart: Name | Trade | Mon..Sun (dag + dd-mm) | Week total, gegroepeerd per contractor (kopregel: naam + Contractor Code + rapporttaal, bv. "Report language: Dutch + Polish") met subtotaalregel; eindtotaal bij "All contractors". Stijl als Hours Summary (kop #0303B8 wit Semibold, zebra, lijnen #DCDCDC, 0 = "–", uren gecentreerd, hele uren zonder komma/punt).
+- Footer (B7): nieuw component cmpReportFooter (Home 110 met Icon.Home links; rechts vorige/volgende week 48, Refresh secundair, Export groen primair, Export onzichtbaar in fase A via input ExportVisible). cmpFooter en de beheerschermen blijven ongewijzigd.
+- Guards: zelfde voorwaarde in Enabled en als eerste OnXxx-voorwaarde; geen navigatie/weekwissel/Refresh tijdens laden.
 
 ## 4. Laden (fase A)
-- Laadstatussen NotLoaded/Loading/Failed/Loaded; staging-collections, vervangen pas na volledig geslaagde load; geen Patch/Update/Remove in loaders; fouten in cmpMessageBar.
-- Reads (alle predicaten met globale variabelen, vooraf gezet):
-  1. Hours: `Filter(Hours, StartsWith(EntryKey, varWrQueryPrefix) && 'Work Date' >= varWrMonday && 'Work Date' < varWrNextMonday)` met varWrQueryPrefix = Text(projectID) & "|". 500 = terugval op 7 dagbatches (uitgeschreven, niet via ForAll); een volle dag blokkeert het rapport.
-  2. Project Workers + Assignment Periods: `ProjectKey = varWrProjectKey` (500-guard).
-  3. Workers: colWorkersCache hergebruiken als varMastersReady && varWorkersCacheReady, anders verse read naar staging (zelfde projectie als Screen1).
-  4. Employers: één read voor naam + Employer Code (500-guard), alleen voor weergave en export (par. 6.2).
-- Rijen (AGENTS punt 3): medewerkers met een periode die de week overlapt of met opgeslagen uren die week. Contractor per uurregel = historische Hours.Employer; rij zonder uren = huidige Workers.Employer. Een medewerker met uren onder twee contractors in dezelfde week = twee rijen (één per contractor).
+- Laadstatussen NotLoaded/Loading/Failed/Loaded; staging-collections, vervangen pas na volledig geslaagde load; geen Patch/Update/Remove; fouten in cmpMessageBar.
+- Reads (predicaten alleen kolommen + globale variabelen, vooraf gezet):
+  1. Hours: `Filter(Hours, StartsWith(EntryKey, varWrQueryPrefix) && 'Work Date' >= varWrMonday && 'Work Date' < varWrNextMonday)`, varWrQueryPrefix = Text(projectID) & "|". 500 = terugval op 7 uitgeschreven dagbatches; een volle dag blokkeert het rapport.
+  2. Project Workers en Assignment Periods: `ProjectKey = varWrProjectKey` (500-guard).
+  3. Workers: eigen read (ook Language en Worker Code; colWorkersCache heeft die niet), 500-guard.
+  4. Employers: één read (Title, Employer Code, Active; na MS-027 ook Report Language), 500-guard. Projects: één read (500-guard).
+- Rijen (B3, AGENTS punt 3): medewerkers met een inzetperiode die de week overlapt, plus medewerkers met opgeslagen uren die week. Lege dagen "–"; weektotaal 0 blijft zichtbaar.
+- Contractor per uurregel = historische Hours.Employer; rij zonder uren = huidige Workers.Employer; uren onder twee contractors in dezelfde week = een rij per contractor.
 - Trade per uurregel = historische Hours.Trade (F -> Fitter, W -> Welder); rij zonder uren = Workers.Trade.
-- Lokale berekening; geen remote LookUp/Filter in ForAll of per cel. Week-/ISO-logica gedeeld met Hours Summary-formules (zelfde ISO-jaar/KW-formule, getest rond week 53).
+- ISO-jaar/KW-formule gelijk aan Hours Summary (week 53 en jaarwisseling getest).
 
-## 5. TEST-regel (AGENTS: Werkwijze)
-- Projecten met Project Number "TEST-..." en contractor TEST Employer horen niet in Week Report en exports, maar functionele tests mogen alleen op TEST-000. Voorstel (beslispunt B5): TEST-projecten blijven kiesbaar in Week Report (testen), export van een TEST-project krijgt bestandsnaamprefix "TEST_"; in echte projecten worden regels van TEST Employer uit tabel en export weggelaten met een melding (Attention).
+## 5. Codes, TEST-regel en rapporttaal
+- EmployerCode (B1): Employers.'Employer Code' alleen lezen (voor weergave en export); leeg -> "EMP-" & Text(ID,"000") (zelfde regel als flow MS-019), geen blokkade.
+- WorkerID (B2): Worker Code (WKR-..., field_1); leeg -> "WKR-" & Text(ID,"000").
+- TEST (B5): TEST-projecten (Project Number begint met "TEST-") blijven kiesbaar; exportbestanden krijgen prefix "TEST_"; bij echte projecten worden regels van contractor "TEST Employer" weggelaten (tabel en export) met een Attention-melding.
+- Rapporttaal (W1, per rapport = project + contractor + week): primair Nederlands + tweede taal. Volgorde tweede taal: (1) Employers.'Report Language' als gevuld (MS-027, vanaf fase C); (2) anders de meerderheid van Workers.Language van de medewerkers in dat rapport (gelijkstand -> English); (3) anders English. Uitkomst Dutch -> alleen Nederlands. Geen taal per team. Taalnamen worden als tekst vergeleken (keuzenaam), zonder vaste lijst in de app (W5).
 
 ## 6. Export (fase B-D)
-### 6.1 CSV (E2, één gedeelde formule voor beide schermen)
-- Lang formaat, één regel per opgeslagen dagregistratie (ook opgeslagen 0); medewerkers met totaal 0 in het bestand vallen weg.
-- Kolommen: ProjectNumber;ProjectReference;EmployerCode;EmployerName;WorkerID;WorkerName;Trade;WorkDate;ISOYear;ISOWeek;Hours.
-- UTF-8 BOM via UniChar(65279), scheiding ";", decimaal ".", datum yyyy-mm-dd, regeleinde CRLF (Char(13) & Char(10)), kopregel zoals hierboven.
-- Getallen: Text(h, "0.##", "en-US") (8 -> "8", 7.5 -> "7.5"). ISOYear = Year(maandag+3), ISOWeek twee cijfers ("01").
-- Tekstvelden met ";", '"' of regeleinde: tussen aanhalingstekens, '"' verdubbeld (RFC 4180). Voorstel B4.
-- Gedeelde vorm: beide schermen vullen dezelfde collection colExportRows (vast schema) en één named formula in App.Formulas bouwt de tekst (ExportCsvText). Studio-controle dat een named formula een collection mag lezen; anders één verborgen label-/knopformule per scherm met een tekstvergelijkingstest die beide gelijk houdt.
-- Hours Summary: colReportFacts heeft nog geen Trade; fase D voegt Trade (historisch, F/W-mapping) toe aan de staging, geen extra read.
+### 6.1 CSV (E2; B4, B10)
+- Lang formaat, één regel per opgeslagen dagregistratie (ook opgeslagen 0); medewerkers met totaal 0 vallen weg.
+- Kolommen (vaste Engelse technische namen, niet vertaald): ProjectNumber;ProjectReference;EmployerCode;EmployerName;WorkerID;WorkerName;Trade;WorkDate;ISOYear;ISOWeek;Hours.
+- UTF-8 BOM via UniChar(65279), ";" scheiding, "." decimaal (Text(h,"0.##","en-US")), datum yyyy-mm-dd, CRLF, ISOWeek twee cijfers. RFC 4180-quoting bij ";", '"' of regeleinde.
+- Eén gedeelde opbouw: beide schermen vullen colExportRows (vast schema); één named formula (ExportCsvText) in App.Formulas bouwt de tekst (Studio-controle dat een named formula een collection mag lezen; anders één formule per scherm met tekstgelijkheidstest).
+- Hours Summary: colReportFacts krijgt Trade (historisch, F/W-mapping) in fase D, geen extra read.
 
-### 6.2 Identiteiten (beslispunten)
-- EmployerCode: komt uit Employers.EmployerCode1 (flow MS-019 vult "EMP-<ID>"). AGENTS zegt nu "de app leest/schrijft Employer Code niet"; Contractors toont hem al alleen-lezen. Voorstel B1: alleen-lezen gebruik voor export toestaan; lege code blokkeert export ("Fix: Contractor Code empty"), nooit zelf invullen.
-- WorkerID: voorstel B2 = Worker Code (WKR-..., field_1, flow MS-017); lege code (net aangemaakte medewerker, ~1 min) blokkeert export met melding. Alternatief: SharePoint-ID (altijd gevuld, maar niet zichtbaar in de app).
-- WorkerName = huidige First Name + " " + Surname (Hours bevat geen naam); EmployerName = historische Hours.Employer.Value.
+### 6.2 Identiteiten in export
+- WorkerName = huidige First Name + " " + Surname; EmployerName = historische Hours.Employer.Value; codes volgens par. 5.
 
-### 6.3 PDF (Week Report, per project + contractor)
-- HTML in de app, Arial (E5), A4 liggend; kop: Project Number, Project Reference, Contractor (naam + code), week "YYYY KWxx" + datumbereik; tabel Name | Trade | Mon..Sun (dag + dd-mm) | Total; totaalrij; voet: "Generated <dd-mm-yyyy HH:mm>" + paginanummer als de converter dat ondersteunt.
-- Medewerkers met weektotaal 0: voorstel B3 = weglaten in PDF (gelijk aan CSV); alternatief tonen met "–".
-- Namen HTML-escapen (&, <, >, "). Logo: het officiële GEA-logo alleen als de converter SVG/data-URI correct rendert (proef in fase B); anders zonder logo. Geen hertekend of omgezet logo.
-- Bestandsnamen (voorstel B8): `<ProjectNumber>_<YYYY>KW<xx>_<EmployerCode>_<yyyymmdd-HHmm>.pdf/.csv`; Hours Summary `<ProjectNumber>_<yyyymmdd>-<yyyymmdd>_<EmployerCode|ALL>_<yyyymmdd-HHmm>.csv`. Tijdstempel voorkomt overschrijven.
+### 6.3 PDF (Week Report, per project + contractor + week; W1-W3)
+- HTML in de app, Arial (E5), A4 liggend, geen externe verwijzingen.
+- Tweetalig: alleen statische teksten (titel, kolomkoppen, dagnamen, voetnoten, labels) vertaald; gegevens ongewijzigd. Opmaak: Nederlandse regel met de tweede taal eronder; koppen compact ("Uren / Godziny"). Bij tweede taal Dutch alleen Nederlands.
+- Documentteksten data-gestuurd (W5, Eddy 9-11-2026; talen groeien): sleutels `doc.*` in SharePoint-lijst "Translations" (MS-028): Key (hernoemde Title), Language (tekst = keuzenaam, bv. "Polish"), Text (meerdere regels); index op Language. App-UI-teksten blijven in T (ongewijzigd).
+  - Laden één keer per rapport(taalset), lokaal per taal: drie aparte reads `Filter(Translations, Language = varDocLangQuery)` voor de tweede taal, "Dutch" en "English" (elk een 500-guard, leesfout = geen export). Eén read met `||` mag ook (delegeerbaar), maar dan is de 500-guard per taal niet aantoonbaar; daarom drie reads.
+  - Fallback: sleutel ontbreekt in de tweede taal -> Engelse tekst; ontbreekt in Dutch -> de sleutel zelf + waarschuwing alleen in debug (Trace), niet in de UI. (Eddy's keuze; let op: dan kan een sleutelnaam in een officieel document staan. Test-Export controleert dat alle fase-C-sleutels in de aangeleverde CSV voor Dutch en English bestaan.)
+  - Geen vaste talenlijst in de app: beschikbare talen = unieke Language in Translations ∪ keuzes van Workers.Language. Taal toevoegen = keuze in Workers.Language en Employers.Report Language (gelijk houden) + rijen in Translations; geen app-build.
+  - Vertalingen: de Claude-chat levert een CSV voor import (sleutels uit fase C); native-speaker-controle vóór livegang (backlog).
+- Inhoud: kop met Project Number, Project Reference, Contractor (naam + code), week "YYYY KWxx" + datumbereik; tabel Name | Trade | Mon..Sun | Total; totaalrij; "Generated dd-mm-yyyy HH:mm". Rijen als in het scherm (B3: ook weektotaal 0, dagen "–").
+- Namen HTML-escapen (&, <, >, "). Logo: base64 PNG (flowcontract, geen SVG). OPEN: alleen een officieel GEA-logobestand in PNG (logobank, voor witte achtergrond) mag; geen zelf omgezet of hertekend logo. Eddy levert dat bestand aan vóór fase C; tot dan PDF zonder logo.
 
-### 6.4 Toelating en foutafhandeling (fail-closed)
-- Export alleen als: Loaded zonder fouten, geen afgekapte batch (500), geen lopende load/export, selectie (project/contractor/week of periode) gelijk aan de geladen selectie, minstens één regel, alle EmployerCode/WorkerID gevuld. Zelfde voorwaarde in DisplayMode en als eerste OnSelect-voorwaarde.
-- "All contractors" = één flowaanroep met per contractor een PDF + CSV.
-- Flowaanroep in IfError; antwoord wordt gecontroleerd (aantal bestanden = aantal gevraagd, elk met link); anders melding "Export failed" met de reden, nooit "geslaagd". Links worden in de meldingsbalk/kaart getoond en geopend met Launch(); geen automatische e-mail.
+### 6.4 Bestandsnamen (B8) en map
+- `[TEST_]<ProjectNumber>_<YYYY>-KW<ww>_<EmployerCode>_<yyyymmdd-hhmm>` + extensie via Format; Hours Summary: `[TEST_]<ProjectNumber>_<yyyymmdd>-<yyyymmdd>_<EmployerCode|ALL>_<yyyymmdd-hhmm>`.
+- Folder: `<ProjectNumber>/<ISO-jaar>` (voorbeeld uit het contract "TEST-000/2026").
+
+### 6.5 Flowcontract (B9, Eddy 9-11-2026)
+- Naam "SiteManagement - Export file"; trigger Power Apps (V2); alleen standaardconnectors.
+- Invoer (tekst): Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content (CSV met BOM of volledige HTML).
+- csv: SharePoint Create file in Exports/Folder. pdf: OneDrive tijdelijk .html -> Convert file (PDF) -> SharePoint Create file Exports/Folder -> tijdelijk bestand verwijderen.
+- Uitvoer (tekst): Status ("ok" | "error"), FileUrl (klikbaar), Message.
+- Eén aanroep per bestand; "All contractors" = per contractor twee aanroepen (PDF + CSV).
+
+### 6.6 Toelating en foutafhandeling (fail-closed)
+- Export alleen als: Loaded zonder fouten, geen afgekapte batch, geen lopende load/export, selectie gelijk aan de geladen selectie, minstens één regel. Zelfde voorwaarde in DisplayMode/Enabled en als eerste OnSelect-voorwaarde.
+- Flowaanroep in IfError; Status <> "ok" of lege FileUrl = fout met Message in de meldingsbalk; bij meerdere bestanden telt elk resultaat apart, nooit "geslaagd" bij een fout. Links tonen en openen met Launch().
 - Trace `DIAG|Export|End` (Files, ElapsedMs, Errors), zonder namen.
 
 ## 7. Tests (lokaal, artifacts)
-- Nieuw Test-WeekReport.ps1: loaderstructuur (staging, 500-guards, predicaten), geen mutaties, guard-pariteit, rijregel (periode/uren/contractorhistorie), ISO-week 53 en jaarwisseling, TEST-regel.
-- Nieuw Test-Export.ps1: CSV-formule geëvalueerd in de Power Fx-interpreter (BOM, kop, ";", ".", datum, quoting, 0-regels, F/W-mapping), HTML-escaping, bestandsnamen, export-guard.
-- Bestaande set uitbreiden: Test-Layout (scrWeekReport 1366/1000/700), Test-Components (cmpReportFooter), Test-GeaColors, Test-Fonts, Test-HomeIcons (tegel actief).
+- Fase A: nieuw Test-WeekReport.ps1 (loaders/staging/500-guards/predicaten, geen mutaties, guard-pariteit, rijregel, contractorhistorie, codefallbacks, TEST-regel, rapporttaal incl. gelijkstand, ISO-week 53); Test-Layout, Test-Components (cmpReportFooter), Test-GeaColors, Test-Fonts, Test-HomeIcons (tegel actief), Check-WeeklySource.
+- Fase B-D: Test-Export.ps1 (CSV in de Power Fx-interpreter: BOM, kop, ";", ".", datum, quoting, 0-regels, F/W; HTML-escaping; bestandsnamen; export-guard; tweetalige koppen).
 
-## 8. Handmatige stappen Eddy (worden MS-items bij de bouw)
-- MS-a: documentbibliotheek "Exports" op de site GEASiteManagment (rechten: wie exporteert moet kunnen schrijven/lezen).
-- MS-b: generieke flow (ontwerp uit de Claude-chat): Power Apps V2-trigger, invoer één tekstparameter met JSON-lijst `{fileName, type: "csv" | "html2pdf", content}`; per item opslaan in Exports; bij html2pdf eerst .html opslaan, dan Convert file naar PDF; antwoord per item `{fileName, link, ok, error}`. Eddy levert het definitieve contract (naam van flow en parameter, antwoordformaat) aan; de app volgt dat exact, er worden geen parameters verzonnen.
-- MS-c: flow toevoegen aan de app in Studio (Power Automate-paneel), opslaan als .msapr, aanleveren in Incoming; dan pakken we hem uit (verbindingen niet zelf maken).
-- MS-d (fase B-proef): converterproef met Arial, A4 liggend, logo.
-
-## 9. Beslispunten voor Eddy
-- B1 EmployerCode alleen-lezen voor export gebruiken (AGENTS-regel aanpassen)? Lege code blokkeert export.
-- B2 WorkerID in CSV = Worker Code (WKR-...) of SharePoint-ID?
-- B3 Medewerkers met weektotaal 0: weglaten in PDF (zoals CSV) of tonen met "–"?
-- B4 CSV-quoting volgens RFC 4180 bij ";", '"' of regeleinde in tekst: akkoord?
-- B5 TEST-regel zoals par. 5 (TEST-projecten kiesbaar, export met prefix "TEST_", TEST Employer weggelaten in echte projecten)?
-- B6 Weekkiezer: Studio-proef in cmpField, anders hand-gebouwd als uitzondering?
-- B7 Nieuwe cmpReportFooter (aanbevolen) of cmpFooter uitbreiden?
-- B8 Bestandsnamen met tijdstempel zoals par. 6.3?
-- B9 Het flowcontract uit de Claude-chat (naam, parameter, antwoordformaat): graag aanleveren of plakken; tot dan is par. 8 MS-b een voorstel.
-- B10 AGENTS-regel "CSV-kolommen ... overnemen uit de bestaande Week Report-werkwijze zodra aangeleverd" vervangen door "volgens DECISIONS.md E2"?
+## 8. Handmatige stappen (MANUAL_STEPS.md)
+- Bibliotheek Exports: gemaakt door Eddy 9-11-2026.
+- MS-027: Employers kolom "Report Language" (keuze Dutch, English, Polish, Romanian, German, Ukrainian; geen standaard); daarna metadata-refresh (alleen Employers) in Incoming\, merge alleen databronnen, App Id 88e53928.
+- MS-028: SharePoint-lijst "Translations" (Title hernoemd naar Key; Language tekst; Text meerdere regels; index op Language), vullen met de CSV uit de Claude-chat. Metadata-refresh na MS-027 + MS-028 samen in Incoming\ (Employers + Translations), merge alleen databronnen.
+- MS-029: flow "SiteManagement - Export file" volgens par. 6.5.
+- MS-030: flow toevoegen aan de app in Studio, opslaan, aanleveren in Incoming\ (verbindingen niet zelf maken).
+- Later (backlog): veld Report Language op het Contractors-scherm; native-speaker-controle vertalingen.
