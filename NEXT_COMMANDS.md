@@ -111,6 +111,8 @@ Also decided 27-10-2026 (Eddy), not built:
 
 ## 5. Week Report
 
+> Vervangen door WEEKREPORT_PLAN.md (9-11-2026). Onderstaande tekst is historisch; niet meer uitvoeren.
+
 ```bash
 claude << 'EOF'
 Task. AGENTS.md auto-loaded. Read PROJECT_STATUS.md + relevant Src. Commit checkpoint.
@@ -136,6 +138,8 @@ EOF
 ```
 
 ## 6. Export spec/build (build after Week Report)
+
+> Vervangen door WEEKREPORT_PLAN.md (9-11-2026; flowcontract par. 6.5). Onderstaande tekst is historisch; niet meer uitvoeren.
 
 ```bash
 claude << 'EOF'

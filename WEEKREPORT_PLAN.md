@@ -1,6 +1,6 @@
 # Week Report + export: plan (9-11-2026; besluiten Eddy 9-11-2026; fase A in bouw)
 
-Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md H4/H5, E1-E5 en W1-W5 (9-11-2026). Dit plan vervangt NEXT_COMMANDS.md par. 5/6.
+Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md H4/H5, E1-E5 en WR1-WR5 (9-11-2026). Dit plan vervangt NEXT_COMMANDS.md par. 5/6.
 
 ## 1. Doel en afbakening
 - Week Report (H4): officieel weekoverzicht van één project, één ISO-week, per contractor; Mon t/m Sun per medewerker, alle teams, alleen-lezen. Basis voor PDF + CSV per project + contractor + week (E1).
@@ -38,7 +38,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 - EmployerCode (B1): Employers.'Employer Code' alleen lezen (voor weergave en export); leeg -> "EMP-" & Text(ID,"000") (zelfde regel als flow MS-019), geen blokkade.
 - WorkerID (B2): Worker Code (WKR-..., field_1); leeg -> "WKR-" & Text(ID,"000").
 - TEST (B5): TEST-projecten (Project Number begint met "TEST-") blijven kiesbaar; exportbestanden krijgen prefix "TEST_"; bij echte projecten worden regels van contractor "TEST Employer" weggelaten (tabel en export) met een Attention-melding.
-- Rapporttaal (W1, per rapport = project + contractor + week): primair Nederlands + tweede taal. Volgorde tweede taal: (1) Employers.'Report Language' als gevuld (MS-027, vanaf fase C); (2) anders de meerderheid van Workers.Language van de medewerkers in dat rapport (gelijkstand -> English); (3) anders English. Uitkomst Dutch -> alleen Nederlands. Geen taal per team. Taalnamen worden als tekst vergeleken (keuzenaam), zonder vaste lijst in de app (W5).
+- Rapporttaal (WR1, per rapport = project + contractor + week): primair Nederlands + tweede taal. Volgorde tweede taal: (1) Employers.'Report Language' als gevuld (MS-027, vanaf fase C); (2) anders de meerderheid van Workers.Language van de medewerkers in dat rapport (gelijkstand -> English); (3) anders English. Uitkomst Dutch -> alleen Nederlands. Geen taal per team. Taalnamen worden als tekst vergeleken (keuzenaam), zonder vaste lijst in de app (W5).
 
 ## 6. Export (fase B-D)
 ### 6.1 CSV (E2; B4, B10)
@@ -51,10 +51,10 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 ### 6.2 Identiteiten in export
 - WorkerName = huidige First Name + " " + Surname; EmployerName = historische Hours.Employer.Value; codes volgens par. 5.
 
-### 6.3 PDF (Week Report, per project + contractor + week; W1-W3)
+### 6.3 PDF (Week Report, per project + contractor + week; WR1-WR3)
 - HTML in de app, Arial (E5), A4 liggend, geen externe verwijzingen.
 - Tweetalig: alleen statische teksten (titel, kolomkoppen, dagnamen, voetnoten, labels) vertaald; gegevens ongewijzigd. Opmaak: Nederlandse regel met de tweede taal eronder; koppen compact ("Uren / Godziny"). Bij tweede taal Dutch alleen Nederlands.
-- Documentteksten data-gestuurd (W5, Eddy 9-11-2026; talen groeien): sleutels `doc.*` in SharePoint-lijst "Translations" (MS-028): Key (hernoemde Title), Language (tekst = keuzenaam, bv. "Polish"), Text (meerdere regels); index op Language. App-UI-teksten blijven in T (ongewijzigd).
+- Documentteksten data-gestuurd (WR5, Eddy 9-11-2026; talen groeien): sleutels `doc.*` in SharePoint-lijst "Translations" (MS-028): Key (hernoemde Title), Language (tekst = keuzenaam, bv. "Polish"), Text (meerdere regels); index op Language. App-UI-teksten blijven in T (ongewijzigd).
   - Laden één keer per rapport(taalset), lokaal per taal: drie aparte reads `Filter(Translations, Language = varDocLangQuery)` voor de tweede taal, "Dutch" en "English" (elk een 500-guard, leesfout = geen export). Eén read met `||` mag ook (delegeerbaar), maar dan is de 500-guard per taal niet aantoonbaar; daarom drie reads.
   - Fallback: sleutel ontbreekt in de tweede taal -> Engelse tekst; ontbreekt in Dutch -> de sleutel zelf + waarschuwing alleen in debug (Trace), niet in de UI. (Eddy's keuze; let op: dan kan een sleutelnaam in een officieel document staan. Test-Export controleert dat alle fase-C-sleutels in de aangeleverde CSV voor Dutch en English bestaan.)
   - Geen vaste talenlijst in de app: beschikbare talen = unieke Language in Translations ∪ keuzes van Workers.Language. Taal toevoegen = keuze in Workers.Language en Employers.Report Language (gelijk houden) + rijen in Translations; geen app-build.

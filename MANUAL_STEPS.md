@@ -22,6 +22,10 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-022 | 27-10-2026 | Done 27-10-2026 (reported by Eddy) |
 | MS-025 | 7-11-2026 | Done 8-11-2026 (Eddy) |
 | MS-026 | 7-11-2026 | Done 7-11-2026 (Eddy) |
+| MS-027 | 9-11-2026 | Open (Eddy) |
+| MS-028 | 9-11-2026 | Open (Eddy) |
+| MS-029 | 9-11-2026 | Open (Eddy) |
+| MS-030 | 9-11-2026 | Open (Eddy) |
 
 ---
 
@@ -161,7 +165,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-005 addendum — TEST-001
 
-- TEST-001 exists (Active = No), test project only (added 27-10-2026, noted by Eddy). Used read-only for the "no periods and no hours" test (TESTPLAN.md TP-PERIOD-01, 6.3). The TEST- prefix rule applies: excluded from Week Report and exports once built (AGENTS.md).
+- TEST-001 exists (Active = No), test project only (added 27-10-2026, noted by Eddy). Used read-only for the "no periods and no hours" test (TESTPLAN.md TP-PERIOD-01, 6.3). The TEST- prefix rule applies: TEST projects stay selectable in Week Report, export files get prefix TEST_, TEST Employer rows are excluded on real projects (DECISIONS.md E10); health check and Hours Summary exports exclude them (AGENTS.md).
 
 ## MS-020 — Refresh data sources for the admin screens
 
@@ -216,3 +220,32 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Instellingen ("Require that this column contains information" = Yes):** Employers Title (Employer Name); Projects Title (Project Name); Workers First Name + Surname.
 - **Flows:** MS-017 (hernoemd "Workers - Worker Name sync") geeft in "Update item" First Name + Surname door uit de trigger; testrun Succeeded. MS-019 ("Employers - Employers code") geeft Title door uit de trigger.
 - **App impact:** geen (de app valideert deze velden al vóór opslaan). Metadata-refresh later meenemen (verplicht-vlaggen).
+
+## Bibliotheek Exports (Week Report/export)
+
+- **Status:** Done 9-11-2026 (Eddy). Documentbibliotheek Exports bestaat; gebruikt door de flow van MS-029 (WEEKREPORT_PLAN.md par. 6.4-6.5).
+
+## MS-027 — Employers: kolom "Report Language"
+
+- **Added:** 9-11-2026. **Status:** Open (Eddy).
+- **Reason:** tweede taal van het Week Report per contractor (DECISIONS.md WR1).
+- **Kolom:** Employers, "Report Language", type keuze; keuzes Dutch, English, Polish, Romanian, German, Ukrainian; geen standaardwaarde.
+- **Let op:** de keuzes van Employers.Report Language en Workers.Language moeten gelijk blijven; bij een nieuwe taal in beide toevoegen.
+- **Daarna:** metadata-refresh samen met MS-028 (zie MS-028).
+
+## MS-028 — SharePoint-lijst "Translations"
+
+- **Added:** 9-11-2026. **Status:** Open (Eddy).
+- **Reason:** data-gestuurde documentteksten (DECISIONS.md WR5; WEEKREPORT_PLAN.md par. 6.3).
+- **Lijst:** "Translations"; Title hernoemen naar Key; Language = tekst, één regel (waarde = keuzenaam, bv. "Polish"); Text = meerdere regels; index op Language. Vullen met de CSV uit de Claude-chat.
+- **Na MS-027 + MS-028:** één metadata-refresh (Employers + Translations), opgeslagen in Incoming\; alleen databronnen samenvoegen; App Id 88e53928.
+
+## MS-029 — Power Automate: flow "SiteManagement - Export file"
+
+- **Added:** 9-11-2026. **Status:** Open (Eddy).
+- **Reason:** generieke bestandsschrijver voor CSV/PDF. Contract: WEEKREPORT_PLAN.md par. 6.5 (invoer Folder, FileName, Format csv|pdf, Content; uitvoer Status, FileUrl, Message).
+
+## MS-030 — Flow toevoegen aan de app
+
+- **Added:** 9-11-2026. **Status:** Open (Eddy), na MS-029.
+- **Stappen:** flow in Studio aan de app toevoegen, opslaan, de msapp aanleveren in Incoming\ (verbindingen niet zelf maken).

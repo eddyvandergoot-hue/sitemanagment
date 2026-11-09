@@ -18,3 +18,7 @@ The full phased plan is still to be added (NEXT_COMMANDS.md, "Roadmap into repo"
 ## Parked
 
 - **WP Document Generator prototype** (browser, pdf-lib): fills Acrobat templates, photos into image fields / photo pages, attachments appended. Not published. Resume when phase 3 (workpackages) starts.
+
+## Documenten (later)
+
+- Werkpakketdocumenten (WR4, DECISIONS.md): aparte versie per taal (NL voor de supervisor + taal van uitvoerende fitters/team), sjablonen per taal; taalbron waarschijnlijk team/uitvoerders, dus "taal per team" heroverwegen bij de start van de WP-module. Alleen documentatie, niets gebouwd. Week Report/export: WEEKREPORT_PLAN.md.

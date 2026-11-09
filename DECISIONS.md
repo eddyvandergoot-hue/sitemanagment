@@ -68,6 +68,23 @@ Dates: 21–24 October 2026.
 | E4 | No e-mail; files downloadable from the app. | Agreed scope. |
 | E5 | Exported PDFs use **Arial**. | GEA rule for IT-generated output; converter has no Inter. |
 
+## 4b. Documenten / Week Report (Eddy 9-11-2026; plan: WEEKREPORT_PLAN.md)
+
+| # | Decision | Why |
+|---|---|---|
+| WR1 | Tweetalige rapporten: primair Nederlands + tweede taal per rapport (project + contractor + week). Volgorde tweede taal: Employers 'Report Language' -> meerderheid Workers.Language op het rapport (gelijk -> English) -> English. Dutch -> alleen Nederlands. Geen taal per team. | Eén taalregel per document; contractorvoorkeur wint van de medewerkerstalen. |
+| WR2 | Alleen statische teksten vertaald, gegevens niet. Opmaak: Nederlandse regel met de tweede taal eronder; koppen compact ("Uren / Godziny"). | Namen en codes blijven exact; compacte kolommen. |
+| WR3 | CSV-koppen zijn vaste Engelse technische namen (E2), niet vertaald. | Importeerbaar en stabiel. |
+| WR4 | Werkpakketdocumenten (later) zijn anders: aparte versie per taal (NL voor de supervisor + taal van uitvoerende fitters/team), sjablonen per taal. Tweetalige opmaak alleen voor korte officiële documenten (Week Report). Taalbron WP waarschijnlijk team/uitvoerders: "taal per team" heroverwegen bij de start van de WP-module. | Lange werkinstructies zijn niet tweetalig leesbaar; de uitvoerders bepalen de taal. |
+| WR5 | Documentteksten data-gestuurd in SharePoint-lijst Translations (Key/Language/Text); geen vaste talenlijst in de app; taal toevoegen zonder app-build. UI-teksten blijven in T. | Talen groeien; geen build per taal. |
+| E6 | Employer Code (B1): de app leest hem alleen (weergave + export); leeg -> "EMP-" & Text(ID,"000"); nooit schrijven. | Zelfde regel als flow MS-019. |
+| E7 | WorkerID (B2) = Worker Code; leeg -> "WKR-" & Text(ID,"000"). | Geen lege ID in de export. |
+| E8 | PDF-rijen (B3) = medewerkers met een inzetperiode die week (of met uren); lege dagen "–"; weektotaal 0 blijft zichtbaar. CSV (B4): totaal 0 vervalt, alleen opgeslagen dagregistraties. | Rapport volgt de inzetperiodes; CSV = ruwe gegevens. |
+| E9 | CSV-quoting volgens RFC 4180 (bij ";", '"' of regeleinde). | Namen mogen speciale tekens bevatten. |
+| E10 | TEST-regel (B5): TEST-projecten kiesbaar in Week Report; exportbestanden krijgen prefix "TEST_"; bij echte projecten worden regels van TEST Employer weggelaten. | Testen zonder echte exports te vervuilen. |
+| E11 | Weekkiezer Week Report (B6) = patroon dpHoursWeek (ModernDatePicker), gedocumenteerde uitzondering op cmpField; footer = nieuw component cmpReportFooter (B7). | Zelfde gedrag als Weekly Hours; cmpFooter blijft ongewijzigd. |
+| E12 | Bestandsnamen (B8): `[TEST_]<ProjectNumber>_<YYYY>-KW<ww>_<EmployerCode>_<yyyymmdd-hhmm>`; map `<ProjectNumber>/<ISO-jaar>`. Flowcontract (B9): "SiteManagement - Export file" (Folder, FileName, Format, Content; uitvoer Status, FileUrl, Message; één aanroep per bestand). CSV (B10) volgens E2. Details: WEEKREPORT_PLAN.md par. 6. | Eén generieke bestandsschrijver, geen bedrijfslogica in de flow. |
+
 ## 5. Design
 
 | # | Decision | Why |

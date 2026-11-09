@@ -11,7 +11,7 @@ Power Apps canvas app on SharePoint Lists for GEA site management: project/team 
 | Current status, current baseline build, open items | **PROJECT_STATUS.md** | Yes |
 | Plan, phases, open decisions | **ROADMAP.md** | Only when the task says so |
 | Build plan admin screens (Contractors, Projects, Workers) | **ADMIN_PLAN.md** | Only when the task says so |
-| Plan Week Report + PDF/CSV export (not built, decisions B1-B10 open) | **WEEKREPORT_PLAN.md** | Only when the task says so |
+| Plan Week Report + PDF/CSV export (decisions taken, phase A in build) | **WEEKREPORT_PLAN.md** | Only when the task says so |
 | Manual SharePoint / Power Automate steps (MS-xxx) | **MANUAL_STEPS.md** | Only when the task says so |
 | Decision log: what was decided and why | **DECISIONS.md** | Only when the task says so |
 | Manual Studio/browser test cases (TP-xxx) | **TESTPLAN.md** | Only when the task says so |
