@@ -25,7 +25,7 @@ Handmatige testcases voor Studio en browser; pack en lokale scripts vervangen de
 | TP-WH-CLEAN-01 | Weekly Hours: geen blauwe balk, geen Trade onbekend-chip | OPEN | - | Eddy |
 | TP-COMP-01 | Stap 2: import met componenten + logicafixes Contractors/Projects | PASS op build components-20261030_150632 (eerder FAIL 132104 PA2231, 135641 cmpListCard) | 30-10-2026 | Eddy |
 | TP-STEP3-01 | Stap 3: Contractors en Projects op componenten (layout 1-7, Reset, regressie) | OPEN (build components-20261031_074310) | - | Eddy |
-| TP-WORKERS-01 | Workers-scherm, H18 in Save week, Weekly Hours-cache (build workers-20261108_014223) | OPEN | - | Eddy |
+| TP-WORKERS-01 | Workers-scherm, H18 in Save week, Weekly Hours-cache (build workers-20261108_014223) | DEELS PASS (Eddy 8-11-2026); g+h hertest nodig (langfix-build), r open | 8-11-2026 | Eddy |
 
 ## TP-DD-01 dropdown hover zichtbaar
 
@@ -504,7 +504,7 @@ Voorafgaand: TP-HOME-03 (Eddy 3-11-2026): punt 5 functioneel ok, 7 ok, 8 (New ch
 | 8 | Lege lijst, New, Discard | geen selectie |
 | 9 | Edit-modus Discard en New + Save | ongewijzigd t.o.v. TP-STEP3-05 |
 
-## TP-WORKERS-01 Workers-scherm, H18 en Weekly Hours-cache (OPEN; build workers-20261108_014223, 8-11-2026)
+## TP-WORKERS-01 Workers-scherm, H18 en Weekly Hours-cache (DEELS PASS, g+h hertest, r open; build workers-20261108_014223, 8-11-2026)
 Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-20261108_014223\SiteManagement_Workers_20261108_014223.msapp, 174058 bytes, SHA-256 97DC194310735EABB412362D3C8701733BF4B3B608E8EA59DD493B0427B3479A. Alleen TEST-gegevens: TEST Employer; bestaande testworkers Test Fitter 2 / Test Welder 2 / Test Unknown 2; een nieuwe worker met een naam die met "TEST" begint (V5); opslaan in Weekly Hours alleen op TEST-000. Technisch gecontroleerd, niet functioneel getest.
 
 | # | Actie | Verwacht |
@@ -515,7 +515,7 @@ Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-20261108_014223\
 | d | Trade, Language en Contractor wijzigen, Save | "Saved."; waarden in SharePoint; Title bijgewerkt (First + Surname); oude Hours behouden de oude contractor-/trade-gegevens |
 | e | First Name leegmaken, Save | foutmelding, rode rand, nul writes |
 | f | Naam met alleen cijfers, Save | geblokkeerd met melding, nul writes |
-| g | New worker "TEST..." onder TEST Employer: standaardwaarden zien, opslaan | Trade Unknown en Language Nederlands (als die waarden bestaan); opgeslagen; Worker Code pas na Refresh gevuld (flow MS-017) |
+| g | New worker "TEST..." onder TEST Employer: standaardwaarden zien, opslaan | Trade Unknown en Language "Nederlands", anders "Dutch", anders leeg (dan "Language required"); opgeslagen; Worker Code pas na Refresh gevuld (flow MS-017) |
 | h | New met dezelfde First Name + Surname + Contractor als een bestaande worker | amber "Attention." met workercode; Save pas na "Save anyway" |
 | i | Worker met een actieve Project Workers-koppeling deactiveren, Save | "Blocked." met projectlijst (eerste 3, "(+n more)"); niets opgeslagen |
 | j | Worker zonder actieve koppeling deactiveren, Save | opgeslagen; chip Inactive |
@@ -527,3 +527,6 @@ Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-20261108_014223\
 | p | Na o: Discard, Refresh (Project / team), opnieuw invoeren, Save | opgeslagen |
 | q | Verouderde cache: Workers-save, dan Home, tegel Weekly hours | landt op Project / team (herlaadt); daarna werkt Weekly Hours |
 | r | Monitor: delegatie van `Filter('Project Workers', Active = true)` en `'First Name' =` | geen delegatiewaarschuwing |
+
+Resultaat (Eddy 8-11-2026, build workers-20261108_014223): a b c d e f i j k l m o p q OK; n overgeslagen (geen legacy-record); r overgeslagen (Monitor-delegatie niet gecontroleerd, blijft OPEN). d: "Attention. Saved. Old hours keep the old contractor." OK. g/h: FAIL, Language was leeg bij New -> "Language required"; h (duplicaatwaarschuwing WKR-017 + Save anyway) werkt zodra Language gekozen is. m: opent op de laatst geselecteerde worker = geaccepteerd (zoals Contractors/Projects). o: conflict correct, niets opgeslagen, maar melding twee keer getoond (Notify + lblWeekLoadStatus): bestaand gedrag van elke mislukte Save op Weekly Hours (backlog UX 4b, PROJECT_STATUS.md).
+Oorzaak g/h: Workers.Language bevat geen exacte waarde "Nederlands" (Studio). Fix 9-11-2026: New-standaard "Nederlands" als in Choices, anders "Dutch", anders leeg (fail-closed). Hertest alleen g + h op de langfix-build (C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-langfix-20261109_131247\SiteManagement_Workers_LangFix_20261109_131247.msapp, 174071 bytes, SHA-256 BA8107BA26B74F4F07D046E7A09829EE4BD541045E8DE0FC9234807D319A07A2). Als de dropdownwaarde iets anders is dan Nederlands/Dutch: Eddy noemt de exacte tekst.

@@ -94,7 +94,7 @@ Status: GEBOUWD 8-11-2026 (scrWorkers, H18 in Save week, 5.6, Projects "Country 
 
 ### 5.1 Scherm en velden
 - scrWorkers op het Admin screen pattern (par. 10) met de vijf componenten: cmpTitleBar "Workers"; cmpMessageBar; cmpListCard (titel "First Surname", subregel "Worker Code · Contractor", zoeken op naam/code/contractor, Show inactive); cmpField-formulier; cmpFooter.
-- GENERAL: First Name*, Surname*, Worker Code (alleen-lezen, flow MS-017, tekst "assigned automatically"). WORK: Trade* (dropdown Choices([@Workers].Trade), New standaard Unknown), Contractor* (dropdown), Language* (dropdown Choices([@Workers].Language), New expliciet "Nederlands"; de metadata-standaard is nog English). Onderste rij: Active-switch + "Last changed in SharePoint".
+- GENERAL: First Name*, Surname*, Worker Code (alleen-lezen, flow MS-017, tekst "assigned automatically"). WORK: Trade* (dropdown Choices([@Workers].Trade), New standaard Unknown), Contractor* (dropdown), Language* (dropdown Choices([@Workers].Language), New-standaard (9-11-2026): "Nederlands" als die in Choices staat, anders "Dutch", anders leeg (fail-closed: "Language required"); de metadata-standaard is English). Onderste rij: Active-switch + "Last changed in SharePoint".
 - Kolommen (gecontroleerd in samengevoegde metadata): Workers: Title "Worker Name", field_1 Worker Code, field_2 First Name, field_3 Surname, field_6 Trade (keuze, verplicht, standaard Unknown), Employer (lookup), Language (keuze, metadata-standaard English), Active (boolean). Project Workers: Project, Worker (lookups, verplicht), Team (keuze), Active (boolean), AssignmentKey, ProjectKey. Geen telefoon/e-mail (Worker Contacts/MS-012 buiten v1; later alleen met toegang).
 
 ### 5.2 Laden en Contractor-dropdown
@@ -140,7 +140,7 @@ Screen1-kandidaten verbergen inactieve medewerkers (Active in de colWorkersCache
 7. Rechten: zolang MS-021 uitgesteld is, kan iedere appgebruiker met lijstrechten wijzigen; pas in productie sluiten.
 
 ## 8. Open punten
-1. Interne namen/typen staan in par. 1; open: controle van de waarden uit de oude Email-kolom en de Status-waarden uit Choices. Workers.Language-standaard: zie par. 5 (expliciet "Nederlands", V4).
+1. Interne namen/typen staan in par. 1; open: controle van de waarden uit de oude Email-kolom en de Status-waarden uit Choices. Workers.Language-standaard: zie par. 5 ("Nederlands", anders "Dutch", anders leeg; V4).
 2. Detectie open periode per medewerker (deactiveringsblokkade): zie par. 5 (V1).
 3. Besluit 11 timing (Closed in Projects-build, inactief in Workers-build): zie par. 5.5 (V3); het Status/Active-veld in de cacheprojecties blijft te bevestigen.
 4. Contractor deactiveren met actieve medewerkers: waarschuwing (voorstel) of blokkeren.

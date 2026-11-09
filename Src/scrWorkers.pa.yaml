@@ -130,7 +130,7 @@ Screens:
                  ClearCollect(colPendingAdminWorkers,ForAll(colPendingWrkRaw As w,With({e:LookUp(colPendingWrkEmployers,ID=w.Employer.Id)},{ID:w.ID,FirstName:Trim(w.'First Name' & ""),Surname:Trim(w.Surname & ""),Code:Trim(w.'Worker Code' & ""),Trade:Trim(w.Trade.Value & ""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value & ""),Contractor:If(IsBlank(w.Employer.Id),"",IsBlank(e.ID),Trim(w.Employer.Value & ""),Coalesce(e.Active,true),e.Name,e.Name & If(LangNl && !IsBlank(T.wrkInactiveSuffix.nl),T.wrkInactiveSuffix.nl,T.wrkInactiveSuffix.en)),Language:Trim(w.Language.Value & ""),Active:Coalesce(w.Active,true)})));
                  ClearCollect(colPendingWrkModified,ForAll(colPendingWrkRaw As w,{ID:w.ID,Modified:w.Modified}));
                  Set(varPendingWrkNewTrade,IfError(If(CountIf(Choices([@Workers].Trade),Value="Unknown")>0,"Unknown",""),""));
-                 Set(varPendingWrkNewLanguage,IfError(If(CountIf(Choices([@Workers].Language),Value="Nederlands")>0,"Nederlands",""),""));
+                 Set(varPendingWrkNewLanguage,IfError(If(CountIf(Choices([@Workers].Language),Value="Nederlands")>0,"Nederlands",CountIf(Choices([@Workers].Language),Value="Dutch")>0,"Dutch",""),""));
                  Collect(colWrkLoadErrors,colWrkWorkersLoadErrors,colWrkEmployersLoadErrors);
                  If(CountRows(colPendingWrkRaw)>=500,Collect(colWrkLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLimitWorkers.nl),T.wrkErrLimitWorkers.nl,T.wrkErrLimitWorkers.en)}));
                  If(CountRows(colPendingWrkEmployers)>=500,Collect(colWrkLoadErrors,{Message:If(LangNl && !IsBlank(T.wrkErrLimitEmployers.nl),T.wrkErrLimitEmployers.nl,T.wrkErrLimitEmployers.en)}));

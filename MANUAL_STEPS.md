@@ -20,7 +20,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-020 | 27-10-2026 | Done 28-10-2026 (Eddy, Studio regression PASS) |
 | MS-021 | 27-10-2026 | Postponed to go-live |
 | MS-022 | 27-10-2026 | Done 27-10-2026 (reported by Eddy) |
-| MS-025 | 7-11-2026 | OPEN (Eddy) |
+| MS-025 | 7-11-2026 | Done 8-11-2026 (Eddy) |
 | MS-026 | 7-11-2026 | Done 7-11-2026 (Eddy) |
 
 ---
@@ -203,7 +203,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-025 — Power Automate: ongebruikte flows uitzetten
 
-- **Added:** 7-11-2026. **Status:** OPEN (Eddy).
+- **Added:** 7-11-2026. **Status:** Done 8-11-2026 (Eddy): GetWeeklyHoursData, SiteHoursConnector and "Recurrence -> FlowConfig,Current KW" turned Off (not deleted). Read check (Weekly Hours / Hours Summary after Off): part of the retest, not separately reported; listed as done per Eddy.
 - **Reason:** Power Automate heeft 5 flows. In gebruik: "Employers - Employers code" (MS-019, SharePoint-trigger) en "Workers - Worker Name sync" (MS-017, SharePoint-trigger). Niet gebruikt volgens controle van Src + Site Managment_VS.msapr: GetWeeklyHoursData (Instant, Power Apps-trigger; nergens een verwijzing), SiteHoursConnector (Instant; nergens een verwijzing) en "Recurrence -> FlowConfig,Current KW" (Scheduled; geen lijst FlowConfig onder de gegevensbronnen en geen verwijzing naar FlowConfig/Current KW: de app leest geen data uit deze flow). Gegevensbronnen van de app: alleen Projects, Employers, Workers, Project Workers, Hours, Assignment Periods (+2 statische voorbeelden) en één legacy-flowbron "PowerAppV2 -> LastID init,BatchCount init,ReportHours Init" (FlowNameId 523dd121-144a-47d6-90d8-45e78243ae72), geregistreerd in de .msapr-metadata maar in Src nooit aangeroepen (.Run).
 - **Stappen (Eddy):** zet GetWeeklyHoursData, SiteHoursConnector en "Recurrence -> FlowConfig,Current KW" UIT (niet verwijderen). Controleer eerst in de URL/details van elke flow of het ID 523dd121-144a-47d6-90d8-45e78243ae72 is (de geregistreerde legacy-flow kan hernoemd zijn); uitzetten blijft veilig omdat de app hem nooit uitvoert, maar noteer het. Na het uitzetten: app eenmaal openen in Studio (geen fout verwacht) en Weekly Hours laden + Hours Summary draaien als leescontrole.
 - **Later, apart besluit (niet nu):** de legacy-flowbron uit de app verwijderen.
