@@ -1,0 +1,345 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+#
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+#
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpReportFooter:
+    DefinitionType: CanvasComponent
+    Description: Week Report footer. Presentation only. Contract - the host passes the complete guard of each button in <Button>Enabled (a Boolean) and puts the SAME guard as the first condition inside its event handler (OnHome, OnPrev, OnNext, OnRefresh, OnExport). The component only calls the event when its Enabled input is true; it never decides, mutates or navigates. Export is the right-most button and only shown when ExportVisible is true; the other right-hand buttons then stay right-aligned without a gap.
+    CustomProperties:
+      HomeText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Home button text.
+        Default: ="Home"
+      PrevText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Previous week button tooltip text.
+        Default: ="Previous week"
+      NextText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Next week button tooltip text.
+        Default: ="Next week"
+      RefreshText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Refresh button text.
+        Default: ="Refresh"
+      ExportText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Export button text.
+        Default: ="Export"
+      HomeEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Home guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      PrevEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Previous week guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      NextEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Next week guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      RefreshEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Refresh guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      ExportEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Export guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      ExportVisible:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Export button visible. When false the other right-hand buttons stay right-aligned without a gap.
+        Default: =false
+      OnHome:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Home pressed. The host handler starts with its guard.
+        Default: =false
+      OnPrev:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Previous week pressed. The host handler starts with its guard.
+        Default: =false
+      OnNext:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Next week pressed. The host handler starts with its guard.
+        Default: =false
+      OnRefresh:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Refresh pressed. The host handler starts with its guard.
+        Default: =false
+      OnExport:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Export pressed. The host handler starts with the complete admission check.
+        Default: =false
+    Properties:
+      Fill: =Color.White
+      Height: =68
+      Width: =1366
+    Children:
+      - lblCmpReportFooterMetrics:
+          Control: Label@2.5.1
+          Properties:
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =40
+            Text: =""
+            Visible: =false
+            Width: =12
+            X: =40
+            Y: =(Parent.Height-Self.Height)/2
+      - conCmpReportFooter:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =Color.White
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Start
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutOverflowX: =LayoutOverflow.Scroll
+            LayoutOverflowY: =LayoutOverflow.Hide
+            LayoutWrap: =false
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+          Children:
+            - conCmpReportFooterRow:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  FillPortions: =0
+                  Height: =68
+                  Width: =Max(Parent.Width,2*lblCmpReportFooterMetrics.X+btnCmpReportHome.Width+btnCmpReportPrev.Width+btnCmpReportNext.Width+btnCmpReportRefresh.Width+btnCmpReportExport.Width+4*lblCmpReportFooterMetrics.Width)
+                Children:
+                  - btnCmpReportHome:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        Color: =Color.White
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#000F41")
+                        HoverColor: =Color.White
+                        HoverFill: =ColorValue("#000F41")
+                        PressedBorderColor: =ColorValue("#000F41")
+                        PressedColor: =Color.White
+                        PressedFill: =ColorValue("#000F41")
+                        Text: =cmpReportFooter.HomeText
+                        DisplayMode: =If(cmpReportFooter.HomeEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpReportFooter.HomeEnabled,cmpReportFooter.OnHome())
+                        X: =lblCmpReportFooterMetrics.X
+                        Width: =110
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpReportFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =40
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - icoCmpReportHome:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AccessibleLabel: =""
+                        Color: =If(btnCmpReportHome.DisplayMode=DisplayMode.Edit,Color.White,ColorValue("#787878"))
+                        Height: =20
+                        Icon: =Icon.Home
+                        OnSelect: =Select(btnCmpReportHome)
+                        TabIndex: =-1
+                        Width: =20
+                        X: =btnCmpReportHome.X+14
+                        Y: =btnCmpReportHome.Y+(btnCmpReportHome.Height-Self.Height)/2
+                  - btnCmpReportPrev:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Color: =ColorValue("#0303B8")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =Color.White
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        PressedColor: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        Text: ="<"
+                        Tooltip: =cmpReportFooter.PrevText
+                        DisplayMode: =If(cmpReportFooter.PrevEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpReportFooter.PrevEnabled,cmpReportFooter.OnPrev())
+                        X: =btnCmpReportNext.X-lblCmpReportFooterMetrics.Width-Self.Width
+                        Width: =48
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpReportFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnCmpReportNext:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Color: =ColorValue("#0303B8")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =Color.White
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        PressedColor: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        Text: =">"
+                        Tooltip: =cmpReportFooter.NextText
+                        DisplayMode: =If(cmpReportFooter.NextEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpReportFooter.NextEnabled,cmpReportFooter.OnNext())
+                        X: =btnCmpReportRefresh.X-lblCmpReportFooterMetrics.Width-Self.Width
+                        Width: =48
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpReportFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnCmpReportRefresh:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Color: =ColorValue("#0303B8")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =Color.White
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        PressedColor: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        Text: =cmpReportFooter.RefreshText
+                        DisplayMode: =If(cmpReportFooter.RefreshEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpReportFooter.RefreshEnabled,cmpReportFooter.OnRefresh())
+                        X: =If(cmpReportFooter.ExportVisible,btnCmpReportExport.X-lblCmpReportFooterMetrics.Width,Parent.Width-lblCmpReportFooterMetrics.X)-Self.Width
+                        Width: =110
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpReportFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnCmpReportExport:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#1AFF80")
+                        BorderThickness: =0
+                        Color: =ColorValue("#000F41")
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =ColorValue("#1AFF80")
+                        HoverBorderColor: =ColorValue("#18DD6E")
+                        HoverColor: =ColorValue("#000F41")
+                        HoverFill: =ColorValue("#18DD6E")
+                        PressedBorderColor: =ColorValue("#18DD6E")
+                        PressedColor: =ColorValue("#000F41")
+                        PressedFill: =ColorValue("#18DD6E")
+                        Text: =cmpReportFooter.ExportText
+                        DisplayMode: =If(cmpReportFooter.ExportEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpReportFooter.ExportEnabled,cmpReportFooter.OnExport())
+                        Visible: =cmpReportFooter.ExportVisible
+                        X: =Parent.Width-lblCmpReportFooterMetrics.X-Self.Width
+                        Width: =110
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpReportFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+      - recCmpReportFooterLine:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =Color.Transparent
+            Fill: =ColorValue("#DCDCDC")
+            Height: =1
+            Width: =Parent.Width
+            X: =0
+            Y: =0

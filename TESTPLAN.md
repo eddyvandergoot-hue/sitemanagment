@@ -530,3 +530,24 @@ Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-20261108_014223\
 
 Resultaat (Eddy 8-11-2026, build workers-20261108_014223): a b c d e f i j k l m o p q OK; n overgeslagen (geen legacy-record); r overgeslagen (Monitor-delegatie niet gecontroleerd, blijft OPEN). d: "Attention. Saved. Old hours keep the old contractor." OK. g/h: FAIL, Language was leeg bij New -> "Language required"; h (duplicaatwaarschuwing WKR-017 + Save anyway) werkt zodra Language gekozen is. m: opent op de laatst geselecteerde worker = geaccepteerd (zoals Contractors/Projects). o: conflict correct, niets opgeslagen, maar melding twee keer getoond (Notify + lblWeekLoadStatus): bestaand gedrag van elke mislukte Save op Weekly Hours (backlog UX 4b, PROJECT_STATUS.md).
 Oorzaak g/h: Workers.Language bevat geen exacte waarde "Nederlands" (Studio). Fix 9-11-2026: New-standaard "Nederlands" als in Choices, anders "Dutch", anders leeg (fail-closed). Hertest alleen g + h op de langfix-build (C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-langfix-20261109_131247\SiteManagement_Workers_LangFix_20261109_131247.msapp, 174071 bytes, SHA-256 BA8107BA26B74F4F07D046E7A09829EE4BD541045E8DE0FC9234807D319A07A2). Hertest-resultaat (Eddy 9-11-2026, langfix-build): g OK (Language Dutch voorgevuld en opgeslagen; Worker Code verschijnt na ongeveer 1 minuut = polling van de flow-trigger MS-017, geaccepteerd), h OK (duplicaatwaarschuwing + Save anyway). r blijft open (Monitor-delegatie niet gecontroleerd, niet blokkerend). Workers goedgekeurd door Eddy 9-11-2026, tag approved-20261109-workers. Language-keuzes in SharePoint: Dutch, English, Polish, Romanian, German, Ukrainian; standaard Dutch. Let op: de code controleert voor de New-standaard nog eerst "Nederlands" (bestaat niet) en dan "Dutch"; opruimen bij de eerstvolgende Workers-wijziging.
+
+## TP-WEEKREPORT-01 Week Report fase A (OPEN; alleen lezen, niet opslaan; build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261109_203719\SiteManagement_WeekReportA_20261109_203719.msapp, 186666 bytes, SHA-256 6A8D56DF8B499D8478CF957E50849B7CAF950758183556ECE866F239D0F6C35C)
+Pad en SHA-256: volgen in PROJECT_STATUS.md. Alleen leesacties; geen Save. Projectkeuze: TEST-000 (stap d-h, j-m), een echt project alleen voor stap i (alleen lezen).
+
+| # | Actie | Verwacht |
+|---|---|---|
+| a | Week Report op ~1366, ~1000 en ~700 px | niets overlapt of knipt; titelbalk 60, meldingsbalk, kaarten en cmpReportFooter volgens het Admin screen pattern |
+| b | Home: tegel Week report | opent scrWeekReport; standaardweek = huidige week; standaardproject = project uit Project / team als dat gezet is |
+| c | Weekkiezer: andere dag in dezelfde week; andere week; weekpijlen Prev/Next | zelfde week = geen herlaad; andere week = herlaad; label "YYYY KWxx"; pijlen springen een week |
+| d | TEST-000: rijen en totalen | rijen = medewerkers met een inzetperiode die de week overlapt plus medewerkers met uren die week; dagen zonder uren "–"; totalen per dag, medewerker, contractor en eindtotaal gelijk aan Weekly Hours van dezelfde week |
+| e | Contractorfilter All / één contractor | alleen de gekozen contractor zichtbaar; totalen kloppen met de rijen |
+| f | Medewerker met gewisselde contractor | oude uren onder de oude contractor; rij met alleen periode onder de huidige contractor |
+| g | Codes | Contractor Code getoond; lege code = EMP-<ID 3 cijfers>; Worker Code als tooltip; lege code = WKR-<ID> |
+| h | Rapporttaalregel per contractor | meerderheid van Workers.Language; gelijkspel = English; allemaal Dutch = alleen "Dutch" |
+| i | Echt project (alleen lezen; alleen als TEST Employer-regels bestaan, anders overslaan) | TEST Employer-regels weggelaten met melding "Attention." |
+| j | Week 53: kies 01-01-2027 | label "2026 KW53" |
+| k | Refresh; tijdens laden | Refresh herlaadt; niets is klikbaar tijdens laden |
+| l | Monitor: Hours, Project Workers en Assignment Periods | queries gedelegeerd, geen delegatiewaarschuwing |
+| m | Controle SharePoint | geen schrijfactie: Modified van Hours en Workers ongewijzigd |
+
+Resultaat: nog niet uitgevoerd.

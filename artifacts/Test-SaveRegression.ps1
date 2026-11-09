@@ -448,7 +448,7 @@ foreach($name in $homeIdx.Keys){foreach($prop in @($homeIdx[$name]['Properties']
  $homeSets=@([regex]::Matches($fx,'\bSet\(\s*(\w+)\s*,') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
  Assert-True (@($homeSets | Where-Object { $_ -notin @('varProject','varTeam') }).Count -eq 0) "scrHome.$name.$prop sets no state other than varProject/varTeam"
  foreach($sel in [regex]::Matches($fx,'\bSelect\(\s*(\w+)\s*\)')){ Assert-True ($false) "scrHome.$name.$prop uses no Select (cmpTile raises OnSelect itself; navigation tiles hold Navigate only) ($($sel.Groups[1].Value))" }
- foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
+ foreach($nav in [regex]::Matches($fx,'\bNavigate\(\s*(\w+)')){ Assert-True ($nav.Groups[1].Value -in @('Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers','scrWeekReport')) "scrHome.$name.$prop navigates to a known screen ($($nav.Groups[1].Value))" }
 }}
 Assert-True ($homeOn -gt 0) "scrHome event formulas checked: $homeOn"
 # Non-event properties (Text, Visible, DisplayMode, layout...) on scrHome must not read SharePoint either.
@@ -815,8 +815,9 @@ $apMeta=($dsJson.DataSources | Where-Object Name -eq 'Assignment Periods').DataE
 $apText=($apMeta.PSObject.Properties | ForEach-Object { [string]$_.Value }) -join ''
 foreach($col in @('From','Till')){ Assert-True ($apText -match ('"'+$col+'":\{[^{}]*"format":"date"[,}]')) "Metadata: Assignment Periods.$col has format date (date only)" }
 # Contractors build (28-10-2026): only scrContractors reads/writes Employers; Employer Code (internal EmployerCode1) is only read in its projection, never written (flow MS-019).
-$srcNonAdmin=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | Where-Object Name -notin @('scrContractors.pa.yaml','scrWorkers.pa.yaml') | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
-Assert-True ($srcNonAdmin -notmatch "\bEmployers\b\s*[,)]" -and $srcAll -notmatch "EmployerCode1") 'Only scrContractors and scrWorkers (contractor dropdown: ID, Title, Active) read the Employers list; internal name EmployerCode1 not used'
+$srcNonAdmin=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | Where-Object Name -notin @('scrContractors.pa.yaml','scrWorkers.pa.yaml','scrWeekReport.pa.yaml') | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
+# Week Report phase A (09-11-2026): scrWeekReport reads Employers once (ID, Title, 'Employer Code', Active) for the group header; read-only, checked in Test-WeekReport.ps1.
+Assert-True ($srcNonAdmin -notmatch "\bEmployers\b\s*[,)]" -and $srcAll -notmatch "EmployerCode1") 'Only scrContractors, scrWorkers (contractor dropdown: ID, Title, Active) and scrWeekReport (read-only: ID, Title, Employer Code, Active) read the Employers list; internal name EmployerCode1 not used'
 Assert-True (([regex]::Matches($srcAll,"'Employer Code'")).Count -eq ([regex]::Matches($srcAll,"emp\.'Employer Code'")).Count) "Employer Code only read as emp.'Employer Code' in the Contractors projection (never a Patch field)"
 Assert-True ($srcAll -notmatch "\b(?:Remove|RemoveIf|Clear)\(\s*(?:Employers|Workers|Projects|Hours|'Project Workers'|'Assignment Periods')\b") 'No Remove/RemoveIf/Clear on SharePoint lists anywhere in Src'
 # Connector cache (TP-CONTRACTORS-01 step 12, 29-10-2026): every SharePoint read in a behaviour formula of the approved

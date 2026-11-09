@@ -140,12 +140,14 @@ Screens:
                       Control: CanvasComponent
                       ComponentName: cmpTile
                       Properties:
-                        Active: =false
+                        Active: =true
+                        ArrowSvg: =IconArrowWhite
                         Height: =lblHomeMetrics.Width
-                        Icon: =IconWeekReportGrey
                         IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconWeekReportWhite
                         Label: =If(LangNl && !IsBlank(T.homeTileWeekReport.nl),T.homeTileWeekReport.nl,T.homeTileWeekReport.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        OnSelect: =Navigate(scrWeekReport); true
                         Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width

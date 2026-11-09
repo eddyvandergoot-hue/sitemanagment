@@ -15,10 +15,12 @@ EditorState:
     - scrContractors
     - scrProjects
     - scrWorkers
+    - scrWeekReport
   ComponentDefinitionsOrder:
     - cmpTitleBar
     - cmpMessageBar
     - cmpFooter
+    - cmpReportFooter
     - cmpField
     - cmpListCard
     - cmpTile

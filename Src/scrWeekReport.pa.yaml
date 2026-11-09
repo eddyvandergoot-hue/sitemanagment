@@ -1,0 +1,962 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+#
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+#
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrWeekReport:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      LoadingSpinnerColor: =ColorValue("#0303B8")
+      OnVisible: |-
+        =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"");
+        If(IsBlank(varWrLoadState),Set(varWrLoadState,"NotLoaded"); Set(varWrContractorDisplay,""); Set(varWrContractorID,0));
+        If(IsBlank(varWrMonday),Set(varWrPickedDay,Today()); Set(varWrMonday,DateAdd(Today(),1-Weekday(Today(),StartOfWeek.Monday),TimeUnit.Days)));
+        If(IsBlank(varWrProjectID) && !IsBlank(varProject.Id),Set(varWrProjectID,varProject.Id));
+        Trace("DIAG|WeekReport|OnVisible",TraceSeverity.Information,{Screen:"WeekReport",LoadState:Coalesce(varWrLoadState,"")});
+        If(!Coalesce(varWrBusy,false),Set(varWrMastersReady,false); Set(varWrForceRefresh,false); Select(btnWrLoad))
+    Children:
+      - cmpWrTitle:
+          Control: CanvasComponent
+          ComponentName: cmpTitleBar
+          Properties:
+            Busy: =Coalesce(varWrBusy,false) || varWrLoadState="Loading"
+            BusyLabel: =If(LangNl && !IsBlank(T.wrBusy.nl),T.wrBusy.nl,T.wrBusy.en)
+            Height: =60
+            Logo: =GEA_logo_white
+            Title: =If(LangNl && !IsBlank(T.wrTitle.nl),T.wrTitle.nl,T.wrTitle.en)
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - cmpWrMsgBar:
+          Control: CanvasComponent
+          ComponentName: cmpMessageBar
+          Properties:
+            Body: =varAdmMsgBody
+            CloseLabel: =If(LangNl && !IsBlank(T.admMsgClose.nl),T.admMsgClose.nl,T.admMsgClose.en)
+            Head: =varAdmMsgHead
+            Height: =If(IsBlank(varAdmMsgKind),0,40)
+            Kind: =varAdmMsgKind
+            OnClose: =Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,"")
+            Width: =cmpWrTitle.Width
+            X: =cmpWrTitle.X
+            Y: =cmpWrTitle.Y+cmpWrTitle.Height
+      - lblWrSel:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =If(Parent.Width-112>=1148,1,0)
+            Y: =If(Self.X=1,1,If(Parent.Width-112>=576,1,0))
+            Width: =If(Self.X=1,360,If(Self.Y=1,Min(360,RoundDown((Parent.Width-112-16)/2,0)),Parent.Width-112))
+            Height: =If(Self.X=1,106,If(Self.Y=1,180,254))
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - lblWrCols:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =If(Parent.Width-112>=900,72,If(Parent.Width-112>=740,56,44))
+            Y: =If(Parent.Width-112>=740,96,72)
+            Width: =Parent.Width-112-Self.Y-7*Self.X-Self.Height
+            Height: =If(Parent.Width-112>=740,88,64)
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - lblWrMetrics:
+          Control: Label@2.5.1
+          Properties:
+            Text: =""
+            Visible: =false
+            X: =0
+            Y: =0
+            Width: =If(galWrLines.Visible,136+galWrLines.Height+24,156)
+            Height: =conWrTableCard.Y+conWrTableCard.Height+24
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+      - btnWrLoad:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Load"
+            Visible: =false
+            DisplayMode: =DisplayMode.Edit
+            X: =0
+            Y: =0
+            Width: =1
+            Height: =1
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            OnSelect: |-
+              =If(Coalesce(varWrBusy,false),
+               Trace("DIAG|WeekReport|LoadSkipped",TraceSeverity.Information,{Screen:"WeekReport",Reason:"Busy"}),
+               Set(varWrBusy,true); Set(varWrLoadState,"Loading"); Set(varWrDiagT0,Now());
+               Clear(colWrLoadErrors); Clear(colWrProjectsErrors); Clear(colWrEmployersErrors); Clear(colWrWorkersErrors);
+               Clear(colWrPendPW); Clear(colWrPendPeriods); Clear(colWrPendHours); Clear(colWrPendFacts); Clear(colWrPendPeriodWorkers); Clear(colWrPendKeys); Clear(colWrPendRows); Clear(colWrPendRowsShown); Clear(colWrPendGroups); Clear(colWrPendGroupRank); Clear(colWrPendRowRank); Clear(colWrPendLines); Clear(colWrPendContractorItems);
+               Set(varWrNextMonday,DateAdd(varWrMonday,7,TimeUnit.Days)); Set(varWrPendSunday,DateAdd(varWrMonday,6,TimeUnit.Days)); Set(varWrQueryPaged,false); Set(varWrPendIsTest,false); Set(varWrPendExcluded,0);
+               Trace("DIAG|WeekReport|Start",TraceSeverity.Information,{Screen:"WeekReport",Monday:Coalesce(Text(varWrMonday,"yyyy-mm-dd"),""),ProjectID:Coalesce(varWrProjectID,0),Forced:Coalesce(varWrForceRefresh,false),MastersReady:Coalesce(varWrMastersReady,false)});
+               If(IsBlank(varWrMonday),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrNoWeek.nl),T.wrErrNoWeek.nl,T.wrErrNoWeek.en)}));
+               If(IsEmpty(colWrLoadErrors) && (Coalesce(varWrForceRefresh,false) || !Coalesce(varWrMastersReady,false)),
+                Set(varWrMastersReady,false); Clear(colWrPendProjects); Clear(colWrPendEmployers); Clear(colWrPendWorkers);
+                IfError(Refresh(Projects),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadProjects.nl),T.wrErrLoadProjects.nl,T.wrErrLoadProjects.en) & " " & FirstError.Message});false);
+                IfError(Refresh(Employers),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadEmployers.nl),T.wrErrLoadEmployers.nl,T.wrErrLoadEmployers.en) & " " & FirstError.Message});false);
+                IfError(Refresh(Workers),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadWorkers.nl),T.wrErrLoadWorkers.nl,T.wrErrLoadWorkers.en) & " " & FirstError.Message});false);
+                If(IsEmpty(colWrLoadErrors),
+                 Concurrent(
+                  IfError(CountRows(ClearCollect(colWrPendProjects,ForAll(Projects As p,{ID:p.ID,Title:Trim(p.Title & ""),Number:Trim(p.'Project Number' & ""),Reference:Trim(p.'Project Reference' & "")})))>=0,
+                   Collect(colWrProjectsErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadProjects.nl),T.wrErrLoadProjects.nl,T.wrErrLoadProjects.en) & " " & FirstError.Message});false),
+                  IfError(CountRows(ClearCollect(colWrPendEmployers,ForAll(Employers As emp,{ID:emp.ID,Name:Trim(emp.Title & ""),Code:Trim(emp.'Employer Code' & ""),Active:Coalesce(emp.Active,true)})))>=0,
+                   Collect(colWrEmployersErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadEmployers.nl),T.wrErrLoadEmployers.nl,T.wrErrLoadEmployers.en) & " " & FirstError.Message});false),
+                  IfError(CountRows(ClearCollect(colWrPendWorkers,ForAll(Workers As w,{ID:w.ID,FirstName:Trim(w.'First Name' & ""),Surname:Trim(w.Surname & ""),Code:Trim(w.'Worker Code' & ""),Trade:Trim(w.Trade.Value & ""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value & ""),Language:If(Trim(w.Language.Value & "")="Nederlands","Dutch",Trim(w.Language.Value & ""))})))>=0,
+                   Collect(colWrWorkersErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadWorkers.nl),T.wrErrLoadWorkers.nl,T.wrErrLoadWorkers.en) & " " & FirstError.Message});false)
+                 );
+                 Collect(colWrLoadErrors,colWrProjectsErrors,colWrEmployersErrors,colWrWorkersErrors)
+                );
+                If(CountRows(colWrPendProjects)>=500,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLimitProjects.nl),T.wrErrLimitProjects.nl,T.wrErrLimitProjects.en)}));
+                If(CountRows(colWrPendEmployers)>=500,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLimitEmployers.nl),T.wrErrLimitEmployers.nl,T.wrErrLimitEmployers.en)}));
+                If(CountRows(colWrPendWorkers)>=500,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLimitWorkers.nl),T.wrErrLimitWorkers.nl,T.wrErrLimitWorkers.en)}));
+                If(IsEmpty(colWrLoadErrors),
+                 ClearCollect(colWrProjects,ForAll(Sort(colWrPendProjects,Lower(Number & " " & Title),SortOrder.Ascending) As p,{ID:p.ID,Title:p.Title,Number:p.Number,Reference:p.Reference,Display:If(IsBlank(p.Number),p.Title & " (ID " & Text(p.ID) & ")",p.Number & " · " & p.Title)}));
+                 ClearCollect(colWrEmployers,colWrPendEmployers); ClearCollect(colWrWorkers,colWrPendWorkers);
+                 Set(varWrMastersReady,true)
+                )
+               );
+               If(IsEmpty(colWrLoadErrors) && Coalesce(varWrMastersReady,false) && !IsBlank(varWrProjectID),
+                Set(varWrPendProjectID,varWrProjectID); Set(varWrProjectKey,Text(varWrPendProjectID)); Set(varWrQueryPrefix,varWrProjectKey & "|");
+                Set(varWrPendProject,LookUp(colWrProjects,ID=varWrPendProjectID));
+                Set(varWrPendIsTest,Left(Trim(varWrPendProject.Number & ""),5)="TEST-");
+                If(IsBlank(varWrPendProject.ID),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrProjectUnknown.nl),T.wrErrProjectUnknown.nl,T.wrErrProjectUnknown.en)}));
+                If(IsEmpty(colWrLoadErrors),
+                 IfError(Refresh(Hours),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                 IfError(Refresh('Project Workers'),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadPW.nl),T.wrErrLoadPW.nl,T.wrErrLoadPW.en) & " " & FirstError.Message});false);
+                 IfError(Refresh('Assignment Periods'),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadPeriods.nl),T.wrErrLoadPeriods.nl,T.wrErrLoadPeriods.en) & " " & FirstError.Message});false)
+                );
+                If(IsEmpty(colWrLoadErrors),
+                 IfError(CountRows(ClearCollect(colWrPendPW,ForAll(Filter('Project Workers',ProjectKey=varWrProjectKey) As pw,{ID:pw.ID,WorkerID:pw.Worker.Id,ProjectID:pw.Project.Id,AssignmentKey:Trim(pw.AssignmentKey & "")})))>=0,
+                  Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadPW.nl),T.wrErrLoadPW.nl,T.wrErrLoadPW.en) & " " & FirstError.Message});false);
+                 If(CountRows(colWrPendPW)>=500,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLimitPW.nl),T.wrErrLimitPW.nl,T.wrErrLimitPW.en)}));
+                 With({badRows:Filter(colWrPendPW,ProjectID<>varWrPendProjectID)},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrPWOtherProject.nl),T.wrErrPWOtherProject.nl,T.wrErrPWOtherProject.en),"{0}",Concat(FirstN(badRows,3),Text(ID),", "))})));
+                 With({badRows:Filter(colWrPendPW,AssignmentKey<>varWrProjectKey & "|" & Text(WorkerID))},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrLinkKey.nl),T.wrErrLinkKey.nl,T.wrErrLinkKey.en),"{0}",Concat(FirstN(badRows,3),If(IsBlank(AssignmentKey),"?",AssignmentKey) & " (ID " & Text(ID) & ")",", ") & If(CountRows(badRows)>3,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(badRows)-3)),""))})));
+                 IfError(CountRows(ClearCollect(colWrPendPeriods,ForAll(Filter('Assignment Periods',ProjectKey=varWrProjectKey) As ap,{ID:ap.ID,AssignmentKey:Trim(ap.AssignmentKey & ""),From:If(IsBlank(ap.From),Blank(),Date(Year(ap.From),Month(ap.From),Day(ap.From))),Until:If(IsBlank(ap.Until),Blank(),Date(Year(ap.Until),Month(ap.Until),Day(ap.Until)))})))>=0,
+                  Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadPeriods.nl),T.wrErrLoadPeriods.nl,T.wrErrLoadPeriods.en) & " " & FirstError.Message});false);
+                 If(CountRows(colWrPendPeriods)>=500,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLimitPeriods.nl),T.wrErrLimitPeriods.nl,T.wrErrLimitPeriods.en)}));
+                 With({badRows:Filter(colWrPendPeriods,!IsBlank(AssignmentKey) && !StartsWith(AssignmentKey,varWrQueryPrefix))},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrPeriodOtherProject.nl),T.wrErrPeriodOtherProject.nl,T.wrErrPeriodOtherProject.en),"{0}",Concat(FirstN(badRows,3),Text(ID),", "))})));
+                 With({badRows:Filter(colWrPendPeriods,IsBlank(From) || IsBlank(AssignmentKey))},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrPeriodData.nl),T.wrErrPeriodData.nl,T.wrErrPeriodData.en),"{0}",Concat(FirstN(badRows,3),Text(ID),", ") & If(CountRows(badRows)>3,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(badRows)-3)),""))})));
+                 With({badRows:Filter(colWrPendPeriods As ap,!IsBlank(ap.AssignmentKey) && CountIf(colWrPendPW,varWrProjectKey & "|" & Text(WorkerID)=ap.AssignmentKey)=0)},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrPeriodNoLink.nl),T.wrErrPeriodNoLink.nl,T.wrErrPeriodNoLink.en),"{0}",Concat(FirstN(badRows,3),AssignmentKey,", ") & If(CountRows(badRows)>3,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(badRows)-3)),""))})))
+                );
+                If(IsEmpty(colWrLoadErrors),
+                 IfError(With({batch:ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=varWrMonday && 'Work Date'<varWrNextMonday) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})},
+                  If(CountRows(batch)<500,CountRows(Collect(colWrPendHours,batch))>=0,Set(varWrQueryPaged,true); true)),
+                  Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                 If(IsEmpty(colWrLoadErrors) && varWrQueryPaged,
+                  Clear(colWrPendHours);
+                  Trace("DIAG|WeekReport|PagedByDay",TraceSeverity.Information,{Screen:"WeekReport",ElapsedMs:DateDiff(varWrDiagT0,Now(),TimeUnit.Milliseconds)});
+                  IfError(CountRows(Collect(colWrPendHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=DateAdd(varWrMonday,0,TimeUnit.Days) && 'Work Date'<DateAdd(varWrMonday,1,TimeUnit.Days)) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})))>=0,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                  IfError(CountRows(Collect(colWrPendHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=DateAdd(varWrMonday,1,TimeUnit.Days) && 'Work Date'<DateAdd(varWrMonday,2,TimeUnit.Days)) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})))>=0,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                  IfError(CountRows(Collect(colWrPendHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=DateAdd(varWrMonday,2,TimeUnit.Days) && 'Work Date'<DateAdd(varWrMonday,3,TimeUnit.Days)) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})))>=0,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                  IfError(CountRows(Collect(colWrPendHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=DateAdd(varWrMonday,3,TimeUnit.Days) && 'Work Date'<DateAdd(varWrMonday,4,TimeUnit.Days)) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})))>=0,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                  IfError(CountRows(Collect(colWrPendHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=DateAdd(varWrMonday,4,TimeUnit.Days) && 'Work Date'<DateAdd(varWrMonday,5,TimeUnit.Days)) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})))>=0,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                  IfError(CountRows(Collect(colWrPendHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=DateAdd(varWrMonday,5,TimeUnit.Days) && 'Work Date'<DateAdd(varWrMonday,6,TimeUnit.Days)) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})))>=0,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                  IfError(CountRows(Collect(colWrPendHours,ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix) && 'Work Date'>=DateAdd(varWrMonday,6,TimeUnit.Days) && 'Work Date'<DateAdd(varWrMonday,7,TimeUnit.Days)) As entry,{HourID:entry.ID,EntryKey:Trim(entry.EntryKey & ""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.'Work Date'),Month(entry.'Work Date'),Day(entry.'Work Date')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value & ""),TradeRaw:Trim(entry.Trade.Value & ""),HourValue:entry.Hours})))>=0,Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrLoadHours.nl),T.wrErrLoadHours.nl,T.wrErrLoadHours.en) & " " & FirstError.Message});false);
+                  ForAll(Sequence(7) As dayIndex,If(CountIf(colWrPendHours,WorkDay=DateAdd(varWrMonday,dayIndex.Value-1,TimeUnit.Days))>=500,Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrLimitDay.nl),T.wrErrLimitDay.nl,T.wrErrLimitDay.en),"{0}",Text(DateAdd(varWrMonday,dayIndex.Value-1,TimeUnit.Days),"dd-mm-yyyy"))})))
+                 )
+                );
+                If(IsEmpty(colWrLoadErrors),
+                 If(CountRows(Distinct(colWrPendHours,HourID))<>CountRows(colWrPendHours),Collect(colWrLoadErrors,{Message:If(LangNl && !IsBlank(T.wrErrHourDuplicate.nl),T.wrErrHourDuplicate.nl,T.wrErrHourDuplicate.en)}));
+                 With({badRows:Filter(colWrPendHours,IsBlank(ContractorID) || IsBlank(HourValue) || IsBlank(AssignmentID) || WorkDay<varWrMonday || WorkDay>varWrPendSunday)},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrHourData.nl),T.wrErrHourData.nl,T.wrErrHourData.en),"{0}",Concat(FirstN(badRows,3),EntryKey & " (ID " & Text(HourID) & ")",", ") & If(CountRows(badRows)>3,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(badRows)-3)),""))})));
+                 With({badRows:Filter(colWrPendHours As h,!IsBlank(h.AssignmentID) && IsBlank(LookUp(colWrPendPW,ID=h.AssignmentID).ID))},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrHourAssignment.nl),T.wrErrHourAssignment.nl,T.wrErrHourAssignment.en),"{0}",Concat(FirstN(badRows,3),EntryKey & " (ID " & Text(HourID) & ")",", ") & If(CountRows(badRows)>3,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(badRows)-3)),""))})));
+                 With({badRows:Filter(colWrPendHours As h,!IsBlank(LookUp(colWrPendPW,ID=h.AssignmentID).ID) && h.EntryKey<>LookUp(colWrPendPW,ID=h.AssignmentID).AssignmentKey & "|" & Text(h.WorkDay,"yyyymmdd"))},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrHourKey.nl),T.wrErrHourKey.nl,T.wrErrHourKey.en),"{0}",Concat(FirstN(badRows,3),EntryKey & " (ID " & Text(HourID) & ")",", ") & If(CountRows(badRows)>3,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(badRows)-3)),""))})))
+                );
+                If(IsEmpty(colWrLoadErrors),
+                 ClearCollect(colWrPendFacts,ForAll(colWrPendHours As h,{HourID:h.HourID,WorkerID:LookUp(colWrPendPW,ID=h.AssignmentID).WorkerID,ContractorID:h.ContractorID,ContractorName:h.ContractorName,DayIndex:DateDiff(varWrMonday,h.WorkDay,TimeUnit.Days),HourValue:h.HourValue,Trade:Switch(h.TradeRaw,"F","Fitter","W","Welder",h.TradeRaw)}));
+                 ClearCollect(colWrPendPeriodWorkers,ForAll(Distinct(Filter(colWrPendPW As pw,CountIf(colWrPendPeriods,AssignmentKey=varWrProjectKey & "|" & Text(pw.WorkerID) && !IsBlank(From) && From<=varWrPendSunday && (IsBlank(Until) || Until>=varWrMonday))>0),WorkerID) As d,{WorkerID:d.Value}));
+                 ClearCollect(colWrPendKeys,ForAll(Distinct(colWrPendFacts,Text(WorkerID) & "|" & Text(ContractorID)) As k,With({f:LookUp(colWrPendFacts,Text(WorkerID) & "|" & Text(ContractorID)=k.Value)},{WorkerID:f.WorkerID,ContractorID:f.ContractorID,SourceName:f.ContractorName,HasHours:true})));
+                 Collect(colWrPendKeys,ForAll(Filter(colWrPendPeriodWorkers As p,CountIf(colWrPendFacts,WorkerID=p.WorkerID)=0) As p,{WorkerID:p.WorkerID,ContractorID:LookUp(colWrWorkers,ID=p.WorkerID).EmployerID,SourceName:LookUp(colWrWorkers,ID=p.WorkerID).EmployerName,HasHours:false}));
+                 With({badRows:Filter(colWrPendKeys As k,IsBlank(k.WorkerID) || IsBlank(k.ContractorID) || IsBlank(LookUp(colWrWorkers,ID=k.WorkerID).ID))},If(!IsEmpty(badRows),Collect(colWrLoadErrors,{Message:Substitute(If(LangNl && !IsBlank(T.wrErrWorkerData.nl),T.wrErrWorkerData.nl,T.wrErrWorkerData.en),"{0}",Concat(FirstN(badRows,3),Coalesce(Text(WorkerID),"?"),", ") & If(CountRows(badRows)>3,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(badRows)-3)),""))})))
+                );
+                If(IsEmpty(colWrLoadErrors),
+                 ClearCollect(colWrPendRows,ForAll(colWrPendKeys As k,With({w:LookUp(colWrWorkers,ID=k.WorkerID),e:LookUp(colWrEmployers,ID=k.ContractorID),lines:Filter(colWrPendFacts,WorkerID=k.WorkerID && ContractorID=k.ContractorID)},{WorkerID:k.WorkerID,WorkerCode:If(IsBlank(w.Code),"WKR-" & Text(k.WorkerID,"000"),w.Code),WorkerName:Trim(w.FirstName & " " & w.Surname),Language:w.Language,ContractorID:k.ContractorID,ContractorName:If(IsBlank(e.Name),k.SourceName,e.Name),EmployerCode:If(IsBlank(e.Code),"EMP-" & Text(k.ContractorID,"000"),e.Code),Trade:If(k.HasHours,Concat(Sort(Distinct(Filter(lines,!IsBlank(Trade)),Trade),Value,SortOrder.Ascending),Value," / "),w.Trade),HasHours:k.HasHours,D1:If(CountIf(lines,DayIndex=0)=0,Blank(),Coalesce(Sum(Filter(lines,DayIndex=0),HourValue),0)),D2:If(CountIf(lines,DayIndex=1)=0,Blank(),Coalesce(Sum(Filter(lines,DayIndex=1),HourValue),0)),D3:If(CountIf(lines,DayIndex=2)=0,Blank(),Coalesce(Sum(Filter(lines,DayIndex=2),HourValue),0)),D4:If(CountIf(lines,DayIndex=3)=0,Blank(),Coalesce(Sum(Filter(lines,DayIndex=3),HourValue),0)),D5:If(CountIf(lines,DayIndex=4)=0,Blank(),Coalesce(Sum(Filter(lines,DayIndex=4),HourValue),0)),D6:If(CountIf(lines,DayIndex=5)=0,Blank(),Coalesce(Sum(Filter(lines,DayIndex=5),HourValue),0)),D7:If(CountIf(lines,DayIndex=6)=0,Blank(),Coalesce(Sum(Filter(lines,DayIndex=6),HourValue),0)),WeekTotal:Coalesce(Sum(lines,HourValue),0)})));
+                 Set(varWrPendExcluded,If(varWrPendIsTest,0,CountIf(colWrPendRows,Trim(ContractorName)="TEST Employer")));
+                 ClearCollect(colWrPendRowsShown,Filter(colWrPendRows,varWrPendIsTest || Trim(ContractorName)<>"TEST Employer"));
+                 ClearCollect(colWrPendGroups,ForAll(Distinct(colWrPendRowsShown,ContractorID) As g,With({gr:Filter(colWrPendRowsShown,ContractorID=g.Value)},With({langs:Filter(gr,!IsBlank(Language))},With({counts:ForAll(Distinct(langs,Language) As l,{Lang:l.Value,N:CountIf(langs,Language=l.Value)})},With({top:Max(counts,N)},{ContractorID:g.Value,ContractorName:First(gr).ContractorName,EmployerCode:First(gr).EmployerCode,Display:First(gr).ContractorName & " (" & First(gr).EmployerCode & ")",SortName:Lower(First(gr).ContractorName) & "|" & Text(g.Value,"0000000000"),ReportLanguage:If(CountIf(counts,N=top)=1,LookUp(counts,N=top).Lang,"English"),Rows:CountRows(gr),D1:Coalesce(Sum(gr,D1),0),D2:Coalesce(Sum(gr,D2),0),D3:Coalesce(Sum(gr,D3),0),D4:Coalesce(Sum(gr,D4),0),D5:Coalesce(Sum(gr,D5),0),D6:Coalesce(Sum(gr,D6),0),D7:Coalesce(Sum(gr,D7),0),WeekTotal:Coalesce(Sum(gr,WeekTotal),0)}))))));
+                 ClearCollect(colWrPendGroupRank,With({s:Sort(colWrPendGroups,SortName,SortOrder.Ascending)},ForAll(Sequence(CountRows(s)) As i,{ContractorID:Index(s,i.Value).ContractorID,Rank:i.Value})));
+                 ClearCollect(colWrPendRowRank,With({s:Sort(ForAll(colWrPendRowsShown As r,{WorkerID:r.WorkerID,ContractorID:r.ContractorID,SortName:Text(LookUp(colWrPendGroupRank,ContractorID=r.ContractorID).Rank,"0000") & "|" & Lower(r.WorkerName) & "|" & Text(r.WorkerID,"0000000000")}),SortName,SortOrder.Ascending)},ForAll(Sequence(CountRows(s)) As i,{WorkerID:Index(s,i.Value).WorkerID,ContractorID:Index(s,i.Value).ContractorID,Pos:i.Value})));
+                 ClearCollect(colWrPendLines,ForAll(colWrPendGroups As g,{LineType:"Header",SortKey:LookUp(colWrPendGroupRank,ContractorID=g.ContractorID).Rank*100000,ContractorID:g.ContractorID,Name:g.ContractorName,Code:g.EmployerCode,Lang:g.ReportLanguage,Trade:"",Zebra:false,D1:0,D2:0,D3:0,D4:0,D5:0,D6:0,D7:0,WeekTotal:0}));
+                 Collect(colWrPendLines,ForAll(colWrPendRowsShown As r,With({pos:LookUp(colWrPendRowRank,WorkerID=r.WorkerID && ContractorID=r.ContractorID).Pos,first:Min(Filter(colWrPendRowRank,ContractorID=r.ContractorID),Pos)},{LineType:"Row",SortKey:LookUp(colWrPendGroupRank,ContractorID=r.ContractorID).Rank*100000+pos,ContractorID:r.ContractorID,Name:r.WorkerName,Code:r.WorkerCode,Lang:"",Trade:r.Trade,Zebra:Mod(pos-first,2)=1,D1:r.D1,D2:r.D2,D3:r.D3,D4:r.D4,D5:r.D5,D6:r.D6,D7:r.D7,WeekTotal:r.WeekTotal})));
+                 Collect(colWrPendLines,ForAll(colWrPendGroups As g,{LineType:"Subtotal",SortKey:LookUp(colWrPendGroupRank,ContractorID=g.ContractorID).Rank*100000+99999,ContractorID:g.ContractorID,Name:If(LangNl && !IsBlank(T.wrSubtotal.nl),T.wrSubtotal.nl,T.wrSubtotal.en),Code:g.EmployerCode,Lang:"",Trade:"",Zebra:false,D1:g.D1,D2:g.D2,D3:g.D3,D4:g.D4,D5:g.D5,D6:g.D6,D7:g.D7,WeekTotal:g.WeekTotal}));
+                 If(!IsEmpty(colWrPendGroups),Collect(colWrPendLines,{LineType:"Grand",SortKey:999999999,ContractorID:-1,Name:If(LangNl && !IsBlank(T.wrGrandTotal.nl),T.wrGrandTotal.nl,T.wrGrandTotal.en),Code:"",Lang:"",Trade:"",Zebra:false,D1:Coalesce(Sum(colWrPendRowsShown,D1),0),D2:Coalesce(Sum(colWrPendRowsShown,D2),0),D3:Coalesce(Sum(colWrPendRowsShown,D3),0),D4:Coalesce(Sum(colWrPendRowsShown,D4),0),D5:Coalesce(Sum(colWrPendRowsShown,D5),0),D6:Coalesce(Sum(colWrPendRowsShown,D6),0),D7:Coalesce(Sum(colWrPendRowsShown,D7),0),WeekTotal:Coalesce(Sum(colWrPendRowsShown,WeekTotal),0)}));
+                 ClearCollect(colWrPendContractorItems,{Value:If(LangNl && !IsBlank(T.wrAllContractors.nl),T.wrAllContractors.nl,T.wrAllContractors.en)});
+                 Collect(colWrPendContractorItems,ForAll(Sort(colWrPendGroups,SortName,SortOrder.Ascending) As g,{Value:g.Display}))
+                );
+                If(IsEmpty(colWrLoadErrors),
+                 ClearCollect(colWrRows,colWrPendRowsShown); ClearCollect(colWrGroups,colWrPendGroups); ClearCollect(colWrLines,Sort(colWrPendLines,SortKey,SortOrder.Ascending)); ClearCollect(colWrContractorItems,colWrPendContractorItems);
+                 Set(varWrLoadedProjectID,varWrPendProjectID); Set(varWrLoadedProject,varWrPendProject); Set(varWrLoadedMonday,varWrMonday); Set(varWrLoadedIsTest,varWrPendIsTest); Set(varWrExcluded,varWrPendExcluded);
+                 Set(varWrContractorID,If(IsBlank(varWrContractorDisplay),0,Coalesce(LookUp(colWrGroups,Display=varWrContractorDisplay).ContractorID,0)));
+                 If(varWrContractorID=0,Set(varWrContractorDisplay,""));
+                 Set(varWrLoadState,"Loaded"); Set(varWrLoadedAt,Now()); Reset(cmpWrContractor);
+                 If(varWrExcluded>0,
+                  Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,Substitute(If(LangNl && !IsBlank(T.wrMsgTestExcluded.nl),T.wrMsgTestExcluded.nl,T.wrMsgTestExcluded.en),"{0}",Text(varWrExcluded))),
+                  Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadLoaded.nl),T.admHeadLoaded.nl,T.admHeadLoaded.en)); Set(varAdmMsgBody,Substitute(Substitute(If(LangNl && !IsBlank(T.wrMsgLoaded.nl),T.wrMsgLoaded.nl,T.wrMsgLoaded.en),"{0}",Text(CountRows(colWrRows))),"{1}",Text(varWrLoadedAt,"hh:mm:ss")))
+                 )
+                )
+               );
+               If(!IsEmpty(colWrLoadErrors),
+                Set(varWrLoadState,"Failed");
+                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadNotLoaded.nl),T.admHeadNotLoaded.nl,T.admHeadNotLoaded.en)); Set(varAdmMsgBody,Substitute(If(LangNl && !IsBlank(T.wrMsgLoadFailed.nl),T.wrMsgLoadFailed.nl,T.wrMsgLoadFailed.en),"{0}",First(colWrLoadErrors).Message & If(CountRows(colWrLoadErrors)>1,Substitute(If(LangNl && !IsBlank(T.wrMsgMore.nl),T.wrMsgMore.nl,T.wrMsgMore.en),"{0}",Text(CountRows(colWrLoadErrors)-1)),""))),
+                If(varWrLoadState="Loading",Set(varWrLoadState,"NotLoaded"); Set(varAdmMsgKind,""); Set(varAdmMsgHead,""); Set(varAdmMsgBody,""))
+               );
+               Set(varWrForceRefresh,false); Set(varWrBusy,false);
+               Trace("DIAG|WeekReport|LoadEnd",TraceSeverity.Information,{Screen:"WeekReport",ElapsedMs:DateDiff(varWrDiagT0,Now(),TimeUnit.Milliseconds),State:varWrLoadState,Paged:Coalesce(varWrQueryPaged,false),HourLines:CountRows(colWrPendHours),Rows:CountRows(colWrPendRowsShown),Groups:CountRows(colWrPendGroups),Excluded:Coalesce(varWrPendExcluded,0),Errors:CountRows(colWrLoadErrors)})
+              )
+      - conWrBody:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            X: =0
+            Y: =cmpWrMsgBar.Y+cmpWrMsgBar.Height
+            Width: =Parent.Width
+            Height: =Max(0,cmpWrFooter.Y-Self.Y)
+            Fill: =Color.Transparent
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutAlignItems: =LayoutAlignItems.Start
+            LayoutJustifyContent: =LayoutJustifyContent.Start
+            LayoutWrap: =false
+            LayoutOverflowX: =LayoutOverflow.Hide
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            LayoutGap: =0
+            PaddingTop: =0
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+          Children:
+            - conWrCanvas:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Width: =Parent.Width
+                  Height: =lblWrMetrics.Height
+                  FillPortions: =0
+                  Fill: =Color.Transparent
+                Children:
+                  - conWrSelCard:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        X: =24
+                        Y: =24
+                        Width: =Parent.Width-64
+                        Height: =lblWrSel.Height
+                        Fill: =Color.White
+                        BorderThickness: =0
+                        DropShadow: =DropShadow.Light
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                      Children:
+                        - lblWrWeekLabel:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              PaddingBottom: =0
+                              PaddingLeft: =1
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrFieldWeek.nl),T.wrFieldWeek.nl,T.wrFieldWeek.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =256
+                              X: =24
+                              Y: =24
+                        - dpWrWeek:
+                            Control: ModernDatePicker@1.0.2
+                            Properties:
+                              AccessibleLabel: =If(LangNl && !IsBlank(T.wrWeekAccessible.nl),T.wrWeekAccessible.nl,T.wrWeekAccessible.en)
+                              DefaultDate: =Coalesce(varWrPickedDay,Today())
+                              Format: ="dd-mm-yyyy"
+                              StartOfWeek: =StartOfWeek.Monday
+                              OnChange: |-
+                                =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",
+                                 If(IsBlank(Self.SelectedDate),Reset(dpWrWeek),
+                                  With({selectedDay:Date(Year(Self.SelectedDate),Month(Self.SelectedDate),Day(Self.SelectedDate))},
+                                   If(selectedDay<>Coalesce(varWrPickedDay,Date(1900,1,1)),
+                                    With({monday:DateAdd(selectedDay,1-Weekday(selectedDay,StartOfWeek.Monday),TimeUnit.Days)},
+                                     If(monday=varWrMonday,
+                                      Set(varWrPickedDay,selectedDay),
+                                      Set(varWrPickedDay,selectedDay); Set(varWrMonday,monday); Select(btnWrLoad)
+                                     )
+                                    )
+                                   )
+                                  )
+                                 )
+                                )
+                              DisplayMode: =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",DisplayMode.Edit,DisplayMode.Disabled)
+                              X: =24
+                              Y: =lblWrWeekLabel.Y+lblWrWeekLabel.Height+1
+                              Width: =256
+                              Height: =36
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Size: =12
+                              Color: =ColorValue("#000000")
+                              Fill: =ColorValue("#F0F0F0")
+                              BorderColor: =ColorValue("#DCDCDC")
+                              BorderThickness: =1
+                        - lblWrWeekKW:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: |-
+                                =If(IsBlank(varWrMonday),"",With({isoYear:Year(DateAdd(varWrMonday,3,TimeUnit.Days))},Text(isoYear,"0000") & " KW" & Text(1+RoundDown(DateDiff(DateAdd(Date(isoYear,1,4),1-Weekday(Date(isoYear,1,4),StartOfWeek.Monday),TimeUnit.Days),varWrMonday,TimeUnit.Days)/7,0),"00")))
+                              X: =dpWrWeek.X+dpWrWeek.Width+12
+                              Y: =dpWrWeek.Y
+                              Width: =120
+                              Height: =dpWrWeek.Height
+                              VerticalAlign: =VerticalAlign.Middle
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Size: =12
+                              Color: =ColorValue("#000000")
+                        - cmpWrProject:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && Coalesce(varWrMastersReady,false)
+                              Height: =58
+                              HintText: =""
+                              InputType: ="dropdown"
+                              Items: =ForAll(colWrProjects As p,{Value:p.Display})
+                              Label: =If(LangNl && !IsBlank(T.wrFieldProject.nl),T.wrFieldProject.nl,T.wrFieldProject.en)
+                              MaxLength: =255
+                              OnChange: |-
+                                =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && Coalesce(varWrMastersReady,false),
+                                 If(IsBlank(Trim(cmpWrProject.Value & "")),
+                                  If(!IsBlank(varWrProjectID),Set(varWrProjectID,Blank()); Set(varWrContractorDisplay,""); Set(varWrContractorID,0); Select(btnWrLoad)),
+                                  CountIf(colWrProjects,Display=Trim(cmpWrProject.Value & ""))<>1,
+                                  Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrErrProjectAmbiguous.nl),T.wrErrProjectAmbiguous.nl,T.wrErrProjectAmbiguous.en)); Reset(cmpWrProject),
+                                  LookUp(colWrProjects,Display=Trim(cmpWrProject.Value & "")).ID<>Coalesce(varWrProjectID,0),
+                                  Set(varWrProjectID,LookUp(colWrProjects,Display=Trim(cmpWrProject.Value & "")).ID); Set(varWrContractorDisplay,""); Set(varWrContractorID,0); Select(btnWrLoad)
+                                 )
+                                ); true
+                              Required: =true
+                              DefaultValue: =Coalesce(LookUp(colWrProjects,ID=varWrProjectID).Display,"")
+                              Width: =lblWrSel.Width
+                              X: =If(lblWrSel.X=1,436,24)
+                              Y: =If(lblWrSel.X=1,24,98)
+                        - cmpWrContractor:
+                            Control: CanvasComponent
+                            ComponentName: cmpField
+                            Properties:
+                              Enabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && varWrLoadState="Loaded"
+                              Height: =58
+                              HintText: =""
+                              InputType: ="dropdown"
+                              Items: =colWrContractorItems
+                              Label: =If(LangNl && !IsBlank(T.wrFieldContractor.nl),T.wrFieldContractor.nl,T.wrFieldContractor.en)
+                              MaxLength: =255
+                              OnChange: |-
+                                =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && varWrLoadState="Loaded",
+                                 If(IsBlank(Trim(cmpWrContractor.Value & "")) || Trim(cmpWrContractor.Value & "")=If(LangNl && !IsBlank(T.wrAllContractors.nl),T.wrAllContractors.nl,T.wrAllContractors.en),
+                                  Set(varWrContractorDisplay,""); Set(varWrContractorID,0),
+                                  !IsBlank(LookUp(colWrGroups,Display=Trim(cmpWrContractor.Value & "")).ContractorID),
+                                  Set(varWrContractorDisplay,Trim(cmpWrContractor.Value & "")); Set(varWrContractorID,LookUp(colWrGroups,Display=Trim(cmpWrContractor.Value & "")).ContractorID)
+                                 )
+                                ); true
+                              Required: =false
+                              DefaultValue: =If(IsBlank(varWrContractorDisplay),If(LangNl && !IsBlank(T.wrAllContractors.nl),T.wrAllContractors.nl,T.wrAllContractors.en),varWrContractorDisplay)
+                              Width: =lblWrSel.Width
+                              X: =If(lblWrSel.X=1,436+lblWrSel.Width+16,If(lblWrSel.Y=1,24+lblWrSel.Width+16,24))
+                              Y: =If(lblWrSel.X=1,24,If(lblWrSel.Y=1,98,172))
+                  - conWrTableCard:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        X: =24
+                        Y: =conWrSelCard.Y+conWrSelCard.Height+24
+                        Width: =Parent.Width-64
+                        Height: =lblWrMetrics.Width
+                        Fill: =Color.White
+                        BorderThickness: =0
+                        DropShadow: =DropShadow.Light
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                      Children:
+                        - lblWrTableTitle:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000F41")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =24
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =14
+                              Text: =If(varWrLoadState="Loaded",varWrLoadedProject.Display,If(LangNl && !IsBlank(T.wrTableTitle.nl),T.wrTableTitle.nl,T.wrTableTitle.en))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =Parent.Width-48
+                              Wrap: =false
+                              X: =24
+                              Y: =24
+                        - lblWrTableSub:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =20
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =11
+                              Text: |-
+                                =If(varWrLoadState="Loaded",If(IsBlank(varWrLoadedMonday),"",With({isoYear:Year(DateAdd(varWrLoadedMonday,3,TimeUnit.Days))},Text(isoYear,"0000") & " KW" & Text(1+RoundDown(DateDiff(DateAdd(Date(isoYear,1,4),1-Weekday(Date(isoYear,1,4),StartOfWeek.Monday),TimeUnit.Days),varWrLoadedMonday,TimeUnit.Days)/7,0),"00"))) & "  ·  " & Text(varWrLoadedMonday,"dd-mm-yyyy") & " – " & Text(DateAdd(varWrLoadedMonday,6,TimeUnit.Days),"dd-mm-yyyy") & If(IsBlank(varWrLoadedProject.Reference),"","  ·  " & Substitute(If(LangNl && !IsBlank(T.wrProjectRef.nl),T.wrProjectRef.nl,T.wrProjectRef.en),"{0}",varWrLoadedProject.Reference)),"")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =Parent.Width-48
+                              Wrap: =false
+                              X: =24
+                              Y: =lblWrTableTitle.Y+lblWrTableTitle.Height+4
+                        - lblWrHdrName:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Left
+                              PaddingLeft: =8
+                              PaddingRight: =0
+                              Size: =11
+                              Text: =If(LangNl && !IsBlank(T.wrColName.nl),T.wrColName.nl,T.wrColName.en)
+                              Width: =lblWrCols.Width
+                              X: =24
+                        - lblWrHdrTrade:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Left
+                              PaddingLeft: =8
+                              PaddingRight: =0
+                              Size: =11
+                              Text: =If(LangNl && !IsBlank(T.wrColTrade.nl),T.wrColTrade.nl,T.wrColTrade.en)
+                              Width: =lblWrCols.Y
+                              X: =24+lblWrCols.Width
+                        - lblWrHdrMon:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrDayMon.nl),T.wrDayMon.nl,T.wrDayMon.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,0,TimeUnit.Days),"dd-mm")
+                              Width: =lblWrCols.X
+                              X: =24+lblWrCols.Width+lblWrCols.Y+0*lblWrCols.X
+                        - lblWrHdrTue:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrDayTue.nl),T.wrDayTue.nl,T.wrDayTue.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,1,TimeUnit.Days),"dd-mm")
+                              Width: =lblWrCols.X
+                              X: =24+lblWrCols.Width+lblWrCols.Y+1*lblWrCols.X
+                        - lblWrHdrWed:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrDayWed.nl),T.wrDayWed.nl,T.wrDayWed.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,2,TimeUnit.Days),"dd-mm")
+                              Width: =lblWrCols.X
+                              X: =24+lblWrCols.Width+lblWrCols.Y+2*lblWrCols.X
+                        - lblWrHdrThu:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrDayThu.nl),T.wrDayThu.nl,T.wrDayThu.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,3,TimeUnit.Days),"dd-mm")
+                              Width: =lblWrCols.X
+                              X: =24+lblWrCols.Width+lblWrCols.Y+3*lblWrCols.X
+                        - lblWrHdrFri:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrDayFri.nl),T.wrDayFri.nl,T.wrDayFri.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,4,TimeUnit.Days),"dd-mm")
+                              Width: =lblWrCols.X
+                              X: =24+lblWrCols.Width+lblWrCols.Y+4*lblWrCols.X
+                        - lblWrHdrSat:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrDaySat.nl),T.wrDaySat.nl,T.wrDaySat.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,5,TimeUnit.Days),"dd-mm")
+                              Width: =lblWrCols.X
+                              X: =24+lblWrCols.Width+lblWrCols.Y+5*lblWrCols.X
+                        - lblWrHdrSun:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =10
+                              Text: =If(LangNl && !IsBlank(T.wrDaySun.nl),T.wrDaySun.nl,T.wrDaySun.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,6,TimeUnit.Days),"dd-mm")
+                              Width: =lblWrCols.X
+                              X: =24+lblWrCols.Width+lblWrCols.Y+6*lblWrCols.X
+                        - lblWrHdrTotal:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =Color.White
+                              Fill: =ColorValue("#0303B8")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =48
+                              PaddingBottom: =0
+                              PaddingTop: =0
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =galWrLines.Visible
+                              Y: =88
+                              Align: =Align.Center
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =11
+                              Text: =If(LangNl && !IsBlank(T.wrColTotal.nl),T.wrColTotal.nl,T.wrColTotal.en)
+                              Width: =lblWrCols.Height
+                              X: =24+lblWrCols.Width+lblWrCols.Y+7*lblWrCols.X
+                        - lblWrEmpty:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Left
+                              Color: =ColorValue("#000000")
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Normal
+                              Height: =44
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Size: =12
+                              Text: |-
+                                =Switch(varWrLoadState,"Loading",If(LangNl && !IsBlank(T.wrLoading.nl),T.wrLoading.nl,T.wrLoading.en),"Failed",If(LangNl && !IsBlank(T.wrNotLoaded.nl),T.wrNotLoaded.nl,T.wrNotLoaded.en),"Loaded",If(LangNl && !IsBlank(T.wrNoRows.nl),T.wrNoRows.nl,T.wrNoRows.en),If(IsBlank(varWrProjectID),If(LangNl && !IsBlank(T.wrChooseProject.nl),T.wrChooseProject.nl,T.wrChooseProject.en),If(LangNl && !IsBlank(T.wrNotLoaded.nl),T.wrNotLoaded.nl,T.wrNotLoaded.en)))
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =!galWrLines.Visible
+                              Width: =Parent.Width-48
+                              X: =24
+                              Y: =88
+                        - galWrLines:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              Items: =Filter(colWrLines,Coalesce(varWrContractorID,0)=0 || ContractorID=varWrContractorID)
+                              X: =24
+                              Y: =136
+                              Width: =Parent.Width-48
+                              Height: =44*CountRows(Filter(colWrLines,Coalesce(varWrContractorID,0)=0 || ContractorID=varWrContractorID))
+                              TemplateSize: =44
+                              TemplatePadding: =0
+                              ShowScrollbar: =false
+                              TemplateFill: |-
+                                =Switch(ThisItem.LineType,"Header",Color.White,"Subtotal",ColorValue("#D5EDFF"),"Grand",ColorValue("#D5EDFF"),If(ThisItem.Zebra,ColorValue("#F0F0F0"),ColorValue("#FFFFFF")))
+                              Visible: =varWrLoadState="Loaded" && !IsEmpty(colWrLines)
+                            Children:
+                              - recWrLineRule:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    BorderColor: =Color.Transparent
+                                    Fill: =ColorValue("#DCDCDC")
+                                    Height: =1
+                                    Width: =Parent.Width
+                                    X: =0
+                                    Y: =43
+                              - recWrGrandLine:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    BorderColor: =Color.Transparent
+                                    Fill: =ColorValue("#0303B8")
+                                    Height: =2
+                                    Visible: =ThisItem.LineType="Grand"
+                                    Width: =Parent.Width
+                                    X: =0
+                                    Y: =0
+                              - recWrGroupLine:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    BorderColor: =Color.Transparent
+                                    Fill: =ColorValue("#0303B8")
+                                    Height: =2
+                                    Visible: =ThisItem.LineType="Header"
+                                    Width: =Parent.Width
+                                    X: =0
+                                    Y: =41
+                              - lblWrGrpName:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =20
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Size: =12
+                                    Text: =ThisItem.Name & "  ·  " & ThisItem.Code
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType="Header"
+                                    Width: =Parent.Width-16
+                                    Wrap: =false
+                                    X: =8
+                                    Y: =2
+                              - lblWrGrpLang:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    FontWeight: =FontWeight.Normal
+                                    Height: =19
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    Text: |-
+                                      =If(ThisItem.Lang="Dutch",If(LangNl && !IsBlank(T.wrLangDutchOnly.nl),T.wrLangDutchOnly.nl,T.wrLangDutchOnly.en),Substitute(If(LangNl && !IsBlank(T.wrLangPair.nl),T.wrLangPair.nl,T.wrLangPair.en),"{0}",ThisItem.Lang))
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType="Header"
+                                    Width: =Parent.Width-16
+                                    Wrap: =false
+                                    X: =8
+                                    Y: =22
+                              - lblWrCellName:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Left
+                                    FontWeight: =Switch(ThisItem.LineType,"Grand",FontWeight.Bold,"Subtotal",FontWeight.Semibold,FontWeight.Normal)
+                                    PaddingLeft: =8
+                                    PaddingRight: =0
+                                    Text: =ThisItem.Name
+                                    Width: =lblWrCols.Width
+                                    X: =0
+                                    Tooltip: =If(ThisItem.LineType="Row",ThisItem.Code,"")
+                              - lblWrCellTrade:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Left
+                                    FontWeight: =FontWeight.Normal
+                                    PaddingLeft: =8
+                                    PaddingRight: =0
+                                    Text: =ThisItem.Trade
+                                    Width: =lblWrCols.Y
+                                    X: =lblWrCols.Width
+                              - lblWrCellMon:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.D1,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: =If(Coalesce(ThisItem.D1,0)=0,"–",Text(ThisItem.D1,If(ThisItem.D1=Round(ThisItem.D1,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.X
+                                    X: =lblWrCols.Width+lblWrCols.Y+0*lblWrCols.X
+                              - lblWrCellTue:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.D2,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: =If(Coalesce(ThisItem.D2,0)=0,"–",Text(ThisItem.D2,If(ThisItem.D2=Round(ThisItem.D2,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.X
+                                    X: =lblWrCols.Width+lblWrCols.Y+1*lblWrCols.X
+                              - lblWrCellWed:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.D3,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: =If(Coalesce(ThisItem.D3,0)=0,"–",Text(ThisItem.D3,If(ThisItem.D3=Round(ThisItem.D3,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.X
+                                    X: =lblWrCols.Width+lblWrCols.Y+2*lblWrCols.X
+                              - lblWrCellThu:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.D4,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: =If(Coalesce(ThisItem.D4,0)=0,"–",Text(ThisItem.D4,If(ThisItem.D4=Round(ThisItem.D4,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.X
+                                    X: =lblWrCols.Width+lblWrCols.Y+3*lblWrCols.X
+                              - lblWrCellFri:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.D5,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: =If(Coalesce(ThisItem.D5,0)=0,"–",Text(ThisItem.D5,If(ThisItem.D5=Round(ThisItem.D5,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.X
+                                    X: =lblWrCols.Width+lblWrCols.Y+4*lblWrCols.X
+                              - lblWrCellSat:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.D6,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: =If(Coalesce(ThisItem.D6,0)=0,"–",Text(ThisItem.D6,If(ThisItem.D6=Round(ThisItem.D6,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.X
+                                    X: =lblWrCols.Width+lblWrCols.Y+5*lblWrCols.X
+                              - lblWrCellSun:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000000")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.D7,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: =If(Coalesce(ThisItem.D7,0)=0,"–",Text(ThisItem.D7,If(ThisItem.D7=Round(ThisItem.D7,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.X
+                                    X: =lblWrCols.Width+lblWrCols.Y+6*lblWrCols.X
+                              - lblWrCellTotal:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ColorValue("#000F41")
+                                    Font: ="Inter, Arial, sans-serif"
+                                    Height: =41
+                                    PaddingBottom: =0
+                                    PaddingTop: =0
+                                    Size: =11
+                                    VerticalAlign: =VerticalAlign.Middle
+                                    Visible: =ThisItem.LineType<>"Header"
+                                    Y: =2
+                                    Align: =Align.Center
+                                    FontWeight: =If(Coalesce(ThisItem.WeekTotal,0)=0,FontWeight.Normal,FontWeight.Bold)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    Text: |-
+                                      =If(Coalesce(ThisItem.WeekTotal,0)=0,"–",Text(ThisItem.WeekTotal,If(ThisItem.WeekTotal=Round(ThisItem.WeekTotal,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
+                                    Width: =lblWrCols.Height
+                                    X: =lblWrCols.Width+lblWrCols.Y+7*lblWrCols.X
+      - cmpWrFooter:
+          Control: CanvasComponent
+          ComponentName: cmpReportFooter
+          Properties:
+            ExportEnabled: =false
+            ExportText: =If(LangNl && !IsBlank(T.wrExport.nl),T.wrExport.nl,T.wrExport.en)
+            ExportVisible: =false
+            Height: =68
+            HomeEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading"
+            HomeText: =If(LangNl && !IsBlank(T.wrHome.nl),T.wrHome.nl,T.wrHome.en)
+            NextEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday)
+            NextText: =If(LangNl && !IsBlank(T.wrNext.nl),T.wrNext.nl,T.wrNext.en)
+            OnExport: =If(false,Trace("DIAG|WeekReport|Export",TraceSeverity.Information,{Screen:"WeekReport",Phase:"A"}))
+            OnHome: |-
+              =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",Navigate(scrHome),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
+              )
+            OnNext: |-
+              =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),
+               Set(varWrPickedDay,DateAdd(Coalesce(varWrPickedDay,varWrMonday),7,TimeUnit.Days)); Set(varWrMonday,DateAdd(varWrMonday,7,TimeUnit.Days)); Reset(dpWrWeek); Select(btnWrLoad),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
+              )
+            OnPrev: |-
+              =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),
+               Set(varWrPickedDay,DateAdd(Coalesce(varWrPickedDay,varWrMonday),-7,TimeUnit.Days)); Set(varWrMonday,DateAdd(varWrMonday,-7,TimeUnit.Days)); Reset(dpWrWeek); Select(btnWrLoad),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
+              )
+            OnRefresh: |-
+              =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",
+               Trace("DIAG|WeekReport|Refresh",TraceSeverity.Information,{Screen:"WeekReport"}); Set(varWrForceRefresh,true); Select(btnWrLoad),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
+              )
+            PrevEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday)
+            PrevText: =If(LangNl && !IsBlank(T.wrPrev.nl),T.wrPrev.nl,T.wrPrev.en)
+            RefreshEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading"
+            RefreshText: =If(LangNl && !IsBlank(T.wrRefresh.nl),T.wrRefresh.nl,T.wrRefresh.en)
+            Width: =Parent.Width
+            X: =0
+            Y: =Parent.Height-Self.Height

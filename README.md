@@ -11,7 +11,7 @@ Power Apps canvas app on SharePoint Lists for GEA site management: project/team 
 | Current status, current baseline build, open items | **PROJECT_STATUS.md** | Yes |
 | Plan, phases, open decisions | **ROADMAP.md** | Only when the task says so |
 | Build plan admin screens (Contractors, Projects, Workers) | **ADMIN_PLAN.md** | Only when the task says so |
-| Plan Week Report + PDF/CSV export (decisions taken, phase A in build) | **WEEKREPORT_PLAN.md** | Only when the task says so |
+| Plan Week Report + PDF/CSV export (decisions taken, phase A built) | **WEEKREPORT_PLAN.md** | Only when the task says so |
 | Manual SharePoint / Power Automate steps (MS-xxx) | **MANUAL_STEPS.md** | Only when the task says so |
 | Decision log: what was decided and why | **DECISIONS.md** | Only when the task says so |
 | Manual Studio/browser test cases (TP-xxx) | **TESTPLAN.md** | Only when the task says so |
@@ -54,7 +54,7 @@ Sitemanagment/
 | `scrHome` | Site Management | Startscherm: vijf categorieën met cmpTile-tegels naar de schermen (inerte tegels "SOON") |
 | `Screen1` | Project / team | Choose project + team, link workers, Save team |
 | `scrHours` | Weekly Hours | Enter hours Mon–Sun per team |
-| `scrWeekReport` *(planned)* | Week Report | Daily hours per worker for one week; export PDF + CSV |
+| `scrWeekReport` *(built 9-11-2026, Studio test open)* | Week Report | Daily hours per worker for one week (read-only, phase A); export PDF + CSV follows |
 | `scrWeeklyHours` | Hours Summary | Period overview; CSV export |
 | `scrContractors` | Contractors | Beheer van contractors (Employers); gebouwd 28-10-2026, Studio-test open (ADMIN_PLAN.md) |
 

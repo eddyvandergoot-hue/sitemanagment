@@ -13,11 +13,11 @@ foreach ($m in [regex]::Matches($app, '(?m)^\s+(Icon\w+White) = "(<svg .*</svg>)
 Assert-True ($app -notmatch '(?m)^\s+Icon\w+White = "data:') 'white icon formulas are raw SVG text (no data: prefix, no EncodeUrl)'
 # formula name -> source file (variant folder / file)
 $map = [ordered]@{
-    IconTeamWhite = 'white/icon-team'; IconWeeklyHoursWhite = 'white/icon-weekly-hours'; IconHoursSummaryWhite = 'white/icon-hours-summary'; IconContractorsWhite = 'white/icon-contractors'; IconProjectsWhite = 'white/icon-projects'; IconWorkersWhite = 'white/icon-workers'; IconArrowWhite = 'white/icon-arrow'
-    IconWeekReportGrey = 'grey/icon-week-report'; IconStockOverviewGrey = 'grey/icon-stock-overview'; IconLocationsGrey = 'grey/icon-locations'; IconRequestsGrey = 'grey/icon-requests'
+    IconTeamWhite = 'white/icon-team'; IconWeeklyHoursWhite = 'white/icon-weekly-hours'; IconHoursSummaryWhite = 'white/icon-hours-summary'; IconContractorsWhite = 'white/icon-contractors'; IconProjectsWhite = 'white/icon-projects'; IconWorkersWhite = 'white/icon-workers'; IconWeekReportWhite = 'white/icon-week-report'; IconArrowWhite = 'white/icon-arrow'
+    IconStockOverviewGrey = 'grey/icon-stock-overview'; IconLocationsGrey = 'grey/icon-locations'; IconRequestsGrey = 'grey/icon-requests'
     Icon3dViewerGrey = 'grey/icon-3d-viewer'; IconPidTrackerGrey = 'grey/icon-pid-tracker'; IconComponentLibraryGrey = 'grey/icon-component-library'; IconKnowledgeBaseGrey = 'grey/icon-knowledge-base'
 }
-Assert-True ($forms.Count -eq $map.Count -and (($forms.Keys | Sort-Object) -join ',') -ceq (($map.Keys | Sort-Object) -join ',')) "App.Formulas has exactly the $($map.Count) icon formulas (7 white incl. arrow, 8 grey; Workers active since the Workers build 08-11-2026)"
+Assert-True ($forms.Count -eq $map.Count -and (($forms.Keys | Sort-Object) -join ',') -ceq (($map.Keys | Sort-Object) -join ',')) "App.Formulas has exactly the $($map.Count) icon formulas (8 white incl. arrow, 7 grey; Workers active since 08-11-2026, Week report since 09-11-2026)"
 foreach ($k in $map.Keys) {
     $file = Join-Path $iconDir (($map[$k] -replace '/', '\') + '.svg')
     $svg = ([IO.File]::ReadAllText($file)).Trim()
@@ -27,7 +27,7 @@ foreach ($k in $map.Keys) {
     Assert-True ($svg.Contains('stroke="' + $stroke + '"')) "$k : stroke $stroke ($(if ($k -like '*White') { 'white variant' } else { 'grey variant' }))"
 }
 $tileIcon = [ordered]@{
-    cmpTileProjectTeam = 'IconTeamWhite'; cmpTileWeeklyHours = 'IconWeeklyHoursWhite'; cmpTileHoursSummary = 'IconHoursSummaryWhite'; cmpTileWeekReport = 'IconWeekReportGrey'
+    cmpTileProjectTeam = 'IconTeamWhite'; cmpTileWeeklyHours = 'IconWeeklyHoursWhite'; cmpTileHoursSummary = 'IconHoursSummaryWhite'; cmpTileWeekReport = 'IconWeekReportWhite'
     cmpTileContractors = 'IconContractorsWhite'; cmpTileProjects = 'IconProjectsWhite'; cmpTileWorkers = 'IconWorkersWhite'
     cmpTileStockOverview = 'IconStockOverviewGrey'; cmpTileLocations = 'IconLocationsGrey'; cmpTileRequests = 'IconRequestsGrey'
     cmpTileViewer3D = 'Icon3dViewerGrey'; cmpTilePIDTracker = 'IconPidTrackerGrey'; cmpTileComponentLibrary = 'IconComponentLibraryGrey'; cmpTileKnowledgeBase = 'IconKnowledgeBaseGrey'

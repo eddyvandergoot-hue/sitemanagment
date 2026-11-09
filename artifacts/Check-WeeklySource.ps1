@@ -146,6 +146,13 @@ foreach($entry in $projectsYaml['Screens']['scrProjects']['Children']) { Check-C
 # Workers build (08-11-2026): admin screen scrWorkers, same templates as scrContractors/scrProjects.
 $workersYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrWorkers.pa.yaml')))
 foreach($entry in $workersYaml['Screens']['scrWorkers']['Children']) { Check-Control $entry }
+# Week Report phase A (09-11-2026): read-only report screen scrWeekReport (ModernDatePicker@1.0.2, cmpField, cmpReportFooter, Gallery@2.15.0); Power Fx syntax and templates.
+$weekReportYaml = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrWeekReport.pa.yaml')))
+$savedFailures = $script:failures; $script:failures = 0
+Check-Node $weekReportYaml 'WeekReport'
+if ($script:failures -gt 0) { throw 'Power Fx syntaxcontrole mislukt in scrWeekReport.' }
+$script:failures = $savedFailures
+foreach($entry in $weekReportYaml['Screens']['scrWeekReport']['Children']) { Check-Control $entry }
 # Every screen file: validate all CanvasComponent instances (also in screens that Check-Control does not walk completely).
 function Check-Instances($entries, $where) {
     foreach($entry in $entries) {

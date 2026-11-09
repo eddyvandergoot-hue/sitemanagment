@@ -1,4 +1,4 @@
-# Layout test for the admin screens scrContractors and scrProjects (31-10-2026, step 3b) and scrWorkers (08-11-2026, Workers build).
+# Layout test for the admin screens scrContractors and scrProjects (31-10-2026, step 3b), scrWorkers (08-11-2026, Workers build) and scrWeekReport (09-11-2026, Week Report phase A).
 # Evaluates every X/Y/Width/Height formula of the screen tree in the Power Fx interpreter (same approach as Test-FooterRow/Test-AdminScreens:
 # Parent./Self. are bound, sibling and global rectangles are published as variables, several passes until stable) at screen widths 1366, 1000
 # and 700 (height 768) and with the message bar hidden and shown. Checks, per container:
@@ -140,6 +140,46 @@ foreach ($s in $screens) {
         }
     }
 }
+# --- scrWeekReport (09-11-2026, Week Report phase A): admin-pattern page (title, message bar, scrolling body) with a selection card and a table
+# card, footer = cmpReportFooter (68 px). The table is one gallery of display lines (contractor header / worker row / subtotal / grand total); the
+# template controls of the four line types share the same area and are mutually exclusive by Visible on ThisItem.LineType, so the whole screen is
+# checked once per line type with ThisItem published as a variable (overlap and bounds of the visible template controls of that type).
+$wrDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrWeekReport.pa.yaml')))
+$wrKids = $wrDoc['Screens']['scrWeekReport']['Children']
+$wrNames = @{}; function Index-WrNames($entries) { foreach ($e in $entries) { $n = @($e.Keys)[0]; $wrNames[$n] = $e[$n]; Index-WrNames $e[$n]['Children'] } }; Index-WrNames $wrKids
+$wrLines = 'Table({LineType:"Header",ContractorID:10},{LineType:"Row",ContractorID:10},{LineType:"Row",ContractorID:10},{LineType:"Subtotal",ContractorID:10},{LineType:"Header",ContractorID:20},{LineType:"Row",ContractorID:20},{LineType:"Subtotal",ContractorID:20},{LineType:"Grand",ContractorID:-1})'
+foreach ($W in 1366, 1000, 700) {
+    foreach ($kind in '', 'Error') {
+        foreach ($lt in 'Header', 'Row', 'Subtotal', 'Grand') {
+            $label = "scrWeekReport $W x $H (message '$kind', line type $lt)"
+            $state = @{ Rects = @{}; Errors = @{}; Kind = $kind }
+            Publish-Var 'varAdmMsgKind' ('"' + $kind + '"'); Publish-Var 'varWrLoadState' '"Loaded"'; Publish-Var 'varWrContractorID' '0'; Publish-Var 'varWrBusy' 'false'; Publish-Var 'varWrMastersReady' 'true'
+            Publish-Var 'colWrLines' $wrLines
+            Publish-Var 'ThisItem' ('{LineType:"' + $lt + '",Zebra:false,Name:"x",Code:"c",Lang:"Polish",Trade:"Fitter",D1:8,D2:0,D3:0,D4:0,D5:0,D6:0,D7:0,WeekTotal:8}')
+            $screenRect = @{ X = 0; Y = 0; Width = $W; Height = $H }
+            for ($pass = 0; $pass -lt 8; $pass++) { $state.Errors = @{}; Walk-Children $wrKids $screenRect $null $state }
+            if ($state.Errors.Count -gt 0) { throw "FAIL $label : unresolved geometry formulas: $(($state.Errors.GetEnumerator() | ForEach-Object { $_.Key + ' -> ' + $_.Value }) -join '; ')" }
+            $script:layoutChecked = 0
+            Collect-Checks $wrKids 'screen' $screenRect $false $null $state 'scrWeekReport' $label
+            $R = $state.Rects
+            $barH = $(if ($kind -eq '') { 0 } else { 40 })
+            Assert-True (($R.cmpWrTitle.Y -eq 0) -and ($R.cmpWrTitle.Height -eq 60) -and ($R.cmpWrTitle.Width -eq $W) -and ($R.cmpWrMsgBar.Y -eq 60) -and ($R.cmpWrMsgBar.Height -eq $barH) -and ($R.conWrBody.Y -eq 60 + $barH) -and ($R.conWrBody.Y + $R.conWrBody.Height -eq $R.cmpWrFooter.Y) -and ($R.cmpWrFooter.Y + $R.cmpWrFooter.Height -eq $H) -and ($R.cmpWrFooter.Height -eq 68) -and ($R.cmpWrFooter.Width -eq $W)) "$label : title 60, message bar $barH, body from $($R.conWrBody.Y) to the footer ($($R.cmpWrFooter.Y)), cmpReportFooter 68 at the bottom"
+            $sel = $R.conWrSelCard; $tab = $R.conWrTableCard
+            Assert-True (($sel.X -eq 24) -and ($sel.Y -eq 24) -and ($tab.X -eq 24) -and ($tab.Y -eq $sel.Y + $sel.Height + 24) -and ($sel.Width -eq $tab.Width) -and ($sel.X + $sel.Width -le $R.conWrBody.Width - 40 + 0.01) -and ($R.conWrCanvas.Height -eq $tab.Y + $tab.Height + 24)) "$label : selection card and table card stacked (24 margin and gap), 16 px scrollbar reserve at the right, canvas ends 24 below the table card"
+            foreach ($f in 'lblWrWeekLabel', 'dpWrWeek', 'lblWrWeekKW', 'cmpWrProject', 'cmpWrContractor') { $fr = $R[$f]; if ($fr.X -lt 24 - 0.01 -or $fr.Y -lt 24 - 0.01 -or $fr.X + $fr.Width -gt $sel.Width - 24 + 0.01 -or $fr.Y + $fr.Height -gt $sel.Height - 24 + 0.01) { throw "FAIL $label : $f outside the 24 px padding of the selection card (X=$($fr.X) Y=$($fr.Y) W=$($fr.Width) H=$($fr.Height), card $($sel.Width) x $($sel.Height))" } }
+            $wide = ($W -ge 1260)
+            Assert-True ($(if ($wide) { ($R.cmpWrProject.Y -eq 24) -and ($R.cmpWrContractor.Y -eq 24) -and ($R.cmpWrProject.X -ge $R.lblWrWeekKW.X + $R.lblWrWeekKW.Width + 24 - 0.01) } else { ($R.cmpWrProject.Y -ge $R.dpWrWeek.Y + $R.dpWrWeek.Height + 16 - 0.01) -and ($R.cmpWrContractor.Y -eq $R.cmpWrProject.Y) -and ($R.cmpWrContractor.X -ge $R.cmpWrProject.X + $R.cmpWrProject.Width + 16 - 0.01) })) "$label : selection $(if ($wide) { 'in one row: Week | Project | Contractor' } else { 'in two rows: Week, then Project | Contractor' })"
+            $tableW = $tab.Width - 48
+            $hdr = @('lblWrHdrName', 'lblWrHdrTrade', 'lblWrHdrMon', 'lblWrHdrTue', 'lblWrHdrWed', 'lblWrHdrThu', 'lblWrHdrFri', 'lblWrHdrSat', 'lblWrHdrSun', 'lblWrHdrTotal')
+            $x = 24; foreach ($hn in $hdr) { if ([math]::Abs($R[$hn].X - $x) -gt 0.01 -or $R[$hn].Y -ne 88 -or $R[$hn].Height -ne 48) { throw "FAIL $label : header $hn not contiguous at X $x (X=$($R[$hn].X))" }; $x += $R[$hn].Width }
+            Assert-True ([math]::Abs($x - (24 + $tableW)) -lt 0.01 -and $R.lblWrHdrName.Width -ge 140 -and $R.lblWrHdrMon.Width -ge 44) "$label : header Name | Trade | Mon..Sun | Week total fills the table width $tableW exactly (name $($R.lblWrHdrName.Width), day $($R.lblWrHdrMon.Width))"
+            $cells = @('lblWrCellName', 'lblWrCellTrade', 'lblWrCellMon', 'lblWrCellTue', 'lblWrCellWed', 'lblWrCellThu', 'lblWrCellFri', 'lblWrCellSat', 'lblWrCellSun', 'lblWrCellTotal')
+            $x = 0; foreach ($c in $cells) { if ([math]::Abs($R[$c].X - $x) -gt 0.01) { throw "FAIL $label : cell $c not under its header (X=$($R[$c].X), expected $x)" }; $x += $R[$c].Width }
+            Assert-True (($R.galWrLines.X -eq 24) -and ($R.galWrLines.Y -eq 136) -and ([math]::Abs($R.galWrLines.Width - $tableW) -lt 0.01) -and ([math]::Abs($x - $tableW) -lt 0.01) -and ($R.galWrLines.Height -eq 44 * 8) -and ($tab.Height -eq 136 + 44 * 8 + 24)) "$label : line gallery under the header, cells aligned with the header columns, 44 px per line, card ends 24 below the last line"
+            Write-Output "PASS $label : $($script:layoutChecked) visible controls inside their parents, no sibling overlaps."
+        }
+    }
+}
 # --- scrHome (3-11-2026 Home redesign): five stacked categories, cmpTile grid, tiles 150 (>=1000) / 130 (700-999) / 110 or smaller (<700), at least 3 per row from 390 px (TP-HOME-02 point 7) ---------
 $homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrHome.pa.yaml')))
 $homeKids = $homeDoc['Screens']['scrHome']['Children']
@@ -181,4 +221,4 @@ foreach ($c in @(@(1366, 768), @(1280, 720), @(1000, 768), @(999, 768), @(900, 7
     $contentH = $y - 32 + 32
     Write-Output "PASS $label : $($script:layoutChecked) visible controls inside their parents, no sibling overlaps; five categories stacked with gap 32, content height $contentH vs viewport $($Hh - 60) ($(if ($contentH -gt $Hh - 60) { 'scrolls' } else { 'fits' }))."
 }
-Write-Output 'Test-Layout covers: bounds (X>=0, Y>=0, right edge inside the parent; bottom edge inside the parent except in the scrolling body), sibling overlaps among visible controls and instances, no Visible formula on cmpField instances, the title/message bar/body/footer stack and the two-card arrangement, for scrContractors, scrProjects and scrWorkers at 1366, 1000 and 700 x 768 with and without a message. NOT covered: component internals (see Test-Components/Test-FooterRow), text clipping and rendering in Studio.'
+Write-Output 'Test-Layout covers: bounds (X>=0, Y>=0, right edge inside the parent; bottom edge inside the parent except in the scrolling body), sibling overlaps among visible controls and instances, no Visible formula on cmpField instances, the title/message bar/body/footer stack and the two-card arrangement, for scrContractors, scrProjects and scrWorkers at 1366, 1000 and 700 x 768 with and without a message; scrWeekReport (cmpReportFooter, selection card, table card, table columns, one pass per gallery line type) at the same sizes. NOT covered: component internals (see Test-Components/Test-FooterRow), text clipping and rendering in Studio.'

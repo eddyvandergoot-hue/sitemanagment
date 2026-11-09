@@ -1,8 +1,10 @@
 # GEA typography (22-10-2026), replaces Test-OpenSans.ps1. Fonts and weight roles only; colours are checked by Test-GeaColors.ps1.
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Test-SaveRegression.ps1')
+# Week Report phase A (09-11-2026): scrWeekReport is indexed here (not in Test-SaveRegression's screen list, whose checkpoint diffs it is not part of).
+$wrFontIdx=@{};Index-RegressionControls ($builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrWeekReport.pa.yaml'))))['Screens']['scrWeekReport']['Children'] $wrFontIdx;$indexes['scrWeekReport']=$wrFontIdx
 $font='="Inter, Arial, sans-serif"'
-$technical=@('btnApplyTeamWeek','lblHomeMetrics','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid','btnPrjLoad','btnPrjFormReset','lblPrjLayout','lblPrjMetrics','lblPrjGrid','btnWrkLoad','btnWrkFormReset','lblWrkLayout','lblWrkMetrics','lblWrkGrid')
+$technical=@('btnApplyTeamWeek','lblHomeMetrics','btnBuildReport','btnLoadReport','btnReadTeam','btnReadWeek','lblFooterButtonMetrics','lblSummaryFieldWidth','btnEmpLoad','btnEmpFormReset','lblEmpLayout','lblEmpMetrics','lblEmpGrid','btnPrjLoad','btnPrjFormReset','lblPrjLayout','lblPrjMetrics','lblPrjGrid','btnWrkLoad','btnWrkFormReset','lblWrkLayout','lblWrkMetrics','lblWrkGrid','btnWrLoad','lblWrSel','lblWrCols','lblWrMetrics')
 $textTypes='^(Label@|Classic/Button@|Classic/DropDown@|Classic/TextInput@|Classic/CheckBox@|ModernDatePicker@)'
 $homeTiles=@()
 $semibold=@{
@@ -12,9 +14,10 @@ $semibold=@{
  'scrContractors'=@('lblEmpFormTitle')  # 30-10-2026 step 3a: title, labels, list rows and footer buttons live in the components (checked in the component section below)
  'scrProjects'=@('lblPrjFormTitle')  # step 3b: title, labels, list rows and footer buttons live in the components
  'scrWorkers'=@('lblWrkFormTitle')  # Workers build 08-11-2026: same admin pattern (components)
+ 'scrWeekReport'=@('lblWrWeekLabel','lblWrTableTitle','lblWrHdrName','lblWrHdrTrade','lblWrHdrMon','lblWrHdrTue','lblWrHdrWed','lblWrHdrThu','lblWrHdrFri','lblWrHdrSat','lblWrHdrSun','lblWrHdrTotal','lblWrGrpName')  # Week Report phase A: field label like cmpField, card title, table header, contractor group header
  'scrWeeklyHours'=@('lblWeeklyHoursTitle','lblReportNameHeader','lblReportEmployerHeader','lblReportWeekHeader','btnHomeSummary','btnSummaryProjectTeam','btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')
 }
-$bold=@{'scrContractors'=@('lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact');'scrProjects'=@('lblPrjSecGeneral','lblPrjSecAddress','lblPrjSecPeople','lblPrjSecLinks');'scrWorkers'=@('lblWrkSecGeneral','lblWrkSecWork');'scrHome'=@();'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
+$bold=@{'scrContractors'=@('lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact');'scrProjects'=@('lblPrjSecGeneral','lblPrjSecAddress','lblPrjSecPeople','lblPrjSecLinks');'scrWorkers'=@('lblWrkSecGeneral','lblWrkSecWork');'scrWeekReport'=@();'scrHome'=@();'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
 # Conditional weights: Screen1 selection feedback; Hours Summary values that show an en dash (Normal) for 0 and Bold otherwise.
 $conditional=@{
  'Screen1'=@{'Subtitle4'='=If(ThisItem.IsSelected, FontWeight.Semibold, FontWeight.Normal)'}
@@ -23,10 +26,11 @@ $conditional=@{
  'scrContractors'=@{}
  'scrProjects'=@{}
  'scrWorkers'=@{}
+ 'scrWeekReport'=@{'lblWrCellName'='=Switch(ThisItem.LineType,"Grand",FontWeight.Bold,"Subtotal",FontWeight.Semibold,FontWeight.Normal)';'lblWrCellTotal'='=If(Coalesce(ThisItem.WeekTotal,0)=0,FontWeight.Normal,FontWeight.Bold)';'lblWrCellMon'='=If(Coalesce(ThisItem.D1,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)';'lblWrCellTue'='=If(Coalesce(ThisItem.D2,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)';'lblWrCellWed'='=If(Coalesce(ThisItem.D3,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)';'lblWrCellThu'='=If(Coalesce(ThisItem.D4,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)';'lblWrCellFri'='=If(Coalesce(ThisItem.D5,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)';'lblWrCellSat'='=If(Coalesce(ThisItem.D6,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)';'lblWrCellSun'='=If(Coalesce(ThisItem.D7,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)'}  # Week Report: totals Bold/Semibold by line type, en dash for 0 Normal
  'scrWeeklyHours'=@{'lblReportWorkerTotal'='=If(ThisItem.PeriodTotal=0,FontWeight.Normal,FontWeight.Bold)';'lblReportTotalWeekHours'='=If(ThisItem.WeekSum=0,FontWeight.Normal,FontWeight.Bold)';'lblReportTotalRowValue'='=If(Sum(colReportRows,PeriodTotal)=0,FontWeight.Normal,FontWeight.Bold)'}
 }
 $fonts=0;$checked=0
-foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers')){
+foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers','scrWeekReport')){
  $new=$indexes[$screen]
  foreach($name in $new.Keys){
   $b=$new[$name]['Properties'];$type=[string]$new[$name]['Control']
@@ -41,8 +45,8 @@ foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContrac
 }
 # Canvas components (Src\Components): every control with text carries the Inter font; weights per role.
 $componentTextTypes='^(Label@|Classic/Button@|Classic/TextInput@|HtmlViewer@|ModernSpinner@)'
-$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave')
-$componentTechnical=@('lblCmpFooterMetrics')
+$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave','btnCmpReportHome','btnCmpReportPrev','btnCmpReportNext','btnCmpReportRefresh','btnCmpReportExport')
+$componentTechnical=@('lblCmpFooterMetrics','lblCmpReportFooterMetrics')
 $componentFonts=0
 foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Components') -Filter *.pa.yaml){
  $componentDoc=$builder.Build().Deserialize([IO.File]::ReadAllText($componentFile.FullName))

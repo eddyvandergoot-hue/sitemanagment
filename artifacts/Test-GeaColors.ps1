@@ -2,6 +2,8 @@
 # disabled buttons, inputs, week totals and errors.
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Test-SaveRegression.ps1')
+# Week Report phase A (09-11-2026): scrWeekReport is indexed here (not in Test-SaveRegression's screen list), so the global button/input/date-picker/grey-text checks below cover it.
+$wrColorIdx=@{};Index-RegressionControls ($builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrWeekReport.pa.yaml'))))['Screens']['scrWeekReport']['Children'] $wrColorIdx;$indexes['scrWeekReport']=$wrColorIdx
 function CV($hex){ '=ColorValue("'+$hex+'")' }
 $W='=Color.White'
 $tokens=@('000000','0303B8','000F41','1AFF80','18DD6E','D5EDFF','F0F0F0','DCDCDC','E6E6E6','787878','DB1E28','FFFFFF')
@@ -9,7 +11,7 @@ $old=@('#7040A0','#593080','#194296','#123273','#E8EDF5','#EEE7F5','#193F83','#E
 $src=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
 foreach($o in $old){ $c=([regex]::Matches($src,[regex]::Escape($o),'IgnoreCase')).Count; if($c){throw "Old colour literal $o still present ($c x)"} }
 # 30-10-2026 (admin pattern spec): extra literals allowed ONLY on the admin-pattern screens (scrContractors; later scrProjects/scrWorkers).
-$adminScreens=@('scrContractors','scrProjects','scrWorkers')
+$adminScreens=@('scrContractors','scrProjects','scrWorkers','scrWeekReport')
 $adminTokens=@('F5F6F8','9B9B9B','5A5A5A','EDEDED','6B6B6B','B4B4B4','F29400')
 $bad=@()
 foreach($file in Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml -Recurse){
@@ -92,13 +94,18 @@ if($indexes['scrHours']['lblWeekLoadStatus']['Properties']['Color'] -ne '=If(!Is
 $chip=$indexes.scrContractors['btnEmpFormChip']['Properties']; $cf='=If(Coalesce(varEmpMode,"")="New",ColorValue("#D5EDFF"),Coalesce(varEmpEdit.Active,true),ColorValue("#1AFF80"),ColorValue("#E6E6E6"))'; $cc='=If(Coalesce(varEmpMode,"")="New",ColorValue("#0303B8"),Coalesce(varEmpEdit.Active,true),ColorValue("#000F41"),ColorValue("#000000"))'; foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){ if($chip[$k] -ne $cf){throw "Chip $k"} }; foreach($k in 'Color','HoverColor','PressedColor','DisabledColor'){ if($chip[$k] -ne $cc){throw "Chip $k"} }; if($chip['DisplayMode'] -ne '=DisplayMode.Disabled'){throw 'Chip must be static'}
 # 30-10-2026 (step 3a): Contractors title bar, footer, list card and form fields are component instances; colour roles are pinned on the component definitions.
 $cmpDefs=@{}
-foreach($cf in 'cmpTitleBar','cmpFooter','cmpListCard','cmpField','cmpMessageBar'){ $cmpDefs[$cf]=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot "Src/Components/$cf.pa.yaml")))['ComponentDefinitions'][$cf] }
+foreach($cf in 'cmpTitleBar','cmpFooter','cmpReportFooter','cmpListCard','cmpField','cmpMessageBar'){ $cmpDefs[$cf]=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot "Src/Components/$cf.pa.yaml")))['ComponentDefinitions'][$cf] }
 function Get-CmpIdx($def){ $r=@{}; Index-RegressionControls $def['Children'] $r; return $r }
 $tb=Get-CmpIdx $cmpDefs.cmpTitleBar; if($tb['lblCmpTitleText']['Properties']['Fill'] -ne (CV '#0303B8') -or $tb['lblCmpTitleText']['Properties']['Color'] -ne $W -or $cmpDefs.cmpTitleBar['Properties']['Fill'] -ne (CV '#0303B8')){throw 'cmpTitleBar fill/colour'}
 $ft=Get-CmpIdx $cmpDefs.cmpFooter
 foreach($a in @(@('btnCmpSave','primary'),@('btnCmpHome','nav'),@('btnCmpNew','secondary'),@('btnCmpRefresh','secondary'),@('btnCmpDiscard','secondary'))){
  $p=$ft[$a[0]]['Properties']
  foreach($kv in @($roles[$a[1]].GetEnumerator())+@($disabled.GetEnumerator())){ if($p[$kv.Key] -ne $kv.Value){throw "cmpFooter.$($a[0]).$($kv.Key) = $($p[$kv.Key]) (expected $($kv.Value) for $($a[1]))"} }
+}
+$rft=Get-CmpIdx $cmpDefs.cmpReportFooter
+foreach($a in @(@('btnCmpReportExport','primary'),@('btnCmpReportHome','nav'),@('btnCmpReportPrev','secondary'),@('btnCmpReportNext','secondary'),@('btnCmpReportRefresh','secondary'))){
+ $p=$rft[$a[0]]['Properties']
+ foreach($kv in @($roles[$a[1]].GetEnumerator())+@($disabled.GetEnumerator())){ if($p[$kv.Key] -ne $kv.Value){throw "cmpReportFooter.$($a[0]).$($kv.Key) = $($p[$kv.Key]) (expected $($kv.Value) for $($a[1]))"} }
 }
 $lc=Get-CmpIdx $cmpDefs.cmpListCard; $tp=$lc['btnCmpListSwitch']['Properties']; $kp=$lc['btnCmpListKnob']['Properties']; $track='=If(cmpListCard.ShowInactive,ColorValue("#0303B8"),ColorValue("#B4B4B4"))'
 foreach($k in 'Fill','HoverFill','PressedFill','DisabledFill'){ if($tp[$k] -ne $track){throw "cmpListCard switch track $k"}; if($kp[$k] -ne $W){throw "cmpListCard knob $k must be white"} }
@@ -133,8 +140,8 @@ Write-Output 'PASS inputs/dropdowns/date pickers #F0F0F0 with 1px #DCDCDC border
 # Active tiles show the white icon variant and arrow; Soon tiles the grey variant, no OnSelect; cmpTile colours are checked in the component section below.
 $homeIdx=$indexes['scrHome']
 if($homeIdx['conHomeScroll']['Properties']['Fill'] -ne '=Color.White'){throw 'Home content must be white'}
-$activeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','Contractors','Projects','Workers')
-$soonTiles=@('WeekReport','StockOverview','Locations','Requests','Viewer3D','PIDTracker','ComponentLibrary','KnowledgeBase')
+$activeTiles=@('ProjectTeam','WeeklyHours','HoursSummary','WeekReport','Contractors','Projects','Workers')
+$soonTiles=@('StockOverview','Locations','Requests','Viewer3D','PIDTracker','ComponentLibrary','KnowledgeBase')
 $tileSet=@($homeIdx.Keys | Where-Object { $homeIdx[$_]['Control'] -eq 'CanvasComponent' -and $homeIdx[$_]['ComponentName'] -eq 'cmpTile' } | Sort-Object)
 $tileExpected=@(($activeTiles+$soonTiles) | ForEach-Object { 'cmpTile'+$_ } | Sort-Object)
 if(($tileSet -join ',') -ne ($tileExpected -join ',')){throw "scrHome tile set changed: found [$($tileSet -join ', ')], expected [$($tileExpected -join ', ')]"}
@@ -146,7 +153,7 @@ foreach($h in 'TeamHours','MasterData','Inventory','CadTools','Knowledge'){
  if($homeIdx['lblHomeHeader'+$h]['Properties']['Color'] -ne (CV '#000F41') -or $homeIdx['lblHomeHeader'+$h]['Properties']['Size'] -ne '=16'){throw "Home header $h colour/size"}
  if($homeIdx['recHomeLine'+$h]['Properties']['Fill'] -ne (CV '#0303B8') -or $homeIdx['recHomeLine'+$h]['Properties']['Height'] -ne '=2'){throw "Home header line $h"}
 }
-foreach($pair in @(@('cmpTileProjectTeam','=Navigate(Screen1); true'),@('cmpTileHoursSummary','=Navigate(scrWeeklyHours); true'),@('cmpTileContractors','=Navigate(scrContractors); true'),@('cmpTileProjects','=Navigate(scrProjects); true'),@('cmpTileWorkers','=Navigate(scrWorkers); true'))){if($homeIdx[$pair[0]]['Properties']['OnSelect'] -ne $pair[1]){throw "Home navigation $($pair[0])"}}
+foreach($pair in @(@('cmpTileProjectTeam','=Navigate(Screen1); true'),@('cmpTileHoursSummary','=Navigate(scrWeeklyHours); true'),@('cmpTileWeekReport','=Navigate(scrWeekReport); true'),@('cmpTileContractors','=Navigate(scrContractors); true'),@('cmpTileProjects','=Navigate(scrProjects); true'),@('cmpTileWorkers','=Navigate(scrWorkers); true'))){if($homeIdx[$pair[0]]['Properties']['OnSelect'] -ne $pair[1]){throw "Home navigation $($pair[0])"}}
 # Weekly Hours tile: conditional navigation (loaded -> scrHours, else Screen1 + Notify); exact logic checked in Test-SaveRegression.ps1.
 $tileWh=[string]$homeIdx['cmpTileWeeklyHours']['Properties']['OnSelect'];if(!$tileWh.StartsWith('=If(') -or !$tileWh.Contains('Navigate(scrHours)') -or !$tileWh.Contains('Navigate(Screen1)')){throw 'Home navigation cmpTileWeeklyHours'}
 # cmpTile component colours (TP-HOME-02 fixes, Eddy 3-11-2026): background rectangle #0303B8 active / #E6E6E6 Soon; label white / #6B6B6B; SOON #5A5A5A.
