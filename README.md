@@ -11,6 +11,7 @@ Power Apps canvas app on SharePoint Lists for GEA site management: project/team 
 | Current status, current baseline build, open items | **PROJECT_STATUS.md** | Yes |
 | Plan, phases, open decisions | **ROADMAP.md** | Only when the task says so |
 | Build plan admin screens (Contractors, Projects, Workers) | **ADMIN_PLAN.md** | Only when the task says so |
+| Plan Week Report + PDF/CSV export (not built, decisions B1-B10 open) | **WEEKREPORT_PLAN.md** | Only when the task says so |
 | Manual SharePoint / Power Automate steps (MS-xxx) | **MANUAL_STEPS.md** | Only when the task says so |
 | Decision log: what was decided and why | **DECISIONS.md** | Only when the task says so |
 | Manual Studio/browser test cases (TP-xxx) | **TESTPLAN.md** | Only when the task says so |
@@ -42,7 +43,7 @@ Sitemanagment/
 │  ├─ *.ps1                  Test scripts
 │  └─ <build-name>/          Packed test builds (*.msapp) — git-ignored
 ├─ .claude/agents/          Subagents: powerfx-logic, powerfx-ui, verifier, reviewer, docs-keeper
-├─ README.md  AGENTS.md  PROJECT_STATUS.md  ROADMAP.md  ADMIN_PLAN.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md  SECURITY.md  RISK_ANALYSIS.md  *_ARCHIVE.md
+├─ README.md  AGENTS.md  PROJECT_STATUS.md  ROADMAP.md  ADMIN_PLAN.md  WEEKREPORT_PLAN.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md  SECURITY.md  RISK_ANALYSIS.md  *_ARCHIVE.md
 └─ Assets/ (GEA logo, only GEA_logo_white.svg tracked)  .gitignore
 ```
 
