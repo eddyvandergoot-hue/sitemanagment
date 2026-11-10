@@ -1,4 +1,4 @@
-# Projectstatus (huidige stand, 9-11-2026)
+# Projectstatus (huidige stand, 10-11-2026)
 
 Geschiedenis en eerdere builds: PROJECT_STATUS_ARCHIVE.md (niet lezen tenzij gevraagd; daar staat ook het op 9-11-2026 verplaatste detail: oudere beperkingen, Studio-bewijs, incident lege Employers-records, MS-detail). Volgorde van open punten: NEXT_COMMANDS.md. Open beslissingen: ROADMAP.md. Handmatige stappen: MANUAL_STEPS.md. "Gebouwd" = aantoonbaar in Src; dat zegt niets over Studio-import of functionele test.
 
@@ -10,7 +10,10 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - Testprojecten: TEST-000 (MS-005, opslaan toegestaan) en TEST-001 (Active = Nee; alleen-lezen, voor "geen periodes en geen uren"). TEST-regel Week Report/exports: AGENTS.md (Werkwijze), DECISIONS.md E10.
 
 ## Huidige build
-- Week Report fase A gebouwd 9-11-2026: scrWeekReport (alleen-lezen), cmpReportFooter, Home-tegel actief, TEST-regel, codefallbacks EMP-/WKR-<ID>, rapporttaal = meerderheid Workers.Language (legacy "Nederlands" telt als Dutch), fail-closed gegevenscontroles. TESTBUILD: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261109_203719\SiteManagement_WeekReportA_20261109_203719.msapp, 186666 bytes, SHA-256 6A8D56DF8B499D8478CF957E50849B7CAF950758183556ECE866F239D0F6C35C. Technisch gecontroleerd: 15 checks PASS (incl. nieuw Test-WeekReport), pack OK, reviewer geen blokkerende bevindingen (ook sleutelcontroles: koppelingssleutel, volledige EntryKey, periodes zonder koppeling/From blokkeren); NIET Studio-getest; volgende stap: Eddy Studio-test TP-WEEKREPORT-01 (TESTPLAN.md). Geen export in fase A.
+- Week Report fase A gebouwd 9-11-2026: scrWeekReport (alleen-lezen), cmpReportFooter, Home-tegel actief, TEST-regel, codefallbacks EMP-/WKR-<ID>, rapporttaal = meerderheid Workers.Language (legacy "Nederlands" telt als Dutch), fail-closed gegevenscontroles. Src ongewijzigd sinds 6e64ceb.
+- Metadata 10-11-2026 samengevoegd (MS-027/028 gedaan): .msapr DataSources.json uit Incoming\Site Managment 10-11-2026.msapp (Translations nieuw, Employers + Language) + Translations in LocalConnectionReferences van Properties.json (reviewerbevinding); App Id 88e53928. Details MANUAL_STEPS.md MS-028. Fase A gebruikt Translations/Employers.Language niet. Let op voor fase C: de Employers-kolom heet in de metadata "Language" (niet "Report Language") en Translations-Title heet daar nog "Title" (niet "Key"); eerst controleren in SharePoint, zo nodig metadata opnieuw verversen.
+- TESTBUILD (vervangt weekreport-a-20261109_203719): C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261110_215823\SiteManagement_WeekReportA_20261110_215823.msapp, 187137 bytes, SHA-256 E0FC44230D44523519E03B969A2DE71724534AE2FBC5FE8F8AC9815935255577. Technisch gecontroleerd: 15 checks PASS (Test-Logo en Check-WeeklySource opnieuw op de definitieve .msapr), pack OK, reviewer geen blokkerende bevindingen (verplichte kolommen Title/First Name/Surname door alle Patches gedekt; geen naamconflict Language). NIET Studio-getest; volgende stap: Eddy Studio-test TP-WEEKREPORT-01 (TESTPLAN.md). Geen export in fase A.
+- Gegevensopruiming 10-11-2026 (Eddy): TP-KEYS-01 PASS; oorzaak = oude test-Hours-regels die naar het verwijderde Project Workers-item ID 1 wezen (koppeling 1|1 is nu ID 24); alle Hours met EntryKey 1|* verwijderd; Hours Summary Friesland Campina laadt weer.
 - Na fase A: Week Report-export (fase B/C), plan WEEKREPORT_PLAN.md goedgekeurd (Eddy 9-11-2026).
 - Bekende beperkingen Workers-build (vastgelegd, niet blokkerend): (a) medewerker die bij het laden van de week al inactief is in Workers: Save van een nieuwe dag toont elke keer de algemene conflictmelding (nul writes; trace Reason Inactive); (b) PW Active=false met open periode wordt door de deactiveringscheck niet gezien (V1-gat); (c) de telling "actieve medewerkers" op Contractors is na een Workers-save verouderd tot Refresh op Contractors; (d) laadfouttekst van de workercache op Weekly Hours is Nederlands (UX-ronde 4b); (e) Home-tegel Weekly hours meldt "Choose project and team first" ook als alleen de caches verouderd zijn; (f) na een H18-conflict blijft varMastersReady false tot Project / team herlaadt (fail-closed). Overige oudere beperkingen (Savefix, Discard, smalle vensters, Home, datumkiezer): archief.
 - Alleen in Studio te controleren: Patch {Until: Blank()} wist de datum; JSON() van projecties; Sort op ID/Modified (delegatie); gedrag ModernDatePicker bij wijzigen van StartDate/EndDate tijdens Reset.
@@ -19,7 +22,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-2026, tag approved-20261107-contractoraddr; (2) layout-freeze ACTIEF (cosmetica alleen via de backlog hieronder); (3) GEDAAN: Workers-scherm goedgekeurd 9-11-2026, tag approved-20261109-workers; (4) Week Report + PDF/CSV-export: plan goedgekeurd door Eddy 9-11-2026 (WEEKREPORT_PLAN.md), fase A gebouwd 9-11-2026, Studio-test open; (5) toegankelijkheidsronde + N2/N5. Details: NEXT_COMMANDS.md.
 
 ## Backlog cosmetica
-- Veld Report Language op het Contractors-scherm (na MS-027).
+- Veld Report Language op het Contractors-scherm (MS-027 gedaan; metadata samengevoegd 10-11-2026).
 - Native-speaker-controle van de vertalingen (Translations) vóór livegang.
 - GEA-logo als PNG (officieel bestand uit de logobank) is nodig vóór fase C (PDF).
 - Home-tegel Tab-focus (TP-HOME-03 punt 6; geen prioriteit).
@@ -40,6 +43,6 @@ Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-
 - Verwijderen van artifacts\Logo_download\20261026-Sitemanagment_logo.msapp (read-only SAS-token verlopen 27-10-2026; lokaal, gitignored) mag door Eddy.
 
 ## Open MS-items (MANUAL_STEPS.md)
-- Open (Eddy, 9-11-2026): MS-027 (Employers Report Language), MS-028 (lijst Translations), MS-029 (flow "SiteManagement - Export file"), MS-030 (flow in de app). Bibliotheek Exports: gedaan 9-11-2026.
+- Open (Eddy, 9-11-2026): MS-029 (flow "SiteManagement - Export file"), MS-030 (flow in de app). Gedaan 10-11-2026: MS-027 (Employers Report Language), MS-028 (lijst Translations), metadata samengevoegd. Bibliotheek Exports: gedaan 9-11-2026.
 - MS-012 (Worker Contacts): deels gedaan; open: groep Site Supervisors + unieke rechten + opschonen versiegeschiedenis Workers. MS-021 (rechten Site Supervisors): uitgesteld tot go-live.
 - Gedaan (details MANUAL_STEPS.md): MS-005/009/010/013-020/022/025/026. Employer Code: flow MS-019 vult "EMP-" + ID; Worker Code: flow MS-017 vult "WKR-" + ID.

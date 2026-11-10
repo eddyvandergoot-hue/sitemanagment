@@ -454,8 +454,10 @@ Inhoud: nieuwe Home (5 categorieën, cmpTile, iconen Assets/Icons v1), N1 (dirty
 | 10 | Projects: TEST-project met Status/Country buiten de keuzelijst (alleen als zo'n record bestaat), ander veld wijzigen, Save | Saved; in SharePoint-versiegeschiedenis is Status/Country niet herschreven |
 | 11 | Projects: New met een bestaand TEST Project Number, Save | rode balk "Not saved." met de reden (dubbel nummer); geen dubbel record in SharePoint; invoer blijft staan |
 
-## TP-KEYS-01 Sleutels in fail-closed meldingen (OPEN; build keys-20261103_210529)
+## TP-KEYS-01 Sleutels in fail-closed meldingen (PASS, Eddy 10-11-2026; build keys-20261103_210529)
 Bevat ook de Home-build (TP-HOME-02). Alleen leescontroles op project 1; geen opslag buiten TEST-000.
+
+Resultaat 10-11-2026 (Eddy): PASS. De melding toonde sleutels + Assignment-ID's. Oorzaak: de Project Workers-koppeling 1|1 heeft nu ID 24; oude Hours-regels wezen nog naar het verwijderde item ID 1 (verouderde testgegevens, geen appfout). Opruiming door Eddy: alle Hours-regels met EntryKey 1|* verwijderd (testgegevens). Daarna laadt Hours Summary voor Friesland Campina weer.
 
 | # | Actie | Verwacht |
 |---|---|---|
@@ -490,7 +492,7 @@ Alleen TEST-gegevens (TEST Employer / een TEST-contractor). Pad: C:\Users\vander
 | i | Discard, Refresh, New + Discard | zoals TP-HOME-04 (5-9) |
 
 ## TP-HOME-04 Home-tegel als één SVG-afbeelding + Discard in New (PASS, Eddy 7-11-2026: 1-4 en 5-9 ok op build contractoraddr-20261104_221534; eerder build homefix2-20261104_215148, vervangen)
-Voorafgaand: TP-HOME-03 (Eddy 3-11-2026): punt 5 functioneel ok, 7 ok, 8 (New chip) ok, B3 ok; punt 6 (Tab-focus) geen prioriteit, naar de toegankelijkheidsronde. TP-KEYS-01: melding toont sleutels ok (voorbeeld "1|1|20261012 Assignment-ID 1 +17 more"); Eddy controleert de Project Workers-ID's van Friesland Campina (open). Opslaan alleen op TEST-records.
+Voorafgaand: TP-HOME-03 (Eddy 3-11-2026): punt 5 functioneel ok, 7 ok, 8 (New chip) ok, B3 ok; punt 6 (Tab-focus) geen prioriteit, naar de toegankelijkheidsronde. TP-KEYS-01: melding toont sleutels ok (voorbeeld "1|1|20261012 Assignment-ID 1 +17 more"); Project Workers-ID's van Friesland Campina: afgehandeld 10-11-2026 (TP-KEYS-01 PASS, oude testuren 1|* verwijderd). Opslaan alleen op TEST-records.
 
 | # | Actie | Verwacht |
 |---|---|---|
@@ -531,7 +533,7 @@ Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-20261108_014223\
 Resultaat (Eddy 8-11-2026, build workers-20261108_014223): a b c d e f i j k l m o p q OK; n overgeslagen (geen legacy-record); r overgeslagen (Monitor-delegatie niet gecontroleerd, blijft OPEN). d: "Attention. Saved. Old hours keep the old contractor." OK. g/h: FAIL, Language was leeg bij New -> "Language required"; h (duplicaatwaarschuwing WKR-017 + Save anyway) werkt zodra Language gekozen is. m: opent op de laatst geselecteerde worker = geaccepteerd (zoals Contractors/Projects). o: conflict correct, niets opgeslagen, maar melding twee keer getoond (Notify + lblWeekLoadStatus): bestaand gedrag van elke mislukte Save op Weekly Hours (backlog UX 4b, PROJECT_STATUS.md).
 Oorzaak g/h: Workers.Language bevat geen exacte waarde "Nederlands" (Studio). Fix 9-11-2026: New-standaard "Nederlands" als in Choices, anders "Dutch", anders leeg (fail-closed). Hertest alleen g + h op de langfix-build (C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-langfix-20261109_131247\SiteManagement_Workers_LangFix_20261109_131247.msapp, 174071 bytes, SHA-256 BA8107BA26B74F4F07D046E7A09829EE4BD541045E8DE0FC9234807D319A07A2). Hertest-resultaat (Eddy 9-11-2026, langfix-build): g OK (Language Dutch voorgevuld en opgeslagen; Worker Code verschijnt na ongeveer 1 minuut = polling van de flow-trigger MS-017, geaccepteerd), h OK (duplicaatwaarschuwing + Save anyway). r blijft open (Monitor-delegatie niet gecontroleerd, niet blokkerend). Workers goedgekeurd door Eddy 9-11-2026, tag approved-20261109-workers. Language-keuzes in SharePoint: Dutch, English, Polish, Romanian, German, Ukrainian; standaard Dutch. Let op: de code controleert voor de New-standaard nog eerst "Nederlands" (bestaat niet) en dan "Dutch"; opruimen bij de eerstvolgende Workers-wijziging.
 
-## TP-WEEKREPORT-01 Week Report fase A (OPEN; alleen lezen, niet opslaan; build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261109_203719\SiteManagement_WeekReportA_20261109_203719.msapp, 186666 bytes, SHA-256 6A8D56DF8B499D8478CF957E50849B7CAF950758183556ECE866F239D0F6C35C)
+## TP-WEEKREPORT-01 Week Report fase A (OPEN; alleen lezen, niet opslaan; build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261110_215823\SiteManagement_WeekReportA_20261110_215823.msapp, 187137 bytes, SHA-256 E0FC44230D44523519E03B969A2DE71724534AE2FBC5FE8F8AC9815935255577, met metadata 10-11-2026 (Employers + Translations); vervangt build weekreport-a-20261109_203719)
 Pad en SHA-256: volgen in PROJECT_STATUS.md. Alleen leesacties; geen Save. Projectkeuze: TEST-000 (stap d-h, j-m), een echt project alleen voor stap i (alleen lezen).
 
 | # | Actie | Verwacht |

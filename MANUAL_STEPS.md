@@ -22,8 +22,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-022 | 27-10-2026 | Done 27-10-2026 (reported by Eddy) |
 | MS-025 | 7-11-2026 | Done 8-11-2026 (Eddy) |
 | MS-026 | 7-11-2026 | Done 7-11-2026 (Eddy) |
-| MS-027 | 9-11-2026 | Open (Eddy) |
-| MS-028 | 9-11-2026 | Open (Eddy) |
+| MS-027 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
+| MS-028 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
 | MS-029 | 9-11-2026 | Open (Eddy) |
 | MS-030 | 9-11-2026 | Open (Eddy) |
 
@@ -227,7 +227,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-027 — Employers: kolom "Report Language"
 
-- **Added:** 9-11-2026. **Status:** Open (Eddy).
+- **Added:** 9-11-2026. **Status:** Done 10-11-2026 (Eddy). Metadata samengevoegd 10-11-2026 (zie MS-028). Let op: in de metadata heet de kolom intern én als weergavenaam "Language" (niet "Report Language"); keuzes staan niet in de metadata. Fase C gebruikt de interne naam Language op Employers. Eddy: controleer of de weergavenaam in SharePoint "Report Language" is; voor de app maakt het niet uit.
 - **Reason:** tweede taal van het Week Report per contractor (DECISIONS.md WR1).
 - **Kolom:** Employers, "Report Language", type keuze; keuzes Dutch, English, Polish, Romanian, German, Ukrainian; geen standaardwaarde.
 - **Let op:** de keuzes van Employers.Report Language en Workers.Language moeten gelijk blijven; bij een nieuwe taal in beide toevoegen.
@@ -235,7 +235,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-028 — SharePoint-lijst "Translations"
 
-- **Added:** 9-11-2026. **Status:** Open (Eddy).
+- **Added:** 9-11-2026. **Status:** Done 10-11-2026 (Eddy): lijst Translations (Key = hernoemde Title, Language tekst, Text meerdere regels, index op Language).
+- **Metadata samengevoegd 10-11-2026 (Claude):** uit `Incoming\Site Managment 10-11-2026.msapp` (747051 bytes, SHA-256 ADECF65C4AF9249E67AE79094DCEAF155D6747E188BFA614797EEF137A377519; kopie met App Id 0ac96947-6b19-452e-8044-44c03832d0ea, niet overgenomen) alleen `msapp\References\DataSources.json` in de .msapr vervangen. App Id blijft 88e53928. Geen ondertekende URL's. Verschil: nieuwe bron Translations (tabel 369863f7-427c-4e7b-adc5-68311e3d179e; intern Title (weergave in de metadata nog "Title", niet "Key"), Language tekst, Text); Employers + Language (keuze); verplicht-vlaggen ververst (Projects Title/ProjectName/Status, Employers Title, Workers field_2/field_3/field_6); overige bronnen alleen revisie/naamtoewijzing; dataset- en tabel-ID's gelijk. Uit Properties.json alleen de Translations-regels in LocalConnectionReferences (SharePoint-verbinding b4a62a3e: dataSources-lijst + tableName; reviewerbevinding, anders heeft de bron geen verbindingsreferentie); Id en de rest van Properties.json ongewijzigd. Niet overgenomen: Src, Resources.json, Templates.json, Header/PublishInfo/AppChecker. Fase A gebruikt Translations en Employers.Language nog niet.
 - **Reason:** data-gestuurde documentteksten (DECISIONS.md WR5; WEEKREPORT_PLAN.md par. 6.3).
 - **Lijst:** "Translations"; Title hernoemen naar Key; Language = tekst, één regel (waarde = keuzenaam, bv. "Polish"); Text = meerdere regels; index op Language. Vullen met de CSV uit de Claude-chat.
 - **Na MS-027 + MS-028:** één metadata-refresh (Employers + Translations), opgeslagen in Incoming\; alleen databronnen samenvoegen; App Id 88e53928.
