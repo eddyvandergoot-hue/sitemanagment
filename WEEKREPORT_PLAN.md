@@ -67,11 +67,13 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 - `[TEST_]<ProjectNumber>_<YYYY>-KW<ww>_<EmployerCode>_<yyyymmdd-hhmm>` + extensie via Format; Hours Summary: `[TEST_]<ProjectNumber>_<yyyymmdd>-<yyyymmdd>_<EmployerCode|ALL>_<yyyymmdd-hhmm>`.
 - Folder: `<ProjectNumber>/<ISO-jaar>` (voorbeeld uit het contract "TEST-000/2026").
 
-### 6.5 Flowcontract (B9, Eddy 9-11-2026)
+### 6.5 Flowcontract (B9, Eddy 9-11-2026; bevestigd 11-11-2026, Eddy bouwt de flow met de hand, MS-029)
 - Naam "SiteManagement - Export file"; trigger Power Apps (V2); alleen standaardconnectors.
-- Invoer (tekst): Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content (CSV met BOM of volledige HTML).
+- Invoer (tekst): Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content (tekst).
+- Content csv: de app zet zelf de UTF-8 BOM (U+FEFF) vooraan; de flow voegt niets toe en wijzigt niets. Content pdf: volledige HTML in Arial met het logo als base64 (data-URI, dus geen externe verwijzing).
 - csv: SharePoint Create file in Exports/Folder. pdf: OneDrive tijdelijk .html -> Convert file (PDF) -> SharePoint Create file Exports/Folder -> tijdelijk bestand verwijderen.
-- Uitvoer (tekst): Status ("ok" | "error"), FileUrl (klikbaar), Message.
+- Uitvoer (tekst): Status ("OK" | "Error"; de app vergelijkt hoofdletterongevoelig), FileUrl (klikbaar), Message.
+- BOM in Power Fx: Eddy noemde Char(65279). Char is volgens Microsoft bedoeld voor ASCII-codes; voor U+FEFF gebruikt de app UniChar(65279) (AGENTS, par. 6.1). Het resultaat in het bestand is hetzelfde: BOM EF BB BF.
 - Eén aanroep per bestand; "All contractors" = per contractor twee aanroepen (PDF + CSV).
 
 ### 6.6 Toelating en foutafhandeling (fail-closed)

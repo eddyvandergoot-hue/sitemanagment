@@ -24,7 +24,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-026 | 7-11-2026 | Done 7-11-2026 (Eddy) |
 | MS-027 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
 | MS-028 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
-| MS-029 | 9-11-2026 | Open (Eddy) |
+| MS-029 | 9-11-2026 | Open (Eddy bouwt, contract bevestigd 11-11) |
 | MS-030 | 9-11-2026 | Open (Eddy) |
 
 ---
@@ -245,6 +245,12 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 - **Added:** 9-11-2026. **Status:** Open (Eddy).
 - **Reason:** generieke bestandsschrijver voor CSV/PDF. Contract: WEEKREPORT_PLAN.md par. 6.5 (invoer Folder, FileName, Format csv|pdf, Content; uitvoer Status, FileUrl, Message).
+- **11-11-2026 (Eddy):** Eddy bouwt de flow met de hand. Bevestigd contract:
+  - Trigger Power Apps (V2). Invoer, alle tekst: Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content.
+  - Uitvoer, alle tekst: Status ("OK" | "Error"), FileUrl, Message.
+  - CSV: de app zet de BOM er zelf voor. De flow schrijft Content ongewijzigd.
+  - PDF: Content is volledige HTML (Arial, logo als base64).
+  - Melden als gedaan, met de exacte namen van de invoer en uitvoer zoals ze in de flow staan. Daarna pas MS-030.
 
 ## MS-030 — Flow toevoegen aan de app
 
