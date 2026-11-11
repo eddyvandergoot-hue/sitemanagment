@@ -94,7 +94,7 @@ $pickOc = P 'dpWrWeek.OnChange'
 Assert-True ((P 'dpWrWeek.DisplayMode') -ceq "=If($G,DisplayMode.Edit,DisplayMode.Disabled)" -and $pickOc.StartsWith("=If($G,")) 'picker guard parity: DisplayMode condition = first OnChange condition (disabled while loading)'
 Assert-True ((Norm $pickOc).Contains('If(monday=varWrMonday,Set(varWrPickedDay,selectedDay),Set(varWrPickedDay,selectedDay);Set(varWrMonday,monday);Select(btnWrLoad))') -and ([regex]::Matches($pickOc, 'Reset\(dpWrWeek\)')).Count -eq 1 -and (Norm $pickOc).Contains('If(IsBlank(Self.SelectedDate),Reset(dpWrWeek),')) 'picker OnChange: other week -> keep day + Monday + load; same week -> keep day only; Reset only for an empty date (never after a normal pick)'
 Assert-True ($screenText -notmatch '\bvar(Hours|Week|Team)\w*' -and $screenText -notmatch '\bdpHoursWeek\b|\bdpTeamWeek\b') 'week state is own (varWr*), independent of Screen1 / Weekly Hours'
-Assert-True ((P 'lblWrWeekKW.X') -eq '=dpWrWeek.X+dpWrWeek.Width+12' -and (P 'lblWrWeekKW.Y') -eq '=dpWrWeek.Y' -and (P 'lblWrWeekLabel.Text').Contains('T.wrFieldWeek.en')) 'label "Week" above the picker and "YYYY KWxx" beside it'
+Assert-True ((P 'lblWrWeekKW.X') -eq '=btnWrNext.X+btnWrNext.Width+12' -and (P 'lblWrWeekKW.Y') -eq '=dpWrWeek.Y' -and (P 'lblWrWeekLabel.Text').Contains('T.wrFieldWeek.en')) 'label "Week" above the picker and "YYYY KWxx" beside the next-week arrow'
 
 # (3) No mutations --------------------------------------------------------------------------------------------------------
 $bare = Strip-Strings $screenText
@@ -150,17 +150,26 @@ Assert-True ($loaderN2.Contains('If(!IsEmpty(colWrLoadErrors),Set(varWrLoadState
 Assert-True ($loaderN2.Contains('Concurrent(IfError(CountRows(ClearCollect(colWrPendProjects,') -and $loaderN2.Contains('Collect(colWrProjectsErrors,') -and $loaderN2.Contains('Collect(colWrEmployersErrors,') -and $loaderN2.Contains('Collect(colWrWorkersErrors,') -and $loaderN2.Contains('Collect(colWrLoadErrors,colWrProjectsErrors,colWrEmployersErrors,colWrWorkersErrors)')) 'Concurrent master reads: each branch its own error collection, merged afterwards'
 
 # (7) Guard parity (footer, dropdowns): same text in Enabled and as first OnXxx condition ------------------------------
-foreach ($b in 'Home', 'Prev', 'Next', 'Refresh', 'Export') {
+foreach ($b in 'Home', 'Refresh', 'Export') {
     $en = (P "cmpWrFooter.${b}Enabled").Substring(1); $on = P "cmpWrFooter.On$b"
     Assert-True ($on.StartsWith("=If($en,")) "footer $b : On$b starts with If(<${b}Enabled>,"
 }
 foreach ($b in 'Home', 'Refresh') { Assert-True ((P "cmpWrFooter.${b}Enabled") -ceq "=$G") "footer $b disabled while loading/busy" }
-foreach ($b in 'Prev', 'Next') { Assert-True ((P "cmpWrFooter.${b}Enabled") -ceq "=$G && !IsBlank(varWrMonday)" -and (Norm (P "cmpWrFooter.On$b")).Contains('Reset(dpWrWeek);Select(btnWrLoad)')) "footer $b disabled while loading; moves the week by 7 days and loads" }
+foreach ($b in 'Prev', 'Next') { Assert-True (-not $all.Contains("cmpWrFooter.On$b") -and -not $all.Contains("cmpWrFooter.${b}Enabled")) "footer has no $b (week arrows next to the week picker, Eddy 11-11-2026)" }
+foreach ($a in @(@('btnWrPrev', '-7', [string][char]0x2039, 'T.wrPrev.en', '=24'), @('btnWrNext', '7', [string][char]0x203A, 'T.wrNext.en', '=dpWrWeek.X+dpWrWeek.Width+6'))) {
+    $n = $a[0]; $arrowCond = "$G && !IsBlank(varWrMonday)"
+    Assert-True ((P "$n.DisplayMode") -ceq "=If($arrowCond,DisplayMode.Edit,DisplayMode.Disabled)" -and (P "$n.OnSelect").StartsWith("=If($arrowCond,") -and (Norm (P "$n.OnSelect")).Contains("Set(varWrMonday,DateAdd(varWrMonday,$($a[1]),TimeUnit.Days));Reset(dpWrWeek);Select(btnWrLoad)")) "$n : same guard in DisplayMode and as first OnSelect condition; moves the week by $($a[1]) days, resets the picker and loads"
+    Assert-True ((P "$n.Text") -ceq ('="' + $a[2] + '"') -and (P "$n.Tooltip").Contains($a[3]) -and (P "$n.Width") -eq '=dpWrWeek.Height' -and (P "$n.Height") -eq '=dpWrWeek.Height' -and (P "$n.Y") -eq '=dpWrWeek.Y' -and (P "$n.X") -eq $a[4]) "$n : chevron, tooltip, square as high as the week picker, 6 px from it"
+    Assert-True ((P "$n.Fill") -eq '=Color.White' -and (P "$n.BorderColor") -eq '=ColorValue("#0303B8")' -and (P "$n.BorderThickness") -eq '=1' -and (P "$n.Color") -eq '=ColorValue("#000F41")' -and (P "$n.HoverFill") -eq '=ColorValue("#D5EDFF")' -and (P "$n.FocusedBorderColor") -eq '=ColorValue("#000F41")' -and (P "$n.FocusedBorderThickness") -eq '=3') "$n : secondary (white, 1 px #0303B8), navy chevron, hover #D5EDFF, focus navy 3 px (Eddy 11-11-2026)"
+}
+Assert-True ((P 'dpWrWeek.X') -eq '=btnWrPrev.X+btnWrPrev.Width+6' -and (P 'lblWrWeekLabel.X') -eq '=dpWrWeek.X' -and (P 'conWrSelCard.Width') -eq '=Max(conWrBody.Width-64,lblWrWeekKW.X+lblWrWeekKW.Width+24)') 'week row: [<] [date] [>] then the KW label; field label above the date; selection card never narrower than the week row (arrows reachable on a phone via horizontal scroll)'
+
 foreach ($c in 'cmpWrProject', 'cmpWrContractor') { $en = (P "$c.Enabled").Substring(1); Assert-True ((P "$c.OnChange").StartsWith("=If($en,") -and (P "$c.OnChange").EndsWith('; true') -and $en.StartsWith($G)) "$c : OnChange starts with If(<Enabled>, (busy/loading blocks) and ends with ; true" }
 foreach ($case in @(@('false', '"Loaded"', 'Date(2026,11,9)', $true), @('true', '"Loaded"', 'Date(2026,11,9)', $false), @('false', '"Loading"', 'Date(2026,11,9)', $false), @('Blank()', '"Failed"', 'Date(2026,11,9)', $true))) {
     Assert-Eval "With({varWrBusy:$($case[0]),varWrLoadState:$($case[1]),varWrMonday:$($case[2])},$((P 'cmpWrFooter.RefreshEnabled').Substring(1)))" $case[3] "footer Refresh/Home enabled = $($case[3]) for busy $($case[0]), state $($case[1])"
 }
-Assert-Eval "With({varWrBusy:false,varWrLoadState:`"Loaded`",varWrMonday:If(false,Date(2026,1,1))},$((P 'cmpWrFooter.PrevEnabled').Substring(1)))" $false 'footer Prev blocked without a week'
+$arrowGuard = (P 'btnWrPrev.DisplayMode'); $arrowGuard = $arrowGuard.Substring(4, $arrowGuard.IndexOf(',DisplayMode.Edit') - 4)
+Assert-Eval "With({varWrBusy:false,varWrLoadState:`"Loaded`",varWrMonday:If(false,Date(2026,1,1))},$arrowGuard)" $false 'week arrow blocked without a week'
 Assert-Eval "With({varWrBusy:false,varWrLoadState:`"Failed`",varWrMastersReady:true},$((P 'cmpWrProject.Enabled').Substring(1)))" $true 'Project dropdown usable after a failed report load when the project list is ready (no dead end)'
 Assert-Eval "With({varWrBusy:false,varWrLoadState:`"Failed`"},$((P 'cmpWrContractor.Enabled').Substring(1)))" $false 'Contractor filter only on a Loaded report'
 Assert-True ((Norm (P 'cmpWrProject.OnChange')).Contains('LookUp(colWrProjects,Display=Trim(cmpWrProject.Value&"")).ID<>Coalesce(varWrProjectID,0),Set(varWrProjectID,') -and (Norm (P 'cmpWrProject.OnChange')).Contains('CountIf(colWrProjects,Display=Trim(cmpWrProject.Value&""))<>1,') -and (P 'cmpWrContractor.OnChange') -notmatch 'Select\(btnWrLoad\)') 'project change loads only for another, unique project; contractor change is local (no read)'

@@ -9,23 +9,13 @@
 ComponentDefinitions:
   cmpReportFooter:
     DefinitionType: CanvasComponent
-    Description: Week Report footer. Presentation only. Contract - the host passes the complete guard of each button in <Button>Enabled (a Boolean) and puts the SAME guard as the first condition inside its event handler (OnHome, OnPrev, OnNext, OnRefresh, OnExport). The component only calls the event when its Enabled input is true; it never decides, mutates or navigates. Export is the right-most button and only shown when ExportVisible is true; the other right-hand buttons then stay right-aligned without a gap.
+    Description: Week Report footer. Presentation only. Contract - the host passes the complete guard of each button in <Button>Enabled (a Boolean) and puts the SAME guard as the first condition inside its event handler (OnHome, OnRefresh, OnExport); week arrows live on the host screen next to the week picker (Eddy 11-11-2026). The component only calls the event when its Enabled input is true; it never decides, mutates or navigates. Export is the right-most button and only shown when ExportVisible is true; the other right-hand buttons then stay right-aligned without a gap.
     CustomProperties:
       HomeText:
         PropertyKind: Input
         DataType: Text
         Description: Home button text.
         Default: ="Home"
-      PrevText:
-        PropertyKind: Input
-        DataType: Text
-        Description: Previous week button tooltip text.
-        Default: ="Previous week"
-      NextText:
-        PropertyKind: Input
-        DataType: Text
-        Description: Next week button tooltip text.
-        Default: ="Next week"
       RefreshText:
         PropertyKind: Input
         DataType: Text
@@ -40,16 +30,6 @@ ComponentDefinitions:
         PropertyKind: Input
         DataType: Boolean
         Description: Home guard (true = Edit, false = Disabled). Fail-closed default.
-        Default: =false
-      PrevEnabled:
-        PropertyKind: Input
-        DataType: Boolean
-        Description: Previous week guard (true = Edit, false = Disabled). Fail-closed default.
-        Default: =false
-      NextEnabled:
-        PropertyKind: Input
-        DataType: Boolean
-        Description: Next week guard (true = Edit, false = Disabled). Fail-closed default.
         Default: =false
       RefreshEnabled:
         PropertyKind: Input
@@ -70,16 +50,6 @@ ComponentDefinitions:
         PropertyKind: Event
         ReturnType: None
         Description: Home pressed. The host handler starts with its guard.
-        Default: =false
-      OnPrev:
-        PropertyKind: Event
-        ReturnType: None
-        Description: Previous week pressed. The host handler starts with its guard.
-        Default: =false
-      OnNext:
-        PropertyKind: Event
-        ReturnType: None
-        Description: Next week pressed. The host handler starts with its guard.
         Default: =false
       OnRefresh:
         PropertyKind: Event
@@ -135,7 +105,7 @@ ComponentDefinitions:
                   Fill: =Color.Transparent
                   FillPortions: =0
                   Height: =68
-                  Width: =Max(Parent.Width,2*lblCmpReportFooterMetrics.X+btnCmpReportHome.Width+btnCmpReportPrev.Width+btnCmpReportNext.Width+btnCmpReportRefresh.Width+btnCmpReportExport.Width+4*lblCmpReportFooterMetrics.Width)
+                  Width: =Max(Parent.Width,2*lblCmpReportFooterMetrics.X+btnCmpReportHome.Width+btnCmpReportRefresh.Width+btnCmpReportExport.Width+2*lblCmpReportFooterMetrics.Width)
                 Children:
                   - btnCmpReportHome:
                       Control: Classic/Button@2.2.0
@@ -184,82 +154,6 @@ ComponentDefinitions:
                         Width: =20
                         X: =btnCmpReportHome.X+14
                         Y: =btnCmpReportHome.Y+(btnCmpReportHome.Height-Self.Height)/2
-                  - btnCmpReportPrev:
-                      Control: Classic/Button@2.2.0
-                      Properties:
-                        BorderColor: =ColorValue("#0303B8")
-                        BorderStyle: =BorderStyle.Solid
-                        BorderThickness: =1
-                        Color: =ColorValue("#0303B8")
-                        DisabledBorderColor: =ColorValue("#E6E6E6")
-                        DisabledColor: =ColorValue("#787878")
-                        DisabledFill: =ColorValue("#E6E6E6")
-                        Fill: =Color.White
-                        HoverBorderColor: =ColorValue("#0303B8")
-                        HoverColor: =ColorValue("#0303B8")
-                        HoverFill: =ColorValue("#D5EDFF")
-                        PressedBorderColor: =ColorValue("#0303B8")
-                        PressedColor: =ColorValue("#0303B8")
-                        PressedFill: =ColorValue("#D5EDFF")
-                        Text: ="<"
-                        Tooltip: =cmpReportFooter.PrevText
-                        DisplayMode: =If(cmpReportFooter.PrevEnabled,DisplayMode.Edit,DisplayMode.Disabled)
-                        OnSelect: =If(cmpReportFooter.PrevEnabled,cmpReportFooter.OnPrev())
-                        X: =btnCmpReportNext.X-lblCmpReportFooterMetrics.Width-Self.Width
-                        Width: =48
-                        Y: =(Parent.Height-Self.Height)/2
-                        Height: =lblCmpReportFooterMetrics.Height
-                        Font: ="Inter, Arial, sans-serif"
-                        Size: =14
-                        FontWeight: =FontWeight.Semibold
-                        Align: =Align.Center
-                        VerticalAlign: =VerticalAlign.Middle
-                        PaddingTop: =0
-                        PaddingBottom: =0
-                        PaddingLeft: =16
-                        PaddingRight: =16
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
-                  - btnCmpReportNext:
-                      Control: Classic/Button@2.2.0
-                      Properties:
-                        BorderColor: =ColorValue("#0303B8")
-                        BorderStyle: =BorderStyle.Solid
-                        BorderThickness: =1
-                        Color: =ColorValue("#0303B8")
-                        DisabledBorderColor: =ColorValue("#E6E6E6")
-                        DisabledColor: =ColorValue("#787878")
-                        DisabledFill: =ColorValue("#E6E6E6")
-                        Fill: =Color.White
-                        HoverBorderColor: =ColorValue("#0303B8")
-                        HoverColor: =ColorValue("#0303B8")
-                        HoverFill: =ColorValue("#D5EDFF")
-                        PressedBorderColor: =ColorValue("#0303B8")
-                        PressedColor: =ColorValue("#0303B8")
-                        PressedFill: =ColorValue("#D5EDFF")
-                        Text: =">"
-                        Tooltip: =cmpReportFooter.NextText
-                        DisplayMode: =If(cmpReportFooter.NextEnabled,DisplayMode.Edit,DisplayMode.Disabled)
-                        OnSelect: =If(cmpReportFooter.NextEnabled,cmpReportFooter.OnNext())
-                        X: =btnCmpReportRefresh.X-lblCmpReportFooterMetrics.Width-Self.Width
-                        Width: =48
-                        Y: =(Parent.Height-Self.Height)/2
-                        Height: =lblCmpReportFooterMetrics.Height
-                        Font: ="Inter, Arial, sans-serif"
-                        Size: =14
-                        FontWeight: =FontWeight.Semibold
-                        Align: =Align.Center
-                        VerticalAlign: =VerticalAlign.Middle
-                        PaddingTop: =0
-                        PaddingBottom: =0
-                        PaddingLeft: =16
-                        PaddingRight: =16
-                        RadiusTopLeft: =8
-                        RadiusTopRight: =8
-                        RadiusBottomLeft: =8
-                        RadiusBottomRight: =8
                   - btnCmpReportRefresh:
                       Control: Classic/Button@2.2.0
                       Properties:

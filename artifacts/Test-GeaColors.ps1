@@ -32,9 +32,11 @@ $disabled=@{DisabledFill=(CV '#E6E6E6');DisabledColor=(CV '#787878');DisabledBor
 $roles=@{
  nav=@{Fill=(CV '#0303B8');Color=$W;BorderColor=(CV '#0303B8');HoverFill=(CV '#000F41');PressedFill=(CV '#000F41');HoverColor=$W;PressedColor=$W;HoverBorderColor=(CV '#000F41');PressedBorderColor=(CV '#000F41')}
  primary=@{Fill=(CV '#1AFF80');Color=(CV '#000F41');BorderColor=(CV '#1AFF80');HoverFill=(CV '#18DD6E');PressedFill=(CV '#18DD6E');HoverColor=(CV '#000F41');PressedColor=(CV '#000F41');HoverBorderColor=(CV '#18DD6E');PressedBorderColor=(CV '#18DD6E')}
+ weekArrow=@{Fill=$W;Color=(CV '#000F41');BorderColor=(CV '#0303B8');BorderThickness='=1';HoverFill=(CV '#D5EDFF');PressedFill=(CV '#D5EDFF');HoverColor=(CV '#000F41');PressedColor=(CV '#000F41');HoverBorderColor=(CV '#0303B8');PressedBorderColor=(CV '#0303B8');FocusedBorderColor=(CV '#000F41');FocusedBorderThickness='=3'}  # Week Report arrows next to the week picker (Eddy 11-11-2026): secondary with navy chevron and navy 3 px focus
  secondary=@{Fill=$W;Color=(CV '#0303B8');BorderColor=(CV '#0303B8');BorderThickness='=1';HoverFill=(CV '#D5EDFF');PressedFill=(CV '#D5EDFF');HoverColor=(CV '#0303B8');PressedColor=(CV '#0303B8');HoverBorderColor=(CV '#0303B8');PressedBorderColor=(CV '#0303B8')}
 }
 $assign=@(
+ @('scrWeekReport','btnWrPrev','weekArrow'),@('scrWeekReport','btnWrNext','weekArrow'),
  @('Screen1','btnHomeScreen1','nav'),@('scrHours','btnHomeHours','nav'),@('scrWeeklyHours','btnHomeSummary','nav'),
  @('Screen1','btnGotoHours','nav'),@('Screen1','btnGotoHoursSummary','nav'),@('scrHours','btnWeeklyProjectTeam','nav'),@('scrWeeklyHours','btnSummaryProjectTeam','nav'),
  @('scrHours','btnSaveWeek','primary'),@('Screen1','btnAddtoTeam','primary'),
@@ -103,7 +105,7 @@ foreach($a in @(@('btnCmpSave','primary'),@('btnCmpHome','nav'),@('btnCmpNew','s
  foreach($kv in @($roles[$a[1]].GetEnumerator())+@($disabled.GetEnumerator())){ if($p[$kv.Key] -ne $kv.Value){throw "cmpFooter.$($a[0]).$($kv.Key) = $($p[$kv.Key]) (expected $($kv.Value) for $($a[1]))"} }
 }
 $rft=Get-CmpIdx $cmpDefs.cmpReportFooter
-foreach($a in @(@('btnCmpReportExport','primary'),@('btnCmpReportHome','nav'),@('btnCmpReportPrev','secondary'),@('btnCmpReportNext','secondary'),@('btnCmpReportRefresh','secondary'))){
+foreach($a in @(@('btnCmpReportExport','primary'),@('btnCmpReportHome','nav'),@('btnCmpReportRefresh','secondary'))){
  $p=$rft[$a[0]]['Properties']
  foreach($kv in @($roles[$a[1]].GetEnumerator())+@($disabled.GetEnumerator())){ if($p[$kv.Key] -ne $kv.Value){throw "cmpReportFooter.$($a[0]).$($kv.Key) = $($p[$kv.Key]) (expected $($kv.Value) for $($a[1]))"} }
 }

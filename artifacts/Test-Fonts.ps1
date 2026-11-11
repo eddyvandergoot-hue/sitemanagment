@@ -14,7 +14,7 @@ $semibold=@{
  'scrContractors'=@('lblEmpFormTitle')  # 30-10-2026 step 3a: title, labels, list rows and footer buttons live in the components (checked in the component section below)
  'scrProjects'=@('lblPrjFormTitle')  # step 3b: title, labels, list rows and footer buttons live in the components
  'scrWorkers'=@('lblWrkFormTitle')  # Workers build 08-11-2026: same admin pattern (components)
- 'scrWeekReport'=@('lblWrWeekLabel','lblWrTableTitle','lblWrHdrName','lblWrHdrTrade','lblWrHdrMon','lblWrHdrTue','lblWrHdrWed','lblWrHdrThu','lblWrHdrFri','lblWrHdrSat','lblWrHdrSun','lblWrHdrTotal','lblWrGrpName')  # Week Report phase A: field label like cmpField, card title, table header, contractor group header
+ 'scrWeekReport'=@('lblWrWeekLabel','btnWrPrev','btnWrNext','lblWrTableTitle','lblWrHdrName','lblWrHdrTrade','lblWrHdrMon','lblWrHdrTue','lblWrHdrWed','lblWrHdrThu','lblWrHdrFri','lblWrHdrSat','lblWrHdrSun','lblWrHdrTotal','lblWrGrpName')  # Week Report phase A: field label like cmpField, card title, table header, contractor group header
  'scrWeeklyHours'=@('lblWeeklyHoursTitle','lblReportNameHeader','lblReportEmployerHeader','lblReportWeekHeader','btnHomeSummary','btnSummaryProjectTeam','btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')
 }
 $bold=@{'scrContractors'=@('lblEmpSecGeneral','lblEmpSecAddress','lblEmpSecContact');'scrProjects'=@('lblPrjSecGeneral','lblPrjSecAddress','lblPrjSecPeople','lblPrjSecLinks');'scrWorkers'=@('lblWrkSecGeneral','lblWrkSecWork');'scrWeekReport'=@();'scrHome'=@();'Screen1'=@();'scrHours'=@();'scrWeeklyHours'=@('lblReportProject','lblReportContractor','lblReportFrom','lblReportUntil','lblReportTotalHeader','lblReportTotalRowLabel')}
@@ -45,7 +45,7 @@ foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContrac
 }
 # Canvas components (Src\Components): every control with text carries the Inter font; weights per role.
 $componentTextTypes='^(Label@|Classic/Button@|Classic/TextInput@|HtmlViewer@|ModernSpinner@)'
-$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave','btnCmpReportHome','btnCmpReportPrev','btnCmpReportNext','btnCmpReportRefresh','btnCmpReportExport')
+$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave','btnCmpReportHome','btnCmpReportRefresh','btnCmpReportExport')
 $componentTechnical=@('lblCmpFooterMetrics','lblCmpReportFooterMetrics')
 $componentFonts=0
 foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Components') -Filter *.pa.yaml){

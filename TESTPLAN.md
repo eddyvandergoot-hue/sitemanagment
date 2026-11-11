@@ -568,3 +568,16 @@ Resultaat 11-11-2026 (Eddy, build weekreport-a-20261110_215823; Eddy testte met 
 | L4 | Telefoon of venster ~390 px (of Studio-preview telefoon) | tabel even breed als in L3-smal; horizontaal scrollen in het inhoudsvlak; selectiekaart blijft schermbreed; footer onderaan |
 | T1 | Kopregel per contractor | alleen "Naam · Contractor Code", één regel verticaal gecentreerd; geen "Report language: ..." meer |
 | R1 | Kort: contractor All / één, week wisselen, Refresh | gedrag als eerder (PASS 11-11), totalen ongewijzigd |
+
+Resultaat hertest 11-11-2026 (Eddy): L1, L2, L3, T1, R1 PASS (screenshot op 1900 px OK). L4 niet getest (geen telefoon).
+Wijziging daarna (Eddy 11-11-2026): weekpijlen van de footer naar de selectiekaart, direct links en rechts van de weekkiezer.
+
+### Hertest 2, 11-11-2026 (build weekreport-a-20261111_210703, SHA-256 FB23D18EA7AAAD42A3A0A1221EB88C2CF955B4B3C88F07885EADB24450F837C2)
+| # | Actie | Verwacht |
+|---|---|---|
+| P1 | Week Report, TEST-000; kijk naar de weekrij | [‹] [datum] [›] en daarna "YYYY KWxx"; pijlen vierkant, even hoog als het datumveld, 6 px ertussen; wit met blauwe rand en navy chevron; label "Week" boven het datumveld |
+| P2 | Klik ‹ en › | week springt 7 dagen terug/vooruit en laadt; datumveld en KW-label volgen; tijdens laden zijn de pijlen uitgeschakeld (grijs) |
+| P3 | Muis op een pijl; Tab door de weekrij | hover lichtblauw #D5EDFF; focus = navy rand 3 px; tooltip "Previous week" / "Next week"; Tab-volgorde ‹, datum, › (anders melden) |
+| P4 | Footer | alleen Home links en Refresh rechts (geen pijlen meer, Export pas in fase C) |
+| P5 | Venster ~1366, ~1000 (onder 1344 px) en ~700 px | vanaf 1344 px: week, Project en Contractor op één rij; daaronder Project en Contractor op een tweede rij; niets overlapt of knipt |
+| P6 | Kort: Home, Refresh, contractorfilter | gedrag ongewijzigd |

@@ -49,7 +49,7 @@ Screens:
           Properties:
             Text: =""
             Visible: =false
-            X: =If(Parent.Width-112>=1148,1,0)
+            X: =If(Parent.Width-112>=1232,1,0)
             Y: =If(Self.X=1,1,If(Parent.Width-112>=576,1,0))
             Width: =If(Self.X=1,360,If(Self.Y=1,Min(360,RoundDown((Parent.Width-112-16)/2,0)),Parent.Width-112))
             Height: =If(Self.X=1,106,If(Self.Y=1,180,254))
@@ -246,7 +246,7 @@ Screens:
                       Properties:
                         X: =24
                         Y: =24
-                        Width: =conWrBody.Width-64
+                        Width: =Max(conWrBody.Width-64,lblWrWeekKW.X+lblWrWeekKW.Width+24)
                         Height: =lblWrSel.Height
                         Fill: =Color.White
                         BorderThickness: =0
@@ -272,7 +272,7 @@ Screens:
                               Text: =If(LangNl && !IsBlank(T.wrFieldWeek.nl),T.wrFieldWeek.nl,T.wrFieldWeek.en)
                               VerticalAlign: =VerticalAlign.Middle
                               Width: =256
-                              X: =24
+                              X: =dpWrWeek.X
                               Y: =24
                         - dpWrWeek:
                             Control: ModernDatePicker@1.0.2
@@ -297,7 +297,7 @@ Screens:
                                  )
                                 )
                               DisplayMode: =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",DisplayMode.Edit,DisplayMode.Disabled)
-                              X: =24
+                              X: =btnWrPrev.X+btnWrPrev.Width+6
                               Y: =lblWrWeekLabel.Y+lblWrWeekLabel.Height+1
                               Width: =256
                               Height: =36
@@ -308,12 +308,100 @@ Screens:
                               Fill: =ColorValue("#F0F0F0")
                               BorderColor: =ColorValue("#DCDCDC")
                               BorderThickness: =1
+                        - btnWrPrev:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =ColorValue("#0303B8")
+                              BorderStyle: =BorderStyle.Solid
+                              BorderThickness: =1
+                              Color: =ColorValue("#000F41")
+                              DisabledBorderColor: =ColorValue("#E6E6E6")
+                              DisabledColor: =ColorValue("#787878")
+                              DisabledFill: =ColorValue("#E6E6E6")
+                              DisplayMode: =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),DisplayMode.Edit,DisplayMode.Disabled)
+                              Fill: =Color.White
+                              FocusedBorderColor: =ColorValue("#000F41")
+                              FocusedBorderThickness: =3
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =dpWrWeek.Height
+                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverColor: =ColorValue("#000F41")
+                              HoverFill: =ColorValue("#D5EDFF")
+                              OnSelect: |-
+                                =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),
+                                 Set(varWrPickedDay,DateAdd(Coalesce(varWrPickedDay,varWrMonday),-7,TimeUnit.Days)); Set(varWrMonday,DateAdd(varWrMonday,-7,TimeUnit.Days)); Reset(dpWrWeek); Select(btnWrLoad),
+                                 Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
+                                )
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedColor: =ColorValue("#000F41")
+                              PressedFill: =ColorValue("#D5EDFF")
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =16
+                              Text: ="‹"
+                              Tooltip: =If(LangNl && !IsBlank(T.wrPrev.nl),T.wrPrev.nl,T.wrPrev.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =dpWrWeek.Height
+                              X: =24
+                              Y: =dpWrWeek.Y
+                        - btnWrNext:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =ColorValue("#0303B8")
+                              BorderStyle: =BorderStyle.Solid
+                              BorderThickness: =1
+                              Color: =ColorValue("#000F41")
+                              DisabledBorderColor: =ColorValue("#E6E6E6")
+                              DisabledColor: =ColorValue("#787878")
+                              DisabledFill: =ColorValue("#E6E6E6")
+                              DisplayMode: =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),DisplayMode.Edit,DisplayMode.Disabled)
+                              Fill: =Color.White
+                              FocusedBorderColor: =ColorValue("#000F41")
+                              FocusedBorderThickness: =3
+                              Font: ="Inter, Arial, sans-serif"
+                              FontWeight: =FontWeight.Semibold
+                              Height: =dpWrWeek.Height
+                              HoverBorderColor: =ColorValue("#0303B8")
+                              HoverColor: =ColorValue("#000F41")
+                              HoverFill: =ColorValue("#D5EDFF")
+                              OnSelect: |-
+                                =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),
+                                 Set(varWrPickedDay,DateAdd(Coalesce(varWrPickedDay,varWrMonday),7,TimeUnit.Days)); Set(varWrMonday,DateAdd(varWrMonday,7,TimeUnit.Days)); Reset(dpWrWeek); Select(btnWrLoad),
+                                 Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
+                                )
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =ColorValue("#0303B8")
+                              PressedColor: =ColorValue("#000F41")
+                              PressedFill: =ColorValue("#D5EDFF")
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =16
+                              Text: ="›"
+                              Tooltip: =If(LangNl && !IsBlank(T.wrNext.nl),T.wrNext.nl,T.wrNext.en)
+                              VerticalAlign: =VerticalAlign.Middle
+                              Width: =dpWrWeek.Height
+                              X: =dpWrWeek.X+dpWrWeek.Width+6
+                              Y: =dpWrWeek.Y
                         - lblWrWeekKW:
                             Control: Label@2.5.1
                             Properties:
                               Text: |-
                                 =If(IsBlank(varWrMonday),"",With({isoYear:Year(DateAdd(varWrMonday,3,TimeUnit.Days))},Text(isoYear,"0000") & " KW" & Text(1+RoundDown(DateDiff(DateAdd(Date(isoYear,1,4),1-Weekday(Date(isoYear,1,4),StartOfWeek.Monday),TimeUnit.Days),varWrMonday,TimeUnit.Days)/7,0),"00")))
-                              X: =dpWrWeek.X+dpWrWeek.Width+12
+                              X: =btnWrNext.X+btnWrNext.Width+12
                               Y: =dpWrWeek.Y
                               Width: =120
                               Height: =dpWrWeek.Height
@@ -346,7 +434,7 @@ Screens:
                               Required: =true
                               DefaultValue: =Coalesce(LookUp(colWrProjects,ID=varWrProjectID).Display,"")
                               Width: =lblWrSel.Width
-                              X: =If(lblWrSel.X=1,436,24)
+                              X: =If(lblWrSel.X=1,520,24)
                               Y: =If(lblWrSel.X=1,24,98)
                         - cmpWrContractor:
                             Control: CanvasComponent
@@ -370,7 +458,7 @@ Screens:
                               Required: =false
                               DefaultValue: =If(IsBlank(varWrContractorDisplay),If(LangNl && !IsBlank(T.wrAllContractors.nl),T.wrAllContractors.nl,T.wrAllContractors.en),varWrContractorDisplay)
                               Width: =lblWrSel.Width
-                              X: =If(lblWrSel.X=1,436+lblWrSel.Width+16,If(lblWrSel.Y=1,24+lblWrSel.Width+16,24))
+                              X: =If(lblWrSel.X=1,520+lblWrSel.Width+16,If(lblWrSel.Y=1,24+lblWrSel.Width+16,24))
                               Y: =If(lblWrSel.X=1,24,If(lblWrSel.Y=1,98,172))
                   - conWrTableCard:
                       Control: GroupContainer@1.5.0
@@ -911,21 +999,9 @@ Screens:
             Height: =68
             HomeEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading"
             HomeText: =If(LangNl && !IsBlank(T.wrHome.nl),T.wrHome.nl,T.wrHome.en)
-            NextEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday)
-            NextText: =If(LangNl && !IsBlank(T.wrNext.nl),T.wrNext.nl,T.wrNext.en)
             OnExport: =If(false,Trace("DIAG|WeekReport|Export",TraceSeverity.Information,{Screen:"WeekReport",Phase:"A"}))
             OnHome: |-
               =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",Navigate(scrHome),
-               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
-              )
-            OnNext: |-
-              =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),
-               Set(varWrPickedDay,DateAdd(Coalesce(varWrPickedDay,varWrMonday),7,TimeUnit.Days)); Set(varWrMonday,DateAdd(varWrMonday,7,TimeUnit.Days)); Reset(dpWrWeek); Select(btnWrLoad),
-               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
-              )
-            OnPrev: |-
-              =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday),
-               Set(varWrPickedDay,DateAdd(Coalesce(varWrPickedDay,varWrMonday),-7,TimeUnit.Days)); Set(varWrMonday,DateAdd(varWrMonday,-7,TimeUnit.Days)); Reset(dpWrWeek); Select(btnWrLoad),
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
               )
             OnRefresh: |-
@@ -933,8 +1009,6 @@ Screens:
                Trace("DIAG|WeekReport|Refresh",TraceSeverity.Information,{Screen:"WeekReport"}); Set(varWrForceRefresh,true); Select(btnWrLoad),
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
               )
-            PrevEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading" && !IsBlank(varWrMonday)
-            PrevText: =If(LangNl && !IsBlank(T.wrPrev.nl),T.wrPrev.nl,T.wrPrev.en)
             RefreshEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading"
             RefreshText: =If(LangNl && !IsBlank(T.wrRefresh.nl),T.wrRefresh.nl,T.wrRefresh.en)
             Width: =Parent.Width

@@ -148,7 +148,7 @@ $wrDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $project
 $wrKids = $wrDoc['Screens']['scrWeekReport']['Children']
 $wrNames = @{}; function Index-WrNames($entries) { foreach ($e in $entries) { $n = @($e.Keys)[0]; $wrNames[$n] = $e[$n]; Index-WrNames $e[$n]['Children'] } }; Index-WrNames $wrKids
 $wrLines = 'Table({LineType:"Header",ContractorID:10},{LineType:"Row",ContractorID:10},{LineType:"Row",ContractorID:10},{LineType:"Subtotal",ContractorID:10},{LineType:"Header",ContractorID:20},{LineType:"Row",ContractorID:20},{LineType:"Subtotal",ContractorID:20},{LineType:"Grand",ContractorID:-1})'
-foreach ($W in 1366, 1000, 700) {
+foreach ($W in 1366, 1344, 1343, 1000, 848, 700) {  # 1344 and 848 are exact-fit widths (0 px slack, reviewer 11-11-2026)
     foreach ($kind in '', 'Error') {
         foreach ($lt in 'Header', 'Row', 'Subtotal', 'Grand') {
             $label = "scrWeekReport $W x $H (message '$kind', line type $lt)"
@@ -166,8 +166,8 @@ foreach ($W in 1366, 1000, 700) {
             Assert-True (($R.cmpWrTitle.Y -eq 0) -and ($R.cmpWrTitle.Height -eq 60) -and ($R.cmpWrTitle.Width -eq $W) -and ($R.cmpWrMsgBar.Y -eq 60) -and ($R.cmpWrMsgBar.Height -eq $barH) -and ($R.conWrBody.Y -eq 60 + $barH) -and ($R.conWrBody.Y + $R.conWrBody.Height -eq $R.cmpWrFooter.Y) -and ($R.cmpWrFooter.Y + $R.cmpWrFooter.Height -eq $H) -and ($R.cmpWrFooter.Height -eq 68) -and ($R.cmpWrFooter.Width -eq $W)) "$label : title 60, message bar $barH, body from $($R.conWrBody.Y) to the footer ($($R.cmpWrFooter.Y)), cmpReportFooter 68 at the bottom"
             $sel = $R.conWrSelCard; $tab = $R.conWrTableCard
             Assert-True (($sel.X -eq 24) -and ($sel.Y -eq 24) -and ($tab.X -eq 24) -and ($tab.Y -eq $sel.Y + $sel.Height + 24) -and ($sel.Width -eq $tab.Width) -and ($sel.X + $sel.Width -le $R.conWrBody.Width - 40 + 0.01) -and ($R.conWrCanvas.Height -eq $tab.Y + $tab.Height + 24)) "$label : selection card and table card stacked (24 margin and gap), 16 px scrollbar reserve at the right, canvas ends 24 below the table card"
-            foreach ($f in 'lblWrWeekLabel', 'dpWrWeek', 'lblWrWeekKW', 'cmpWrProject', 'cmpWrContractor') { $fr = $R[$f]; if ($fr.X -lt 24 - 0.01 -or $fr.Y -lt 24 - 0.01 -or $fr.X + $fr.Width -gt $sel.Width - 24 + 0.01 -or $fr.Y + $fr.Height -gt $sel.Height - 24 + 0.01) { throw "FAIL $label : $f outside the 24 px padding of the selection card (X=$($fr.X) Y=$($fr.Y) W=$($fr.Width) H=$($fr.Height), card $($sel.Width) x $($sel.Height))" } }
-            $wide = ($W -ge 1260)
+            foreach ($f in 'lblWrWeekLabel', 'btnWrPrev', 'dpWrWeek', 'btnWrNext', 'lblWrWeekKW', 'cmpWrProject', 'cmpWrContractor') { $fr = $R[$f]; if ($fr.X -lt 24 - 0.01 -or $fr.Y -lt 24 - 0.01 -or $fr.X + $fr.Width -gt $sel.Width - 24 + 0.01 -or $fr.Y + $fr.Height -gt $sel.Height - 24 + 0.01) { throw "FAIL $label : $f outside the 24 px padding of the selection card (X=$($fr.X) Y=$($fr.Y) W=$($fr.Width) H=$($fr.Height), card $($sel.Width) x $($sel.Height))" } }
+            $wide = ($W -ge 1344)
             Assert-True ($(if ($wide) { ($R.cmpWrProject.Y -eq 24) -and ($R.cmpWrContractor.Y -eq 24) -and ($R.cmpWrProject.X -ge $R.lblWrWeekKW.X + $R.lblWrWeekKW.Width + 24 - 0.01) } else { ($R.cmpWrProject.Y -ge $R.dpWrWeek.Y + $R.dpWrWeek.Height + 16 - 0.01) -and ($R.cmpWrContractor.Y -eq $R.cmpWrProject.Y) -and ($R.cmpWrContractor.X -ge $R.cmpWrProject.X + $R.cmpWrProject.Width + 16 - 0.01) })) "$label : selection $(if ($wide) { 'in one row: Week | Project | Contractor' } else { 'in two rows: Week, then Project | Contractor' })"
             $a = $W - 112; $expCols = $(if ($a -ge 928) { @(240, 96, 72, 88) } elseif ($a -ge 736) { @(200, 80, 56, 64) } else { @(140, 72, 44, 64) })
             $tableW = $expCols[0] + $expCols[1] + 7 * $expCols[2] + $expCols[3]
