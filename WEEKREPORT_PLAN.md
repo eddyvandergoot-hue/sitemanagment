@@ -11,14 +11,14 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 ## 2. Fasering (elke fase eigen build + Studio-test, tag pas na Eddy's OK)
 1. Fase A, scherm (geen export): scrWeekReport alleen-lezen, Home-tegel "Week report" actief, TEST-regel, codes met fallback, rapporttaal (zonder Employers.Report Language tot MS-027 is samengevoegd). Studio-test TP-WEEKREPORT-01.
 2. Fase B, export-proef: na MS-029 (flow) en MS-030 (flow in de app): één CSV + één PDF van TEST-000 (flowcontract, PDF-opmaak, link). TP-EXPORT-01.
-3. Fase C, Week Report-export: PDF (tweetalig, teksten uit Translations, par. 6.3) + CSV per contractor; Report Language van Employers; vereist de metadata-refresh na MS-027 + MS-028. TP-EXPORT-02.
+3. Fase C, Week Report-export: PDF (tweetalig: pagina 1 NL, pagina 2 tweede taal, H24; teksten uit Translations, par. 6.3) + CSV per contractor; Report Language van Employers; vereist de metadata-refresh na MS-027 + MS-028. TP-EXPORT-02.
 4. Fase D, Hours Summary-export: CSV van de gekozen periode (zelfde CSV-formule). TP-EXPORT-03.
 
 ## 3. Scherm scrWeekReport (fase A)
 - Admin screen pattern: cmpTitleBar ("Week Report"; spinner tijdens laden), cmpMessageBar (geen Notify), cmpField-dropdowns Project en Contractor, pagina #F5F6F8, witte kaarten; teksten uit `T` (sleutels `wr*`; app-UI Engels).
 - Weekkiezer (B6): hetzelfde patroon als dpHoursWeek op Weekly Hours (ModernDatePicker@1.0.2, "dd-mm-yyyy", StartOfWeek.Monday, 256 px, gekozen dag blijft zichtbaar, label "Week" + "YYYY KWxx" ernaast, OnChange laadt alleen bij een andere week, geen Load-knop, geen Reset na gewone keuze). Gedocumenteerde uitzondering op "geen hand-gebouwd veld"; geen nieuw component. Standaard = week van vandaag; eigen variabelen (varWr*), los van Screen1/Weekly Hours.
 - Project: colProjectsCache-achtige eigen read van Projects (alle projecten, TEST inbegrepen, B5). Contractor: "All contractors" + contractors die in de geladen week voorkomen.
-- Tabelkaart: Name | Trade | Mon..Sun (dag + dd-mm) | Week total, gegroepeerd per contractor (kopregel: naam + Contractor Code + rapporttaal, bv. "Report language: Dutch + Polish") met subtotaalregel; eindtotaal bij "All contractors". Stijl als Hours Summary (kop #0303B8 wit Semibold, zebra, lijnen #DCDCDC, 0 = "–", uren gecentreerd, hele uren zonder komma/punt).
+- Tabelkaart: Name | Trade | Mon..Sun (dag + dd-mm) | Week total, gegroepeerd per contractor (kopregel: naam + Contractor Code; geen rapporttaal op het scherm, H24) met subtotaalregel; eindtotaal bij "All contractors". Stijl als Hours Summary (kop #0303B8 wit Semibold, zebra, lijnen #DCDCDC, 0 = "–", hele uren zonder komma/punt). Kolommen (Eddy 11-11-2026, H24): vaste breedtes naam | trade | dag | totaal = 240 | 96 | 72 | 88 (kaartinhoud >= 928), 200 | 80 | 56 | 64 (>= 736), anders 140 | 72 | 44 | 64; de tabel stopt na Week total (niet uitrekken); uren en dagkoppen rechts uitgelijnd (padding rechts 8, in de 44-stand 2); smaller dan de tabel: horizontaal scrollen in het inhoudsvlak.
 - Footer (B7): nieuw component cmpReportFooter (Home 110 met Icon.Home links; rechts vorige/volgende week 48, Refresh secundair, Export groen primair, Export onzichtbaar in fase A via input ExportVisible). cmpFooter en de beheerschermen blijven ongewijzigd.
 - Guards: zelfde voorwaarde in Enabled en als eerste OnXxx-voorwaarde; geen navigatie/weekwissel/Refresh tijdens laden.
 
@@ -38,7 +38,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 - EmployerCode (B1): Employers.'Employer Code' alleen lezen (voor weergave en export); leeg -> "EMP-" & Text(ID,"000") (zelfde regel als flow MS-019), geen blokkade.
 - WorkerID (B2): Worker Code (WKR-..., field_1); leeg -> "WKR-" & Text(ID,"000").
 - TEST (B5): TEST-projecten (Project Number begint met "TEST-") blijven kiesbaar; exportbestanden krijgen prefix "TEST_"; bij echte projecten worden regels van contractor "TEST Employer" weggelaten (tabel en export) met een Attention-melding.
-- Rapporttaal (WR1, per rapport = project + contractor + week): primair Nederlands + tweede taal. Volgorde tweede taal: (1) Employers.'Report Language' als gevuld (MS-027, vanaf fase C); (2) anders de meerderheid van Workers.Language van de medewerkers in dat rapport (gelijkstand -> English); (3) anders English. Uitkomst Dutch -> alleen Nederlands. Geen taal per team. Taalnamen worden als tekst vergeleken (keuzenaam), zonder vaste lijst in de app (W5).
+- Rapporttaal (WR1, per rapport = project + contractor + week): primair Nederlands + tweede taal. Volgorde tweede taal: (1) Employers.'Report Language' als gevuld (MS-027, vanaf fase C); (2) anders de meerderheid van Workers.Language van de medewerkers in dat rapport (gelijkstand -> English); (3) anders English. Uitkomst Dutch -> alleen Nederlands. Geen taal per team. Alleen voor de PDF-export (H24): het scherm toont geen rapporttaal; ReportLanguage blijft in de groepsrecord voor fase C. Taalnamen worden als tekst vergeleken (keuzenaam), zonder vaste lijst in de app (W5).
 
 ## 6. Export (fase B-D)
 ### 6.1 CSV (E2; B4, B10)
@@ -53,7 +53,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 
 ### 6.3 PDF (Week Report, per project + contractor + week; WR1-WR3)
 - HTML in de app, Arial (E5), A4 liggend, geen externe verwijzingen.
-- Tweetalig: alleen statische teksten (titel, kolomkoppen, dagnamen, voetnoten, labels) vertaald; gegevens ongewijzigd. Opmaak: Nederlandse regel met de tweede taal eronder; koppen compact ("Uren / Godziny"). Bij tweede taal Dutch alleen Nederlands.
+- Tweetalig: alleen statische teksten (titel, kolomkoppen, dagnamen, voetnoten, labels) vertaald; gegevens ongewijzigd. Opmaak (H24, Eddy 11-11-2026): pagina 1 volledig Nederlands, pagina 2 dezelfde inhoud in de tweede taal (paginascheiding); bij tweede taal Dutch alleen pagina 1.
 - Documentteksten data-gestuurd (WR5, Eddy 9-11-2026; talen groeien): sleutels `doc.*` in SharePoint-lijst "Translations" (MS-028): Key (hernoemde Title), Language (tekst = keuzenaam, bv. "Polish"), Text (meerdere regels); index op Language. App-UI-teksten blijven in T (ongewijzigd).
   - Laden één keer per rapport(taalset), lokaal per taal: drie aparte reads `Filter(Translations, Language = varDocLangQuery)` voor de tweede taal, "Dutch" en "English" (elk een 500-guard, leesfout = geen export). Eén read met `||` mag ook (delegeerbaar), maar dan is de 500-guard per taal niet aantoonbaar; daarom drie reads.
   - Fallback: sleutel ontbreekt in de tweede taal -> Engelse tekst; ontbreekt in Dutch -> de sleutel zelf + waarschuwing alleen in debug (Trace), niet in de UI. (Eddy's keuze; let op: dan kan een sleutelnaam in een officieel document staan. Test-Export controleert dat alle fase-C-sleutels in de aangeleverde CSV voor Dutch en English bestaan.)

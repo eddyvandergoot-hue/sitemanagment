@@ -265,8 +265,6 @@ App:
         wrDaySun: {en: "Sun", nl: ""},
         wrSubtotal: {en: "Subtotal", nl: ""},
         wrGrandTotal: {en: "Total", nl: ""},
-        wrLangDutchOnly: {en: "Report language: Dutch", nl: ""},
-        wrLangPair: {en: "Report language: Dutch + {0}", nl: ""},
         wrLoading: {en: "Loading…", nl: ""},
         wrChooseProject: {en: "Choose a project.", nl: ""},
         wrNotLoaded: {en: "Not loaded. Click Refresh.", nl: ""},

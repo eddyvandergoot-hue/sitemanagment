@@ -533,7 +533,7 @@ Pad: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-20261108_014223\
 Resultaat (Eddy 8-11-2026, build workers-20261108_014223): a b c d e f i j k l m o p q OK; n overgeslagen (geen legacy-record); r overgeslagen (Monitor-delegatie niet gecontroleerd, blijft OPEN). d: "Attention. Saved. Old hours keep the old contractor." OK. g/h: FAIL, Language was leeg bij New -> "Language required"; h (duplicaatwaarschuwing WKR-017 + Save anyway) werkt zodra Language gekozen is. m: opent op de laatst geselecteerde worker = geaccepteerd (zoals Contractors/Projects). o: conflict correct, niets opgeslagen, maar melding twee keer getoond (Notify + lblWeekLoadStatus): bestaand gedrag van elke mislukte Save op Weekly Hours (backlog UX 4b, PROJECT_STATUS.md).
 Oorzaak g/h: Workers.Language bevat geen exacte waarde "Nederlands" (Studio). Fix 9-11-2026: New-standaard "Nederlands" als in Choices, anders "Dutch", anders leeg (fail-closed). Hertest alleen g + h op de langfix-build (C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\workers-langfix-20261109_131247\SiteManagement_Workers_LangFix_20261109_131247.msapp, 174071 bytes, SHA-256 BA8107BA26B74F4F07D046E7A09829EE4BD541045E8DE0FC9234807D319A07A2). Hertest-resultaat (Eddy 9-11-2026, langfix-build): g OK (Language Dutch voorgevuld en opgeslagen; Worker Code verschijnt na ongeveer 1 minuut = polling van de flow-trigger MS-017, geaccepteerd), h OK (duplicaatwaarschuwing + Save anyway). r blijft open (Monitor-delegatie niet gecontroleerd, niet blokkerend). Workers goedgekeurd door Eddy 9-11-2026, tag approved-20261109-workers. Language-keuzes in SharePoint: Dutch, English, Polish, Romanian, German, Ukrainian; standaard Dutch. Let op: de code controleert voor de New-standaard nog eerst "Nederlands" (bestaat niet) en dan "Dutch"; opruimen bij de eerstvolgende Workers-wijziging.
 
-## TP-WEEKREPORT-01 Week Report fase A (OPEN; alleen lezen, niet opslaan; build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261110_215823\SiteManagement_WeekReportA_20261110_215823.msapp, 187137 bytes, SHA-256 E0FC44230D44523519E03B969A2DE71724534AE2FBC5FE8F8AC9815935255577, met metadata 10-11-2026 (Employers + Translations); vervangt build weekreport-a-20261109_203719)
+## TP-WEEKREPORT-01 Week Report fase A (FAIL layout 11-11-2026, rest PASS; hertest L1-L4/T1/R1 op build weekreport-a-20261111_165606; alleen lezen, niet opslaan; build: C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261110_215823\SiteManagement_WeekReportA_20261110_215823.msapp, 187137 bytes, SHA-256 E0FC44230D44523519E03B969A2DE71724534AE2FBC5FE8F8AC9815935255577, met metadata 10-11-2026 (Employers + Translations); vervangt build weekreport-a-20261109_203719)
 Pad en SHA-256: volgen in PROJECT_STATUS.md. Alleen leesacties; geen Save. Projectkeuze: TEST-000 (stap d-h, j-m), een echt project alleen voor stap i (alleen lezen).
 
 | # | Actie | Verwacht |
@@ -552,4 +552,19 @@ Pad en SHA-256: volgen in PROJECT_STATUS.md. Alleen leesacties; geen Save. Proje
 | l | Monitor: Hours, Project Workers en Assignment Periods | queries gedelegeerd, geen delegatiewaarschuwing |
 | m | Controle SharePoint | geen schrijfactie: Modified van Hours en Workers ongewijzigd |
 
-Resultaat: nog niet uitgevoerd.
+Resultaat 11-11-2026 (Eddy, build weekreport-a-20261110_215823; Eddy testte met een testlijst uit de Claude-chat, letters wijken af van de tabel hierboven; vastgelegd op omschrijving):
+- PASS: Home-tegel Week report actief; scherm opent zonder rode melding; medewerkers + uren per dag + totalen gelijk aan Weekly Hours (TEST-000); TEST-regel zichtbaar; codes EMP-/WKR- getoond; alleen-lezen, geen Save; week zonder uren zonder fout; terug naar Home; geen nieuwe App Checker-fouten; weekkiezer/weekwissel, contractorfilter, week 53 en Refresh (punten b-e, h-k van Eddy's lijst).
+- Footer: geen bug. De chattekst was fout (het logo zit in de titelbalk). Lege witte footer is in fase A goed; de Export-knop komt in fase C. Geen Studio-controle nodig.
+- Tweetaligheid: Eddy bevestigt PDF = 2 pagina's (1 per taal); het scherm is eentalig (besluit H24).
+- FAIL layout: urenkolommen ver rechts, vreemd verdeeld. Fix (build weekreport-a-20261111_165606): naamkolom vast links, Mon..Sun + Week total vast direct erna, getallen rechts uitgelijnd, niet uitrekken; ook op telefoon (horizontaal scrollen).
+- Wijziging: tekst "Report language: <x>" van het scherm verwijderd (H24).
+
+### Hertest 11-11-2026 (build weekreport-a-20261111_165606; pad en SHA-256 in PROJECT_STATUS.md)
+| # | Actie | Verwacht |
+|---|---|---|
+| L1 | Home -> Week report, TEST-000, huidige week; venster ~1366 px breed | Name-kolom 240 px links, daarna Trade, direct daarna Mon..Sun (72 px) en Week total (88 px); rechts van Week total lege witte kaart, zebra en lijnen stoppen na Week total |
+| L2 | Uren in de dagkolommen en Week total | rechts uitgelijnd onder de dagkop; dagkop (Mon + dd-mm) en "Week total" ook rechts uitgelijnd; 0 = "–" rechts |
+| L3 | Venster ~1000 px en ~700 px | kolommen smaller (200/80/56/64, onder 848 px 140/72/44/64), niet uitgerekt; niets overlapt; "09-11" en "Week total" niet afgeknipt |
+| L4 | Telefoon of venster ~390 px (of Studio-preview telefoon) | tabel even breed als in L3-smal; horizontaal scrollen in het inhoudsvlak; selectiekaart blijft schermbreed; footer onderaan |
+| T1 | Kopregel per contractor | alleen "Naam · Contractor Code", één regel verticaal gecentreerd; geen "Report language: ..." meer |
+| R1 | Kort: contractor All / één, week wisselen, Refresh | gedrag als eerder (PASS 11-11), totalen ongewijzigd |

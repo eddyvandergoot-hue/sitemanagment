@@ -60,10 +60,10 @@ Screens:
           Properties:
             Text: =""
             Visible: =false
-            X: =If(Parent.Width-112>=900,72,If(Parent.Width-112>=740,56,44))
-            Y: =If(Parent.Width-112>=740,96,72)
-            Width: =Parent.Width-112-Self.Y-7*Self.X-Self.Height
-            Height: =If(Parent.Width-112>=740,88,64)
+            X: =If(Parent.Width-112>=928,72,If(Parent.Width-112>=736,56,44))
+            Y: =If(Parent.Width-112>=928,96,If(Parent.Width-112>=736,80,72))
+            Width: =If(Parent.Width-112>=928,240,If(Parent.Width-112>=736,200,140))
+            Height: =If(Parent.Width-112>=928,88,64)
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
       - lblWrMetrics:
@@ -223,7 +223,7 @@ Screens:
             LayoutAlignItems: =LayoutAlignItems.Start
             LayoutJustifyContent: =LayoutJustifyContent.Start
             LayoutWrap: =false
-            LayoutOverflowX: =LayoutOverflow.Hide
+            LayoutOverflowX: =LayoutOverflow.Scroll
             LayoutOverflowY: =LayoutOverflow.Scroll
             LayoutGap: =0
             PaddingTop: =0
@@ -235,7 +235,7 @@ Screens:
                 Control: GroupContainer@1.5.0
                 Variant: ManualLayout
                 Properties:
-                  Width: =Parent.Width
+                  Width: =Max(Parent.Width-16,lblWrCols.Width+lblWrCols.Y+7*lblWrCols.X+lblWrCols.Height+96)
                   Height: =lblWrMetrics.Height
                   FillPortions: =0
                   Fill: =Color.Transparent
@@ -246,7 +246,7 @@ Screens:
                       Properties:
                         X: =24
                         Y: =24
-                        Width: =Parent.Width-64
+                        Width: =conWrBody.Width-64
                         Height: =lblWrSel.Height
                         Fill: =Color.White
                         BorderThickness: =0
@@ -378,7 +378,7 @@ Screens:
                       Properties:
                         X: =24
                         Y: =conWrSelCard.Y+conWrSelCard.Height+24
-                        Width: =Parent.Width-64
+                        Width: =Parent.Width-48
                         Height: =lblWrMetrics.Width
                         Fill: =Color.White
                         BorderThickness: =0
@@ -480,9 +480,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =10
                               Text: =If(LangNl && !IsBlank(T.wrDayMon.nl),T.wrDayMon.nl,T.wrDayMon.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,0,TimeUnit.Days),"dd-mm")
                               Width: =lblWrCols.X
@@ -500,9 +500,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =10
                               Text: =If(LangNl && !IsBlank(T.wrDayTue.nl),T.wrDayTue.nl,T.wrDayTue.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,1,TimeUnit.Days),"dd-mm")
                               Width: =lblWrCols.X
@@ -520,9 +520,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =10
                               Text: =If(LangNl && !IsBlank(T.wrDayWed.nl),T.wrDayWed.nl,T.wrDayWed.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,2,TimeUnit.Days),"dd-mm")
                               Width: =lblWrCols.X
@@ -540,9 +540,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =10
                               Text: =If(LangNl && !IsBlank(T.wrDayThu.nl),T.wrDayThu.nl,T.wrDayThu.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,3,TimeUnit.Days),"dd-mm")
                               Width: =lblWrCols.X
@@ -560,9 +560,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =10
                               Text: =If(LangNl && !IsBlank(T.wrDayFri.nl),T.wrDayFri.nl,T.wrDayFri.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,4,TimeUnit.Days),"dd-mm")
                               Width: =lblWrCols.X
@@ -580,9 +580,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =10
                               Text: =If(LangNl && !IsBlank(T.wrDaySat.nl),T.wrDaySat.nl,T.wrDaySat.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,5,TimeUnit.Days),"dd-mm")
                               Width: =lblWrCols.X
@@ -600,9 +600,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =10
                               Text: =If(LangNl && !IsBlank(T.wrDaySun.nl),T.wrDaySun.nl,T.wrDaySun.en) & Char(10) & Text(DateAdd(varWrLoadedMonday,6,TimeUnit.Days),"dd-mm")
                               Width: =lblWrCols.X
@@ -620,9 +620,9 @@ Screens:
                               VerticalAlign: =VerticalAlign.Middle
                               Visible: =galWrLines.Visible
                               Y: =88
-                              Align: =Align.Center
+                              Align: =Align.Right
                               PaddingLeft: =0
-                              PaddingRight: =0
+                              PaddingRight: =If(lblWrCols.X>=56,8,2)
                               Size: =11
                               Text: =If(LangNl && !IsBlank(T.wrColTotal.nl),T.wrColTotal.nl,T.wrColTotal.en)
                               Width: =lblWrCols.Height
@@ -652,7 +652,7 @@ Screens:
                               Items: =Filter(colWrLines,Coalesce(varWrContractorID,0)=0 || ContractorID=varWrContractorID)
                               X: =24
                               Y: =136
-                              Width: =Parent.Width-48
+                              Width: =lblWrCols.Width+lblWrCols.Y+7*lblWrCols.X+lblWrCols.Height
                               Height: =44*CountRows(Filter(colWrLines,Coalesce(varWrContractorID,0)=0 || ContractorID=varWrContractorID))
                               TemplateSize: =44
                               TemplatePadding: =0
@@ -696,7 +696,7 @@ Screens:
                                     Color: =ColorValue("#000000")
                                     Font: ="Inter, Arial, sans-serif"
                                     FontWeight: =FontWeight.Semibold
-                                    Height: =20
+                                    Height: =39
                                     PaddingBottom: =0
                                     PaddingLeft: =0
                                     PaddingRight: =0
@@ -709,26 +709,6 @@ Screens:
                                     Wrap: =false
                                     X: =8
                                     Y: =2
-                              - lblWrGrpLang:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ColorValue("#000000")
-                                    Font: ="Inter, Arial, sans-serif"
-                                    FontWeight: =FontWeight.Normal
-                                    Height: =19
-                                    PaddingBottom: =0
-                                    PaddingLeft: =0
-                                    PaddingRight: =0
-                                    PaddingTop: =0
-                                    Size: =11
-                                    Text: |-
-                                      =If(ThisItem.Lang="Dutch",If(LangNl && !IsBlank(T.wrLangDutchOnly.nl),T.wrLangDutchOnly.nl,T.wrLangDutchOnly.en),Substitute(If(LangNl && !IsBlank(T.wrLangPair.nl),T.wrLangPair.nl,T.wrLangPair.en),"{0}",ThisItem.Lang))
-                                    VerticalAlign: =VerticalAlign.Middle
-                                    Visible: =ThisItem.LineType="Header"
-                                    Width: =Parent.Width-16
-                                    Wrap: =false
-                                    X: =8
-                                    Y: =22
                               - lblWrCellName:
                                   Control: Label@2.5.1
                                   Properties:
@@ -780,10 +760,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.D1,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: =If(Coalesce(ThisItem.D1,0)=0,"–",Text(ThisItem.D1,If(ThisItem.D1=Round(ThisItem.D1,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.X
                                     X: =lblWrCols.Width+lblWrCols.Y+0*lblWrCols.X
@@ -799,10 +779,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.D2,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: =If(Coalesce(ThisItem.D2,0)=0,"–",Text(ThisItem.D2,If(ThisItem.D2=Round(ThisItem.D2,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.X
                                     X: =lblWrCols.Width+lblWrCols.Y+1*lblWrCols.X
@@ -818,10 +798,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.D3,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: =If(Coalesce(ThisItem.D3,0)=0,"–",Text(ThisItem.D3,If(ThisItem.D3=Round(ThisItem.D3,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.X
                                     X: =lblWrCols.Width+lblWrCols.Y+2*lblWrCols.X
@@ -837,10 +817,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.D4,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: =If(Coalesce(ThisItem.D4,0)=0,"–",Text(ThisItem.D4,If(ThisItem.D4=Round(ThisItem.D4,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.X
                                     X: =lblWrCols.Width+lblWrCols.Y+3*lblWrCols.X
@@ -856,10 +836,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.D5,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: =If(Coalesce(ThisItem.D5,0)=0,"–",Text(ThisItem.D5,If(ThisItem.D5=Round(ThisItem.D5,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.X
                                     X: =lblWrCols.Width+lblWrCols.Y+4*lblWrCols.X
@@ -875,10 +855,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.D6,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: =If(Coalesce(ThisItem.D6,0)=0,"–",Text(ThisItem.D6,If(ThisItem.D6=Round(ThisItem.D6,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.X
                                     X: =lblWrCols.Width+lblWrCols.Y+5*lblWrCols.X
@@ -894,10 +874,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.D7,0)=0 || ThisItem.LineType="Row",FontWeight.Normal,ThisItem.LineType="Grand",FontWeight.Bold,FontWeight.Semibold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: =If(Coalesce(ThisItem.D7,0)=0,"–",Text(ThisItem.D7,If(ThisItem.D7=Round(ThisItem.D7,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.X
                                     X: =lblWrCols.Width+lblWrCols.Y+6*lblWrCols.X
@@ -913,10 +893,10 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Visible: =ThisItem.LineType<>"Header"
                                     Y: =2
-                                    Align: =Align.Center
+                                    Align: =Align.Right
                                     FontWeight: =If(Coalesce(ThisItem.WeekTotal,0)=0,FontWeight.Normal,FontWeight.Bold)
                                     PaddingLeft: =0
-                                    PaddingRight: =0
+                                    PaddingRight: =If(lblWrCols.X>=56,8,2)
                                     Text: |-
                                       =If(Coalesce(ThisItem.WeekTotal,0)=0,"–",Text(ThisItem.WeekTotal,If(ThisItem.WeekTotal=Round(ThisItem.WeekTotal,0),"[$-en-US]0","[$-en-US]0.##"),"nl-NL"))
                                     Width: =lblWrCols.Height
