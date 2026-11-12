@@ -45,7 +45,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 ### 6.1 CSV (E2; B4, B10)
 - Lang formaat, één regel per opgeslagen dagregistratie (ook opgeslagen 0); medewerkers met totaal 0 vallen weg.
 - Kolommen (vaste Engelse technische namen, niet vertaald): ProjectNumber;ProjectReference;EmployerCode;EmployerName;WorkerID;WorkerName;Trade;WorkDate;ISOYear;ISOWeek;Hours.
-- UTF-8 BOM via UniChar(65279), ";" scheiding, "." decimaal (Text(h,"0.##","en-US")), datum yyyy-mm-dd, CRLF, ISOWeek twee cijfers. RFC 4180-quoting bij ";", '"' of regeleinde.
+- UTF-8 BOM via UniChar(65279), ";" scheiding, decimale komma (H25, Nederlandse Excel; Text(h,"0.##","nl-NL"), dus 7,5), datum yyyy-mm-dd, CRLF, ISOWeek twee cijfers. RFC 4180-quoting bij ";", '"' of regeleinde (een komma in tekst hoeft niet gequote; ";" is de scheiding).
 - Eén gedeelde opbouw: beide schermen vullen colExportRows (vast schema); één named formula (ExportCsvText) in App.Formulas bouwt de tekst (Studio-controle dat een named formula een collection mag lezen; anders één formule per scherm met tekstgelijkheidstest).
 - Hours Summary: colReportFacts krijgt Trade (historisch, F/W-mapping) in fase D, geen extra read.
 
@@ -61,20 +61,33 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
   - Geen vaste talenlijst in de app: beschikbare talen = unieke Language in Translations ∪ keuzes van Workers.Language. Taal toevoegen = keuze in Workers.Language en Employers.Report Language (gelijk houden) + rijen in Translations; geen app-build.
   - Vertalingen: de Claude-chat levert een CSV voor import (sleutels uit fase C); native-speaker-controle vóór livegang (backlog).
 - Inhoud: kop met Project Number, Project Reference, Contractor (naam + code), week "YYYY KWxx" + datumbereik; tabel Name | Trade | Mon..Sun | Total; totaalrij; "Generated dd-mm-yyyy HH:mm". Rijen als in het scherm (B3: ook weektotaal 0, dagen "–").
-- Namen HTML-escapen (&, <, >, "). Logo: base64 PNG (flowcontract, geen SVG). OPEN: alleen een officieel GEA-logobestand in PNG (logobank, voor witte achtergrond) mag; geen zelf omgezet of hertekend logo. Eddy levert dat bestand aan vóór fase C; tot dan PDF zonder logo.
+- Namen HTML-escapen (&, <, >, "). Daarnaast "{" in gegevens als `&#123;` schrijven, zodat een naam nooit een token ({{BODY}}/{{HEADER}}) kan vormen.
+- Templates (H25, Eddy 12-11-2026): opmaak staat in SharePoint-bibliotheek "Templates" (MS-031); bron in de repo `templates/`.
+  - `header.html`: snippet (geen html/body), blauwe balk #0303B8 met het officiële witte logo (Assets/GEA_logo_white.svg, ongewijzigd, base64-data-URI, alleen hoogte 30, niet gerekt), Arial.
+  - `weekreport.html`: volledige HTML, Arial, `@page` A4 liggend, tabelstijl als scrWeekReport (kop #0303B8 wit, zebra via klasse `alt` #F0F0F0, lijnen #DCDCDC, groepsregel blauw met 2 px lijn, `subtotal` en `total` #D5EDFF, Total-kolom Navy vet, vaste kolombreedtes 60/22/7x16/20 mm, getallen rechts), klasse `page` met page-break-after (laatste pagina niet). Token {{BODY}} precies één keer, als enige inhoud van body. Geen teksten in het template.
+  - `sample-body.html`: 2 pagina's (nl + en) met synthetische TEST-gegevens, voor de flowtest.
+  - Content die de app stuurt: per taal `<section class="page" lang="..">{{HEADER}} ... </section>`, met klassen `meta`, `report`, `group`, `alt`, `subtotal`, `total`, `num`, `total-col`, `daydate`, `note`, `c-name`/`c-trade`/`c-day`/`c-total` (colgroup). Controle: artifacts/Test-Templates.ps1 (tokens, palet, Arial, logo-hash, tagbalans, samenvoeging als de flow, optioneel PDF via Edge headless).
+- Logo: base64 in header.html. OPEN: Eddy vroeg om een PNG uit de repo. De enige PNG (Assets/GEA_Logo_w_Claim_CMYK_VibrantBlue.png) is de claimversie en staat bewust buiten git (AGENTS: geen claimbestanden); zelf omzetten van de SVG mag niet. Daarom nu het officiële witte SVG op Vibrant Blue. Edge rendert het goed; of de OneDrive-conversie (Convert file) SVG toont, blijkt bij de flowtest. Zo niet: Eddy levert een officiële PNG zonder claim uit de logobank en alleen de base64 in header.html wordt vervangen.
 
 ### 6.4 Bestandsnamen (B8) en map
-- `[TEST_]<ProjectNumber>_<YYYY>-KW<ww>_<EmployerCode>_<yyyymmdd-hhmm>` + extensie via Format; Hours Summary: `[TEST_]<ProjectNumber>_<yyyymmdd>-<yyyymmdd>_<EmployerCode|ALL>_<yyyymmdd-hhmm>`.
-- Folder: `<ProjectNumber>/<ISO-jaar>` (voorbeeld uit het contract "TEST-000/2026").
+- H25 (Eddy 12-11-2026): één Export-klik = .pdf + .csv met dezelfde basisnaam, voorbeeld `Exports/<ProjectNumber>/WeekReport_<ProjectNumber>_<YYYY>KW<ww>.pdf/.csv`.
+- OPEN (Eddy beslist vóór de bouw van fase C); het voorbeeld botst met eerdere afspraken:
+  1. Geen EmployerCode in de naam. Een Week Report is per project + contractor + week (WR1), en bij "All contractors" komen er per contractor twee bestanden. Twee contractors in dezelfde week krijgen dan dezelfde naam en overschrijven elkaar. Voorstel: `WeekReport_<ProjectNumber>_<YYYY>KW<ww>_<EmployerCode>`.
+  2. Geen prefix "TEST_" voor TEST-projecten (E10, AGENTS Werkwijze). Voorstel: prefix houden.
+  3. Geen tijdstempel. Opnieuw exporteren overschrijft dan (of faalt, afhankelijk van de flow). Eddy kiest: overschrijven (nieuwste telt, SharePoint-versiegeschiedenis houdt oud) of tijdstempel `_<yyyymmdd-hhmm>`.
+  4. Map `<ProjectNumber>` zonder submap per ISO-jaar (eerder `<ProjectNumber>/<ISO-jaar>`). Voorstel: H25 volgen (alleen projectmap).
+- Eerder (9-11-2026, vervangen door H25 tenzij Eddy anders kiest): `[TEST_]<ProjectNumber>_<YYYY>-KW<ww>_<EmployerCode>_<yyyymmdd-hhmm>`; Hours Summary: `[TEST_]<ProjectNumber>_<yyyymmdd>-<yyyymmdd>_<EmployerCode|ALL>_<yyyymmdd-hhmm>` (Hours Summary blijft alleen CSV, E1). Folder was `<ProjectNumber>/<ISO-jaar>`.
 
 ### 6.5 Flowcontract (B9, Eddy 9-11-2026; bevestigd 11-11-2026, Eddy bouwt de flow met de hand, MS-029)
 - Naam "SiteManagement - Export file"; trigger Power Apps (V2); alleen standaardconnectors.
-- Invoer (tekst): Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content (tekst).
-- Content csv: de app zet zelf de UTF-8 BOM (U+FEFF) vooraan; de flow voegt niets toe en wijzigt niets. Content pdf: volledige HTML in Arial met het logo als base64 (data-URI, dus geen externe verwijzing).
-- csv: SharePoint Create file in Exports/Folder. pdf: OneDrive tijdelijk .html -> Convert file (PDF) -> SharePoint Create file Exports/Folder -> tijdelijk bestand verwijderen.
+- Invoer (tekst): Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content (tekst), TemplateName (H25; bv. "weekreport.html"; alleen gebruikt bij pdf, bij csv leeg).
+- Content csv: de app zet zelf de UTF-8 BOM (U+FEFF) vooraan; de flow voegt niets toe en wijzigt niets. Content pdf (H25): alleen de pagina's (per taal `<section class="page">`, elke pagina begint met {{HEADER}}); opmaak, Arial en logo komen uit het template.
+- csv: SharePoint Create file in Exports/Folder.
+- pdf: (1) lees TemplateName en header.html uit bibliotheek Templates (MS-031); (2) html = replace(template, '{{BODY}}', Content); (3) html = replace(html, '{{HEADER}}', header) (replace() vervangt alle voorkomens); (4) OneDrive tijdelijk .html -> Convert file (PDF) -> SharePoint Create file Exports/Folder -> tijdelijk bestand verwijderen. Volgorde BODY vóór HEADER is verplicht (de HEADER-tokens zitten in Content). Template of header niet gevonden = Status "Error" met Message, geen bestand.
 - Uitvoer (tekst): Status ("OK" | "Error"; de app vergelijkt hoofdletterongevoelig), FileUrl (klikbaar), Message.
 - BOM in Power Fx: Eddy noemde Char(65279). Char is volgens Microsoft bedoeld voor ASCII-codes; voor U+FEFF gebruikt de app UniChar(65279) (AGENTS, par. 6.1). Het resultaat in het bestand is hetzelfde: BOM EF BB BF.
-- Eén aanroep per bestand; "All contractors" = per contractor twee aanroepen (PDF + CSV).
+- Eén aanroep per bestand; één Export-klik = twee aanroepen (PDF + CSV, zelfde basisnaam); "All contractors" = per contractor twee aanroepen (zie open punt 6.4-1).
+- Flowtest (fase B): Content = inhoud van templates/sample-body.html, TemplateName "weekreport.html", Format "pdf", Folder "TEST-000"; verwacht een PDF van 2 pagina's gelijk aan de Edge-render van Test-Templates.ps1 -RenderPdf.
 
 ### 6.6 Toelating en foutafhandeling (fail-closed)
 - Export alleen als: Loaded zonder fouten, geen afgekapte batch, geen lopende load/export, selectie gelijk aan de geladen selectie, minstens één regel. Zelfde voorwaarde in DisplayMode/Enabled en als eerste OnSelect-voorwaarde.

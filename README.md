@@ -42,6 +42,7 @@ Sitemanagment/
 ├─ artifacts/
 │  ├─ *.ps1                  Test scripts
 │  └─ <build-name>/          Packed test builds (*.msapp) — git-ignored
+├─ templates/                PDF templates (header.html, weekreport.html, sample-body.html; DECISIONS.md H25, copy in SP library Templates)
 ├─ .claude/agents/          Subagents: powerfx-logic, powerfx-ui, verifier, reviewer, docs-keeper
 ├─ README.md  AGENTS.md  PROJECT_STATUS.md  ROADMAP.md  ADMIN_PLAN.md  WEEKREPORT_PLAN.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md  SECURITY.md  RISK_ANALYSIS.md  *_ARCHIVE.md
 └─ Assets/ (GEA logo, only GEA_logo_white.svg tracked)  .gitignore
@@ -54,7 +55,7 @@ Sitemanagment/
 | `scrHome` | Site Management | Startscherm: vijf categorieën met cmpTile-tegels naar de schermen (inerte tegels "SOON") |
 | `Screen1` | Project / team | Choose project + team, link workers, Save team |
 | `scrHours` | Weekly Hours | Enter hours Mon–Sun per team |
-| `scrWeekReport` *(built 9-11-2026, Studio test open)* | Week Report | Daily hours per worker for one week (read-only, phase A); export PDF + CSV follows |
+| `scrWeekReport` *(phase A approved 11-11-2026)* | Week Report | Daily hours per worker for one week (read-only, phase A); export PDF + CSV follows |
 | `scrWeeklyHours` | Hours Summary | Period overview; CSV export |
 | `scrContractors` | Contractors | Beheer van contractors (Employers); gebouwd 28-10-2026, Studio-test open (ADMIN_PLAN.md) |
 

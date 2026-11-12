@@ -26,6 +26,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-028 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
 | MS-029 | 9-11-2026 | Open (Eddy bouwt, contract bevestigd 11-11) |
 | MS-030 | 9-11-2026 | Open (Eddy) |
+| MS-031 | 12-11-2026 | Open (Eddy) |
 
 ---
 
@@ -249,8 +250,25 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   - Trigger Power Apps (V2). Invoer, alle tekst: Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content.
   - Uitvoer, alle tekst: Status ("OK" | "Error"), FileUrl, Message.
   - CSV: de app zet de BOM er zelf voor. De flow schrijft Content ongewijzigd.
-  - PDF: Content is volledige HTML (Arial, logo als base64).
+  - PDF: Content is volledige HTML (Arial, logo als base64). Vervangen door H25 (12-11), zie hieronder.
   - Melden als gedaan, met de exacte namen van de invoer en uitvoer zoals ze in de flow staan. Daarna pas MS-030.
+- **12-11-2026 (Eddy, H25): contractwijziging.**
+  - Extra invoer **TemplateName** (tekst, bv. "weekreport.html"), alleen gebruikt bij pdf; bij csv leeg.
+  - PDF-stappen:
+    1. Lees het bestand TemplateName en header.html uit bibliotheek Templates (MS-031).
+    2. `replace(template, '{{BODY}}', Content)`.
+    3. Daarna `replace(<resultaat>, '{{HEADER}}', header)`. Eerst BODY, dan HEADER: de HEADER-tokens zitten in Content.
+    4. Daarna zoals gepland: tijdelijk .html in OneDrive, Convert file naar PDF, Create file in Exports/Folder, tijdelijk bestand verwijderen.
+  - Content bij pdf = alleen de pagina's, zonder opmaak of logo.
+  - Template of header niet gevonden: Status "Error" met Message, geen bestand.
+  - Flowtest: Content = de inhoud van templates/sample-body.html, Format "pdf", TemplateName "weekreport.html", Folder "TEST-000", FileName bv. "TEST_flowtest". Verwacht een PDF van 2 pagina's (Weekrapport NL en Week report EN, blauwe balk met GEA-logo). Meld of het logo zichtbaar is: het is een SVG, en of Convert file dat toont, is niet bekend.
+
+## MS-031 — SharePoint-bibliotheek "Templates"
+
+- **Added:** 12-11-2026. **Status:** Open (Eddy).
+- **Reason:** PDF-opmaak centraal en aanpasbaar zonder app-build (DECISIONS.md H25).
+- **Stappen:** maak op https://geacloud.sharepoint.com/sites/GEASiteManagment de documentbibliotheek **Templates** (geen extra kolommen). Upload uit de repo-map templates/ de bestanden **header.html** en **weekreport.html** (ongewijzigd). sample-body.html hoeft er niet in (alleen voor de flowtest). Rechten: lezen voor de flow-eigenaar; bewerken alleen voor beheerders.
+- **Let op:** een wijziging in de bibliotheek ook in de repo vastleggen (bron = repo; Test-Templates.ps1 controleert de repo-versie).
 
 ## MS-030 — Flow toevoegen aan de app
 

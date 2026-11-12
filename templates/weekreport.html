@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>GEA Site Management</title>
+<!--
+  Week Report PDF template (DECISIONS.md H25). Layers: this template = look, list Translations = texts, app = data.
+  The template holds no language texts and no data. The flow replaces the BODY token (exactly once, in body) with Content,
+  then every HEADER token with templates/header.html. Content = one section class "page" with lang per language,
+  each page starting with the HEADER token. Tokens appear nowhere else. Arial only (E5); GEA palette (AGENTS.md).
+-->
+<style>
+@page { size: A4 landscape; margin: 12mm; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10pt;
+  color: #000000;
+  background-color: #FFFFFF;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.page { page-break-after: always; break-after: page; }
+.page:last-child { page-break-after: auto; break-after: auto; }
+
+h1 { font-size: 16pt; font-weight: bold; color: #000F41; margin: 0 0 6pt 0; }
+
+table.meta { border-collapse: collapse; margin: 0 0 10pt 0; }
+table.meta th { text-align: left; font-weight: bold; padding: 1pt 12pt 1pt 0; vertical-align: top; }
+table.meta td { padding: 1pt 0; vertical-align: top; }
+
+/* Report table: fixed column widths (H24), not stretched to the page edge */
+table.report { border-collapse: collapse; table-layout: fixed; width: 214mm; }
+col.c-name { width: 60mm; }
+col.c-trade { width: 22mm; }
+col.c-day { width: 16mm; }
+col.c-total { width: 20mm; }
+table.report th, table.report td {
+  padding: 4pt 6pt;
+  border-bottom: 1px solid #DCDCDC;
+  text-align: left;
+  vertical-align: middle;
+  overflow: hidden;
+  white-space: nowrap;
+}
+table.report thead { display: table-header-group; }
+table.report thead th { background-color: #0303B8; color: #FFFFFF; font-weight: bold; border-bottom: 1px solid #0303B8; }
+table.report .num { text-align: right; }
+table.report .daydate { display: block; font-weight: normal; }
+table.report tr { page-break-inside: avoid; break-inside: avoid; }
+table.report tr.group td { font-weight: bold; color: #0303B8; padding-top: 8pt; border-bottom: 2px solid #0303B8; }
+table.report tr.alt td { background-color: #F0F0F0; }
+table.report tr.subtotal td { background-color: #D5EDFF; font-weight: bold; }
+table.report tr.total td { background-color: #D5EDFF; font-weight: bold; border-top: 2px solid #0303B8; }
+table.report .total-col { font-weight: bold; color: #000F41; border-left: 1px solid #DCDCDC; }
+table.report thead .total-col { color: #FFFFFF; border-left: 1px solid #0303B8; }
+
+p.note { margin: 8pt 0 0 0; font-size: 8pt; }
+</style>
+</head>
+<body>
+{{BODY}}
+</body>
+</html>
