@@ -47,6 +47,9 @@ Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-
 - Week Report smal (reviewer 11-11-2026, niet blokkerend): in de 44 px-dagkolom kunnen sub-/eindtotalen met decimalen (bv. "100,75") omslaan; "09-11" past in Inter met minder dan 1 px marge. Oplossen als Eddy het op telefoon ziet.
 - GEA-logo als PNG (officieel bestand uit de logobank) is nodig vóór fase C (PDF).
 - Home-tegel Tab-focus (TP-HOME-03 punt 6; geen prioriteit).
+
+## Backlog functies
+- Lasstickerregister (Eddy 12-11-2026, na Week Report): uitgifteregister van lasstickerreeksen per lasser (sticker → lasser, werkgever, project, periode), innamebewijs als PDF via de exportflow. Alleen ontwerp: WELDSTICKERS_PLAN.md; open vragen V1-V9 (o.a. serie gebonden aan project) eerst beslissen. Geen MS-items aangemaakt.
 - Optie "Worker Code direct na aanmaken": de app schrijft WKR-<ID> meteen na het aanmaken; flow MS-017 blijft terugval (nu verschijnt de code na ongeveer 1 minuut). Botst met de AGENTS-regel "de app schrijft Worker Code nooit" en met de uniciteit van field_1; vereist Eddy's besluit en een formaatcontrole tegen flow MS-017 vóór bouw.
 - UX 4b, Weekly Hours: een mislukte Save toont de melding twee keer (Notify + rode statusregel lblWeekLoadStatus; TP-WORKERS-01 o). Eddy's keuze 9-11-2026: eenmeldingsregel, alleen Notify; de statusregel toont alleen de laadstatus. Niet nu (layout-freeze). Bij die fix wijzigen ook: Test-SaveRegression.ps1 en Test-GeaColors.
 
