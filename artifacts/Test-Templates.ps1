@@ -25,7 +25,7 @@ Check ((Count $w '\{\{HEADER\}\}') -eq 0) 'weekreport.html: no HEADER token'
 Check ((Count $h '\{\{') -eq 0) 'header.html: no tokens'
 $pages = Count $s '<section class="page"'
 Check ($pages -eq 2) 'sample-body.html: 2 pages'
-Check ((Count $s '<section class="page"[^>]*>\s*\{\{HEADER\}\}') -eq $pages) 'sample-body.html: every page starts with HEADER token'
+Check ((Count $s '<section class="page"[^>]*>\s*(<style>[^<]*</style>\s*)?\{\{HEADER\}\}') -eq $pages) 'sample-body.html: every page starts with HEADER token'
 Check ((Count $s '\{\{HEADER\}\}') -eq $pages) 'sample-body.html: HEADER token once per page'
 Check ((Count $s '\{\{BODY\}\}') -eq 0) 'sample-body.html: no BODY token'
 Check ((Count $w '(?s)<body>\s*\{\{BODY\}\}\s*</body>') -eq 1) 'weekreport.html: BODY token is the whole body'
@@ -44,11 +44,19 @@ foreach ($rule in @(
   @('thead th', 'background-color: #0303B8; color: #FFFFFF'),
   @('tr.alt td', 'background-color: #F0F0F0'),
   @('tr.subtotal td', 'background-color: #D5EDFF'),
-  @('tr.total td', 'background-color: #D5EDFF'))) {
+  @('tr.total td', 'background-color: #000F41; color: #FFFFFF; font-weight: bold'),
+  @('thead th.we', 'background-color: #F0F0F0'),
+  @('table.report td.we', 'background-color: #F0F0F0'),
+  @('h1.doc-title', 'position: absolute; top: 0; right: 12px;'),
+  @('table.report', 'border-collapse: collapse; table-layout: fixed; width: 100%;'))) {
   Check ($w -match ([regex]::Escape($rule[0]) + '\s*\{[^}]*' + [regex]::Escape($rule[1]))) "weekreport.html: $($rule[0]) = $($rule[1])"
 }
 Check ($w -match 'table\.report th, table\.report td \{[^}]*border-bottom: 1px solid #DCDCDC') 'weekreport.html: row lines #DCDCDC'
 Check ($w -match 'table\.report \.num \{ text-align: right; \}') 'weekreport.html: numbers right-aligned'
+Check ($w -notmatch 'border-left') 'weekreport.html: no vertical line before Total (Eddy 12-11 item 9)'
+Check ($w -match 'h1\.doc-title \{[^}]*height: 40px; line-height: 40px;[^}]*color: #FFFFFF') 'weekreport.html: title white in 40 px bar'
+Check ($w -match '@bottom-left \{ font-family: Arial' -and $w -match '@bottom-right \{ font-family: Arial') 'weekreport.html: page footer margin boxes (Arial)'
+Check ($w -notmatch '(?s)@bottom-(left|right) \{[^}]*content:') 'weekreport.html: no footer text in template (comes from app)'
 
 # Fonts: Arial only (E5)
 foreach ($pair in @(@('header.html', $h), @('weekreport.html', $w))) {
@@ -58,7 +66,7 @@ foreach ($pair in @(@('header.html', $h), @('weekreport.html', $w))) {
 Check ((Count ($h + $w + $s) '(?i)Inter|Segoe|Open Sans|Montserrat|GEA Sans') -eq 0) 'no other font names'
 
 # Colours: GEA palette only
-$palette = '#0303B8', '#000F41', '#FFFFFF', '#000000', '#F0F0F0', '#DCDCDC', '#D5EDFF'
+$palette = '#0303B8', '#000F41', '#FFFFFF', '#000000', '#F0F0F0', '#DCDCDC', '#D5EDFF', '#E6E6E6'
 $h2 = [regex]::Replace($h, 'base64,[A-Za-z0-9+/=]+', 'base64,')
 $cols = [regex]::Matches($h2 + $w + $s, '#[0-9A-Fa-f]{6}\b') | ForEach-Object { $_.Value.ToUpper() } | Sort-Object -Unique
 $bad = @($cols | Where-Object { $palette -notcontains $_ })
@@ -74,7 +82,7 @@ if ($m.Count -eq 1) {
   Check ($hash -eq '5D460376D030AF075E004E50191C8BE0C8DB05C5E0A9E593F53612DA52606087') 'header.html: logo = official Assets/GEA_logo_white.svg (SHA-256)'
 }
 Check ($h -match 'background-color:#0303B8' -and $h -match 'bgcolor="#0303B8"') 'header.html: white logo on #0303B8'
-Check ($h -match 'height="30"' -and $h -notmatch '<img[^>]*width=' -and $h -match 'width:auto') 'header.html: logo height only (no stretch)'
+Check ($h -match 'height:40px;' -and $h -match 'height="24"' -and $h -notmatch '<img[^>]*width=' -and $h -match 'width:auto') 'header.html: logo height only (no stretch)'
 Check ($h -match 'alt="GEA"') 'header.html: alt GEA'
 
 # No external references (converter must not fetch anything)
@@ -84,7 +92,19 @@ Check ((Count ($w + $s) '(?i)<script|<link|@import') -eq 0) 'no script, link or 
 # Synthetic data only (AGENTS: no personal data): names in sample start with Test/TEST
 $names = [regex]::Matches($s, '<tr(?: class="alt")?><td>([^<]+)</td>') | ForEach-Object { $_.Groups[1].Value }
 Check (@($names).Count -ge 1 -and -not (@($names) | Where-Object { $_ -notmatch '^Test ' })) "sample-body.html: synthetic worker names ($(@($names).Count))"
-Check ((Count $s '(?i)@|\+31|\b06[- ]?\d{8}\b') -eq 0) 'sample-body.html: no e-mail or phone'
+Check ((Count $s '(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\+31|\b06[- ]?\d{8}\b') -eq 0) 'sample-body.html: no e-mail or phone'
+
+# Sample contract per page: named page + footer rule, title, info block, unit header, weekend cells
+$secs = [regex]::Matches($s, '(?s)<section class="page" lang="([a-z]+)" style="page: wr-\1">\s*<style>@page wr-\1 \{ @bottom-left \{ content: "[^"]+"; \} @bottom-right \{ content: "[^"]+" counter\(page\) "[^"]+" counter\(pages\); \} \}</style>\s*\{\{HEADER\}\}\s*<h1 class="doc-title">[^<]+</h1>(.*?)</section>')
+Check ($secs.Count -eq $pages) "sample-body.html: every page = named page + footer rule + HEADER + doc-title ($($secs.Count))"
+foreach ($sec in $secs) {
+  $body = $sec.Groups[2].Value; $lg = $sec.Groups[1].Value
+  $meta = [regex]::Matches($body, '<tr><th>([^<]+)</th><td>') | ForEach-Object { $_.Groups[1].Value }
+  Check (@($meta).Count -eq 5) "sample-body.html [$lg]: info block 5 rows (project name, number, reference, contractor, week)"
+  Check ($body -match '<th class="num total-col">[^<]+\([^)]+\)</th>') "sample-body.html [$lg]: Total header with unit"
+  $bad = 0; foreach ($r in [regex]::Matches($body, '(?s)<tr[^>]*>(.*?)</tr>')) { $v = $r.Groups[1].Value; if ($v -match 'colspan="10"' -or $v -match '^<th>[^<]*</th><td>') { continue }; if ((Count $v 'class="num we"') -ne 2) { $bad++ } }
+  Check ($bad -eq 0) "sample-body.html [$lg]: Sat/Sun cells class we in every table row"
+}
 
 # Tag balance (void elements and comments ignored)
 function TagBalance([string]$text) {
@@ -111,7 +131,7 @@ foreach ($pair in @(@('header.html', $h), @('weekreport.html', $w), @('sample-bo
 foreach ($row in [regex]::Matches($s, '(?s)<tr[^>]*>(.*?)</tr>')) {
   $cells = 0
   foreach ($c in [regex]::Matches($row.Groups[1].Value, '<t[dh]( colspan="(\d+)")?')) { $cells += $(if ($c.Groups[2].Success) { [int]$c.Groups[2].Value } else { 1 }) }
-  if ($row.Groups[1].Value -match '^<th>(Projectnummer|Projectreferentie|Week|Project number|Project reference)') { continue }
+  if ($row.Groups[1].Value -match '^<th>[^<]*</th><td>[^<]*</td>$') { continue }
   if ($cells -ne 10) { Check $false "sample-body.html: row with $cells cells: $($row.Value.Substring(0,[Math]::Min(60,$row.Value.Length)))" }
 }
 

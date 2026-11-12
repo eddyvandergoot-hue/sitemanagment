@@ -24,9 +24,9 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-026 | 7-11-2026 | Done 7-11-2026 (Eddy) |
 | MS-027 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
 | MS-028 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
-| MS-029 | 9-11-2026 | Open (Eddy bouwt, contract bevestigd 11-11) |
+| MS-029 | 9-11-2026 | Done 12-11-2026 (Eddy); flowtest T1-T4 PASS |
 | MS-030 | 9-11-2026 | Open (Eddy) |
-| MS-031 | 12-11-2026 | Open (Eddy) |
+| MS-031 | 12-11-2026 | Done 12-11-2026 (Eddy) |
 
 ---
 
@@ -244,7 +244,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-029 — Power Automate: flow "SiteManagement - Export file"
 
-- **Added:** 9-11-2026. **Status:** Open (Eddy).
+- **Added:** 9-11-2026. **Status:** Done 12-11-2026 (Eddy; zie onderaan deze sectie).
 - **Reason:** generieke bestandsschrijver voor CSV/PDF. Contract: WEEKREPORT_PLAN.md par. 6.5 (invoer Folder, FileName, Format csv|pdf, Content; uitvoer Status, FileUrl, Message).
 - **11-11-2026 (Eddy):** Eddy bouwt de flow met de hand. Bevestigd contract:
   - Trigger Power Apps (V2). Invoer, alle tekst: Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content.
@@ -262,15 +262,27 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   - Content bij pdf = alleen de pagina's, zonder opmaak of logo.
   - Template of header niet gevonden: Status "Error" met Message, geen bestand.
   - Flowtest: Content = de inhoud van templates/sample-body.html, Format "pdf", TemplateName "weekreport.html", Folder "TEST-000", FileName bv. "TEST_flowtest". Verwacht een PDF van 2 pagina's (Weekrapport NL en Week report EN, blauwe balk met GEA-logo). Meld of het logo zichtbaar is: het is een SVG, en of Convert file dat toont, is niet bekend.
+- **Done 12-11-2026 (Eddy): gebouwd en getest** (TESTPLAN.md TP-EXPORT-01: T1 csv, T2 pdf, T3 overschrijven, T4 onbekend formaat, alle PASS).
+  - Trigger-invoer in deze volgorde: Folder, FileName, Format, Content, TemplateName (optioneel).
+  - Uitvoer: Status, FileUrl, Message.
+  - Samenvoegen: eerst BODY vervangen, dan HEADER.
+  - Opslag in SharePoint (Exports). Tijdelijke map in Eddy's OneDrive: SiteManagementTemp. Het bestand wordt na de conversie verwijderd.
+  - De converter is Chromium, niet Word: het SVG-logo, A4 liggend en het CSS-pagina-einde werken.
+  - Exports: major versions aan.
 
 ## MS-031 — SharePoint-bibliotheek "Templates"
 
-- **Added:** 12-11-2026. **Status:** Open (Eddy).
+- **Added:** 12-11-2026. **Status:** Done 12-11-2026 (Eddy): bibliotheek Templates (label None, unieke rechten: Eddy Full Control, rest Read, major versions), header.html + weekreport.html geüpload.
 - **Reason:** PDF-opmaak centraal en aanpasbaar zonder app-build (DECISIONS.md H25).
 - **Stappen:** maak op https://geacloud.sharepoint.com/sites/GEASiteManagment de documentbibliotheek **Templates** (geen extra kolommen). Upload uit de repo-map templates/ de bestanden **header.html** en **weekreport.html** (ongewijzigd). sample-body.html hoeft er niet in (alleen voor de flowtest). Rechten: lezen voor de flow-eigenaar; bewerken alleen voor beheerders.
 - **Let op:** een wijziging in de bibliotheek ook in de repo vastleggen (bron = repo; Test-Templates.ps1 controleert de repo-versie).
 
 ## MS-030 — Flow toevoegen aan de app
 
-- **Added:** 9-11-2026. **Status:** Open (Eddy), na MS-029.
-- **Stappen:** flow in Studio aan de app toevoegen, opslaan, de msapp aanleveren in Incoming\ (verbindingen niet zelf maken).
+- **Added:** 9-11-2026. **Status:** Open (Eddy). MS-029 is gedaan, dus deze stap kan nu.
+- **Stappen:**
+  1. Open de app in Studio en voeg via Data (of het Power Automate-paneel) de flow "SiteManagement - Export file" toe. Maak geen verbindingen zelf in YAML.
+  2. Wijzig verder niets en sla op.
+  3. Zet de save in Incoming\ (bijvoorbeeld via Save as -> This computer).
+  4. Meld de exacte naam waarmee de flow in Studio verschijnt (bv. 'SiteManagement-Exportfile'). Daarna neem ik alleen de flowkoppeling over in de .msapr, zoals bij MS-028: App Id 88e53928, de rest uit die save niet.
+- **Nodig voor fase C:** zonder deze save kan de Export-knop de flow niet aanroepen en faalt de Studio-import.

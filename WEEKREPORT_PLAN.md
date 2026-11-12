@@ -60,25 +60,59 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
   - Fallback: sleutel ontbreekt in de tweede taal -> Engelse tekst; ontbreekt in Dutch -> de sleutel zelf + waarschuwing alleen in debug (Trace), niet in de UI. (Eddy's keuze; let op: dan kan een sleutelnaam in een officieel document staan. Test-Export controleert dat alle fase-C-sleutels in de aangeleverde CSV voor Dutch en English bestaan.)
   - Geen vaste talenlijst in de app: beschikbare talen = unieke Language in Translations ∪ keuzes van Workers.Language. Taal toevoegen = keuze in Workers.Language en Employers.Report Language (gelijk houden) + rijen in Translations; geen app-build.
   - Vertalingen: de Claude-chat levert een CSV voor import (sleutels uit fase C); native-speaker-controle vóór livegang (backlog).
-- Inhoud: kop met Project Number, Project Reference, Contractor (naam + code), week "YYYY KWxx" + datumbereik; tabel Name | Trade | Mon..Sun | Total; totaalrij; "Generated dd-mm-yyyy HH:mm". Rijen als in het scherm (B3: ook weektotaal 0, dagen "–").
+- Inhoud (opmaakfeedback Eddy 12-11-2026):
+  - **Titelbalk:** documenttitel wit rechts in de logobalk.
+  - **Infoblok:** Project name (Projects.Title), Project number, Project reference, Contractor ("All contractors" of "naam · EmployerCode") en Week ("YYYY KWxx" + datumbereik). Location bestaat niet in Projects (AGENTS), dus geen locatieregel. Country is beschikbaar als Eddy die wil.
+  - **Tabel:** Name | Trade | Mon..Sun | Total met eenheid ("Totaal (uur)" / "Total (hrs)"), daarna subtotaal per contractor en een totaalrij.
+  - **Voettekst per pagina:** "Gegenereerd <datum tijd> door <gebruiker>" links en "Pagina x van y" rechts. Gebruiker = User().FullName.
+  - **Rijen:** als op het scherm (B3: ook weektotaal 0, dagen "–").
+- Sleutels in Translations die fase C nodig heeft (Language Dutch en English verplicht). Eddy controleert of ze in de lijst staan of voegt ze toe; de exacte namen zet ik vast vóór de bouw:
+  - **Kop en infoblok:** doc.title, doc.projectName, doc.projectNumber, doc.projectReference, doc.contractor, doc.contractorAll, doc.week, doc.weekRangeSep ("t/m" / "to").
+  - **Tabel:** doc.colName, doc.colTrade, doc.day1..doc.day7, doc.colTotal ("Totaal (uur)" / "Total (hrs)"), doc.subtotal, doc.total.
+  - **Voettekst:** doc.footerGenerated ("Gegenereerd {date} door {user}"), doc.footerPage ("Pagina {page} van {pages}").
 - Namen HTML-escapen (&, <, >, "). Daarnaast "{" in gegevens als `&#123;` schrijven, zodat een naam nooit een token ({{BODY}}/{{HEADER}}) kan vormen.
 - Templates (H25, Eddy 12-11-2026): opmaak staat in SharePoint-bibliotheek "Templates" (MS-031); bron in de repo `templates/`.
-  - `header.html`: snippet (geen html/body), blauwe balk #0303B8 met het officiële witte logo (Assets/GEA_logo_white.svg, ongewijzigd, base64-data-URI, alleen hoogte 30, niet gerekt), Arial.
-  - `weekreport.html`: volledige HTML, Arial, `@page` A4 liggend, tabelstijl als scrWeekReport (kop #0303B8 wit, zebra via klasse `alt` #F0F0F0, lijnen #DCDCDC, groepsregel blauw met 2 px lijn, `subtotal` en `total` #D5EDFF, Total-kolom Navy vet, vaste kolombreedtes 60/22/7x16/20 mm, getallen rechts), klasse `page` met page-break-after (laatste pagina niet). Token {{BODY}} precies één keer, als enige inhoud van body. Geen teksten in het template.
+  - `header.html`: snippet (geen html/body), blauwe balk #0303B8 van 40 px over de volle breedte met het officiële witte logo (Assets/GEA_logo_white.svg, ongewijzigd, base64-data-URI, hoogte 24, niet gerekt), Arial.
+  - `weekreport.html` (opmaak Eddy 12-11-2026):
+    - Volledige HTML, Arial, `@page` A4 liggend (marge 12 mm, onder 16 mm).
+    - Voettekst via de margeboxen `@bottom-left`/`@bottom-right`: lettertype en grootte (8 pt) staan in het template, de tekst komt van de app.
+    - Titel `h1.doc-title` wit rechts in de balk.
+    - Tabel 100 % breed (rechterrand gelijk aan de balk). De naamkolom neemt de rest, Trade 24 mm, dag 15 mm, Total 28 mm.
+    - Kop #0303B8 wit; za/zo (klasse `we`) #F0F0F0, ook in de kop (tekst Navy).
+    - Zebra `alt` #F0F0F0 (za/zo op een zebrarij #E6E6E6); lijnen #DCDCDC.
+    - Groepsregel blauw met een lijn van 2 px; `subtotal` #D5EDFF; `total` Navy #000F41 met witte vette tekst.
+    - Total-kolom vet, geen verticale lijn ervoor; getallen rechts.
+    - Klasse `page` met page-break-after (niet op de laatste pagina). Token {{BODY}} precies één keer, als enige inhoud van body. Geen teksten in het template.
   - `sample-body.html`: 2 pagina's (nl + en) met synthetische TEST-gegevens, voor de flowtest.
-  - Content die de app stuurt: per taal `<section class="page" lang="..">{{HEADER}} ... </section>`, met klassen `meta`, `report`, `group`, `alt`, `subtotal`, `total`, `num`, `total-col`, `daydate`, `note`, `c-name`/`c-trade`/`c-day`/`c-total` (colgroup). Controle: artifacts/Test-Templates.ps1 (tokens, palet, Arial, logo-hash, tagbalans, samenvoeging als de flow, optioneel PDF via Edge headless).
-- Logo: base64 in header.html. OPEN: Eddy vroeg om een PNG uit de repo. De enige PNG (Assets/GEA_Logo_w_Claim_CMYK_VibrantBlue.png) is de claimversie en staat bewust buiten git (AGENTS: geen claimbestanden); zelf omzetten van de SVG mag niet. Daarom nu het officiële witte SVG op Vibrant Blue. Edge rendert het goed; of de OneDrive-conversie (Convert file) SVG toont, blijkt bij de flowtest. Zo niet: Eddy levert een officiële PNG zonder claim uit de logobank en alleen de base64 in header.html wordt vervangen.
+  - Content die de app stuurt, per taal:
+    ```
+    <section class="page" lang="xx" style="page: wr-xx">
+    <style>@page wr-xx { @bottom-left { content: "<generated-tekst>"; } @bottom-right { content: "<Pagina> " counter(page) " <van> " counter(pages); } }</style>
+    {{HEADER}}<h1 class="doc-title">..</h1> ... </section>
+    ```
+    - De style bevat alleen de vertaalde voettekst; de opmaak blijft in het template.
+    - CSS-strings escapen: `\` als `\\` en `"` als `\"`.
+    - counter(pages) telt het hele document, dus de Engelse pagina zegt "Page 2 of 2".
+    - Klassen: `meta`, `report`, `group`, `alt`, `subtotal`, `total`, `num`, `we`, `total-col`, `daydate`, `doc-title`, `c-name`/`c-trade`/`c-day`/`c-total` (colgroup). Controle: artifacts/Test-Templates.ps1 (tokens, palet, Arial, logo-hash, tagbalans, samenvoeging als de flow, optioneel PDF via Edge headless).
+- Logo: base64 in header.html. OPGELOST 12-11-2026 (flowtest T2): de converter is Chromium en toont het SVG-logo; er is geen PNG nodig. Achtergrond: Eddy vroeg om een PNG uit de repo. De enige PNG (Assets/GEA_Logo_w_Claim_CMYK_VibrantBlue.png) is de claimversie en staat bewust buiten git (AGENTS: geen claimbestanden); zelf omzetten van de SVG mag niet. Daarom nu het officiële witte SVG op Vibrant Blue. Edge rendert het goed; of de OneDrive-conversie (Convert file) SVG toont, blijkt bij de flowtest. Zo niet: Eddy levert een officiële PNG zonder claim uit de logobank en alleen de base64 in header.html wordt vervangen.
 
 ### 6.4 Bestandsnamen (B8) en map
 - H25 (Eddy 12-11-2026): één Export-klik = .pdf + .csv met dezelfde basisnaam, voorbeeld `Exports/<ProjectNumber>/WeekReport_<ProjectNumber>_<YYYY>KW<ww>.pdf/.csv`.
-- OPEN (Eddy beslist vóór de bouw van fase C); het voorbeeld botst met eerdere afspraken:
-  1. Geen EmployerCode in de naam. Een Week Report is per project + contractor + week (WR1), en bij "All contractors" komen er per contractor twee bestanden. Twee contractors in dezelfde week krijgen dan dezelfde naam en overschrijven elkaar. Voorstel: `WeekReport_<ProjectNumber>_<YYYY>KW<ww>_<EmployerCode>`.
-  2. Geen prefix "TEST_" voor TEST-projecten (E10, AGENTS Werkwijze). Voorstel: prefix houden.
-  3. Geen tijdstempel. Opnieuw exporteren overschrijft dan (of faalt, afhankelijk van de flow). Eddy kiest: overschrijven (nieuwste telt, SharePoint-versiegeschiedenis houdt oud) of tijdstempel `_<yyyymmdd-hhmm>`.
-  4. Map `<ProjectNumber>` zonder submap per ISO-jaar (eerder `<ProjectNumber>/<ISO-jaar>`). Voorstel: H25 volgen (alleen projectmap).
+- Besloten (Eddy 12-11-2026: "filename per 6.4"; punt 3 expliciet): basisnaam `[TEST_]WeekReport_<ProjectNumber>_<YYYY>KW<ww>_<EmployerCode>` + .pdf/.csv, map `Exports/<ProjectNumber>`, geen tijdstempel. De eerdere open punten:
+  1. Geen EmployerCode in de naam. Een Week Report is per project + contractor + week (WR1), en bij "All contractors" komen er per contractor twee bestanden. Twee contractors in dezelfde week krijgen dan dezelfde naam en overschrijven elkaar. Besloten: `_<EmployerCode>` erbij.
+  2. Geen prefix "TEST_" voor TEST-projecten (E10, AGENTS Werkwijze). Besloten: prefix houden.
+  3. Geen tijdstempel: BESLOTEN (Eddy 12-11-2026, T3 PASS). Opnieuw exporteren overschrijft; de versiegeschiedenis van Exports bewaart oud (de GEA-tenant laat oude versies automatisch verlopen). De lijsten zijn de historie: elke week kan opnieuw worden gemaakt (toont dan de actuele gegevens, inclusief latere correcties).
+  4. Map `<ProjectNumber>` zonder submap per ISO-jaar (eerder `<ProjectNumber>/<ISO-jaar>`). Besloten: alleen projectmap.
 - Eerder (9-11-2026, vervangen door H25 tenzij Eddy anders kiest): `[TEST_]<ProjectNumber>_<YYYY>-KW<ww>_<EmployerCode>_<yyyymmdd-hhmm>`; Hours Summary: `[TEST_]<ProjectNumber>_<yyyymmdd>-<yyyymmdd>_<EmployerCode|ALL>_<yyyymmdd-hhmm>` (Hours Summary blijft alleen CSV, E1). Folder was `<ProjectNumber>/<ISO-jaar>`.
 
-### 6.5 Flowcontract (B9, Eddy 9-11-2026; bevestigd 11-11-2026, Eddy bouwt de flow met de hand, MS-029)
+### 6.5 Flowcontract (B9, Eddy 9-11-2026; flow gebouwd en getest 12-11-2026, MS-029 gedaan)
+- Gebouwd (Eddy 12-11-2026):
+  - Trigger-invoer in deze volgorde: Folder, FileName, Format, Content, TemplateName (optioneel).
+  - Uitvoer: Status, FileUrl, Message.
+  - Samenvoegen: eerst BODY vervangen, dan HEADER.
+  - Opslag in SharePoint. Tijdelijke map in Eddy's OneDrive: SiteManagementTemp; het bestand wordt na de conversie verwijderd.
+  - Exports en Templates: major versions aan.
+- Risico "Word-engine" GESLOTEN: Convert file gebruikt Chromium, niet Word. SVG, `@page` A4 liggend en CSS-pagina-einde werken (T2). De template mag dus Chromium-CSS gebruiken (o.a. `@page`-margeboxen met paginatellers).
 - Naam "SiteManagement - Export file"; trigger Power Apps (V2); alleen standaardconnectors.
 - Invoer (tekst): Folder, FileName (zonder extensie), Format ("csv" | "pdf"), Content (tekst), TemplateName (H25; bv. "weekreport.html"; alleen gebruikt bij pdf, bij csv leeg).
 - Content csv: de app zet zelf de UTF-8 BOM (U+FEFF) vooraan; de flow voegt niets toe en wijzigt niets. Content pdf (H25): alleen de pagina's (per taal `<section class="page">`, elke pagina begint met {{HEADER}}); opmaak, Arial en logo komen uit het template.
@@ -87,7 +121,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 - Uitvoer (tekst): Status ("OK" | "Error"; de app vergelijkt hoofdletterongevoelig), FileUrl (klikbaar), Message.
 - BOM in Power Fx: Eddy noemde Char(65279). Char is volgens Microsoft bedoeld voor ASCII-codes; voor U+FEFF gebruikt de app UniChar(65279) (AGENTS, par. 6.1). Het resultaat in het bestand is hetzelfde: BOM EF BB BF.
 - Eén aanroep per bestand; één Export-klik = twee aanroepen (PDF + CSV, zelfde basisnaam); "All contractors" = per contractor twee aanroepen (zie open punt 6.4-1).
-- Flowtest (fase B): Content = inhoud van templates/sample-body.html, TemplateName "weekreport.html", Format "pdf", Folder "TEST-000"; verwacht een PDF van 2 pagina's gelijk aan de Edge-render van Test-Templates.ps1 -RenderPdf.
+- Flowtest (fase B): Content = inhoud van templates/sample-body.html, TemplateName "weekreport.html", Format "pdf", Folder "TEST-000"; verwacht een PDF van 2 pagina's gelijk aan de Edge-render van Test-Templates.ps1 -RenderPdf. Resultaat: PASS (TESTPLAN TP-EXPORT-01).
 
 ### 6.6 Toelating en foutafhandeling (fail-closed)
 - Export alleen als: Loaded zonder fouten, geen afgekapte batch, geen lopende load/export, selectie gelijk aan de geladen selectie, minstens één regel. Zelfde voorwaarde in DisplayMode/Enabled en als eerste OnSelect-voorwaarde.

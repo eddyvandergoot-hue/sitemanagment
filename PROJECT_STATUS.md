@@ -20,7 +20,18 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 - TESTBUILD (vervangt weekreport-a-20261111_165606): C:\Users\vandergoot.ed\Dev\Sitemanagment\artifacts\weekreport-a-20261111_210703\SiteManagement_WeekReportA_20261111_210703.msapp, 187238 bytes, SHA-256 FB23D18EA7AAAD42A3A0A1221EB88C2CF955B4B3C88F07885EADB24450F837C2. Technisch gecontroleerd: volledige set 15 checks PASS; na de reviewerfixes (kaartbreedte telefoon, ontbrekende pijlcontroles in Test-WeekReport, randbreedtes) Test-WeekReport, -Components, -GeaColors, -Fonts, -Layout en Check-WeeklySource opnieuw PASS en opnieuw gepackt; reviewer geen blokkerende bevindingen; glyphs ‹ › aanwezig in Inter en Arial. Hertest 2 PASS (Eddy 11-11-2026), goedgekeurd, tag approved-20261111-weekreport-a.
 - Gegevensopruiming 10-11-2026 (Eddy): TP-KEYS-01 PASS; oorzaak = oude test-Hours-regels die naar het verwijderde Project Workers-item ID 1 wezen (koppeling 1|1 is nu ID 24); alle Hours met EntryKey 1|* verwijderd; Hours Summary Friesland Campina laadt weer.
 - Besluit H25 (Eddy 12-11-2026): export = PDF + CSV met dezelfde basisnaam; CSV met decimale komma voor Nederlandse Excel (wijzigt E2); PDF-opmaak in SharePoint-bibliotheek Templates (MS-031), flowinvoer TemplateName. Templates gemaakt in templates/ (header.html, weekreport.html, sample-body.html); technisch gecontroleerd met artifacts/Test-Templates.ps1 (alle checks PASS, samenvoeging als de flow, Edge-render 2 pagina's A4 liggend); NIET getest in de flow/OneDrive-conversie. Open voor Eddy: bestandsnaam per contractor/TEST_/tijdstempel (WEEKREPORT_PLAN 6.4), logo als PNG zonder claim als Convert file de SVG niet toont (6.3). Geen app-build.
-- Volgende: fase B (export-proef, WEEKREPORT_PLAN.md). Eddy bouwt flow MS-029 "SiteManagement - Export file" met de hand (contract par. 6.5, bevestigd 11-11-2026). MS-030 (flow in de app) pas na MS-029 gedaan. Geen build tot dan.
+- Fase B gedaan 12-11-2026 (Eddy):
+  - MS-029 flow gebouwd en getest (TP-EXPORT-01 T1-T4 PASS). De converter is Chromium: het SVG-logo, A4 liggend en het pagina-einde werken; het Word-engine-risico is gesloten.
+  - MS-031 bibliotheek Templates gedaan.
+  - Bestandsnaam besloten: `[TEST_]WeekReport_<ProjectNumber>_<YYYY>KW<ww>_<EmployerCode>` in Exports/<ProjectNumber>, overschrijven zonder tijdstempel (WEEKREPORT_PLAN 6.4).
+- PDF-opmaakfeedback Eddy 12-11-2026 verwerkt in de templates:
+  - Titel rechts in een balk van 40 px; infoblok met Project name en Contractor; "Totaal (uur)" / "Total (hrs)".
+  - Voettekst "Gegenereerd ... door ..." en "Pagina x van y" via @page-margeboxen.
+  - Tabel volle breedte; totaalrij Navy; za/zo grijs; geen lijn vóór Total.
+  - Test-Templates PASS en Edge-render 2 pagina's bekeken. Eddy uploadt opnieuw en draait T2 opnieuw.
+- Volgende: fase C (MS-030 + Export-knop op scrWeekReport). Geblokkeerd tot:
+  - (a) Eddy's Studio-save met de flow in Incoming\ (MS-030).
+  - (b) De doc.*-sleutels in Translations zijn bevestigd (WEEKREPORT_PLAN 6.3). Eddy bouwt flow MS-029 "SiteManagement - Export file" met de hand (contract par. 6.5, bevestigd 11-11-2026). MS-030 (flow in de app) pas na MS-029 gedaan. Geen build tot dan.
 - Bekende beperkingen Workers-build (vastgelegd, niet blokkerend): (a) medewerker die bij het laden van de week al inactief is in Workers: Save van een nieuwe dag toont elke keer de algemene conflictmelding (nul writes; trace Reason Inactive); (b) PW Active=false met open periode wordt door de deactiveringscheck niet gezien (V1-gat); (c) de telling "actieve medewerkers" op Contractors is na een Workers-save verouderd tot Refresh op Contractors; (d) laadfouttekst van de workercache op Weekly Hours is Nederlands (UX-ronde 4b); (e) Home-tegel Weekly hours meldt "Choose project and team first" ook als alleen de caches verouderd zijn; (f) na een H18-conflict blijft varMastersReady false tot Project / team herlaadt (fail-closed). Overige oudere beperkingen (Savefix, Discard, smalle vensters, Home, datumkiezer): archief.
 - Alleen in Studio te controleren: Patch {Until: Blank()} wist de datum; JSON() van projecties; Sort op ID/Modified (delegatie); gedrag ModernDatePicker bij wijzigen van StartDate/EndDate tijdens Reset.
 
@@ -28,6 +39,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
 Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-2026, tag approved-20261107-contractoraddr; (2) layout-freeze ACTIEF (cosmetica alleen via de backlog hieronder); (3) GEDAAN: Workers-scherm goedgekeurd 9-11-2026, tag approved-20261109-workers; (4) Week Report + PDF/CSV-export: plan goedgekeurd door Eddy 9-11-2026 (WEEKREPORT_PLAN.md), fase A goedgekeurd 11-11-2026 (tag approved-20261111-weekreport-a), fase B wacht op MS-029; (5) toegankelijkheidsronde + N2/N5. Details: NEXT_COMMANDS.md.
 
 ## Backlog cosmetica
+- PDF Week Report: handtekeningvakken "Akkoord contractor / site manager" (Eddy 12-11-2026; niet nu, tot nu toe nooit gebruikt). Later alleen een wijziging in de template.
 - Veld Report Language op het Contractors-scherm (MS-027 gedaan; metadata samengevoegd 10-11-2026).
 - Native-speaker-controle van de vertalingen (Translations) vóór livegang.
 - Weekpijlen naast de datumkiezer (Eddy 11-11-2026, zoals op Week Report): Hours Summary (scrWeeklyHours) heeft btnReportPreviousWeeks/btnReportNextWeeks in de footer (die bladeren door de weekkolommen); Weekly Hours (scrHours) en Project / team (Screen1) hebben geen weekpijlen. Niet nu (layout-freeze).

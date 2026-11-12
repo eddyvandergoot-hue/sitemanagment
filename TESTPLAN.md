@@ -583,3 +583,19 @@ Wijziging daarna (Eddy 11-11-2026): weekpijlen van de footer naar de selectiekaa
 | P6 | Kort: Home, Refresh, contractorfilter | gedrag ongewijzigd |
 
 Resultaat hertest 2 (Eddy 11-11-2026, build weekreport-a-20261111_210703): PASS. Pijlen naast het datumveld, vorige/volgende week werkt, positie OK. Week Report fase A goedgekeurd door Eddy, tag approved-20261111-weekreport-a (commit 5573e8e). Niet apart gemeld, blijft open en niet blokkerend: L4 telefoon, Tab-volgorde (P3), Monitor-delegatie (l).
+
+## TP-EXPORT-01 Flow "SiteManagement - Export file" (MS-029; PASS 12-11-2026, Eddy; flow los getest, nog niet vanuit de app)
+| # | Actie | Resultaat |
+|---|---|---|
+| T1 | Format csv | PASS |
+| T2 | Format pdf met sample-body.html en TemplateName weekreport.html | PASS: 2 pagina's A4 liggend (NL + EN); SVG-logo zichtbaar; CSS-pagina-einde werkt (converter = Chromium, niet Word) |
+| T3 | Zelfde bestandsnaam opnieuw | PASS: overschreven, versiegeschiedenis toont 6 versies (de GEA-tenant laat oude versies automatisch verlopen; geen tijdstempel nodig) |
+| T4 | Onbekend Format | PASS: Status Error |
+
+Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/header.html en templates/weekreport.html opnieuw naar Templates en draait T2 met de nieuwe templates/sample-body.html. Verwacht:
+- Balk van 40 px met het logo links en de titel wit rechts.
+- Infoblok met Project name, Project number, Project reference, Contractor en Week.
+- Tabel even breed als de balk; Sat/Sun lichtgrijs, ook in de kop; geen verticale lijn vóór Total.
+- Kopje "Totaal (uur)" / "Total (hrs)".
+- Totaalrij navy met witte vette tekst; subtotaal lichtblauw.
+- Voettekst "Gegenereerd ... door Test User" links en paginanummer "1 / 2" rechts op elke pagina.
