@@ -13,6 +13,8 @@ App:
     Formulas: |-
       =LangNl = Coalesce(varLang,"en")="nl";
       KnowledgeBaseUrl = "";
+      // Primary report language (page 1 of the Week Report PDF, DECISIONS H27). Interim single setting until MS-033 (list AppSettings, key report.primaryLanguage) is connected; default Dutch.
+      ReportPrimaryLanguage = "Dutch";
       IconTeamWhite = "<svg xmlns=""http://www.w3.org/2000/svg"" width=""56"" height=""56"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#FFFFFF"" stroke-width=""1.4"" stroke-linecap=""round"" stroke-linejoin=""round""><circle cx=""9"" cy=""8"" r=""3.2""/><path d=""M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6""/><circle cx=""17"" cy=""9"" r=""2.4""/><path d=""M16 14.2c2.9.3 5 2.7 5 5.8""/></svg>";
       IconWeeklyHoursWhite = "<svg xmlns=""http://www.w3.org/2000/svg"" width=""56"" height=""56"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#FFFFFF"" stroke-width=""1.4"" stroke-linecap=""round"" stroke-linejoin=""round""><circle cx=""12"" cy=""12"" r=""8.5""/><path d=""M12 7v5l3.5 2""/></svg>";
       IconHoursSummaryWhite = "<svg xmlns=""http://www.w3.org/2000/svg"" width=""56"" height=""56"" viewBox=""0 0 24 24"" fill=""none"" stroke=""#FFFFFF"" stroke-width=""1.4"" stroke-linecap=""round"" stroke-linejoin=""round""><path d=""M3 20.5h18""/><path d=""M6 20.5V12M10.5 20.5V5M15 20.5v-8M19.5 20.5V9""/></svg>";
@@ -304,10 +306,15 @@ App:
         wrMsgNothingExported: {en: "Nothing exported.", nl: ""},
         wrErrExportNoNumber: {en: "Project has no Project Number. Fix in Projects, then Refresh.", nl: ""},
         wrErrExportTexts: {en: "Document texts (Translations) not read:", nl: ""},
-        wrErrExportTextsLimit: {en: "500+ document texts for {0}: may be incomplete.", nl: ""},
+        wrErrExportTextsLimit: {en: "500+ document texts in Translations: may be incomplete.", nl: ""},
         wrErrExportBuild: {en: "Export content could not be built.", nl: ""},
-        wrErrExportPdf: {en: "PDF {0}.pdf not saved: {1}", nl: ""},
-        wrErrExportCsv: {en: "PDF {0}.pdf saved, but CSV {0}.csv not saved: {1}", nl: ""},
+        wrErrExportPdf: {en: "{0}: PDF not confirmed ({1}). Check Exports/{2}.", nl: ""},
+        wrErrExportCsv: {en: "{0}: PDF saved, CSV not confirmed ({1}). Check Exports/{2}.", nl: ""},
+        wrMsgExportedN: {en: "Exported {0} of {1} contractors to Exports/{2}.", nl: ""},
+        wrMsgExportNoHours: {en: "{0}: no hours, skipped.", nl: ""},
+        wrErrExportNoLanguage: {en: "{0}: no report language (column Language in Employers list). Not exported.", nl: ""},
+        wrErrExportTextsMissing: {en: "{0}: texts missing in Translations ({1}). Not exported.", nl: ""},
+        wrErrExportNoPrimary: {en: "Primary report language not set.", nl: ""},
         wrExportNoMessage: {en: "no message from the export flow", nl: ""},
         admHeadNotSaved: {en: "Not saved.", nl: ""},
         admHeadNotLoaded: {en: "Not loaded.", nl: ""},

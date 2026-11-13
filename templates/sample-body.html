@@ -1,4 +1,4 @@
-<!-- Sample Content for the flow test (MS-029, TP-EXPORT-01 T2): 2 pages (Dutch + English), synthetic TEST data, no personal data. Texts are test values only; the app takes them from the Translations list. Per page: one named page (style page: wr-xx) and one @page wr-xx rule holding only the footer text (DECISIONS.md H25). -->
+<!-- Sample Content for the flow test (MS-029, TP-EXPORT-01 T2) and the reference for Test-Export: one contractor per file (DECISIONS.md H26), 2 pages (Dutch + English), synthetic TEST data, no personal data. Texts are test values only; the app takes them from the Translations list. Per page: one named page (style page: wr-xx) and one @page wr-xx rule holding only the footer text (DECISIONS.md H25). -->
 <section class="page" lang="nl" style="page: wr-nl">
 <style>@page wr-nl { @bottom-left { content: "Gegenereerd 12-11-2026 10:00 door Test User"; } @bottom-right { content: "Pagina " counter(page) " van " counter(pages); } }</style>
 {{HEADER}}
@@ -8,7 +8,7 @@
 <tr><th>Land</th><td>Netherlands</td></tr>
 <tr><th>Projectnummer</th><td>TEST-000</td></tr>
 <tr><th>Projectreferentie</th><td>Test project reference</td></tr>
-<tr><th>Aannemer</th><td>Alle aannemers</td></tr>
+<tr><th>Aannemer</th><td>TEST Employer &middot; EMP-901</td></tr>
 <tr><th>Week</th><td>2026 KW46 &middot; 09-11-2026 t/m 15-11-2026</td></tr>
 </table>
 <table class="report">
@@ -21,10 +21,6 @@
 <tr><td>Test Worker A</td><td>Fitter</td><td class="num">8</td><td class="num">8</td><td class="num">8</td><td class="num">8</td><td class="num">6</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">38</td></tr>
 <tr class="alt"><td>Test Worker B</td><td>Welder</td><td class="num">10</td><td class="num">10</td><td class="num">10</td><td class="num">10</td><td class="num">&ndash;</td><td class="num we">4</td><td class="num we">&ndash;</td><td class="num total-col">44</td></tr>
 <tr class="subtotal"><td colspan="2">Subtotaal</td><td class="num">18</td><td class="num">18</td><td class="num">18</td><td class="num">18</td><td class="num">6</td><td class="num we">4</td><td class="num we">&ndash;</td><td class="num total-col">82</td></tr>
-<tr class="group"><td colspan="10">TEST Contractor B &middot; EMP-902</td></tr>
-<tr><td>Test Worker C</td><td>Fitter</td><td class="num">8</td><td class="num">8</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">16</td></tr>
-<tr class="subtotal"><td colspan="2">Subtotaal</td><td class="num">8</td><td class="num">8</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">16</td></tr>
-<tr class="total"><td colspan="2">Totaal</td><td class="num">26</td><td class="num">26</td><td class="num">18</td><td class="num">18</td><td class="num">6</td><td class="num we">4</td><td class="num we">&ndash;</td><td class="num total-col">98</td></tr>
 </tbody>
 </table>
 </section>
@@ -37,7 +33,7 @@
 <tr><th>Country</th><td>Netherlands</td></tr>
 <tr><th>Project number</th><td>TEST-000</td></tr>
 <tr><th>Project reference</th><td>Test project reference</td></tr>
-<tr><th>Contractor</th><td>All contractors</td></tr>
+<tr><th>Contractor</th><td>TEST Employer &middot; EMP-901</td></tr>
 <tr><th>Week</th><td>2026 KW46 &middot; 09-11-2026 to 15-11-2026</td></tr>
 </table>
 <table class="report">
@@ -50,10 +46,6 @@
 <tr><td>Test Worker A</td><td>Fitter</td><td class="num">8</td><td class="num">8</td><td class="num">8</td><td class="num">8</td><td class="num">6</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">38</td></tr>
 <tr class="alt"><td>Test Worker B</td><td>Welder</td><td class="num">10</td><td class="num">10</td><td class="num">10</td><td class="num">10</td><td class="num">&ndash;</td><td class="num we">4</td><td class="num we">&ndash;</td><td class="num total-col">44</td></tr>
 <tr class="subtotal"><td colspan="2">Subtotal</td><td class="num">18</td><td class="num">18</td><td class="num">18</td><td class="num">18</td><td class="num">6</td><td class="num we">4</td><td class="num we">&ndash;</td><td class="num total-col">82</td></tr>
-<tr class="group"><td colspan="10">TEST Contractor B &middot; EMP-902</td></tr>
-<tr><td>Test Worker C</td><td>Fitter</td><td class="num">8</td><td class="num">8</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">16</td></tr>
-<tr class="subtotal"><td colspan="2">Subtotal</td><td class="num">8</td><td class="num">8</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">16</td></tr>
-<tr class="total"><td colspan="2">Total</td><td class="num">26</td><td class="num">26</td><td class="num">18</td><td class="num">18</td><td class="num">6</td><td class="num we">4</td><td class="num we">&ndash;</td><td class="num total-col">98</td></tr>
 </tbody>
 </table>
 </section>

@@ -1,4 +1,4 @@
-﻿# Week Report phase A (WEEKREPORT_PLAN.md par. 3-5 and 7; DECISIONS.md WR1, E6-E8, E10, E11): static and Power Fx interpreter checks of
+# Week Report phase A (WEEKREPORT_PLAN.md par. 3-5 and 7; DECISIONS.md WR1, E6-E8, E10, E11): static and Power Fx interpreter checks of
 # Src\scrWeekReport.pa.yaml. Style of Test-AdminScreens.ps1: Check-WeeklySource.ps1 is dot-sourced (syntax + templates), the real formula
 # texts are read from the YAML and evaluated in the Power Fx interpreter with synthetic fixtures (no real names; TEST-000 style data).
 # Proves source structure and local calculation only: NO Studio import, Canvas binding, delegation (Monitor) or functional result.
@@ -113,7 +113,7 @@ $allowedReads = @(
     'Refresh(Projects)', 'Refresh(Employers)', 'Refresh(Workers)', 'Refresh(Hours)', "Refresh('ProjectWorkers')", "Refresh('AssignmentPeriods')",
     'ForAll(ProjectsAsp,{ID:p.ID,Title:Trim(p.Title&""),Number:Trim(p.''ProjectNumber''&""),Reference:Trim(p.''ProjectReference''&""),Country:Trim(p.Country.Value&"")})',
     'ForAll(EmployersAsemp,{ID:emp.ID,Name:Trim(emp.Title&""),Code:Trim(emp.''EmployerCode''&""),Active:Coalesce(emp.Active,true),Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))})',
-    'ForAll(WorkersAsw,{ID:w.ID,FirstName:Trim(w.''FirstName''&""),Surname:Trim(w.Surname&""),Code:Trim(w.''WorkerCode''&""),Trade:Trim(w.Trade.Value&""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value&""),Language:If(Trim(w.Language.Value&"")="Nederlands","Dutch",Trim(w.Language.Value&""))})',
+    'ForAll(WorkersAsw,{ID:w.ID,FirstName:Trim(w.''FirstName''&""),Surname:Trim(w.Surname&""),Code:Trim(w.''WorkerCode''&""),Trade:Trim(w.Trade.Value&""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value&"")})',
     "Filter('ProjectWorkers',ProjectKey=varWrProjectKey)", "Filter('AssignmentPeriods',ProjectKey=varWrProjectKey)",
     "ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix)&&'WorkDate'>=varWrMonday&&'WorkDate'<varWrNextMonday)Asentry,$hrec)"
 )
@@ -218,26 +218,22 @@ $rowFx = 'Concat(Sort(colWrPendRowsShown,Text(WorkerID) & "|" & Text(ContractorI
 $rowsExp = '1/10:Anna Test|WKR-001|Alpha BV|EMP-010|Welder|_,_,_,_,_,_,_=0; 2/10:Bram Test|WKR-002|Alpha BV|EMP-010|Fitter|8,_,_,_,_,_,_=8; 2/20:Bram Test|WKR-002|Beta|BETA-1|Welder|_,7.5,2.25,_,_,_,_=9.75; 3/10:Cees Test|WKR-003|Alpha BV|EMP-010|Fitter|_,_,0,10,_,_,_=10; 6/20:Fay Test|WKR-006|Beta|BETA-1|Unknown|_,_,_,_,_,_,_=0'
 Assert-Eval $rowFx $rowsExp 'rows (real project): period-only workers 1/6 with the current contractor and Workers.Trade; worker 2 with hours under two contractors = two rows (historical Hours.Employer); worker 3 hours without period; worker 4 (period ended Sunday before) absent; F->Fitter, W->Welder; blank trade lines ignored; stored 0 kept as 0; codes WKR-/EMP- fallback'
 Assert-Eval 'varWrPendExcluded' 1 'TEST rule: on a real project the TEST Employer row (worker 5, period only) is excluded and counted (Attention message)'
-Assert-Eval 'Concat(Sort(colWrPendGroups,SortName),Display & "=" & ReportLanguage & "/" & Text(Rows) & "/" & Text(WeekTotal),"; ")' 'Alpha BV (EMP-010)=Polish/3/18; Beta (BETA-1)=English/2/9.75' 'report language per contractor group: majority Polish (2 of 3); tie Polish/Romanian -> English; subtotals per contractor'
+Assert-Eval 'Concat(Sort(colWrPendGroups,SortName),Display & "=" & Text(Rows) & "/" & Text(WeekTotal),"; ")' 'Alpha BV (EMP-010)=3/18; Beta (BETA-1)=2/9.75' 'rows and subtotals per contractor group'
 $lineFx = 'Concat(Sort(colWrPendLines,SortKey),LineType & ":" & Name & If(LineType="Row",If(Zebra,"#z",""),"") & "=" & Text(WeekTotal),"; ")'
 Assert-Eval $lineFx 'Header:Alpha BV=0; Row:Anna Test=0; Row:Bram Test#z=8; Row:Cees Test=10; Subtotal:Subtotal=18; Header:Beta=0; Row:Bram Test=9.75; Row:Fay Test#z=0; Subtotal:Subtotal=9.75; Grand:Total=27.75' 'display lines: per contractor (sorted by name) header, rows (sorted by name, zebra from the 2nd row of each group), subtotal; grand total last'
 Assert-Eval 'Concat(Filter(colWrPendLines,LineType="Grand"),Concat(Table({d:D1},{d:D2},{d:D3},{d:D4},{d:D5},{d:D6},{d:D7}),Text(d),","))' '8,7.5,2.25,10,0,0,0' 'grand total per day'
 Assert-Eval 'Concat(colWrPendContractorItems,Value,"; ")' 'All contractors; Alpha BV (EMP-010); Beta (BETA-1)' 'Contractor dropdown items: All contractors first, then the contractors of the week (TEST Employer not on a real project)'
 Run-Pipeline 'TEST-000'
 Assert-Eval 'varWrPendExcluded' 0 'TEST rule: on a TEST- project nothing is excluded'
-Assert-Eval 'Concat(Sort(colWrPendGroups,SortName),Display & "=" & ReportLanguage,"; ")' 'Alpha BV (EMP-010)=Polish; Beta (BETA-1)=English; TEST Employer (EMP-099)=English' 'TEST project: TEST Employer group shown; its single English worker -> English'
+Assert-Eval 'Concat(Sort(colWrPendGroups,SortName),Display,"; ")' 'Alpha BV (EMP-010); Beta (BETA-1); TEST Employer (EMP-099)' 'TEST project: TEST Employer group shown'
 foreach ($c in @(@('TEST-000', $true), @(' TEST-001', $true), @('P-1000', $false), @('test-000', $false), @('XTEST-000', $false))) {
     $isTestFx = ($steps | Where-Object Target -eq 'varWrPendIsTest').Expr
     Assert-Eval "With({varWrPendProject:{Number:`"$($c[0])`"}},$isTestFx)" $c[1] "TEST project detection '$($c[0])' -> $($c[1]) (Project Number starts with TEST-, trimmed)"
 }
-# report language edge cases on the real group formula
+# H27 (Eddy 13-11-2026): no worker-majority report language any more; page 2 of the PDF = Employers.Language only (Test-Export)
 $grpStep = ($steps | Where-Object Target -eq 'colWrPendGroups').Expr
-foreach ($c in @(@('"Dutch","Dutch",""', 'Dutch'), @('"","",""', 'English'), @('"Polish","Romanian","Ukrainian"', 'English'), @('"Ukrainian","Ukrainian","Dutch"', 'Ukrainian'), @('"Dutch","Dutch","German"', 'Dutch'))) {
-    $langs = $c[0] -split ','
-    $rows = (0..2 | ForEach-Object { "{ContractorID:10,ContractorName:`"Alpha BV`",EmployerCode:`"EMP-010`",WorkerID:$($_+1),Language:$($langs[$_]),D1:If(false,0),D2:If(false,0),D3:If(false,0),D4:If(false,0),D5:If(false,0),D6:If(false,0),D7:If(false,0),WeekTotal:0}" }) -join ','
-    Assert-Eval "With({colWrPendRowsShown:Table($rows)},First($grpStep).ReportLanguage)" $c[1] "report language for worker languages [$($c[0])] -> $($c[1]) (texts compared, no fixed language list; blank ignored; tie or none -> English)"
-}
-Assert-True (-not ([IO.File]::ReadAllText((Join-Path $srcDir 'scrWeekReport.pa.yaml'))).Contains('lblWrGrpLang') -and -not ([IO.File]::ReadAllText((Join-Path $srcDir 'App.pa.yaml'))).Contains('Report language')) 'screen shows no report language (H24, Eddy 11-11-2026: screen single-language; second language only in the PDF export); ReportLanguage stays in the group record for phase C'
+Assert-True ($grpStep -notmatch 'Language' -and $loader -notmatch 'ReportLanguage' -and $loader -notmatch 'w\.Language') 'H27: contractor groups carry no report language; Workers.Language is no longer read by Week Report'
+Assert-True (-not ([IO.File]::ReadAllText((Join-Path $srcDir 'scrWeekReport.pa.yaml'))).Contains('lblWrGrpLang') -and -not ([IO.File]::ReadAllText((Join-Path $srcDir 'App.pa.yaml'))).Contains('Report language')) 'screen shows no report language (H24, Eddy 11-11-2026: screen single-language; second language only in the PDF export)'
 Assert-Eval "With({ThisItem:{Name:`"Alpha BV`",Code:`"EMP-010`"}},$((P 'lblWrGrpName.Text').Substring(1)))" "Alpha BV  $([char]0xB7)  EMP-010" 'group header: contractor name + Contractor Code'
 # error checks of the loader on bad fixtures (fail closed)
 $bad = @([regex]::Matches($loader, 'With\(\{badRows:') | ForEach-Object { $open = $_.Index + 4; $inner = Get-Balanced $loader $open; $a = Split-Args $inner; $rec = $a[0].Trim(); $rec.Substring('{badRows:'.Length, $rec.Length - '{badRows:'.Length - 1) })
@@ -254,12 +250,11 @@ Assert-Eval "Concat(With({colWrPendPW:Table({ID:101,WorkerID:1,AssignmentKey:`"7
 Assert-Eval "Concat(With({colWrPendPW:Table({ID:102,WorkerID:2,AssignmentKey:`"7|2`"},{ID:200,WorkerID:8,AssignmentKey:`"`"}),colWrPendHours:Table({HourID:1,EntryKey:`"7|2|20261109`",AssignmentID:102,WorkDay:Date(2026,11,9)},{HourID:2,EntryKey:`"7|3|20261109`",AssignmentID:102,WorkDay:Date(2026,11,9)},{HourID:3,EntryKey:`"7|20|20261109`",AssignmentID:102,WorkDay:Date(2026,11,9)},{HourID:4,EntryKey:`"7|8|20261109`",AssignmentID:200,WorkDay:Date(2026,11,9)},{HourID:5,EntryKey:`"7|9|20261109`",AssignmentID:999,WorkDay:Date(2026,11,9)},{HourID:6,EntryKey:`"7|2|20261110`",AssignmentID:102,WorkDay:Date(2026,11,9)},{HourID:7,EntryKey:`"7|2|20261109|x`",AssignmentID:102,WorkDay:Date(2026,11,9)},{HourID:8,EntryKey:`"7|2|20261115`",AssignmentID:102,WorkDay:Date(2026,11,15)})},$($bad[7])),Text(HourID),`",`")" '2,3,4,6,7' 'check (review 2 + re-review 3): EntryKey must equal link AssignmentKey & "|" & yyyymmdd of Work Date (other worker, look-alike 7|20, blank link key, wrong date suffix, extra suffix block); an unknown assignment is left to the assignment check'
 $pwFx = ($steps | Where-Object Target -eq 'colWrPendPeriodWorkers').Expr
 Assert-Eval "Concat(With({colWrPendPW:Table({ID:101,WorkerID:1},{ID:102,WorkerID:2}),colWrPendPeriods:Table({AssignmentKey:`"7|1`",From:If(false,Date(2026,1,1)),Until:If(false,Date(2026,1,1))},{AssignmentKey:`"7|2`",From:Date(2026,11,1),Until:If(false,Date(2026,1,1))})},$pwFx),Text(WorkerID),`",`")" '2' 'review 3: a period with blank From never counts as overlapping'
-$wkOpen = $loader.IndexOf('ForAll(Workers As w,') + 'ForAll'.Length
-$wkRec = (Split-Args (Get-Balanced $loader $wkOpen))[1].Trim()
+$emOpen = $loader.IndexOf('ForAll(Employers As emp,') + 'ForAll'.Length
+$emRec = (Split-Args (Get-Balanced $loader $emOpen))[1].Trim()
 foreach ($c in @(@('Nederlands', 'Dutch'), @(' Nederlands ', 'Dutch'), @('Dutch', 'Dutch'), @('Polish', 'Polish'), @('', ''))) {
-    Assert-Eval "With({w:{ID:1,'First Name':`"A`",Surname:`"B`",'Worker Code':`"`",Trade:{Value:`"Fitter`"},Employer:{Id:10,Value:`"Alpha BV`"},Language:{Value:`"$($c[0])`"}}},$wkRec).Language" $c[1] "review 4: Workers.Language '$($c[0])' read as '$($c[1])' (legacy Nederlands = Dutch, never 'Dutch + Nederlands')"
-}
-# ISO year/week label (same formula as Hours Summary colReportFacts) and the picker Monday
+    Assert-Eval "With({emp:{ID:10,Title:`"Alpha BV`",'Employer Code':`"`",Active:true,Language:{Value:`"$($c[0])`"}}},$emRec).Language" $c[1] "Employers.Language '$($c[0])' read as '$($c[1])' (report language of the PDF page 2, H27; legacy Nederlands = Dutch)"
+}# ISO year/week label (same formula as Hours Summary colReportFacts) and the picker Monday
 $kwFx = (P 'lblWrWeekKW.Text').Substring(1)
 $mondayFx = [regex]::Match($pickOc, 'monday:(DateAdd\(selectedDay,1-Weekday\(selectedDay,StartOfWeek\.Monday\),TimeUnit\.Days\))').Groups[1].Value
 Assert-True ($mondayFx.Length -gt 0) 'picker Monday formula found'

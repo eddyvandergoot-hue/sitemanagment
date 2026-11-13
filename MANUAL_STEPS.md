@@ -28,6 +28,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-030 | 9-11-2026 | Done 13-11-2026 (Eddy); flowkoppeling samengevoegd (commit 74c37bf) |
 | MS-031 | 12-11-2026 | Done 12-11-2026 (Eddy) |
 | MS-032 | 13-11-2026 | Done 13-11-2026 (Eddy); 138 items |
+| MS-033 | 13-11-2026 | Open (Eddy) |
+| MS-034 | 13-11-2026 | Open (Eddy) |
 
 ---
 
@@ -300,3 +302,25 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   3. Bestaande doc.*-regels met dezelfde Key + Language: vervangen, niet dubbel laten staan.
   4. Controleer na de import: 138 regels met Key "doc.*", Oekraïense teksten in Cyrillisch leesbaar (geen ?-tekens), placeholders {date} {user} {page} {pages} ongewijzigd.
 - **Let op:** pl/ro/de/uk zijn nog niet door native speakers gecontroleerd (backlog). Wijzigingen in de lijst ook in de repo-CSV vastleggen.
+
+
+## MS-033 — Lijst AppSettings (primaire rapporttaal)
+
+- **Added:** 13-11-2026. **Status:** Open (Eddy).
+- **Reason:** DECISIONS.md H27: de taal van pagina 1 van de Week Report-PDF is een instelling (standaard Dutch), geen vaste waarde in formules. Er is geen bestaande configuratielijst in de app (FlowConfig is een flow, niet gekoppeld). Tot deze stap gedaan is gebruikt de app één named formula `ReportPrimaryLanguage = "Dutch"` in App.Formulas.
+- **Stappen:**
+  1. Maak op https://geacloud.sharepoint.com/sites/GEASiteManagment de lijst **AppSettings**: kolom Title hernoemen naar **Key** (interne naam blijft Title, enkele regel tekst, verplicht, unieke waarden afdwingen), kolom **Value** (enkele regel tekst). Geen andere kolommen.
+  2. Item toevoegen: Key `report.primaryLanguage`, Value `Dutch` (zelfde schrijfwijze als de keuzes van Language: Dutch, English, Polish, Romanian, German, Ukrainian).
+  3. Rechten: lezen voor alle app-gebruikers; wijzigen alleen eigenaren.
+  4. Open de app in Studio, voeg via Data de lijst AppSettings toe, wijzig verder niets, sla op en zet het bestand in `Incoming\` (zoals MS-030). Meld bestandsnaam en SHA-256.
+- **Daarna (Claude):** metadata samenvoegen (DataSources.json + LocalConnectionReferences, zoals MS-028/MS-030) en ReportPrimaryLanguage vervangen door een read van AppSettings (Key = "report.primaryLanguage"; geen item = Dutch; leesfout = geen export). Geen bouw vóór de Incoming-save.
+
+## MS-034 — Employers: Report Language verplicht
+
+- **Added:** 13-11-2026. **Status:** Open (Eddy).
+- **Reason:** DECISIONS.md H27: pagina 2 van de Week Report-PDF is de Report Language van de contractor, zonder terugval. Een lege waarde blokkeert de export voor die contractor (rode melding). Daarom verplicht in SharePoint.
+- **Stappen:**
+  1. Nu: vul de Report Language in bij alle bestaande Employers (actief en inactief) via een weergave met filter Report Language is leeg. Dit volstaat voor de export (lege taal = rode melding, geen export voor die contractor).
+  2. **Nog niet** aanzetten: kolominstelling "Require that this column contains information = Yes". Reden: het Contractors-scherm heeft het veld Report Language nog niet; met verplicht aan weigert SharePoint dan elke **New** contractor (Patch zonder verplichte kolom) en een Save van een bestaand item zonder taal. Eerst krijgt Contractors het veld (backlog, aparte opdracht); daarna zet je stap 2 aan.
+  3. Na de Contractors-wijziging: Require = Yes, geen standaardwaarde.
+- **Controle:** geen enkel Employers-item met lege Report Language.

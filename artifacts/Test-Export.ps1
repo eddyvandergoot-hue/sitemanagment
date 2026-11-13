@@ -1,4 +1,4 @@
-# Week Report phase C (WEEKREPORT_PLAN.md par. 6.1-6.6; DECISIONS.md H24, H25, E2, E10): static and Power Fx interpreter checks of the
+# Week Report phase C (WEEKREPORT_PLAN.md par. 6.1-6.7; DECISIONS.md H24-H27, E2, E10): static and Power Fx interpreter checks of the
 # Export button on scrWeekReport (cmpWrFooter.ExportEnabled / OnExport). Style of Test-WeekReport.ps1: Check-WeeklySource.ps1 is dot-sourced
 # (syntax + templates), the real formula texts are read from the YAML and evaluated in the Power Fx interpreter with synthetic fixtures.
 # The PDF Content built by the real formula is compared with templates/sample-body.html (same synthetic TEST data and texts).
@@ -7,7 +7,11 @@
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Check-WeeklySource.ps1')
 [Reflection.Assembly]::LoadFrom((Join-Path $pacDir 'Microsoft.PowerFx.Interpreter.dll')) | Out-Null
-$xEngine = New-Object Microsoft.PowerFx.RecalcEngine
+# MaxCallDepth: the interpreter default (20) is a local harness limit; the per-contractor HTML (ForAll > With > With > Concat > With > Substitute chain)
+# nests deeper than the old single-file build. Studio import is the real check for this nesting (TP-EXPORT-02).
+$xCfg = New-Object Microsoft.PowerFx.PowerFxConfig
+$xCfg.MaxCallDepth = 60
+$xEngine = New-Object Microsoft.PowerFx.RecalcEngine -ArgumentList $xCfg
 $xOpt = New-Object Microsoft.PowerFx.ParserOptions
 $xOpt.Culture = [Globalization.CultureInfo]::GetCultureInfo('en-US')
 $xOpt.AllowsSideEffects = $true
@@ -110,61 +114,53 @@ Assert-True ($guard -notmatch 'cmpWr\w+\.Value') 'guard reads no component outpu
 Test-Guard 'colWrRows:Filter(Table({ContractorID:10,WorkerID:1}),false)' $false 'no report rows'
 Test-Guard 'varWrContractorID:20|||varWrContractorDisplay:"Beta (B-1)"|||colWrRows:Table({ContractorID:10,WorkerID:1})' $false 'chosen contractor has no rows'
 Test-Guard 'varWrContractorID:0|||varWrContractorDisplay:"Beta (B-1)"' $false 'L6: contractor ID 0 but a remembered contractor display (not "All") blocks'
-$blocked = $onExp.Substring($onExp.LastIndexOf('CsvRows:CountRows(colWrExpCsvRows)}),'))
+$blocked = $onExp.Substring($onExp.LastIndexOf('Skipped:CountIf(colWrExpResults,Status="NoHours")}),'))
 Assert-True ($blocked.Contains('Set(varAdmMsgKind,"Error")') -and $blocked.Contains('T.admHeadBlocked.en') -and $blocked.Contains('T.wrMsgExportBlocked.en') -and $blocked -notmatch '\.Run\(') 'guard false: red "Blocked." message, no flow call'
 
-# (2) Busy flag, no mutations, messages ----------------------------------------------------------------------------------
+# (2) Busy flag, no mutations, texts ------------------------------------------------------------------------------------------
 Assert-True ($onExpN.StartsWith("=If($gN,Set(varWrExporting,true);Set(varWrBusy,true);")) 'export sets varWrExporting and varWrBusy first (spinner in cmpTitleBar; navigation, Refresh and week change blocked)'
-Assert-True ($onExpN.Contains(');Set(varWrBusy,false);Set(varWrExporting,false);Trace("DIAG|Export|End",') -and ([regex]::Matches($onExpN, 'Set\(varWrExporting,false\)')).Count -eq 1 -and $onExpN.IndexOf('Set(varWrBusy,false);Set(varWrExporting,false);') -gt $onExpN.LastIndexOf("'SiteManagment-Exportfile'.Run(")) 'M1: busy flags reset once, unconditionally after the message step (not inside any If), before the end trace'
+Assert-True ($onExpN.Contains(');Set(varWrBusy,false);Set(varWrExporting,false);Trace("DIAG|Export|End",') -and ([regex]::Matches($onExpN, 'Set\(varWrExporting,false\)')).Count -eq 1 -and $onExpN.IndexOf('Set(varWrBusy,false);Set(varWrExporting,false);') -gt $onExpN.LastIndexOf("'SiteManagment-Exportfile'.Run(")) 'busy flags reset once, unconditionally after the message step (not inside any If), before the end trace'
 Assert-True ((P 'cmpWrTitle.Busy') -eq '=Coalesce(varWrBusy,false) || varWrLoadState="Loading"') 'title spinner follows varWrBusy (also during export)'
 foreach ($k in 'cmpWrFooter.HomeEnabled', 'cmpWrFooter.RefreshEnabled', 'dpWrWeek.DisplayMode', 'btnWrPrev.DisplayMode', 'btnWrNext.DisplayMode', 'cmpWrProject.Enabled', 'cmpWrContractor.Enabled') { Assert-True ((P $k).Contains('!Coalesce(varWrBusy,false)')) "$k blocked while busy (export sets varWrBusy)" }
 Assert-True ((P 'btnWrLoad.OnSelect').StartsWith('=If(Coalesce(varWrBusy,false),')) 'loader refuses while busy (no reload during export)'
 $bare = Remove-FxStrings $screenText
-Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Notify|Choices)\(') 'no Patch/Remove/Update/SubmitForm/Launch/Download/Notify/Choices on scrWeekReport'
+Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Notify|Choices)\(') 'no Patch/Remove/Update/SubmitForm/Launch/Download/Notify/Choices on scrWeekReport (the app does not open the file, H26)'
 $colTargets = @([regex]::Matches((Remove-FxStrings $onExp), '\b(Collect|ClearCollect|Clear)\(\s*([^,\)]+)') | ForEach-Object { $_.Groups[2].Value.Trim() } | Sort-Object -Unique)
 Assert-True (@($colTargets | Where-Object { $_ -notmatch '^col[A-Z]\w*$' }).Count -eq 0 -and $colTargets -notcontains 'Translations') "OnExport collection functions only target local collections ($($colTargets -join ', '))"
-Assert-True ($onExpN.Contains('Set(varAdmMsgKind,"Success");Set(varAdmMsgHead,If(LangNl&&!IsBlank(T.admHeadExported.nl),T.admHeadExported.nl,T.admHeadExported.en));') -and $onExpN.Contains('If(IfError(IsEmpty(colWrExportErrors)&&varWrExpPdfOk&&varWrExpCsvOk,false),Set(varAdmMsgKind,"Success")')) 'M1: green "Exported." only when both files are OK and no error was collected; any error in that check -> red branch (never no message)'
-Assert-True ($onExpN.Contains('Set(varAdmMsgBody,IfError(If(varWrExpFiles>0,') -and $onExpN.Contains('IfError(Coalesce(varWrExpPdfError,') -and $onExpN.Contains('IfError(Coalesce(varWrExpCsvError,')) 'M1: error-message texts built inside IfError (a broken flow result still gives a red message with a T text)'
-Assert-True ($onExpN.Contains('Set(varAdmMsgHead,If(varWrExpFiles>0,If(LangNl&&!IsBlank(T.admHeadPartExported.nl),T.admHeadPartExported.nl,T.admHeadPartExported.en),If(LangNl&&!IsBlank(T.admHeadNotExported.nl),T.admHeadNotExported.nl,T.admHeadNotExported.en)))')) 'failure: red "Partly exported." (PDF saved, CSV failed) or "Not exported."'
 $tKeys = @([regex]::Matches($formulas, '(?m)^\s*(\w+):\s*\{en:') | ForEach-Object { $_.Groups[1].Value })
 $used = @([regex]::Matches($onExp + $guard, '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
-Assert-True (@($used | Where-Object { $tKeys -notcontains $_ }).Count -eq 0 -and $used.Count -ge 14) "all $($used.Count) T keys used by the export exist in App.Formulas T (English UI texts)"
-Assert-Eval 'T.wrMsgExported.en' 'Saved in Exports/{0}: {1}.pdf and {1}.csv' 'success body names the folder and both file names'
-Assert-Eval 'T.wrErrExportCsv.en' 'PDF {0}.pdf saved, but CSV {0}.csv not saved: {1}' 'CSV failure says the PDF was saved'
+Assert-True (@($used | Where-Object { $tKeys -notcontains $_ }).Count -eq 0 -and $used.Count -ge 18) "all $($used.Count) T keys used by the export exist in App.Formulas T (English UI texts)"
+Assert-Eval 'T.wrErrExportPdf.en' '{0}: PDF not confirmed ({1}). Check Exports/{2}.' 'N2: flow failure says "not confirmed" with a hint to check Exports/<ProjectNumber>'
+Assert-Eval 'T.wrErrExportCsv.en' '{0}: PDF saved, CSV not confirmed ({1}). Check Exports/{2}.' 'N2: CSV failure says the PDF was saved and the CSV is not confirmed'
+Assert-Eval 'T.wrMsgExportedN.en' 'Exported {0} of {1} contractors to Exports/{2}.' 'summary "Exported x of y contractors" (UI term Contractor)'
+Assert-Eval 'T.wrMsgExportNoHours.en' '{0}: no hours, skipped.' 'N4: contractor without hours is skipped with its code'
 $trace = [regex]::Match($onExp, 'Trace\("DIAG\|Export\|End",TraceSeverity\.Information,\{([^}]*)\}\)')
-Assert-True ($trace.Success -and $trace.Groups[1].Value.Contains('Files:varWrExpFiles') -and $trace.Groups[1].Value.Contains('ElapsedMs:DateDiff(varWrExpT0,Now(),TimeUnit.Milliseconds)') -and $trace.Groups[1].Value.Contains('Errors:CountRows(colWrExportErrors)') -and $trace.Groups[1].Value -notmatch 'Name|User|Folder|Base|Message') 'trace DIAG|Export|End with Files, ElapsedMs, Errors and no names'
+Assert-True ($trace.Success -and $trace.Groups[1].Value.Contains('Files:varWrExpFiles') -and $trace.Groups[1].Value.Contains('ElapsedMs:DateDiff(varWrExpT0,Now(),TimeUnit.Milliseconds)') -and $trace.Groups[1].Value.Contains('Errors:CountRows(colWrExportErrors)') -and $trace.Groups[1].Value -notmatch 'Name|User|Folder|Base|Message|Code') 'trace DIAG|Export|End with Files, ElapsedMs, Errors and no names or codes'
 
-# (3) Flow calls (6.5): 2 calls, PDF 5 arguments with TemplateName, CSV 4 arguments, each checked ---------------------------
+# (3) Flow calls (6.5): 2 calls inside one ForAll over the built files; PDF 5 args with TemplateName, CSV 4 args, CSV only after PDF OK
 $runs = @([regex]::Matches($onExp, "'SiteManagment-Exportfile'\.Run\("))
 Assert-True ($runs.Count -eq 2 -and ([regex]::Matches($bare, '\.Run\(')).Count -eq 2) "exactly 2 calls of 'SiteManagment-Exportfile'.Run (PDF + CSV) on the screen"
 $pdfArgs = Split-FxArgs (Get-Balanced $onExp ($runs[0].Index + $runs[0].Length - 1))
 $csvArgs = Split-FxArgs (Get-Balanced $onExp ($runs[1].Index + $runs[1].Length - 1))
-Assert-True ($pdfArgs.Count -eq 5 -and ($pdfArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|varWrExpBase|"pdf"|varWrExpHtml|{text_4:"weekreport.html"}') 'PDF call: Run(Folder, FileName, "pdf", Content, {text_4: "weekreport.html"}) (TemplateName as optional record)'
-Assert-True ($csvArgs.Count -eq 4 -and ($csvArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|varWrExpBase|"csv"|varWrExpCsvText') 'CSV call: Run(Folder, FileName, "csv", Content) (same base name, no TemplateName)'
-Assert-True ($onExpN.Contains("IfError(Set(varWrExpPdfResult,'SiteManagment-Exportfile'.Run(") -and $onExpN.Contains("IfError(Set(varWrExpCsvResult,'SiteManagment-Exportfile'.Run(")) 'each flow call inside IfError'
-foreach ($f in 'Pdf', 'Csv') {
-    Assert-True ($onExpN.Contains("Set(varWrExp${f}Ok,IfError(IsBlank(varWrExp${f}Error)&&Lower(Trim(varWrExp${f}Result.status&`"`"))=`"ok`"&&!IsBlank(Trim(varWrExp${f}Result.fileurl&`"`")),false));")) "M1: $f result: OK only without error, status ok (case-insensitive), non-empty fileurl; evaluated inside IfError(..., false)"
-    $okFx = Get-CallArg $onExp "Set(varWrExp${f}Ok,IfError(" 1
-    foreach ($c in @(@('""', '{status:"OK",fileurl:"https://x/f",message:""}', $true, 'status OK + url'), @('""', '{status:"ok",fileurl:"u",message:""}', $true, 'status lower-case ok'), @('""', '{status:"Error",fileurl:"u",message:"m"}', $false, 'status Error'), @('""', '{status:"OK",fileurl:"  ",message:""}', $false, 'empty fileurl'), @('"boom"', '{status:"OK",fileurl:"u",message:""}', $false, 'IfError caught a flow error'), @('""', 'If(false,{status:"",fileurl:"",message:""})', $false, 'blank result'), @('If(1/0>0,"x","y")', '{status:"OK",fileurl:"u",message:""}', $false, 'error value in the result check -> false'))) {
-        Assert-Eval "With({varWrExp${f}Error:$($c[0]),varWrExp${f}Result:$($c[1])},$okFx)" $c[2] "M1: $f OK = $($c[2]) for $($c[3])"
-    }
+Assert-True ($pdfArgs.Count -eq 5 -and ($pdfArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|b.Base|"pdf"|b.Html|{text_4:"weekreport.html"}') 'PDF call: Run(Folder, FileName, "pdf", Content, {text_4: "weekreport.html"}) per contractor'
+Assert-True ($csvArgs.Count -eq 4 -and ($csvArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|b.Base|"csv"|b.Csv') 'CSV call: Run(Folder, FileName, "csv", Content) (same base name, no TemplateName)'
+Assert-True ($onExpN.Contains("If(IsEmpty(colWrExportErrors),ClearCollect(colWrExpResults,") -and $onExpN.Contains("ForAll(colWrExpBuiltAsb,With({pdf:IfError(With({rr:'SiteManagment-Exportfile'.Run(") -and $onExpN.Contains("With({csv:If(pdf.Ok,IfError(With({rr:'SiteManagment-Exportfile'.Run(")) 'one PDF + CSV pair per built contractor file; flow calls only without collected errors; each call in IfError; CSV only after PDF OK'
+$flowResFx = '{Ok:Lower(Trim(rr.status & ""))="ok" && !IsBlank(Trim(rr.fileurl & "")),Msg:Trim(rr.message & "")}'
+Assert-True (([regex]::Matches($onExp, [regex]::Escape($flowResFx))).Count -eq 2 -and ([regex]::Matches($onExp, [regex]::Escape('{Ok:false,Msg:Coalesce(FirstError.Message,"?")}'))).Count -eq 2) 'both results: OK only with status ok (case-insensitive) and a non-empty fileurl; an error gives Ok false with the error text'
+foreach ($c in @(@('{status:"OK",fileurl:"https://x/f",message:""}', $true, 'status OK + url'), @('{status:"ok",fileurl:"u",message:""}', $true, 'status lower-case ok'), @('{status:"Error",fileurl:"u",message:"m"}', $false, 'status Error'), @('{status:"OK",fileurl:"  ",message:""}', $false, 'status OK but empty fileurl (not confirmed)'), @('If(false,{status:"",fileurl:"",message:""})', $false, 'blank result'))) {
+    Assert-Eval "With({rr:$($c[0])},$flowResFx).Ok" $c[1] "flow result OK = $($c[1]) for $($c[2])"
 }
-Assert-True ($onExpN.Contains("If(IsEmpty(colWrExportErrors)&&varWrExpPdfOk,Set(varWrExpCsvResult,Blank());")) 'CSV only after a successful PDF and without collected errors'
-$iPdf = $onExpN.IndexOf("'SiteManagment-Exportfile'.Run("); $iCsv = $onExpN.LastIndexOf("'SiteManagment-Exportfile'.Run(")
-Assert-True ($onExpN.IndexOf('Set(varWrExpHtml,Concat(') -lt $iPdf -and $onExpN.IndexOf('Set(varWrExpCsvText,UniChar(65279)') -lt $iPdf -and $onExpN.LastIndexOf('Filter(Translations,') -lt $iPdf -and $iPdf -lt $iCsv) 'order: Translations reads and all local building first, then PDF, then CSV'
-Assert-True ($onExpN.Contains('If(IsEmpty(colWrExportErrors),Set(varWrExpPdfResult,Blank());')) 'PDF call only when no local/Translations error was collected (any error = zero flow calls)'
+$iPdf = $onExpN.IndexOf("'SiteManagment-Exportfile'.Run(")
+Assert-True ($onExpN.IndexOf('ClearCollect(colWrExpBuilt,') -lt $iPdf -and $onExpN.IndexOf('ForAll(TranslationsAstr,') -lt $iPdf) 'order: Translations read and all local building first, then the flow calls'
+Assert-True ($onExp -notmatch '"ALL"' -and $onExp -notmatch '_ALL') 'H26: no _ALL file any more (one file pair per contractor)'
 
-# (4) Translations reads (6.3): three reads with global predicate variables, 500 guards, read errors block -----------------
-$reads = @([regex]::Matches($onExpN, 'IfError\(CountRows\(ClearCollect\((colWrDoc\w+),ForAll\(Filter\(Translations,Language=(varWrDocQuery\w+)\)Astr,\{Key:Trim\(tr\.Title&""\),Txt:TrimEnds\(tr\.Text&""\)\}\)\)\)>=0,Collect\(colWrExportErrors,'))
-Assert-True ($reads.Count -eq 3 -and (($reads | ForEach-Object { $_.Groups[1].Value + '=' + $_.Groups[2].Value }) -join ',') -ceq 'colWrDocNl=varWrDocQueryNl,colWrDocEn=varWrDocQueryEn,colWrDoc2=varWrDocQuery2') 'three Translations reads Filter(Translations, Language = <global var>) (Dutch, English, second language), each in IfError'
-Assert-True (([regex]::Matches($onExpBare, '\bTranslations\b')).Count -eq 4 -and ([regex]::Matches((Remove-FxStrings ($screenText.Replace($onExp, ''))), '\bTranslations\b')).Count -eq 0) 'Translations referenced only by Refresh + the 3 reads in OnExport'
-foreach ($c in @(@('Nl', '"Dutch"'), @('En', '"English"'), @('2', 'varWrDocLang2'))) {
-    $iSet = $onExpN.IndexOf("Set(varWrDocQuery$($c[0]),$($c[1]))"); $iRead = $onExpN.IndexOf("Language=varWrDocQuery$($c[0]))")
-    Assert-True ($iSet -ge 0 -and $iSet -lt $iRead) "predicate variable varWrDocQuery$($c[0]) set before its read"
-}
-foreach ($c in 'Nl', 'En', '2') { Assert-True ($onExpN.Contains("If(CountRows(colWrDoc$c)>=500,Collect(colWrExportErrors,")) "500 guard on colWrDoc$c (500+ = error, no export)" }
-Assert-True ($onExpN.Contains('If(varWrDocQuery2<>"Dutch"&&varWrDocQuery2<>"English",IfError(CountRows(ClearCollect(colWrDoc2,') -and $onExpN.Contains('If(varWrDocQuery2="English",ClearCollect(colWrDoc2,colWrDocEn))')) 'second-language read only when it is not Dutch/English (English reuses the English read)'
-Assert-True ($onExpN.Contains('IfError(Refresh(Translations),Collect(colWrExportErrors,')) 'Refresh(Translations) in IfError before the reads'
+# (4) Translations: one read of all languages with a 500 guard; no fallback language ----------------------------------------------
+Assert-True ($onExpN.Contains('IfError(CountRows(ClearCollect(colWrDocAll,ForAll(TranslationsAstr,{Lang:Trim(tr.Language&""),Key:Trim(tr.Title&""),Txt:TrimEnds(tr.Text&"")})))>=0,Collect(colWrExportErrors,')) 'one Translations read (all languages, about 138 rows) in IfError; no remote call inside a ForAll body'
+Assert-True ($onExpN.Contains('If(CountRows(colWrDocAll)>=500,Collect(colWrExportErrors,')) '500 guard on the Translations read (500+ = error, no export)'
+Assert-True ($onExpN.Contains('IfError(Refresh(Translations),Collect(colWrExportErrors,') -and ([regex]::Matches((Remove-FxStrings $onExp), '\bTranslations\b')).Count -eq 2 -and ([regex]::Matches((Remove-FxStrings ($screenText.Replace($onExp, ''))), '\bTranslations\b')).Count -eq 0) 'Translations referenced only by Refresh + the one read in OnExport'
+Assert-True (([regex]::Matches($onExp, '"English"')).Count -eq 1 -and $onExp.Contains('Switch(pg.L,"Dutch","nl","English","en",')) 'H27: no English fallback anywhere (the only "English" is the lang-code mapping)'
+Assert-True ($onExpN.Contains('Set(varWrDocLang1,Trim(ReportPrimaryLanguage&""))') -and $formulas.Contains('ReportPrimaryLanguage = "Dutch";') -and $onExpN.Contains('If(IsBlank(varWrDocLang1),Collect(colWrExportErrors,')) 'H27: page 1 = ReportPrimaryLanguage (one setting, default Dutch; AppSettings after MS-033); empty = blocked'
+Assert-True ($loader -notmatch 'ReportLanguage' -and $loader -notmatch 'w\.Language' -and $loaderN.Contains('Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))') -and $loaderN.Contains('Country:Trim(p.Country.Value&"")')) 'H27: worker-majority language removed from the loader; Employers.Language and Projects.Country in the existing master projections (no extra read)'
 
 # (5) Keys (23) from templates/translations-weekreport.csv -------------------------------------------------------------------
 $csvLines = [IO.File]::ReadAllLines((Join-Path $tplDir 'translations-weekreport.csv'), [Text.Encoding]::UTF8) | Select-Object -Skip 1 | Where-Object { $_.Trim() }
@@ -172,60 +168,67 @@ $tr = @($csvLines | ForEach-Object { $p = $_.Split(';'); [pscustomobject]@{ Key 
 $keys = @($tr | ForEach-Object Key | Select-Object -Unique)
 Assert-True ($keys.Count -eq 23) "translations-weekreport.csv: 23 doc.* keys"
 foreach ($k in $keys) { Assert-True ($onExp.Contains('"' + $k + '"')) "key $k used in OnExport" }
-foreach ($k in $keys) { foreach ($lg in 'Dutch', 'English') { if (-not ($tr | Where-Object { $_.Key -eq $k -and $_.Lang -eq $lg -and $_.Text.Trim() })) { throw "FAIL $k missing for $lg in the CSV" } } }
-Assert-True $true 'every key has a Dutch and an English text in the CSV (fallback to the key never needed for the delivered texts)'
+foreach ($k in $keys) { foreach ($lg in 'Dutch', 'English', 'Polish', 'Romanian', 'German', 'Ukrainian') { if (-not ($tr | Where-Object { $_.Key -eq $k -and $_.Lang -eq $lg -and $_.Text.Trim() })) { throw "FAIL $k missing for $lg in the CSV" } } }
+Assert-True $true 'every key has a text in all six languages in the CSV (a delivered language never blocks)'
 
-# (6) Interpreter: texts with fallback ----------------------------------------------------------------------------------------
-function Get-TrTable([string]$lang) { return 'Table(' + ((@($tr | Where-Object Lang -eq $lang) | ForEach-Object { '{Key:' + (ConvertTo-FxString $_.Key) + ',Txt:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')' }
-$pageListFx = Get-CallArg $onExp 'ClearCollect(colWrDocPageList,' 1
+# (6) Interpreter: jobs per contractor, document texts, status ---------------------------------------------------------------
+function Get-DocAll([string[]]$langs) { return 'Table(' + ((@($tr | Where-Object { $langs -contains $_.Lang }) | ForEach-Object { '{Lang:' + (ConvertTo-FxString $_.Lang) + ',Key:' + (ConvertTo-FxString $_.Key) + ',Txt:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')' }
+$jobsFx = Get-CallArg $onExp 'ClearCollect(colWrExpJobs,' 1
+$jobs2Fx = Get-CallArg $onExp 'ClearCollect(colWrExpJobs2,' 1
 $textsFx = Get-CallArg $onExp 'ClearCollect(colWrDocTexts,' 1
-$lang2Fx = Get-CallArg $onExp 'Set(varWrDocLang2,' 1
-$code2Fx = Get-CallArg $onExp 'Set(varWrDocCode2,' 1
-function Set-DocTexts() {
-    $pages = Invoke-Fx $pageListFx; Set-FxValue 'colWrDocPageList' $pages
-    # Ungroup is not supported by the local interpreter (Studio supports it; cmpField uses it): evaluate the inner ForAll and flatten here
-    Set-FxValue 'wrPages' (Invoke-Fx $textsInnerFx)
-    Set-FxValue 'colWrDocTexts' (Invoke-Fx 'With({a:First(wrPages).PageTexts,b:If(CountRows(wrPages)>1,Last(wrPages).PageTexts,Filter(First(wrPages).PageTexts,false))},ForAll(Sequence(CountRows(a)+CountRows(b)) As i,If(i.Value<=CountRows(a),Index(a,i.Value),Index(b,i.Value-CountRows(a)))))')
-}
-$tArgs = Split-FxArgs (Get-Balanced $textsFx $textsFx.IndexOf('('))
-Assert-True ($textsFx.StartsWith('Ungroup(ForAll(colWrDocPageList As pg,{PageTexts:') -and $tArgs.Count -eq 2 -and $tArgs[1].Trim() -ceq 'PageTexts') 'doc texts = Ungroup(ForAll(pages, {PageTexts: ForAll(23 keys)}), PageTexts) (column as identifier)'
-$textsInnerFx = $tArgs[0].Trim()
-Set-FxVar 'colWrDocNl' (Get-TrTable 'Dutch'); Set-FxVar 'colWrDocEn' (Get-TrTable 'English')
-Set-FxVar 'colWrDoc2' 'Table({Key:"doc.title",Txt:"Raport X"},{Key:"doc.colName",Txt:""})'
-Set-FxVar 'colWrDocNl' 'Filter(colWrDocNl,Key<>"doc.weekRangeSep")'
-Set-FxVar 'varWrDocLang2' '"Polish"'; Set-FxVar 'varWrDocCode2' '"pl"'
-Set-DocTexts
-Assert-Eval 'Concat(colWrDocPageList,Text(Page) & Lang,",")' '1nl,2pl' 'second language Polish: page 1 nl + page 2 pl'
-Assert-Eval 'Concat(Filter(colWrDocTexts,Key in ["doc.title","doc.colName","doc.week","doc.weekRangeSep"]),Text(Page) & ":" & Key & "=" & Txt & If(Missing,"!",""),"; ")' '1:doc.title=Weekrapport; 1:doc.week=Week; 1:doc.weekRangeSep=doc.weekRangeSep!; 1:doc.colName=Naam; 2:doc.title=Raport X; 2:doc.week=Week; 2:doc.weekRangeSep=to; 2:doc.colName=Name' 'fallback: second language missing or empty -> English; missing in Dutch -> the key itself (flagged Missing for the trace)'
-Assert-True ($onExpN.Contains('If(CountIf(colWrDocTexts,Missing)>0,Trace("DIAG|Export|MissingText",TraceSeverity.Warning,')) 'missing texts only traced (not shown in the UI)'
-Set-FxVar 'varWrDocLang2' '"Dutch"'; Set-FxVar 'varWrDocCode2' '"nl"'
-Assert-Eval "CountRows($pageListFx)" 1 'second language Dutch: only page 1'
-# language choice (H24/WR1): Employers.Language first, else the group ReportLanguage; All contractors: one common outcome or English
-Set-FxVar 'colWrGroups' 'Table({ContractorID:10,ReportLanguage:"Romanian",ContractorName:"Alpha",EmployerCode:"EMP-010"},{ContractorID:20,ReportLanguage:"German",ContractorName:"Beta",EmployerCode:"B-1"},{ContractorID:30,ReportLanguage:"Polish",ContractorName:"Gamma",EmployerCode:"G-1"})'
-Set-FxVar 'colWrEmployers' 'Table({ID:10,Language:"Polish"},{ID:20,Language:""},{ID:30,Language:""})'
-foreach ($c in @(@(10, 'Polish'), @(20, 'German'), @(30, 'Polish'), @(0, 'English'))) { Assert-Eval "With({varWrExpContractorID:$($c[0])},$lang2Fx)" $c[1] "second language for contractor $($c[0]) = $($c[1]) (Employers.Language, else majority language of the group; All with mixed outcomes = English)" }
-Set-FxVar 'colWrGroups' 'Table({ContractorID:10,ReportLanguage:"Romanian"},{ContractorID:30,ReportLanguage:"Polish"})'
-Assert-Eval "With({varWrExpContractorID:0},$lang2Fx)" 'Polish' 'All contractors with one common outcome (Polish) = Polish'
-foreach ($c in @(@('Dutch', 'nl'), @('English', 'en'), @('Polish', 'pl'), @('Romanian', 'ro'), @('German', 'de'), @('Ukrainian', 'uk'), @('Spanish', 'und'))) { Assert-Eval "With({varWrDocLang2:`"$($c[0])`"},$code2Fx)" $c[1] "lang code $($c[0]) -> $($c[1])" }
-Assert-True ($loaderN.Contains('Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))') -and $loaderN.Contains('Country:Trim(p.Country.Value&"")') -and $loaderN.Contains('Country:p.Country,Display:')) 'Employers.Language and Projects.Country added to the existing master projections (no extra read)'
-
-# (7) Interpreter: PDF Content equals templates/sample-body.html ---------------------------------------------------------------
+$langsFx = Get-CallArg $onExp '; Collect(colWrDocLangs,' 1
 $linesFx = Get-CallArg $onExp 'ClearCollect(colWrExpLines,' 1
-$htmlFx = Get-CallArg $onExp 'Set(varWrExpHtml,' 1 -Last
+$csvRowsFx = Get-CallArg $onExp 'ClearCollect(colWrExpCsvRows,' 1
+$builtFx = Get-CallArg $onExp 'ClearCollect(colWrExpBuilt,' 1
+$resultsFx = Get-CallArg $onExp 'ClearCollect(colWrExpResults,' 1
 $isoYFx = Get-CallArg $onExp 'Set(varWrExpIsoYear,' 1
 $isoWFx = Get-CallArg $onExp 'Set(varWrExpIsoWeek,' 1
 $labelFx = Get-CallArg $onExp 'Set(varWrExpWeekLabel,' 1
 $folderFx = Get-CallArg $onExp 'Set(varWrExpFolder,' 1
-$baseFx = Get-CallArg $onExp 'Set(varWrExpBase,' 1
+$tArgs = Split-FxArgs (Get-Balanced $textsFx $textsFx.IndexOf('('))
+Assert-True ($textsFx.StartsWith('Ungroup(ForAll(Distinct(colWrDocLangs,L) As lg,{LangTexts:') -and $tArgs.Count -eq 2 -and $tArgs[1].Trim() -ceq 'LangTexts') 'doc texts = Ungroup(ForAll(languages used, {LangTexts: ForAll(23 keys)}), LangTexts) (column as identifier)'
+$textsInnerFx = $tArgs[0].Trim()
+function Set-DocTexts([string]$langsTable) {
+    # Ungroup is not supported by the local interpreter (Studio supports it): evaluate the inner ForAll and flatten here (max 3 languages)
+    Set-FxVar 'colWrDocLangs' $langsTable
+    Set-FxValue 'wrL' (Invoke-Fx $textsInnerFx)
+    Set-FxValue 'colWrDocTexts' (Invoke-Fx 'With({a:Index(wrL,1).LangTexts,b:If(CountRows(wrL)>=2,Index(wrL,2).LangTexts,Filter(Index(wrL,1).LangTexts,false)),c:If(CountRows(wrL)>=3,Index(wrL,3).LangTexts,Filter(Index(wrL,1).LangTexts,false))},ForAll(Sequence(CountRows(a)+CountRows(b)+CountRows(c)) As i,If(i.Value<=CountRows(a),Index(a,i.Value),i.Value<=CountRows(a)+CountRows(b),Index(b,i.Value-CountRows(a)),Index(c,i.Value-CountRows(a)-CountRows(b)))))')
+}
 function Set-Week([string]$mondayFx) { Set-FxVar 'varWrLoadedMonday' $mondayFx; Set-FxVar 'varWrExpIsoYear' $isoYFx; Set-FxVar 'varWrExpIsoWeek' $isoWFx; Set-FxVar 'varWrExpWeekLabel' $labelFx }
 Set-Week 'Date(2026,11,9)'
 Set-FxVar 'varWrLoadedProject' '{ID:1,Title:"Test project",Country:"Netherlands",Number:"TEST-000",Reference:"Test project reference",Display:"x"}'
-Set-FxVar 'varWrExpNow' 'DateTime(2026,11,12,10,0,0)'; Set-FxVar 'varWrExpUser' '"Test User"'; Set-FxVar 'varWrExpContractorID' '0'
-Set-FxVar 'colWrDocNl' (Get-TrTable 'Dutch'); Set-FxVar 'colWrDoc2' (Get-TrTable 'English')
-Set-FxVar 'varWrDocLang2' '"English"'; Set-FxVar 'varWrDocCode2' '"en"'
-Set-DocTexts
+Set-FxVar 'varWrLoadedIsTest' 'true'; Set-FxVar 'varWrExpFolder' $folderFx; Set-FxVar 'varWrDocLang1' '"Dutch"'
+Set-FxVar 'colWrGroups' 'Table({ContractorID:902,ContractorName:"TEST Contractor B",EmployerCode:"EMP-902",SortName:"test contractor b|0000000902",WeekTotal:16},{ContractorID:901,ContractorName:"TEST Employer",EmployerCode:"EMP-901",SortName:"test employer|0000000901",WeekTotal:82},{ContractorID:903,ContractorName:"TEST Zero",EmployerCode:"EMP-903",SortName:"test zero|0000000903",WeekTotal:0},{ContractorID:904,ContractorName:"TEST NoLang",EmployerCode:"EMP-904",SortName:"test nolang|0000000904",WeekTotal:5},{ContractorID:905,ContractorName:"TEST Polish",EmployerCode:"EMP-905",SortName:"test polish|0000000905",WeekTotal:7})'
+Set-FxVar 'colWrEmployers' 'Table({ID:901,Language:"English"},{ID:902,Language:"Dutch"},{ID:903,Language:"German"},{ID:904,Language:""},{ID:905,Language:"Polish"})'
+Set-FxVar 'varWrExpContractorID' '0'
+Set-FxVar 'colWrExpJobs' $jobsFx
+Assert-Eval 'Concat(colWrExpJobs,Code & "=" & Base & "|" & Lang2 & "|" & Text(HoursTotal),", ")' 'EMP-902=TEST_WeekReport_TEST-000_2026KW46_EMP-902|Dutch|16, EMP-901=TEST_WeekReport_TEST-000_2026KW46_EMP-901|English|82, EMP-904=TEST_WeekReport_TEST-000_2026KW46_EMP-904||5, EMP-905=TEST_WeekReport_TEST-000_2026KW46_EMP-905|Polish|7, EMP-903=TEST_WeekReport_TEST-000_2026KW46_EMP-903|German|0' 'H26: All contractors = one job per contractor (sorted as the report), base name _<EmployerCode>, page-2 language = Employers.Language only (empty stays empty, no fallback)'
+Set-FxVar 'varWrExpContractorID' '905'
+Assert-Eval "Concat($jobsFx,Code,`",`")" 'EMP-905' 'one contractor chosen = one job'
+Set-FxVar 'varWrExpContractorID' '0'
+Set-FxVar 'colWrDocLangs' '{L:varWrDocLang1}'
+Assert-Eval "Concat(ForAll($langsFx As x,x.L),Value,`",`")" 'English,Polish' 'languages read: page 1 language + every other page-2 language of contractors with hours and a language'
+# Translations without the Polish doc.colName and with an empty Dutch doc.week -> both missing (no fallback to English or to the key)
+Set-FxVar 'colWrDocAll' ('Filter(' + (Get-DocAll @('Dutch', 'English', 'Polish')) + ',!(Lang="Polish" && Key="doc.colName"))')
+Set-FxVar 'colWrDocAll' 'ForAll(colWrDocAll As d,{Lang:d.Lang,Key:d.Key,Txt:If(d.Lang="Dutch" && d.Key="doc.week","",d.Txt)})'
+Set-DocTexts 'Table({L:"Dutch"},{L:"English"},{L:"Polish"})'
+Assert-Eval 'CountRows(colWrDocTexts)' 69 'doc texts: 23 keys x 3 languages'
+Assert-Eval 'Concat(Filter(colWrDocTexts,Missing),Lang & ":" & Key & "=" & Txt,",")' 'Dutch:doc.week=,Polish:doc.colName=' 'N5: a key that is missing or empty is flagged Missing with an empty text (no key name, no other language)'
+Set-FxVar 'colWrExpJobs2' $jobs2Fx
+Assert-Eval 'Concat(colWrExpJobs2,Code & "=" & Status,", ")' 'EMP-902=MissingTexts, EMP-901=MissingTexts, EMP-904=NoLanguage, EMP-905=MissingTexts, EMP-903=NoHours' 'status: 0 hours -> NoHours (before any other check); no Employers.Language -> NoLanguage; missing text on page 1 blocks every contractor'
+Assert-Eval 'LookUp(colWrExpJobs2,Code="EMP-905").MissingKeys' 'Dutch: doc.week, Polish: doc.colName' 'N5: the message lists the missing keys per language'
+Set-FxVar 'colWrDocAll' ('Filter(' + (Get-DocAll @('Dutch', 'English', 'Polish')) + ',!(Lang="Polish" && Key="doc.colName"))')
+Set-DocTexts 'Table({L:"Dutch"},{L:"English"},{L:"Polish"})'
+Set-FxVar 'colWrExpJobs2' $jobs2Fx
+Assert-Eval 'Concat(colWrExpJobs2,Code & "=" & Status,", ")' 'EMP-902=Ready, EMP-901=Ready, EMP-904=NoLanguage, EMP-905=MissingTexts, EMP-903=NoHours' 'missing Polish text blocks only the Polish contractor; Dutch = Dutch -> needs only page-1 texts'
+Set-FxVar 'colWrExpResults' $resultsFx
+Assert-Eval 'Concat(colWrExpResults,Msg," ")' 'EMP-904: no report language (column Language in Employers list). Not exported. EMP-905: texts missing in Translations (Polish: doc.colName). Not exported. EMP-903: no hours, skipped.' 'messages for blocked and skipped contractors (red text for blocked, skipped note for 0 hours)'
+Assert-True ($onExpN.Contains('If(IsEmpty(colWrExportErrors)&&(IsEmpty(colWrExpJobs)||CountRows(Distinct(colWrExpJobs,Base))<>CountRows(colWrExpJobs)),Collect(colWrExportErrors,')) 'two contractors with the same file name after "-" replacement = build error, zero flow calls'
+
+# (7) Interpreter: PDF Content per contractor = templates/sample-body.html --------------------------------------------------------
+Set-FxVar 'varWrExpNow' 'DateTime(2026,11,12,10,0,0)'; Set-FxVar 'varWrExpUser' '"Test User"'
 $nb = 'If(false,0)'
-function Get-Line($type, $sk, $cid, $name, $code, $trade, $zebra, $d, $tot) { $dd = @(1..7 | ForEach-Object { "D$($_):$($d[$_-1])" }) -join ','; return "{LineType:`"$type`",SortKey:$sk,ContractorID:$cid,Name:`"$name`",Code:`"$code`",Lang:`"`",Trade:`"$trade`",Zebra:$zebra,$dd,WeekTotal:$tot}" }
+function Get-Line($type, $sk, $cid, $name, $code, $trade, $zebra, $d, $tot) { $dd = @(1..7 | ForEach-Object { "D$($_):$($d[$_-1])" }) -join ','; return "{LineType:`"$type`",SortKey:$sk,ContractorID:$cid,Name:`"$name`",Code:`"$code`",Trade:`"$trade`",Zebra:$zebra,$dd,WeekTotal:$tot}" }
 $sampleLines = @(
     (Get-Line 'Header' 100000 901 'TEST Employer' 'EMP-901' '' 'false' @(0, 0, 0, 0, 0, 0, 0) 0),
     (Get-Line 'Row' 100001 901 'Test Worker A' 'WKR-001' 'Fitter' 'false' @(8, 8, 8, 8, 6, $nb, $nb) 38),
@@ -236,115 +239,138 @@ $sampleLines = @(
     (Get-Line 'Subtotal' 299999 902 'Subtotal' 'EMP-902' '' 'false' @(8, 8, 0, 0, 0, 0, 0) 16),
     (Get-Line 'Grand' 999999999 -1 'Total' '' '' 'false' @(26, 26, 18, 18, 6, 4, 0) 98))
 Set-FxVar 'colWrLines' ('Table(' + ($sampleLines -join ',') + ')')
-Set-FxVar 'colWrGroups' 'Table({ContractorID:901,ContractorName:"TEST Employer",EmployerCode:"EMP-901",ReportLanguage:"English"},{ContractorID:902,ContractorName:"TEST Contractor B",EmployerCode:"EMP-902",ReportLanguage:"English"})'
+Set-FxVar 'colWrRows' 'Table({WorkerID:1,ContractorID:901,WorkerCode:"WKR-001",WorkerName:"Test Worker A",EmployerCode:"EMP-901",WeekTotal:38},{WorkerID:2,ContractorID:901,WorkerCode:"WKR-002",WorkerName:"Test Worker B",EmployerCode:"EMP-901",WeekTotal:44},{WorkerID:3,ContractorID:902,WorkerCode:"WKR-003",WorkerName:"Test Worker C",EmployerCode:"EMP-902",WeekTotal:16})'
+Set-FxVar 'colWrExportFacts' 'Table({HourID:1,WorkerID:1,ContractorID:901,EmployerName:"TEST Employer",DayIndex:0,WorkDay:Date(2026,11,9),HourValue:8,Trade:"Fitter",Pos:1},{HourID:2,WorkerID:2,ContractorID:901,EmployerName:"TEST Employer",DayIndex:0,WorkDay:Date(2026,11,9),HourValue:10,Trade:"Welder",Pos:2},{HourID:3,WorkerID:3,ContractorID:902,EmployerName:"TEST Contractor B",DayIndex:0,WorkDay:Date(2026,11,9),HourValue:8,Trade:"Fitter",Pos:3})'
+Set-FxVar 'colWrGroups' 'Table({ContractorID:901,ContractorName:"TEST Employer",EmployerCode:"EMP-901",SortName:"a",WeekTotal:82},{ContractorID:902,ContractorName:"TEST Contractor B",EmployerCode:"EMP-902",SortName:"b",WeekTotal:16})'
+Set-FxVar 'colWrEmployers' 'Table({ID:901,Language:"English"},{ID:902,Language:"Dutch"})'
+Set-FxVar 'colWrExpJobs' $jobsFx
+Set-FxVar 'colWrDocAll' (Get-DocAll @('Dutch', 'English'))
+Set-DocTexts 'Table({L:"Dutch"},{L:"English"})'
+Set-FxVar 'colWrExpJobs2' $jobs2Fx
 Set-FxVar 'colWrExpLines' $linesFx
-$html = (Invoke-Fx $htmlFx).Value
+Assert-Eval 'Concat(colWrExpLines,Text(ContractorID) & LineType,",")' '901Header,901Row,901Row,901Subtotal,902Header,902Row,902Subtotal' 'H26: PDF lines only of contractors that are exported; no Grand total line'
+Set-FxVar 'colWrExpCsvRows' $csvRowsFx
+Set-FxVar 'colWrExpBuilt' $builtFx
+Assert-Eval 'Concat(colWrExpBuilt,Code & ":" & Text(Pages) & ":" & If(Ok,"ok","BAD"),",")' 'EMP-901:2:ok,EMP-902:1:ok' 'one file pair per contractor; page 2 only when the contractor language differs from page 1 (Dutch contractor = 1 page); integrity Ok'
+$html = (Invoke-Fx 'LookUp(colWrExpBuilt,Code="EMP-901").Html').Value
 $sample = ([IO.File]::ReadAllText((Join-Path $tplDir 'sample-body.html'))).Replace("`r`n", "`n")
 $sample = $sample.Substring($sample.IndexOf("`n") + 1)  # drop the leading comment line
 if ($html.TrimEnd() -cne $sample.TrimEnd()) {
     $a = $html.TrimEnd().Split("`n"); $b = $sample.TrimEnd().Split("`n")
     for ($i = 0; $i -lt [Math]::Max($a.Count, $b.Count); $i++) { if ($a[$i] -cne $b[$i]) { throw "FAIL PDF Content differs from sample-body.html at line $($i+2):`n  app:    $($a[$i])`n  sample: $($b[$i])" } }
 }
-Assert-True $true 'PDF Content (All contractors, nl + en) is byte-identical to templates/sample-body.html: named page + @page footer style + {{HEADER}} + doc-title + meta (6 rows) + colgroup + day headers with daydate + group/alt/subtotal/total rows, we on Sat/Sun, &ndash; for 0/empty'
-Assert-True (([regex]::Matches($html, '\{\{HEADER\}\}')).Count -eq 2 -and $html -notmatch '\{\{BODY\}\}' -and $html -notmatch '<script|<img|<link|url\(') 'one {{HEADER}} per page, no {{BODY}}, no script/image/link in Content'
-# one contractor: no total row, contractor "name &middot; code" in the info block, Dutch only
-Set-FxVar 'varWrExpContractorID' '902'; Set-FxVar 'varWrDocLang2' '"Dutch"'; Set-FxVar 'varWrDocCode2' '"nl"'
-Set-DocTexts
-Set-FxVar 'colWrExpLines' $linesFx
-$html1 = (Invoke-Fx $htmlFx).Value
-Assert-True (([regex]::Matches($html1, '<section ')).Count -eq 1 -and $html1.Contains('<tr><th>Aannemer</th><td>TEST Contractor B &middot; EMP-902</td></tr>') -and $html1 -notmatch 'class="total"' -and $html1 -notmatch 'TEST Employer' -and ([regex]::Matches($html1, '<tr class="subtotal">')).Count -eq 1) 'one contractor, second language Dutch: 1 page, info block "name &middot; code", only its group + subtotal, no total row (as on screen)'
+Assert-True $true 'PDF Content (EMP-901, nl + en) is byte-identical to templates/sample-body.html: named page + @page footer + {{HEADER}} + doc-title + meta (contractor "name &middot; code") + colgroup + day headers + group/alt/subtotal rows, we on Sat/Sun, &ndash; for 0/empty'
+Assert-True (([regex]::Matches($html, '\{\{HEADER\}\}')).Count -eq 2 -and $html -notmatch '\{\{BODY\}\}' -and $html -notmatch '<script|<img|<link|url\(' -and $html -notmatch 'TEST Contractor B|EMP-902|class="total"') 'H26 privacy: the EMP-901 file holds no data of another contractor and no grand total'
+$html1 = (Invoke-Fx 'LookUp(colWrExpBuilt,Code="EMP-902").Html').Value
+Assert-True (([regex]::Matches($html1, '<section ')).Count -eq 1 -and $html1.Contains('<tr><th>Aannemer</th><td>TEST Contractor B &middot; EMP-902</td></tr>') -and $html1 -notmatch 'TEST Employer|EMP-901|class="total"' -and ([regex]::Matches($html1, '<tr class="subtotal">')).Count -eq 1) 'contractor language Dutch = page-1 language: 1 page, only its own group + subtotal'
 # escaping: data and texts HTML-escaped, "{" as &#123;; footer as a CSS string
-Set-FxVar 'varWrExpContractorID' '0'
-Set-FxVar 'colWrLines' ('Table(' + (Get-Line 'Header' 100000 901 'A&B <x> "q" {{HEADER}}' 'E{1}' '' 'false' @(0, 0, 0, 0, 0, 0, 0) 0).Replace('"A&B <x> "q" {{HEADER}}"', '"A&B <x> ""q"" {{HEADER}}"') + ',' + (Get-Line 'Row' 100001 901 'Test <W>' 'WKR-1' 'Fit;ter' 'false' @(7.5, 0, $nb, 2.25, 10, $nb, $nb) 19.75) + ')')
+Set-FxVar 'colWrLines' ('Table(' + (Get-Line 'Header' 100000 901 'A&B <x> "q" {{HEADER}}' 'E{1}' '' 'false' @(0, 0, 0, 0, 0, 0, 0) 0).Replace('"A&B <x> "q" {{HEADER}}"', '"A&B <x> ""q"" {{HEADER}}"') + ',' + (Get-Line 'Row' 100001 901 'Test <W>' 'WKR-1' 'Fit;ter' 'false' @(7.5, 0, $nb, 2.25, 10, $nb, $nb) 19.75) + ',' + (Get-Line 'Subtotal' 199999 901 'Subtotal' 'E{1}' '' 'false' @(7.5, 0, 0, 2.25, 10, 0, 0) 19.75) + ')')
 Set-FxVar 'colWrExpLines' $linesFx
 Set-FxVar 'varWrExpUser' "`"Q `"`"B`"`" \ <x> {y}`" & Char(10) & `"z`""
 Set-FxVar 'varWrLoadedProject' '{ID:1,Title:"P & <Q>",Country:"",Number:"P{1}",Reference:"R\"" ",Display:"x"}'.Replace('R\"" "', 'R"" "')
-$colNl = (Get-TrTable 'Dutch').Replace('"Pagina {page} van {pages}"', '"{page}/{pages}"')
-Set-FxVar 'colWrDocNl' $colNl
-Set-DocTexts
-$h2 = (Invoke-Fx $htmlFx).Value
-Assert-True ($h2.Contains('<tr class="group"><td colspan="10">A&amp;B &lt;x&gt; &quot;q&quot; &#123;&#123;HEADER}} &middot; E&#123;1}</td></tr>') -and ([regex]::Matches($h2, '\{\{HEADER\}\}')).Count -eq 1) 'HTML escaping of data: & < > " and { as &#123; (a name can never form a token)'
-Assert-True ($h2.Contains('<td>Test &lt;W&gt;</td><td>Fit;ter</td><td class="num">7,5</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num">2,25</td><td class="num">10</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">19,75</td>') -and $h2.Contains('<td>P &amp; &lt;Q&gt;</td>') -and $h2.Contains('<td>P&#123;1}</td>')) 'numbers with decimal comma, whole hours without separator, 0 and empty as &ndash;; project fields escaped'
+Set-FxVar 'colWrDocAll' ((Get-DocAll @('Dutch', 'English')).Replace('"Pagina {page} van {pages}"', '"{page}/{pages}"'))
+Set-DocTexts 'Table({L:"Dutch"},{L:"English"})'
+Set-FxVar 'colWrExpBuilt' $builtFx
+$h2 = (Invoke-Fx 'LookUp(colWrExpBuilt,Code="EMP-901").Html').Value
+Assert-True ($h2.Contains('<tr class="group"><td colspan="10">A&amp;B &lt;x&gt; &quot;q&quot; &#123;&#123;HEADER}} &middot; E&#123;1}</td></tr>') -and ([regex]::Matches($h2, '\{\{HEADER\}\}')).Count -eq 2) 'HTML escaping of data: & < > " and { as &#123; (a name can never form a token)'
+Assert-True ($h2.Contains('<td>Test &lt;W&gt;</td><td>Fit;ter</td><td class="num">7,5</td><td class="num">&ndash;</td><td class="num">&ndash;</td><td class="num">2,25</td><td class="num">10</td><td class="num we">&ndash;</td><td class="num we">&ndash;</td><td class="num total-col">19,75</td>') -and $h2.Contains('<td>P &amp; &lt;Q&gt;</td>') -and $h2.Contains('<td>P&#123;1}</td>')) 'N3: numbers with decimal comma, whole hours without separator, 0 and empty as &ndash;; project fields escaped'
 Assert-True ($h2.Contains('@bottom-left { content: "Gegenereerd 12-11-2026 10:00 door Q \"B\" \\ \3C x> \7B y} z"; }')) 'footer CSS string: {date}/{user} filled, \ -> \\, " -> \", < -> \3C, { -> \7B, line break removed'
 Assert-True ($h2.Contains('@bottom-right { content: counter(page) "/" counter(pages); }')) 'page footer "{page}/{pages}" -> counter(page) "/" counter(pages) (empty leading/trailing strings dropped)'
 
-# (8) Interpreter: file names and folder (6.4) ---------------------------------------------------------------------------------
-Set-FxVar 'varWrLoadedProject' '{ID:1,Number:"TEST-000"}'; Set-FxVar 'varWrLoadedIsTest' 'true'; Set-FxVar 'varWrExpContractorID' '0'
+# (8) Interpreter: file names and folder (6.4, H26) ---------------------------------------------------------------------------------
+Set-FxVar 'varWrLoadedProject' '{ID:1,Number:"TEST-000"}'; Set-FxVar 'varWrLoadedIsTest' 'true'
 Set-FxVar 'varWrExpFolder' $folderFx
-Assert-Eval $baseFx 'TEST_WeekReport_TEST-000_2026KW46_ALL' 'TEST project, All contractors: TEST_WeekReport_TEST-000_2026KW46_ALL'
 Assert-Eval 'varWrExpFolder' 'TEST-000' 'folder = Project Number'
 Set-Week 'Date(2026,12,28)'
 Set-FxVar 'varWrLoadedProject' '{ID:1,Number:" P/1:2 "}'; Set-FxVar 'varWrLoadedIsTest' 'false'; Set-FxVar 'varWrExpContractorID' '10'
-Set-FxVar 'colWrGroups' 'Table({ContractorID:10,EmployerCode:"E*1?""<>|#%\x"})'
+Set-FxVar 'colWrGroups' 'Table({ContractorID:10,ContractorName:"X",SortName:"x",WeekTotal:1,EmployerCode:"E*1?""<>|#%\x"})'
 Set-FxVar 'varWrExpFolder' $folderFx
-Assert-Eval $baseFx 'WeekReport_P-1-2_2026KW53_E-1--------x' 'real project, one contractor, ISO week 53: no TEST_ prefix, EmployerCode suffix, \ / : * ? " < > | # % replaced by "-"'
+Assert-Eval "First($jobsFx).Base" 'WeekReport_P-1-2_2026KW53_E-1--------x' 'N3: real project, ISO week 53: no TEST_ prefix, EmployerCode suffix, \ / : * ? " < > | # % replaced by "-"'
 Set-Week 'Date(2027,1,4)'
-Assert-Eval $baseFx 'WeekReport_P-1-2_2027KW01_E-1--------x' 'ISO week 2027 KW01 (two digits)'
+Assert-Eval "First($jobsFx).Base" 'WeekReport_P-1-2_2027KW01_E-1--------x' 'ISO week 2027 KW01 (two digits)'
 Assert-True ($onExpN.Contains('If(IsBlank(varWrExpFolder),Collect(colWrExportErrors,')) 'empty Project Number blocks the export (no flow call)'
 Assert-True ($loaderN.Contains('Set(varWrLoadedIsTest,varWrPendIsTest)') -and $loaderN.Contains('Set(varWrPendIsTest,Left(Trim(varWrPendProject.Number&""),5)="TEST-")')) 'TEST_ prefix follows the loaded project (Project Number starts with TEST-)'
 
-# (9) Interpreter: CSV (6.1) ------------------------------------------------------------------------------------------------------
-$csvRowsFx = Get-CallArg $onExp 'ClearCollect(colWrExpCsvRows,' 1
-$csvTextFx = Get-CallArg $onExp 'Set(varWrExpCsvText,' 1 -Last
-Assert-True ($csvTextFx.StartsWith('UniChar(65279) & "ProjectNumber;ProjectReference;EmployerCode;EmployerName;WorkerID;WorkerName;Trade;WorkDate;ISOYear;ISOWeek;Hours" & Char(13) & Char(10) & Concat(colWrExpCsvRows,Line & Char(13) & Char(10))')) 'CSV: UTF-8 BOM via UniChar(65279), exact header, CRLF line ends'
+# (9) Interpreter: CSV per contractor (6.1) ----------------------------------------------------------------------------------------
+Assert-True ($builtFx.Contains('csv:UniChar(65279) & "ProjectNumber;ProjectReference;EmployerCode;EmployerName;WorkerID;WorkerName;Trade;WorkDate;ISOYear;ISOWeek;Hours" & Char(13) & Char(10) & Concat(rows,Line & Char(13) & Char(10))') -and $builtFx.Contains('rows:Filter(colWrExpCsvRows,ContractorID=j.ContractorID)')) 'CSV per contractor: UTF-8 BOM via UniChar(65279), exact header, CRLF, only that contractor''s lines'
 Assert-True ($csvRowsFx.Contains('"nl-NL"') -and $csvRowsFx.Contains('Text(f.WorkDay,"yyyy-mm-dd")') -and $csvRowsFx.Contains('Text(varWrExpIsoWeek,"00")') -and $csvRowsFx -notmatch 'Choices\(|LookUp\((Hours|Workers|Employers)') 'CSV fields: decimal comma (nl-NL), yyyy-mm-dd, ISOWeek two digits; local data only'
-Assert-True ($loaderN.Contains('ClearCollect(colWrPendExportFacts,ForAll(colWrPendFacts Asf,'.Replace(' ', '')) -and $loaderN.Contains('ClearCollect(colWrExportFacts,colWrPendExportFacts)') -and $loaderN.IndexOf('ClearCollect(colWrExportFacts,') -gt $loaderN.IndexOf('If(IsEmpty(colWrLoadErrors),ClearCollect(colWrRows,colWrPendRowsShown);')) 'hour facts per Hours record kept from staging, committed with the report (no extra Hours read at export)'
+Assert-True ($loaderN.Contains('ClearCollect(colWrPendExportFacts,ForAll(colWrPendFactsAsf,') -and $loaderN.Contains('ClearCollect(colWrExportFacts,colWrPendExportFacts)') -and $loaderN.IndexOf('ClearCollect(colWrExportFacts,') -gt $loaderN.IndexOf('If(IsEmpty(colWrLoadErrors),ClearCollect(colWrRows,colWrPendRowsShown);')) 'hour facts per Hours record kept from staging, committed with the report (no extra Hours read at export)'
 Set-Week 'Date(2026,12,28)'
-Set-FxVar 'varWrLoadedProject' '{ID:1,Number:"P-1000",Reference:"Ref; A"}'
+Set-FxVar 'varWrLoadedProject' '{ID:1,Title:"T",Country:"",Number:"P-1000",Reference:"Ref; A"}'; Set-FxVar 'varWrExpFolder' $folderFx
 Set-FxVar 'colWrRows' 'Table({WorkerID:1,ContractorID:10,WorkerCode:"WKR-001",WorkerName:"Anna \"Q\" Test",EmployerCode:"EMP-010",WeekTotal:15.5},{WorkerID:2,ContractorID:10,WorkerCode:"WKR-002",WorkerName:"Bram Test",EmployerCode:"EMP-010",WeekTotal:10},{WorkerID:3,ContractorID:20,WorkerCode:"WKR-003",WorkerName:"Cees Test",EmployerCode:"B-1",WeekTotal:0},{WorkerID:2,ContractorID:20,WorkerCode:"WKR-002",WorkerName:"Bram Test",EmployerCode:"B-1",WeekTotal:3})'.Replace('\"Q\"', '""Q""')
 Set-FxVar 'colWrExportFacts' 'Table({HourID:11,WorkerID:1,ContractorID:10,EmployerName:"Alpha;Old",DayIndex:1,WorkDay:Date(2026,12,29),HourValue:7.5,Trade:"Welder",Pos:2},{HourID:10,WorkerID:1,ContractorID:10,EmployerName:"Alpha;Old",DayIndex:0,WorkDay:Date(2026,12,28),HourValue:8,Trade:"Welder",Pos:2},{HourID:12,WorkerID:2,ContractorID:10,EmployerName:"Alpha",DayIndex:2,WorkDay:Date(2026,12,30),HourValue:0,Trade:"Fitter",Pos:1},{HourID:13,WorkerID:2,ContractorID:10,EmployerName:"Alpha",DayIndex:3,WorkDay:Date(2026,12,31),HourValue:10,Trade:"Fitter",Pos:1},{HourID:14,WorkerID:3,ContractorID:20,EmployerName:"Beta",DayIndex:0,WorkDay:Date(2026,12,28),HourValue:0,Trade:"Fitter",Pos:3},{HourID:15,WorkerID:5,ContractorID:99,EmployerName:"TEST Employer",DayIndex:0,WorkDay:Date(2026,12,28),HourValue:8,Trade:"Fitter",Pos:0},{HourID:16,WorkerID:2,ContractorID:20,EmployerName:"Beta",DayIndex:6,WorkDay:Date(2027,1,3),HourValue:3,Trade:"Welder",Pos:4})'
+Set-FxVar 'colWrLines' ('Table(' + ((Get-Line 'Header' 100000 10 'Alpha' 'EMP-010' '' 'false' @(0, 0, 0, 0, 0, 0, 0) 0), (Get-Line 'Row' 100001 10 'Bram Test' 'WKR-002' 'Fitter' 'false' @($nb, $nb, 0, 10, $nb, $nb, $nb) 10), (Get-Line 'Subtotal' 199999 10 'Subtotal' 'EMP-010' '' 'false' @(8, 7.5, 0, 10, 0, 0, 0) 25.5), (Get-Line 'Header' 200000 20 'Beta' 'B-1' '' 'false' @(0, 0, 0, 0, 0, 0, 0) 0), (Get-Line 'Row' 200001 20 'Bram Test' 'WKR-002' 'Welder' 'false' @($nb, $nb, $nb, $nb, $nb, $nb, 3) 3), (Get-Line 'Subtotal' 299999 20 'Subtotal' 'B-1' '' 'false' @(0, 0, 0, 0, 0, 0, 3) 3) -join ',') + ')')
+Set-FxVar 'colWrGroups' 'Table({ContractorID:10,ContractorName:"Alpha",EmployerCode:"EMP-010",SortName:"a",WeekTotal:25.5},{ContractorID:20,ContractorName:"Beta",EmployerCode:"B-1",SortName:"b",WeekTotal:3})'
+Set-FxVar 'colWrEmployers' 'Table({ID:10,Language:"Dutch"},{ID:20,Language:"Dutch"})'
+Set-FxVar 'varWrExpContractorID' '0'
+Set-FxVar 'colWrDocAll' (Get-DocAll @('Dutch'))
+Set-DocTexts 'Table({L:"Dutch"})'
+Set-FxVar 'colWrExpJobs' $jobsFx; Set-FxVar 'colWrExpJobs2' $jobs2Fx; Set-FxVar 'colWrExpLines' $linesFx; Set-FxVar 'colWrExpCsvRows' $csvRowsFx; Set-FxVar 'colWrExpBuilt' $builtFx
 $crlf = "`r`n"; $bom = [string][char]0xFEFF
 $hdr = 'ProjectNumber;ProjectReference;EmployerCode;EmployerName;WorkerID;WorkerName;Trade;WorkDate;ISOYear;ISOWeek;Hours'
-$expAll = $bom + $hdr + $crlf +
-    '"P-1000";"Ref; A";EMP-010;Alpha;WKR-002;Bram Test;Fitter;2026-12-30;2026;53;0'.Replace('"P-1000"', 'P-1000') + $crlf +
+$exp10 = $bom + $hdr + $crlf +
+    'P-1000;"Ref; A";EMP-010;Alpha;WKR-002;Bram Test;Fitter;2026-12-30;2026;53;0' + $crlf +
     'P-1000;"Ref; A";EMP-010;Alpha;WKR-002;Bram Test;Fitter;2026-12-31;2026;53;10' + $crlf +
     'P-1000;"Ref; A";EMP-010;"Alpha;Old";WKR-001;"Anna ""Q"" Test";Welder;2026-12-28;2026;53;8' + $crlf +
-    'P-1000;"Ref; A";EMP-010;"Alpha;Old";WKR-001;"Anna ""Q"" Test";Welder;2026-12-29;2026;53;7,5' + $crlf +
-    'P-1000;"Ref; A";B-1;Beta;WKR-002;Bram Test;Welder;2027-01-03;2026;53;3' + $crlf
-Set-FxVar 'varWrExpContractorID' '0'
-Set-FxVar 'colWrExpCsvRows' $csvRowsFx
-$csvAll = (Invoke-Fx $csvTextFx).Value
-if ($csvAll -cne $expAll) { throw "FAIL CSV All contractors:`n$($csvAll.Replace($crlf,'<CRLF>'))`nexpected:`n$($expAll.Replace($crlf,'<CRLF>'))" }
-Assert-True $true 'CSV (All contractors): one line per stored Hours record incl. stored 0, sorted as the report (row position, day); worker with week total 0 dropped; TEST Employer facts (not in the report rows) dropped; historical EmployerName; RFC 4180 quoting only for ; " or line break; decimal comma; ISO 2026 KW53 across the year end'
-Set-FxVar 'varWrExpContractorID' '20'
-Set-FxVar 'colWrExpCsvRows' $csvRowsFx
-Assert-Eval $csvTextFx ($bom + $hdr + $crlf + 'P-1000;"Ref; A";B-1;Beta;WKR-002;Bram Test;Welder;2027-01-03;2026;53;3' + $crlf) 'CSV (one contractor): only its lines; its worker with total 0 dropped'
+    'P-1000;"Ref; A";EMP-010;"Alpha;Old";WKR-001;"Anna ""Q"" Test";Welder;2026-12-29;2026;53;7,5' + $crlf
+$csv10 = (Invoke-Fx 'LookUp(colWrExpBuilt,ContractorID=10).Csv').Value
+if ($csv10 -cne $exp10) { throw "FAIL CSV EMP-010:`n$($csv10.Replace($crlf,'<CRLF>'))`nexpected:`n$($exp10.Replace($crlf,'<CRLF>'))" }
+Assert-True $true 'CSV EMP-010: one line per stored Hours record incl. stored 0, sorted as the report (row position, day); historical EmployerName; RFC 4180 quoting only for ; " or line break; decimal comma; ISO 2026 KW53 across the year end; no line of another contractor'
+Assert-Eval 'LookUp(colWrExpBuilt,ContractorID=20).Csv' ($bom + $hdr + $crlf + 'P-1000;"Ref; A";B-1;Beta;WKR-002;Bram Test;Welder;2027-01-03;2026;53;3' + $crlf) 'CSV B-1: only its lines; its worker with week total 0 dropped; TEST Employer facts (not in the report rows) dropped'
+Assert-Eval 'Concat(colWrExpBuilt,Base,",")' 'WeekReport_P-1000_2026KW53_EMP-010,WeekReport_P-1000_2026KW53_B-1' 'All contractors: N file pairs with _<EmployerCode>'
 
-# (10) Review M2/L2: every local build step in IfError; completeness checks before the first flow call -----------------------------
+# (10) Every local build step in IfError; integrity check before the first flow call ------------------------------------------------
 $errC = 'Collect(colWrExportErrors,{Message:If(LangNl&&!IsBlank(T.wrErrExportBuild.nl),T.wrErrExportBuild.nl,T.wrErrExportBuild.en)&""&FirstError.Message});false)'
-foreach ($s in 'IfError(CountRows(ClearCollect(colWrDocTexts,Ungroup(ForAll(colWrDocPageListAspg,{PageTexts:', 'IfError(CountRows(ClearCollect(colWrExpLines,', 'IfError(CountRows(ClearCollect(colWrExpCsvRows,', 'IfError(Set(varWrExpCsvText,', 'IfError(Set(varWrExpHtml,') {
-    $i = $onExpN.IndexOf($s); Assert-True ($i -ge 0 -and $onExpN.IndexOf($errC, $i) -gt $i -and $i -lt $iPdf) "M2: build step in IfError with Collect(colWrExportErrors, build error) before the first flow call: $s"
+foreach ($s in 'IfError(CountRows(ClearCollect(colWrExpJobs,', 'IfError(CountRows(ClearCollect(colWrDocTexts,Ungroup(', 'IfError(CountRows(ClearCollect(colWrExpJobs2,', 'IfError(CountRows(ClearCollect(colWrExpLines,', 'IfError(CountRows(ClearCollect(colWrExpCsvRows,', 'IfError(CountRows(ClearCollect(colWrExpBuilt,') {
+    $i = $onExpN.IndexOf($s); Assert-True ($i -ge 0 -and $onExpN.IndexOf($errC, $i) -gt $i -and $i -lt $iPdf) "build step in IfError with Collect(colWrExportErrors, build error) before the first flow call: $s"
 }
-Assert-True ($onExpN.Contains(',PageTexts)))>=0,' + $errC)) 'M2: doc texts built with ClearCollect(Ungroup(ForAll(...))) (no Collect inside ForAll), so IfError sees the result'
-$chkFx = Get-CallArg $onExp 'If(IsEmpty(colWrExportErrors) && IfError(IsEmpty(colWrDocPageList)' 0
-Assert-True ($onExpN.IndexOf('If(IsEmpty(colWrExportErrors)&&IfError(IsEmpty(colWrDocPageList)') -lt $iPdf -and $onExpN -notmatch 'Len\(varWrExpCsvText\)=0' -and $chkFx.EndsWith(',true)')) 'M2: completeness check before the first flow call; an error inside the check counts as a mismatch (IfError(..., true)); the old Len(csv)=0 check is gone'
-Set-FxVar 'colWrExportErrors' 'Filter(Table({Message:""}),false)'
-Set-FxVar 'varWrLoadedProject' '{ID:1,Title:"Test project",Country:"Netherlands",Number:"TEST-000",Reference:"Test project reference",Display:"x"}'
-Set-FxVar 'varWrExpContractorID' '0'; Set-FxVar 'varWrDocLang2' '"English"'; Set-FxVar 'varWrDocCode2' '"en"'
-Set-FxVar 'colWrDocNl' (Get-TrTable 'Dutch'); Set-FxVar 'colWrDoc2' (Get-TrTable 'English')
-Set-DocTexts
-Set-FxVar 'colWrLines' ('Table(' + ($sampleLines -join ',') + ')')
-Set-FxVar 'colWrGroups' 'Table({ContractorID:901,ContractorName:"TEST Employer",EmployerCode:"EMP-901",ReportLanguage:"English"},{ContractorID:902,ContractorName:"TEST Contractor B",EmployerCode:"EMP-902",ReportLanguage:"English"})'
-Set-FxVar 'colWrExpLines' $linesFx; Set-FxVar 'colWrExpCsvRows' $csvRowsFx
-Set-FxVar 'varWrExpCsvText' $csvTextFx; Set-FxVar 'varWrExpHtml' $htmlFx
-Assert-Eval 'CountRows(colWrDocTexts)' 46 'doc texts: 23 keys x 2 pages'
-Assert-Eval $chkFx $false 'M2: consistent export content -> no mismatch (flow calls allowed)'
+Assert-True ($onExpN.Contains('If(IsEmpty(colWrExportErrors)&&IfError(CountRows(colWrExpBuilt)<>CountIf(colWrExpJobs2,Status="Ready")||CountIf(colWrExpBuilt,!Ok)>0,true),Collect(colWrExportErrors,') -and $onExpN.IndexOf('CountIf(colWrExpBuilt,!Ok)>0') -lt $iPdf) 'integrity check before the first flow call: one built file per Ready contractor and every file Ok; an error inside the check counts as a mismatch'
+$okFx = $builtFx.Substring($builtFx.IndexOf(',Ok:') + 4); $okFx = $okFx.Substring(0, $okFx.LastIndexOf('})'))
 foreach ($c in @(
-        @('colWrExpCsvRows:FirstN(colWrExpCsvRows,CountRows(colWrExpCsvRows)-1)', 'one CSV row missing vs. the expected fact lines'),
-        @('varWrExpCsvText:Left(varWrExpCsvText,Len(varWrExpCsvText)-1)', 'CSV text shorter than BOM + header + rows'),
-        @('varWrExpCsvText:""', 'CSV text empty (Set failed)'),
-        @('varWrExpHtml:Substitute(varWrExpHtml,"{{HEADER}}","",1)', 'one {{HEADER}} missing'),
-        @('varWrExpHtml:Substitute(varWrExpHtml,"</section>","",2)', 'one </section> missing'),
-        @('colWrDocTexts:FirstN(colWrDocTexts,45)', 'doc texts not 23 x pages'),
-        @('colWrExpLines:FirstN(colWrExpLines,CountRows(colWrExpLines)-1)', 'one PDF table line missing'),
-        @('colWrDocPageList:Filter(colWrDocPageList,false)', 'no pages'))) {
-    Assert-Eval "With({$($c[0])},$chkFx)" $true "M2: mismatch detected (error, zero flow calls): $($c[1])"
+        @('lns:FirstN(lns,2)', 'fewer than 3 table lines (header, row, subtotal)'),
+        @('rows:Filter(rows,false)', 'no CSV line for a contractor with hours'),
+        @('csv:Left(csv,Len(csv)-1)', 'CSV text shorter than BOM + header + rows'),
+        @('html:Substitute(html,"{{HEADER}}","",1)', 'one {{HEADER}} missing'),
+        @('html:Substitute(html,"</section>","",1)', 'one </section> missing'))) {
+    Assert-Eval "With({j:LookUp(colWrExpJobs2,ContractorID=10)},With({pages:Table({Page:1,L:`"Dutch`"}),rows:Filter(colWrExpCsvRows,ContractorID=10),lns:Filter(colWrExpLines,ContractorID=10)},With({csv:LookUp(colWrExpBuilt,ContractorID=10).Csv,html:LookUp(colWrExpBuilt,ContractorID=10).Html},With({$($c[0])},$okFx))))" $false "integrity: mismatch detected (error, zero flow calls): $($c[1])"
 }
-$l2Fx = Get-CallArg $onExp 'If(IsEmpty(colWrExportErrors) && (IsEmpty(colWrDocNl)' 0
-Assert-True ($onExpN.IndexOf('If(IsEmpty(colWrExportErrors)&&(IsEmpty(colWrDocNl)||IsEmpty(colWrDocEn)),Collect(colWrExportErrors,{Message:If(LangNl&&!IsBlank(T.wrErrExportTexts.nl),T.wrErrExportTexts.nl,T.wrErrExportTexts.en)') -ge 0 -and $onExpN.IndexOf('(IsEmpty(colWrDocNl)||IsEmpty(colWrDocEn))') -lt $iPdf) 'L2: empty Dutch or English text set -> red message (T.wrErrExportTexts), zero flow calls'
-Assert-Eval "With({colWrDocNl:Filter(colWrDocNl,false)},$l2Fx)" $true 'L2: no Dutch texts blocks'
-Assert-Eval "With({colWrDocEn:Filter(colWrDocEn,false)},$l2Fx)" $true 'L2: no English texts blocks'
-Assert-Eval $l2Fx $false 'L2: both text sets present -> no block (per-key fallback stays)'
 
-Write-Output 'Test-Export: admission guard (parity + cases), busy flag, flow calls (PDF 5 args with TemplateName, CSV 4 args, results checked), Translations reads (3, global predicate vars, 500 guards), 23 keys, text fallback, language choice, PDF Content = sample-body.html, escaping, CSS footer, file names, CSV verified locally.'
-Write-Output 'NOT verified locally: Studio import and binding (flow optional parameter record {text_4:...}, User().FullName, Text(...,"nl-NL") in Studio, UniChar), delegation of the Translations reads (Monitor), flow run and PDF rendering, real SharePoint data.'
+# (11) Interpreter: result message (green / amber / red) ---------------------------------------------------------------------------
+$sumFx = $onExp.Substring($onExp.LastIndexOf('Set(varWrExpOkN,'))
+$sumFx = $sumFx.Substring(0, $sumFx.IndexOf('Set(varWrBusy,false);')).Trim().TrimEnd(';')
+function Test-Msg([string]$results, [string]$jobs, [string]$errors, [string]$kind, [string]$headKey, [string]$body, [string]$label) {
+    Set-FxVar 'colWrExpResults' $results; Set-FxVar 'colWrExpJobs2' $jobs; Set-FxVar 'colWrExportErrors' $errors
+    Set-FxVar 'colWrExpBuilt' 'Table({Base:"TEST_WeekReport_TEST-000_2026KW46_EMP-901"})'; Set-FxVar 'varWrExpFolder' '"TEST-000"'
+    foreach ($v in 'varAdmMsgKind', 'varAdmMsgHead', 'varAdmMsgBody', 'varWrExpOkN', 'varWrExpFiles', 'varWrExpFailN', 'varWrExpNotes') { Set-FxVar $v $(if ($v -like 'varWrExp*N' -or $v -eq 'varWrExpFiles') { '0' } else { '""' }) }
+    Invoke-FxStatements $sumFx
+    Assert-Eval 'varAdmMsgKind & "|" & varAdmMsgHead & "|" & varAdmMsgBody' "$kind|$((Invoke-Fx "T.$headKey.en").Value)|$body" "message: $label"
+}
+function Invoke-FxStatements([string]$fx) {
+    # top-level ';' statements run in order; If(...) with ';' in a branch picks its branch when reached (after the earlier Sets);
+    # Set() is not enabled in this interpreter: Set(name, expr) is evaluated here and stored with UpdateVariable
+    $out = @(); $depth = 0; $inS = $false; $last = 0
+    for ($j = 0; $j -lt $fx.Length; $j++) { $ch = $fx[$j]; if ($ch -eq '"') { $inS = -not $inS; continue }; if ($inS) { continue }; if ($ch -in @('(', '{', '[')) { $depth++ } elseif ($ch -in @(')', '}', ']')) { $depth-- } elseif ($ch -eq ';' -and $depth -eq 0) { $out += $fx.Substring($last, $j - $last).Trim(); $last = $j + 1 } }
+    $out += $fx.Substring($last).Trim()
+    foreach ($s in $out) {
+        if (-not $s) { continue }
+        if ($s.StartsWith('If(')) {
+            $a = Split-FxArgs (Get-Balanced $s 2)
+            $k = 0; $chosen = $null
+            while ($k + 1 -lt $a.Count) { if ((Invoke-Fx $a[$k].Trim()).Value) { $chosen = $a[$k + 1]; break }; $k += 2 }
+            if ($null -eq $chosen -and ($a.Count % 2) -eq 1) { $chosen = $a[$a.Count - 1] }
+            if ($chosen) { Invoke-FxStatements $chosen.Trim() }
+        } elseif ($s -match '^Set\((\w+),') { Set-FxValue $Matches[1] (Invoke-Fx (Split-FxArgs (Get-Balanced $s 3))[1].Trim()) }
+        else { throw "FAIL unexpected statement in the message step: $s" }
+    }
+}
+$noErr = 'Filter(Table({Message:""}),false)'
+$j1 = 'Table({Code:"EMP-901"})'; $j3 = 'Table({Code:"EMP-901"},{Code:"EMP-902"},{Code:"EMP-903"})'
+Test-Msg 'Table({Code:"EMP-901",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""})' $j1 $noErr 'Success' 'admHeadExported' 'Saved in Exports/TEST-000: TEST_WeekReport_TEST-000_2026KW46_EMP-901.pdf and TEST_WeekReport_TEST-000_2026KW46_EMP-901.csv' 'one contractor exported -> green, folder + both file names'
+Test-Msg 'Table({Code:"EMP-901",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""},{Code:"EMP-902",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""},{Code:"EMP-903",Status:"NoHours",PdfOk:false,CsvOk:false,Msg:"EMP-903: no hours, skipped."})' $j3 $noErr 'Success' 'admHeadExported' 'Exported 2 of 3 contractors to Exports/TEST-000. EMP-903: no hours, skipped.' 'All: 2 exported + 1 without hours -> green with the skip note'
+Test-Msg 'Table({Code:"EMP-901",Status:"NoHours",PdfOk:false,CsvOk:false,Msg:"EMP-901: no hours, skipped."})' $j1 $noErr 'Warning' 'admHeadAttention' 'Nothing exported. EMP-901: no hours, skipped.' 'only a contractor without hours -> amber "Attention.", nothing exported'
+Test-Msg 'Table({Code:"EMP-901",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""},{Code:"EMP-902",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"EMP-902: no report language (column Language in Employers list). Not exported."},{Code:"EMP-903",Status:"Ready",PdfOk:true,CsvOk:false,Msg:"EMP-903: PDF saved, CSV not confirmed (x). Check Exports/TEST-000."})' $j3 $noErr 'Warning' 'admHeadPartExported' 'Exported 1 of 3 contractors to Exports/TEST-000. EMP-902: no report language (column Language in Employers list). Not exported. EMP-903: PDF saved, CSV not confirmed (x). Check Exports/TEST-000.' 'partial -> amber "Partly exported." with the list of failed contractors'
+Test-Msg 'Table({Code:"EMP-901",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"EMP-901: no report language (column Language in Employers list). Not exported."})' $j1 $noErr 'Error' 'admHeadNotExported' 'Nothing exported. EMP-901: no report language (column Language in Employers list). Not exported.' 'missing report language (one contractor) -> red, nothing exported'
+Test-Msg 'Filter(Table({Code:"",Status:"",PdfOk:false,CsvOk:false,Msg:""}),false)' $j1 'Table({Message:"Project has no Project Number. Fix in Projects, then Refresh."})' 'Error' 'admHeadNotExported' 'Nothing exported. Project has no Project Number. Fix in Projects, then Refresh.' 'collected error before any flow call -> red, zero flow calls'
+
+Write-Output 'Test-Export: admission guard (parity + cases), busy flag, flow calls (per contractor: PDF 5 args with TemplateName, CSV 4 args after PDF OK, results checked), one Translations read (500 guard), 23 keys, no fallback (missing text blocks), page languages (primary setting + Employers.Language), jobs per contractor (H26), statuses NoHours/NoLanguage/MissingTexts, PDF Content = sample-body.html, escaping, CSS footer, file names, CSV per contractor, integrity, result messages verified locally.'
+Write-Output 'NOT verified locally: Studio import and binding (flow optional parameter record {text_4:...}, flow calls inside ForAll, Ungroup, User().FullName, Text(...,"nl-NL") in Studio, UniChar), delegation/Monitor of the Translations read, flow run and PDF rendering, real SharePoint data.'
