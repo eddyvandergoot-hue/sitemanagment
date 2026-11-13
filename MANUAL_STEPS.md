@@ -331,4 +331,4 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Added:** 14-11-2026. **Status:** Open (Eddy).
 - **Reason:** DECISIONS.md H29: de Week Report-export leest Translations per taal met `Filter(Translations, Language = <taal>)` (gedelegeerd). Een index op Language houdt die read werkend als de lijst later groot wordt (andere documenten). Lokale metadata bewijst geen index (AGENTS); controleer online.
 - **Stappen:** lijst Translations > List settings > Indexed columns > Create a new index > kolom **Language** (enkele regel tekst). Geen andere wijziging.
-- **Controle:** Indexed columns toont Language. Meld het als de index niet kan (bv. kolomtype).
+- **Controle:** Indexed columns toont Language. Meld het als de index niet kan (bv. kolomtype). Controleer ook dat Language overal exact gespeld is (Dutch, English, Polish, Romanian, German, Ukrainian; geen spatie ervoor of erna): de read vergelijkt nu exact op de server; een afwijkende spelling geeft bij de export "texts missing".

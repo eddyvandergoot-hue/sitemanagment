@@ -601,7 +601,7 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Voettekst "Gegenereerd ... door Test User" links en paginanummer "1 / 2" rechts op elke pagina.
 - Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.
 
-## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c2-20261113_234734, SHA-256 77F02AC88A0D9D04D650AC93CD2190649A66C15B1A322C7C521D192122C8D58C; alleen TEST-000; DECISIONS H26-H28)
+## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c3-20261114_002529, SHA-256 14EEFC3FEC03634C8274D62D26F201BCFD21B2023D092C61A8561D16BB06C849; alleen TEST-000; DECISIONS H26-H28)
 Vervangt de eerdere TP-EXPORT-02 (build weekreport-export-c-20261113_230804, `_ALL`-model; niet getest).
 
 Voorbereiding
@@ -626,6 +626,6 @@ Voorbereiding
 | 9 | Translations: maak bij doc.colTrade / Polish de Text tijdelijk leeg (noteer de oude tekst). App: Contractor = B, Export | Rood "Not exported. Nothing exported. <code B>: texts missing in Translations (Polish: doc.colTrade). Not exported."; geen bestanden; daarna Contractor = A → wel geëxporteerd (Dutch-teksten compleet). Zet de tekst terug |
 | 10 | Flowfout: hernoem in Templates tijdelijk weekreport.html, Contractor = A, Export; zet de naam terug | Rood "Not exported. … TEST-EMP: PDF not confirmed (<flowmelding>). Check Exports/TEST-000."; geen CSV; spinner weg, knoppen actief |
 | 11 | Andere week via pijl, direct Export tijdens laden | Export uitgeschakeld tot geladen |
-| 12 | Studio Monitor tijdens stap 3 | Eén Translations-read (alle ~138 regels), per contractor twee flowaanroepen, geen Patch |
+| 12 | Studio Monitor tijdens stap 3 | Per gebruikte taal één Translations-read met $filter Language eq '<taal>' (gedelegeerd; hier Dutch en Polish), per contractor twee flowaanroepen, geen Patch |
 
 Meld per stap PASS/FAIL; bij een importfout de exacte tekst.

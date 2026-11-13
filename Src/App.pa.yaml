@@ -315,6 +315,7 @@ App:
         wrErrExportNoLanguage: {en: "{0}: no report language (column Report Language in the Employers list). Not exported.", nl: ""},
         wrErrExportTextsMissing: {en: "{0}: texts missing in Translations ({1}). Not exported.", nl: ""},
         wrErrExportNoPrimary: {en: "Primary report language not set.", nl: ""},
+        wrErrExportTooManyLangs: {en: "More than 6 report languages needed. Check Report Language in the Employers list.", nl: ""},
         wrExportNoMessage: {en: "no message from the export flow", nl: ""},
         admHeadNotSaved: {en: "Not saved.", nl: ""},
         admHeadNotLoaded: {en: "Not loaded.", nl: ""},
