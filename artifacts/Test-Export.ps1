@@ -14,7 +14,7 @@ $xOpt.AllowsSideEffects = $true
 function Assert-True($cond, $label) { if (!$cond) { throw "FAIL $label" }; Write-Output "PASS $label" }
 function Invoke-Fx([string]$fx) {
     $fx = $fx.Replace('[$-en-US]', '')  # format tag (Studio) stripped for the interpreter, as in Test-WeekReport
-    try { $v = $xEngine.Eval($fx, $null, $xOpt) } catch { throw "FAIL evaluation error in: $($fx.Substring(0,[Math]::Min(300,$fx.Length))) :: $($_.Exception.InnerException.Message) $($_.Exception.Message)" }
+    try { $v = $xEngine.Eval($fx, $null, $xOpt) } catch { $chk = ''; try { $chk = (@($xEngine.Check($fx, $xOpt).Errors) | ForEach-Object { $_.ToString() }) -join ' | ' } catch { }; throw "FAIL evaluation error in: $($fx.Substring(0,[Math]::Min(300,$fx.Length))) :: $($_.Exception.InnerException.Message) $($_.Exception.Message) :: $chk" }
     if ($v -is [Microsoft.PowerFx.Types.ErrorValue]) { throw "FAIL evaluation returned an error: $($v.ToExpression()) :: $($fx.Substring(0,[Math]::Min(300,$fx.Length)))" }
     return $v
 }
@@ -81,7 +81,7 @@ $loaderN = Get-Norm $loader
 Assert-True ($idx['cmpWrFooter']['ComponentName'] -eq 'cmpReportFooter' -and (P 'cmpWrFooter.ExportVisible') -eq '=true') 'Export button visible (cmpReportFooter.ExportVisible = true; component unchanged)'
 Assert-True ($onExp.StartsWith("=If($guard,")) 'guard parity: OnExport starts with If(<ExportEnabled>, (same text)'
 $gN = Get-Norm $guard
-foreach ($part in '!Coalesce(varWrBusy,false)', '!Coalesce(varWrExporting,false)', 'varWrLoadState="Loaded"', 'IsEmpty(colWrLoadErrors)', '!IsBlank(varWrLoadedProject.ID)', '!IsBlank(varWrLoadedMonday)', 'varWrLoadedProjectID=varWrProjectID', 'varWrLoadedMonday=varWrMonday', '(Coalesce(varWrContractorID,0)=0||CountIf(colWrGroups,ContractorID=varWrContractorID&&Display=varWrContractorDisplay)=1)', 'CountIf(colWrRows,Coalesce(varWrContractorID,0)=0||ContractorID=varWrContractorID)>0') {
+foreach ($part in '!Coalesce(varWrBusy,false)', '!Coalesce(varWrExporting,false)', 'varWrLoadState="Loaded"', 'IsEmpty(colWrLoadErrors)', '!IsBlank(varWrLoadedProject.ID)', '!IsBlank(varWrLoadedMonday)', 'varWrLoadedProjectID=varWrProjectID', 'varWrLoadedMonday=varWrMonday', 'If(Coalesce(varWrContractorID,0)=0,IsBlank(varWrContractorDisplay),CountIf(colWrGroups,ContractorID=varWrContractorID&&Display=varWrContractorDisplay)=1)', 'CountIf(colWrRows,Coalesce(varWrContractorID,0)=0||ContractorID=varWrContractorID)>0') {
     Assert-True ($gN.Contains($part)) "export guard contains: $part"
 }
 $formulas = [string]$appDoc['App']['Properties']['Formulas']
@@ -109,12 +109,13 @@ Test-Guard 'varWrContractorID:30|||varWrContractorDisplay:"Gamma"' $false 'contr
 Assert-True ($guard -notmatch 'cmpWr\w+\.Value') 'guard reads no component output (Test-Components instance rule; dropdown and variables are kept in step by cmpWrContractor.OnChange)'
 Test-Guard 'colWrRows:Filter(Table({ContractorID:10,WorkerID:1}),false)' $false 'no report rows'
 Test-Guard 'varWrContractorID:20|||varWrContractorDisplay:"Beta (B-1)"|||colWrRows:Table({ContractorID:10,WorkerID:1})' $false 'chosen contractor has no rows'
-$blocked = $onExp.Substring($onExp.LastIndexOf('Set(varWrBusy,false); Set(varWrExporting,false),'))
+Test-Guard 'varWrContractorID:0|||varWrContractorDisplay:"Beta (B-1)"' $false 'L6: contractor ID 0 but a remembered contractor display (not "All") blocks'
+$blocked = $onExp.Substring($onExp.LastIndexOf('CsvRows:CountRows(colWrExpCsvRows)}),'))
 Assert-True ($blocked.Contains('Set(varAdmMsgKind,"Error")') -and $blocked.Contains('T.admHeadBlocked.en') -and $blocked.Contains('T.wrMsgExportBlocked.en') -and $blocked -notmatch '\.Run\(') 'guard false: red "Blocked." message, no flow call'
 
 # (2) Busy flag, no mutations, messages ----------------------------------------------------------------------------------
 Assert-True ($onExpN.StartsWith("=If($gN,Set(varWrExporting,true);Set(varWrBusy,true);")) 'export sets varWrExporting and varWrBusy first (spinner in cmpTitleBar; navigation, Refresh and week change blocked)'
-Assert-True ($onExpN.Contains('Set(varWrBusy,false);Set(varWrExporting,false),Set(varAdmMsgKind,"Error")') -and ([regex]::Matches($onExpN, 'Set\(varWrExporting,false\)')).Count -eq 1) 'busy flags reset once, at the end of the export branch'
+Assert-True ($onExpN.Contains(');Set(varWrBusy,false);Set(varWrExporting,false);Trace("DIAG|Export|End",') -and ([regex]::Matches($onExpN, 'Set\(varWrExporting,false\)')).Count -eq 1 -and $onExpN.IndexOf('Set(varWrBusy,false);Set(varWrExporting,false);') -gt $onExpN.LastIndexOf("'SiteManagment-Exportfile'.Run(")) 'M1: busy flags reset once, unconditionally after the message step (not inside any If), before the end trace'
 Assert-True ((P 'cmpWrTitle.Busy') -eq '=Coalesce(varWrBusy,false) || varWrLoadState="Loading"') 'title spinner follows varWrBusy (also during export)'
 foreach ($k in 'cmpWrFooter.HomeEnabled', 'cmpWrFooter.RefreshEnabled', 'dpWrWeek.DisplayMode', 'btnWrPrev.DisplayMode', 'btnWrNext.DisplayMode', 'cmpWrProject.Enabled', 'cmpWrContractor.Enabled') { Assert-True ((P $k).Contains('!Coalesce(varWrBusy,false)')) "$k blocked while busy (export sets varWrBusy)" }
 Assert-True ((P 'btnWrLoad.OnSelect').StartsWith('=If(Coalesce(varWrBusy,false),')) 'loader refuses while busy (no reload during export)'
@@ -122,7 +123,8 @@ $bare = Remove-FxStrings $screenText
 Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Notify|Choices)\(') 'no Patch/Remove/Update/SubmitForm/Launch/Download/Notify/Choices on scrWeekReport'
 $colTargets = @([regex]::Matches((Remove-FxStrings $onExp), '\b(Collect|ClearCollect|Clear)\(\s*([^,\)]+)') | ForEach-Object { $_.Groups[2].Value.Trim() } | Sort-Object -Unique)
 Assert-True (@($colTargets | Where-Object { $_ -notmatch '^col[A-Z]\w*$' }).Count -eq 0 -and $colTargets -notcontains 'Translations') "OnExport collection functions only target local collections ($($colTargets -join ', '))"
-Assert-True ($onExpN.Contains('Set(varAdmMsgKind,"Success");Set(varAdmMsgHead,If(LangNl&&!IsBlank(T.admHeadExported.nl),T.admHeadExported.nl,T.admHeadExported.en));') -and $onExpN.Contains('If(IsEmpty(colWrExportErrors)&&varWrExpPdfOk&&varWrExpCsvOk,Set(varAdmMsgKind,"Success")')) 'green "Exported." only when both files are OK and no error was collected'
+Assert-True ($onExpN.Contains('Set(varAdmMsgKind,"Success");Set(varAdmMsgHead,If(LangNl&&!IsBlank(T.admHeadExported.nl),T.admHeadExported.nl,T.admHeadExported.en));') -and $onExpN.Contains('If(IfError(IsEmpty(colWrExportErrors)&&varWrExpPdfOk&&varWrExpCsvOk,false),Set(varAdmMsgKind,"Success")')) 'M1: green "Exported." only when both files are OK and no error was collected; any error in that check -> red branch (never no message)'
+Assert-True ($onExpN.Contains('Set(varAdmMsgBody,IfError(If(varWrExpFiles>0,') -and $onExpN.Contains('IfError(Coalesce(varWrExpPdfError,') -and $onExpN.Contains('IfError(Coalesce(varWrExpCsvError,')) 'M1: error-message texts built inside IfError (a broken flow result still gives a red message with a T text)'
 Assert-True ($onExpN.Contains('Set(varAdmMsgHead,If(varWrExpFiles>0,If(LangNl&&!IsBlank(T.admHeadPartExported.nl),T.admHeadPartExported.nl,T.admHeadPartExported.en),If(LangNl&&!IsBlank(T.admHeadNotExported.nl),T.admHeadNotExported.nl,T.admHeadNotExported.en)))')) 'failure: red "Partly exported." (PDF saved, CSV failed) or "Not exported."'
 $tKeys = @([regex]::Matches($formulas, '(?m)^\s*(\w+):\s*\{en:') | ForEach-Object { $_.Groups[1].Value })
 $used = @([regex]::Matches($onExp + $guard, '\bT\.(\w+)\.en\b') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
@@ -140,7 +142,13 @@ $csvArgs = Split-FxArgs (Get-Balanced $onExp ($runs[1].Index + $runs[1].Length -
 Assert-True ($pdfArgs.Count -eq 5 -and ($pdfArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|varWrExpBase|"pdf"|varWrExpHtml|{text_4:"weekreport.html"}') 'PDF call: Run(Folder, FileName, "pdf", Content, {text_4: "weekreport.html"}) (TemplateName as optional record)'
 Assert-True ($csvArgs.Count -eq 4 -and ($csvArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|varWrExpBase|"csv"|varWrExpCsvText') 'CSV call: Run(Folder, FileName, "csv", Content) (same base name, no TemplateName)'
 Assert-True ($onExpN.Contains("IfError(Set(varWrExpPdfResult,'SiteManagment-Exportfile'.Run(") -and $onExpN.Contains("IfError(Set(varWrExpCsvResult,'SiteManagment-Exportfile'.Run(")) 'each flow call inside IfError'
-foreach ($f in 'Pdf', 'Csv') { Assert-True ($onExpN.Contains("Set(varWrExp${f}Ok,IsBlank(varWrExp${f}Error)&&Lower(Trim(varWrExp${f}Result.status&`"`"))=`"ok`"&&!IsBlank(Trim(varWrExp${f}Result.fileurl&`"`")));")) "$f result: OK only without error, status ok (case-insensitive) and a non-empty fileurl" }
+foreach ($f in 'Pdf', 'Csv') {
+    Assert-True ($onExpN.Contains("Set(varWrExp${f}Ok,IfError(IsBlank(varWrExp${f}Error)&&Lower(Trim(varWrExp${f}Result.status&`"`"))=`"ok`"&&!IsBlank(Trim(varWrExp${f}Result.fileurl&`"`")),false));")) "M1: $f result: OK only without error, status ok (case-insensitive), non-empty fileurl; evaluated inside IfError(..., false)"
+    $okFx = Get-CallArg $onExp "Set(varWrExp${f}Ok,IfError(" 1
+    foreach ($c in @(@('""', '{status:"OK",fileurl:"https://x/f",message:""}', $true, 'status OK + url'), @('""', '{status:"ok",fileurl:"u",message:""}', $true, 'status lower-case ok'), @('""', '{status:"Error",fileurl:"u",message:"m"}', $false, 'status Error'), @('""', '{status:"OK",fileurl:"  ",message:""}', $false, 'empty fileurl'), @('"boom"', '{status:"OK",fileurl:"u",message:""}', $false, 'IfError caught a flow error'), @('""', 'If(false,{status:"",fileurl:"",message:""})', $false, 'blank result'), @('If(1/0>0,"x","y")', '{status:"OK",fileurl:"u",message:""}', $false, 'error value in the result check -> false'))) {
+        Assert-Eval "With({varWrExp${f}Error:$($c[0]),varWrExp${f}Result:$($c[1])},$okFx)" $c[2] "M1: $f OK = $($c[2]) for $($c[3])"
+    }
+}
 Assert-True ($onExpN.Contains("If(IsEmpty(colWrExportErrors)&&varWrExpPdfOk,Set(varWrExpCsvResult,Blank());")) 'CSV only after a successful PDF and without collected errors'
 $iPdf = $onExpN.IndexOf("'SiteManagment-Exportfile'.Run("); $iCsv = $onExpN.LastIndexOf("'SiteManagment-Exportfile'.Run(")
 Assert-True ($onExpN.IndexOf('Set(varWrExpHtml,Concat(') -lt $iPdf -and $onExpN.IndexOf('Set(varWrExpCsvText,UniChar(65279)') -lt $iPdf -and $onExpN.LastIndexOf('Filter(Translations,') -lt $iPdf -and $iPdf -lt $iCsv) 'order: Translations reads and all local building first, then PDF, then CSV'
@@ -170,18 +178,18 @@ Assert-True $true 'every key has a Dutch and an English text in the CSV (fallbac
 # (6) Interpreter: texts with fallback ----------------------------------------------------------------------------------------
 function Get-TrTable([string]$lang) { return 'Table(' + ((@($tr | Where-Object Lang -eq $lang) | ForEach-Object { '{Key:' + (ConvertTo-FxString $_.Key) + ',Txt:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')' }
 $pageListFx = Get-CallArg $onExp 'ClearCollect(colWrDocPageList,' 1
-$textsFx = Get-CallArg $onExp 'Collect(colWrDocTexts,' 1
+$textsFx = Get-CallArg $onExp 'ClearCollect(colWrDocTexts,' 1
 $lang2Fx = Get-CallArg $onExp 'Set(varWrDocLang2,' 1
 $code2Fx = Get-CallArg $onExp 'Set(varWrDocCode2,' 1
 function Set-DocTexts() {
     $pages = Invoke-Fx $pageListFx; Set-FxValue 'colWrDocPageList' $pages
-    $n = (Invoke-Fx 'CountRows(colWrDocPageList)').Value
-    Set-FxValue 'colWrDocTexts' (Invoke-Fx "With({pg:First(colWrDocPageList)},$textsFx)")
-    if ($n -gt 1) {
-        Set-FxValue 'wrTxt2' (Invoke-Fx "With({pg:Last(colWrDocPageList)},$textsFx)")
-        Set-FxValue 'colWrDocTexts' (Invoke-Fx 'With({a:colWrDocTexts,b:wrTxt2},ForAll(Sequence(CountRows(a)+CountRows(b)) As i,If(i.Value<=CountRows(a),Index(a,i.Value),Index(b,i.Value-CountRows(a)))))')
-    }
+    # Ungroup is not supported by the local interpreter (Studio supports it; cmpField uses it): evaluate the inner ForAll and flatten here
+    Set-FxValue 'wrPages' (Invoke-Fx $textsInnerFx)
+    Set-FxValue 'colWrDocTexts' (Invoke-Fx 'With({a:First(wrPages).PageTexts,b:If(CountRows(wrPages)>1,Last(wrPages).PageTexts,Filter(First(wrPages).PageTexts,false))},ForAll(Sequence(CountRows(a)+CountRows(b)) As i,If(i.Value<=CountRows(a),Index(a,i.Value),Index(b,i.Value-CountRows(a)))))')
 }
+$tArgs = Split-FxArgs (Get-Balanced $textsFx $textsFx.IndexOf('('))
+Assert-True ($textsFx.StartsWith('Ungroup(ForAll(colWrDocPageList As pg,{PageTexts:') -and $tArgs.Count -eq 2 -and $tArgs[1].Trim() -ceq 'PageTexts') 'doc texts = Ungroup(ForAll(pages, {PageTexts: ForAll(23 keys)}), PageTexts) (column as identifier)'
+$textsInnerFx = $tArgs[0].Trim()
 Set-FxVar 'colWrDocNl' (Get-TrTable 'Dutch'); Set-FxVar 'colWrDocEn' (Get-TrTable 'English')
 Set-FxVar 'colWrDoc2' 'Table({Key:"doc.title",Txt:"Raport X"},{Key:"doc.colName",Txt:""})'
 Set-FxVar 'colWrDocNl' 'Filter(colWrDocNl,Key<>"doc.weekRangeSep")'
@@ -301,6 +309,42 @@ Assert-True $true 'CSV (All contractors): one line per stored Hours record incl.
 Set-FxVar 'varWrExpContractorID' '20'
 Set-FxVar 'colWrExpCsvRows' $csvRowsFx
 Assert-Eval $csvTextFx ($bom + $hdr + $crlf + 'P-1000;"Ref; A";B-1;Beta;WKR-002;Bram Test;Welder;2027-01-03;2026;53;3' + $crlf) 'CSV (one contractor): only its lines; its worker with total 0 dropped'
+
+# (10) Review M2/L2: every local build step in IfError; completeness checks before the first flow call -----------------------------
+$errC = 'Collect(colWrExportErrors,{Message:If(LangNl&&!IsBlank(T.wrErrExportBuild.nl),T.wrErrExportBuild.nl,T.wrErrExportBuild.en)&""&FirstError.Message});false)'
+foreach ($s in 'IfError(CountRows(ClearCollect(colWrDocTexts,Ungroup(ForAll(colWrDocPageListAspg,{PageTexts:', 'IfError(CountRows(ClearCollect(colWrExpLines,', 'IfError(CountRows(ClearCollect(colWrExpCsvRows,', 'IfError(Set(varWrExpCsvText,', 'IfError(Set(varWrExpHtml,') {
+    $i = $onExpN.IndexOf($s); Assert-True ($i -ge 0 -and $onExpN.IndexOf($errC, $i) -gt $i -and $i -lt $iPdf) "M2: build step in IfError with Collect(colWrExportErrors, build error) before the first flow call: $s"
+}
+Assert-True ($onExpN.Contains(',PageTexts)))>=0,' + $errC)) 'M2: doc texts built with ClearCollect(Ungroup(ForAll(...))) (no Collect inside ForAll), so IfError sees the result'
+$chkFx = Get-CallArg $onExp 'If(IsEmpty(colWrExportErrors) && IfError(IsEmpty(colWrDocPageList)' 0
+Assert-True ($onExpN.IndexOf('If(IsEmpty(colWrExportErrors)&&IfError(IsEmpty(colWrDocPageList)') -lt $iPdf -and $onExpN -notmatch 'Len\(varWrExpCsvText\)=0' -and $chkFx.EndsWith(',true)')) 'M2: completeness check before the first flow call; an error inside the check counts as a mismatch (IfError(..., true)); the old Len(csv)=0 check is gone'
+Set-FxVar 'colWrExportErrors' 'Filter(Table({Message:""}),false)'
+Set-FxVar 'varWrLoadedProject' '{ID:1,Title:"Test project",Country:"Netherlands",Number:"TEST-000",Reference:"Test project reference",Display:"x"}'
+Set-FxVar 'varWrExpContractorID' '0'; Set-FxVar 'varWrDocLang2' '"English"'; Set-FxVar 'varWrDocCode2' '"en"'
+Set-FxVar 'colWrDocNl' (Get-TrTable 'Dutch'); Set-FxVar 'colWrDoc2' (Get-TrTable 'English')
+Set-DocTexts
+Set-FxVar 'colWrLines' ('Table(' + ($sampleLines -join ',') + ')')
+Set-FxVar 'colWrGroups' 'Table({ContractorID:901,ContractorName:"TEST Employer",EmployerCode:"EMP-901",ReportLanguage:"English"},{ContractorID:902,ContractorName:"TEST Contractor B",EmployerCode:"EMP-902",ReportLanguage:"English"})'
+Set-FxVar 'colWrExpLines' $linesFx; Set-FxVar 'colWrExpCsvRows' $csvRowsFx
+Set-FxVar 'varWrExpCsvText' $csvTextFx; Set-FxVar 'varWrExpHtml' $htmlFx
+Assert-Eval 'CountRows(colWrDocTexts)' 46 'doc texts: 23 keys x 2 pages'
+Assert-Eval $chkFx $false 'M2: consistent export content -> no mismatch (flow calls allowed)'
+foreach ($c in @(
+        @('colWrExpCsvRows:FirstN(colWrExpCsvRows,CountRows(colWrExpCsvRows)-1)', 'one CSV row missing vs. the expected fact lines'),
+        @('varWrExpCsvText:Left(varWrExpCsvText,Len(varWrExpCsvText)-1)', 'CSV text shorter than BOM + header + rows'),
+        @('varWrExpCsvText:""', 'CSV text empty (Set failed)'),
+        @('varWrExpHtml:Substitute(varWrExpHtml,"{{HEADER}}","",1)', 'one {{HEADER}} missing'),
+        @('varWrExpHtml:Substitute(varWrExpHtml,"</section>","",2)', 'one </section> missing'),
+        @('colWrDocTexts:FirstN(colWrDocTexts,45)', 'doc texts not 23 x pages'),
+        @('colWrExpLines:FirstN(colWrExpLines,CountRows(colWrExpLines)-1)', 'one PDF table line missing'),
+        @('colWrDocPageList:Filter(colWrDocPageList,false)', 'no pages'))) {
+    Assert-Eval "With({$($c[0])},$chkFx)" $true "M2: mismatch detected (error, zero flow calls): $($c[1])"
+}
+$l2Fx = Get-CallArg $onExp 'If(IsEmpty(colWrExportErrors) && (IsEmpty(colWrDocNl)' 0
+Assert-True ($onExpN.IndexOf('If(IsEmpty(colWrExportErrors)&&(IsEmpty(colWrDocNl)||IsEmpty(colWrDocEn)),Collect(colWrExportErrors,{Message:If(LangNl&&!IsBlank(T.wrErrExportTexts.nl),T.wrErrExportTexts.nl,T.wrErrExportTexts.en)') -ge 0 -and $onExpN.IndexOf('(IsEmpty(colWrDocNl)||IsEmpty(colWrDocEn))') -lt $iPdf) 'L2: empty Dutch or English text set -> red message (T.wrErrExportTexts), zero flow calls'
+Assert-Eval "With({colWrDocNl:Filter(colWrDocNl,false)},$l2Fx)" $true 'L2: no Dutch texts blocks'
+Assert-Eval "With({colWrDocEn:Filter(colWrDocEn,false)},$l2Fx)" $true 'L2: no English texts blocks'
+Assert-Eval $l2Fx $false 'L2: both text sets present -> no block (per-key fallback stays)'
 
 Write-Output 'Test-Export: admission guard (parity + cases), busy flag, flow calls (PDF 5 args with TemplateName, CSV 4 args, results checked), Translations reads (3, global predicate vars, 500 guards), 23 keys, text fallback, language choice, PDF Content = sample-body.html, escaping, CSS footer, file names, CSV verified locally.'
 Write-Output 'NOT verified locally: Studio import and binding (flow optional parameter record {text_4:...}, User().FullName, Text(...,"nl-NL") in Studio, UniChar), delegation of the Translations reads (Monitor), flow run and PDF rendering, real SharePoint data.'

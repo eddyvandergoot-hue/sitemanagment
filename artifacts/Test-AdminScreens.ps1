@@ -471,7 +471,7 @@ foreach ($n in $idx.Keys) {
 Assert-True ($literalCaptions.Count -eq 0) "Visible captions use T, no literal text ($captions checked) $($literalCaptions -join ', ')"
 
 # (12) Identifier trap: bare ProjectName (internal name of 'Project Number') ----------------------------------
-Assert-True ($srcAll -notmatch "(?<!['\w])ProjectName\b") 'No bare ProjectName identifier in Src'
+Assert-True ($srcAll -cnotmatch "(?<!['\w])ProjectName\b") 'No bare ProjectName identifier in Src (case-sensitive like Power Fx; the text key "doc.projectName" is not an identifier)'
 
 # (13) Blank versus empty text (bug TP-CONTRACTORS-01 steps 8/9: every Save ended in "Save not confirmed") ---------------
 # Root cause, reproduced in the Power Fx interpreter: Coalesce(x,"") returns Blank when x is blank, and Blank() = "" is false,

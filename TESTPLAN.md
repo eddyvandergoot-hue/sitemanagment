@@ -600,3 +600,21 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Totaalrij navy met witte vette tekst; subtotaal lichtblauw.
 - Voettekst "Gegenereerd ... door Test User" links en paginanummer "1 / 2" rechts op elke pagina.
 - Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.
+
+## TP-EXPORT-02 Week Report Export-knop (fase C; build weekreport-export-c-20261113_230804.msapp; alleen TEST-000)
+Voorbereiding: importeer de build (make.powerapps.com > Apps > Import app > From file; SHA-256 controleren). Open de app in Studio (Edit), controleer dat er geen fouten of waarschuwingen bij scrWeekReport staan (App checker), en speel af (F5). Alle stappen alleen op project TEST-000; de export schrijft alleen bestanden in Exports/TEST-000 en wijzigt geen lijst.
+
+| # | Stap (klikpad) | Verwacht |
+|---|---|---|
+| 1 | Home > tegel Week report | Week Report opent; footer: Home links, Refresh en Export (groen) rechts |
+| 2 | Project = TEST-000, Week = een week met opgeslagen uren (bij voorkeur ook een waarde met decimalen, bv. 7,5, en uren op za/zo), Contractor = All contractors; wacht tot de tabel geladen is | Export actief; tijdens laden Export uitgeschakeld |
+| 3 | Klik Export | Spinner in de titelbalk; Home/Refresh/weekpijlen/kiezers uitgeschakeld; daarna groene balk "Exported." met "Saved in Exports/TEST-000: TEST_WeekReport_TEST-000_<YYYY>KW<ww>_ALL.pdf and ….csv" |
+| 4 | SharePoint > Exports > TEST-000: open de PDF | Pagina 1 Nederlands, pagina 2 tweede taal (of alleen pagina 1 als de taal Dutch is); infoblok Project name, Country, Project number, Project reference, Contractor "All contractors", Week; per contractor groepsregel + subtotaal, navy totaalrij; dezelfde getallen als het scherm (decimale komma); voettekst "Gegenereerd <datum tijd> door <jouw naam>" en "Pagina x van y" |
+| 5 | Open de CSV in Excel (dubbelklik, Nederlandse instellingen) | Kolommen netjes gescheiden (;), kop ProjectNumber…Hours, één regel per opgeslagen dag (ook opgeslagen 0), 7,5 als getal, geen vreemde tekens (BOM), datum yyyy-mm-dd |
+| 6 | Kies Contractor = één contractor; klik Export | Bestanden …_<EmployerCode>.pdf/.csv; PDF zonder totaalrij, alleen die contractor; taal pagina 2 = Language van die contractor (Contractors-scherm/SharePoint), anders meerderheid medewerkers |
+| 7 | Klik Export nogmaals (zelfde selectie) | Bestanden overschreven (versiegeschiedenis +1), opnieuw "Exported." |
+| 8 | Verander de week met een pijl en klik direct Export tijdens het laden | Export uitgeschakeld tot de nieuwe week geladen is |
+| 9 | Flowfout: hernoem in Templates tijdelijk weekreport.html (bv. weekreport-x.html), klik Export, zet de naam terug | Rode balk "Not exported." met de flowmelding; geen CSV gemaakt; app blijft bruikbaar (spinner weg, knoppen actief) |
+| 10 | Studio: Monitor tijdens een export | Drie of minder Translations-reads met filter op Language (gedelegeerd), twee flowaanroepen; geen Patch |
+
+Meld per stap PASS/FAIL; bij een importfout de exacte tekst.

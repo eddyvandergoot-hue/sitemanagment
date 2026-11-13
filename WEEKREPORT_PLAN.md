@@ -128,6 +128,15 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 - Flowaanroep in IfError; Status <> "ok" of lege FileUrl = fout met Message in de meldingsbalk; bij meerdere bestanden telt elk resultaat apart, nooit "geslaagd" bij een fout. Links tonen en openen met Launch().
 - Trace `DIAG|Export|End` (Files, ElapsedMs, Errors), zonder namen.
 
+### 6.7 Fase C gebouwd (13-11-2026): keuzes van Claude, door Eddy te bevestigen
+- Tweede taal bij "All contractors" (bestandspaar `_ALL`): hebben alle opgenomen contractors dezelfde uitkomst (Employers.Language, anders meerderheid Workers.Language, gelijkstand English), dan die taal; anders English. Dutch = alleen pagina 1.
+- Getallen in de PDF met decimale komma, zelfde vorm als de CSV (7,5; hele uren zonder komma).
+- Geen Launch(): de app opent het bestand niet; de groene melding noemt map en beide bestandsnamen (afwijking van 6.6 "Links tonen en openen met Launch()").
+- Totaalrij alleen bij "All contractors", zoals het scherm; bij één contractor groepsregel + subtotaal.
+- Map en bestandsnaam: de tekens \ / : * ? " < > | # % worden "-" (twee projectnummers die alleen daarin verschillen zouden dezelfde naam krijgen; in de praktijk niet verwacht). Leeg Project Number blokkeert de export.
+- Volgorde: eerst PDF, alleen bij PDF OK de CSV. Meldingen: "Exported." (groen), "Not exported." (rood, niets opgeslagen), "Partly exported." (rood, PDF opgeslagen, CSV niet).
+- Onbekende taalnaam (niet een van de zes) krijgt lang="und"; teksten vallen terug op English. Ontbreekt de Dutch- of English-set in Translations volledig, dan geen export.
+
 ## 7. Tests (lokaal, artifacts)
 - Fase A: nieuw Test-WeekReport.ps1 (loaders/staging/500-guards/predicaten, geen mutaties, guard-pariteit, rijregel, contractorhistorie, codefallbacks, TEST-regel, rapporttaal incl. gelijkstand, ISO-week 53); Test-Layout, Test-Components (cmpReportFooter), Test-GeaColors, Test-Fonts, Test-HomeIcons (tegel actief), Check-WeeklySource.
 - Fase B-D: Test-Export.ps1 (CSV in de Power Fx-interpreter: BOM, kop, ";", ".", datum, quoting, 0-regels, F/W; HTML-escaping; bestandsnamen; export-guard; tweetalige koppen).
