@@ -598,7 +598,7 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Tabel even breed als de balk; Sat/Sun lichtgrijs, ook in de kop; geen verticale lijn vóór Total.
 - Kopje "Totaal (uur)" / "Total (hrs)".
 - Totaalrij navy met witte vette tekst; subtotaal lichtblauw.
-- Voettekst "Gegenereerd ... door Test User" links en paginanummer "1 / 2" rechts op elke pagina.
+- Voettekst "Gegenereerd ... door Test User" links en paginanummer "Pagina x van y" (EN: "Page x of y") rechts op elke pagina.
 - Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.
 
 ## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c3-20261114_002529, SHA-256 14EEFC3FEC03634C8274D62D26F201BCFD21B2023D092C61A8561D16BB06C849; alleen TEST-000; DECISIONS H26-H28)
