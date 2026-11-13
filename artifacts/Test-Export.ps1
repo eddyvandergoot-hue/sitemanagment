@@ -167,7 +167,8 @@ $csvLines = [IO.File]::ReadAllLines((Join-Path $tplDir 'translations-weekreport.
 $tr = @($csvLines | ForEach-Object { $p = $_.Split(';'); [pscustomobject]@{ Key = $p[0]; Lang = $p[1]; Text = ($p[2..($p.Count - 1)] -join ';') } })
 $keys = @($tr | ForEach-Object Key | Select-Object -Unique)
 Assert-True ($keys.Count -eq 23) "translations-weekreport.csv: 23 doc.* keys"
-foreach ($k in $keys) { Assert-True ($onExp.Contains('"' + $k + '"')) "key $k used in OnExport" }
+$unused = @('doc.contractorAll', 'doc.total')  # review 13-11: no _ALL file and no grand total any more (H26); not required, so an empty value never blocks
+foreach ($k in $keys) { if ($unused -contains $k) { Assert-True (-not $onExp.Contains('"' + $k + '"')) "key $k no longer required in OnExport" } else { Assert-True ($onExp.Contains('"' + $k + '"')) "key $k used in OnExport" } }
 foreach ($k in $keys) { foreach ($lg in 'Dutch', 'English', 'Polish', 'Romanian', 'German', 'Ukrainian') { if (-not ($tr | Where-Object { $_.Key -eq $k -and $_.Lang -eq $lg -and $_.Text.Trim() })) { throw "FAIL $k missing for $lg in the CSV" } } }
 Assert-True $true 'every key has a text in all six languages in the CSV (a delivered language never blocks)'
 
@@ -186,7 +187,7 @@ $isoWFx = Get-CallArg $onExp 'Set(varWrExpIsoWeek,' 1
 $labelFx = Get-CallArg $onExp 'Set(varWrExpWeekLabel,' 1
 $folderFx = Get-CallArg $onExp 'Set(varWrExpFolder,' 1
 $tArgs = Split-FxArgs (Get-Balanced $textsFx $textsFx.IndexOf('('))
-Assert-True ($textsFx.StartsWith('Ungroup(ForAll(Distinct(colWrDocLangs,L) As lg,{LangTexts:') -and $tArgs.Count -eq 2 -and $tArgs[1].Trim() -ceq 'LangTexts') 'doc texts = Ungroup(ForAll(languages used, {LangTexts: ForAll(23 keys)}), LangTexts) (column as identifier)'
+Assert-True ($textsFx.StartsWith('Ungroup(ForAll(Distinct(colWrDocLangs,L) As lg,{LangTexts:') -and $tArgs.Count -eq 2 -and $tArgs[1].Trim() -ceq 'LangTexts') 'doc texts = Ungroup(ForAll(languages used, {LangTexts: ForAll(21 required keys)}), LangTexts) (column as identifier)'
 $textsInnerFx = $tArgs[0].Trim()
 function Set-DocTexts([string]$langsTable) {
     # Ungroup is not supported by the local interpreter (Studio supports it): evaluate the inner ForAll and flatten here (max 3 languages)
@@ -212,17 +213,21 @@ Assert-Eval "Concat(ForAll($langsFx As x,x.L),Value,`",`")" 'English,Polish' 'la
 Set-FxVar 'colWrDocAll' ('Filter(' + (Get-DocAll @('Dutch', 'English', 'Polish')) + ',!(Lang="Polish" && Key="doc.colName"))')
 Set-FxVar 'colWrDocAll' 'ForAll(colWrDocAll As d,{Lang:d.Lang,Key:d.Key,Txt:If(d.Lang="Dutch" && d.Key="doc.week","",d.Txt)})'
 Set-DocTexts 'Table({L:"Dutch"},{L:"English"},{L:"Polish"})'
-Assert-Eval 'CountRows(colWrDocTexts)' 69 'doc texts: 23 keys x 3 languages'
+Assert-Eval 'CountRows(colWrDocTexts)' 63 'doc texts: 21 required keys x 3 languages'
 Assert-Eval 'Concat(Filter(colWrDocTexts,Missing),Lang & ":" & Key & "=" & Txt,",")' 'Dutch:doc.week=,Polish:doc.colName=' 'N5: a key that is missing or empty is flagged Missing with an empty text (no key name, no other language)'
 Set-FxVar 'colWrExpJobs2' $jobs2Fx
 Assert-Eval 'Concat(colWrExpJobs2,Code & "=" & Status,", ")' 'EMP-902=MissingTexts, EMP-901=MissingTexts, EMP-904=NoLanguage, EMP-905=MissingTexts, EMP-903=NoHours' 'status: 0 hours -> NoHours (before any other check); no Employers.Language -> NoLanguage; missing text on page 1 blocks every contractor'
 Assert-Eval 'LookUp(colWrExpJobs2,Code="EMP-905").MissingKeys' 'Dutch: doc.week, Polish: doc.colName' 'N5: the message lists the missing keys per language'
+Set-FxVar 'colWrDocAll' ('Filter(' + (Get-DocAll @('Dutch', 'English', 'Polish')) + ',!(Lang="Dutch" && Key in ["doc.title","doc.projectName","doc.country","doc.projectNumber","doc.projectReference"]))')
+Set-DocTexts 'Table({L:"Dutch"},{L:"English"},{L:"Polish"})'
+Set-FxVar 'colWrExpJobs2' $jobs2Fx
+Assert-Eval 'LookUp(colWrExpJobs2,Code="EMP-901").MissingKeys' 'Dutch: doc.title, Dutch: doc.projectName, Dutch: doc.country (+2 more)' 'review 6: missing keys listed max 3 + "(+n more)" (one-line message bar)'
 Set-FxVar 'colWrDocAll' ('Filter(' + (Get-DocAll @('Dutch', 'English', 'Polish')) + ',!(Lang="Polish" && Key="doc.colName"))')
 Set-DocTexts 'Table({L:"Dutch"},{L:"English"},{L:"Polish"})'
 Set-FxVar 'colWrExpJobs2' $jobs2Fx
 Assert-Eval 'Concat(colWrExpJobs2,Code & "=" & Status,", ")' 'EMP-902=Ready, EMP-901=Ready, EMP-904=NoLanguage, EMP-905=MissingTexts, EMP-903=NoHours' 'missing Polish text blocks only the Polish contractor; Dutch = Dutch -> needs only page-1 texts'
 Set-FxVar 'colWrExpResults' $resultsFx
-Assert-Eval 'Concat(colWrExpResults,Msg," ")' 'EMP-904: no report language (column Language in Employers list). Not exported. EMP-905: texts missing in Translations (Polish: doc.colName). Not exported. EMP-903: no hours, skipped.' 'messages for blocked and skipped contractors (red text for blocked, skipped note for 0 hours)'
+Assert-Eval 'Concat(colWrExpResults,Msg," ")' 'EMP-904: no report language (column Report Language in the Employers list). Not exported. EMP-905: texts missing in Translations (Polish: doc.colName). Not exported. EMP-903: no hours, skipped.' 'messages for blocked and skipped contractors (red text for blocked, skipped note for 0 hours)'
 Assert-True ($onExpN.Contains('If(IsEmpty(colWrExportErrors)&&(IsEmpty(colWrExpJobs)||CountRows(Distinct(colWrExpJobs,Base))<>CountRows(colWrExpJobs)),Collect(colWrExportErrors,')) 'two contractors with the same file name after "-" replacement = build error, zero flow calls'
 
 # (7) Interpreter: PDF Content per contractor = templates/sample-body.html --------------------------------------------------------
@@ -329,6 +334,8 @@ $okFx = $builtFx.Substring($builtFx.IndexOf(',Ok:') + 4); $okFx = $okFx.Substrin
 foreach ($c in @(
         @('lns:FirstN(lns,2)', 'fewer than 3 table lines (header, row, subtotal)'),
         @('rows:Filter(rows,false)', 'no CSV line for a contractor with hours'),
+        @('rows:FirstN(rows,CountRows(rows)-1)', 'review 1: one CSV line fewer than the expected Hours records of this contractor'),
+        @('colWrLines:Table(First(colWrLines),First(colWrLines),First(colWrLines),First(colWrLines))', 'review 1: PDF table has fewer lines than the report lines of this contractor'),
         @('csv:Left(csv,Len(csv)-1)', 'CSV text shorter than BOM + header + rows'),
         @('html:Substitute(html,"{{HEADER}}","",1)', 'one {{HEADER}} missing'),
         @('html:Substitute(html,"</section>","",1)', 'one </section> missing'))) {
@@ -368,9 +375,9 @@ $j1 = 'Table({Code:"EMP-901"})'; $j3 = 'Table({Code:"EMP-901"},{Code:"EMP-902"},
 Test-Msg 'Table({Code:"EMP-901",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""})' $j1 $noErr 'Success' 'admHeadExported' 'Saved in Exports/TEST-000: TEST_WeekReport_TEST-000_2026KW46_EMP-901.pdf and TEST_WeekReport_TEST-000_2026KW46_EMP-901.csv' 'one contractor exported -> green, folder + both file names'
 Test-Msg 'Table({Code:"EMP-901",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""},{Code:"EMP-902",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""},{Code:"EMP-903",Status:"NoHours",PdfOk:false,CsvOk:false,Msg:"EMP-903: no hours, skipped."})' $j3 $noErr 'Success' 'admHeadExported' 'Exported 2 of 3 contractors to Exports/TEST-000. EMP-903: no hours, skipped.' 'All: 2 exported + 1 without hours -> green with the skip note'
 Test-Msg 'Table({Code:"EMP-901",Status:"NoHours",PdfOk:false,CsvOk:false,Msg:"EMP-901: no hours, skipped."})' $j1 $noErr 'Warning' 'admHeadAttention' 'Nothing exported. EMP-901: no hours, skipped.' 'only a contractor without hours -> amber "Attention.", nothing exported'
-Test-Msg 'Table({Code:"EMP-901",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""},{Code:"EMP-902",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"EMP-902: no report language (column Language in Employers list). Not exported."},{Code:"EMP-903",Status:"Ready",PdfOk:true,CsvOk:false,Msg:"EMP-903: PDF saved, CSV not confirmed (x). Check Exports/TEST-000."})' $j3 $noErr 'Warning' 'admHeadPartExported' 'Exported 1 of 3 contractors to Exports/TEST-000. EMP-902: no report language (column Language in Employers list). Not exported. EMP-903: PDF saved, CSV not confirmed (x). Check Exports/TEST-000.' 'partial -> amber "Partly exported." with the list of failed contractors'
-Test-Msg 'Table({Code:"EMP-901",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"EMP-901: no report language (column Language in Employers list). Not exported."})' $j1 $noErr 'Error' 'admHeadNotExported' 'Nothing exported. EMP-901: no report language (column Language in Employers list). Not exported.' 'missing report language (one contractor) -> red, nothing exported'
-Test-Msg 'Filter(Table({Code:"",Status:"",PdfOk:false,CsvOk:false,Msg:""}),false)' $j1 'Table({Message:"Project has no Project Number. Fix in Projects, then Refresh."})' 'Error' 'admHeadNotExported' 'Nothing exported. Project has no Project Number. Fix in Projects, then Refresh.' 'collected error before any flow call -> red, zero flow calls'
+Test-Msg 'Table({Code:"EMP-901",Status:"Ready",PdfOk:true,CsvOk:true,Msg:""},{Code:"EMP-902",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"EMP-902: no report language (column Report Language in the Employers list). Not exported."},{Code:"EMP-903",Status:"Ready",PdfOk:true,CsvOk:false,Msg:"EMP-903: PDF saved, CSV not confirmed (x). Check Exports/TEST-000."})' $j3 $noErr 'Warning' 'admHeadPartExported' 'Exported 1 of 3 contractors to Exports/TEST-000. EMP-902: no report language (column Report Language in the Employers list). Not exported. EMP-903: PDF saved, CSV not confirmed (x). Check Exports/TEST-000.' 'partial -> amber "Partly exported." with the list of failed contractors'
+Test-Msg 'Table({Code:"EMP-901",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"EMP-901: no report language (column Report Language in the Employers list). Not exported."})' $j1 $noErr 'Error' 'admHeadNotExported' 'Nothing exported. EMP-901: no report language (column Report Language in the Employers list). Not exported.' 'missing report language (one contractor) -> red, nothing exported'
+Test-Msg 'Table({Code:"EMP-905",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E5."},{Code:"EMP-901",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E1."},{Code:"EMP-904",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E4."},{Code:"EMP-902",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E2."},{Code:"EMP-903",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E3."})' 'Table({Code:"EMP-901"},{Code:"EMP-902"},{Code:"EMP-903"},{Code:"EMP-904"},{Code:"EMP-905"})' $noErr 'Error' 'admHeadNotExported' 'Nothing exported. E1. E2. E3. (+2 more)' 'review 6: notes sorted by Contractor Code, max 3 + "(+n more)" (parallel ForAll order does not matter)'Test-Msg 'Filter(Table({Code:"",Status:"",PdfOk:false,CsvOk:false,Msg:""}),false)' $j1 'Table({Message:"Project has no Project Number. Fix in Projects, then Refresh."})' 'Error' 'admHeadNotExported' 'Nothing exported. Project has no Project Number. Fix in Projects, then Refresh.' 'collected error before any flow call -> red, zero flow calls'
 
 Write-Output 'Test-Export: admission guard (parity + cases), busy flag, flow calls (per contractor: PDF 5 args with TemplateName, CSV 4 args after PDF OK, results checked), one Translations read (500 guard), 23 keys, no fallback (missing text blocks), page languages (primary setting + Employers.Language), jobs per contractor (H26), statuses NoHours/NoLanguage/MissingTexts, PDF Content = sample-body.html, escaping, CSS footer, file names, CSV per contractor, integrity, result messages verified locally.'
 Write-Output 'NOT verified locally: Studio import and binding (flow optional parameter record {text_4:...}, flow calls inside ForAll, Ungroup, User().FullName, Text(...,"nl-NL") in Studio, UniChar), delegation/Monitor of the Translations read, flow run and PDF rendering, real SharePoint data.'

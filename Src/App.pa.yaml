@@ -312,7 +312,7 @@ App:
         wrErrExportCsv: {en: "{0}: PDF saved, CSV not confirmed ({1}). Check Exports/{2}.", nl: ""},
         wrMsgExportedN: {en: "Exported {0} of {1} contractors to Exports/{2}.", nl: ""},
         wrMsgExportNoHours: {en: "{0}: no hours, skipped.", nl: ""},
-        wrErrExportNoLanguage: {en: "{0}: no report language (column Language in Employers list). Not exported.", nl: ""},
+        wrErrExportNoLanguage: {en: "{0}: no report language (column Report Language in the Employers list). Not exported.", nl: ""},
         wrErrExportTextsMissing: {en: "{0}: texts missing in Translations ({1}). Not exported.", nl: ""},
         wrErrExportNoPrimary: {en: "Primary report language not set.", nl: ""},
         wrExportNoMessage: {en: "no message from the export flow", nl: ""},

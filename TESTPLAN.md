@@ -601,20 +601,31 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Voettekst "Gegenereerd ... door Test User" links en paginanummer "1 / 2" rechts op elke pagina.
 - Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.
 
-## TP-EXPORT-02 Week Report Export-knop (fase C; build weekreport-export-c-20261113_230804.msapp; alleen TEST-000)
-Voorbereiding: importeer de build (make.powerapps.com > Apps > Import app > From file; SHA-256 controleren). Open de app in Studio (Edit), controleer dat er geen fouten of waarschuwingen bij scrWeekReport staan (App checker), en speel af (F5). Alle stappen alleen op project TEST-000; de export schrijft alleen bestanden in Exports/TEST-000 en wijzigt geen lijst.
+## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c2-20261113_234734, SHA-256 77F02AC88A0D9D04D650AC93CD2190649A66C15B1A322C7C521D192122C8D58C; alleen TEST-000; DECISIONS H26-H28)
+Vervangt de eerdere TP-EXPORT-02 (build weekreport-export-c-20261113_230804, `_ALL`-model; niet getest).
+
+Voorbereiding
+- Import: make.powerapps.com > Apps > Import app > From file; SHA-256 eerst controleren. Open in Studio (Edit): App checker zonder fouten bij scrWeekReport; meld een importfout exact. Speel af (F5).
+- Testgegevens, alleen TEST (MS-005-stijl), alleen op TEST-000. Nodig in één week (kies week W, bij voorkeur met 7,5 uur en uren op za/zo):
+  - Contractor A = TEST Employer (TEST-EMP), Report Language = Dutch, medewerkers met uren.
+  - Contractor B = een tweede TEST-contractor (bv. "TEST Contractor 2"; maak hem op het Contractors-scherm als hij nog niet bestaat), Report Language = bv. Polish, één testmedewerker met een inzetperiode op TEST-000 en uren in week W.
+  - Contractor C = een derde TEST-contractor, één testmedewerker met een inzetperiode in week W maar zonder uren (0 uur).
+  - Report Language vul je in SharePoint (Employers, kolom Report Language); het Contractors-scherm heeft dat veld nog niet.
+- Bestaat de map Exports/TEST-000 nog niet, laat hem dan bij stap 3 door de flow maken (test review 5: parallelle aanroepen op een nieuwe map).
 
 | # | Stap (klikpad) | Verwacht |
 |---|---|---|
-| 1 | Home > tegel Week report | Week Report opent; footer: Home links, Refresh en Export (groen) rechts |
-| 2 | Project = TEST-000, Week = een week met opgeslagen uren (bij voorkeur ook een waarde met decimalen, bv. 7,5, en uren op za/zo), Contractor = All contractors; wacht tot de tabel geladen is | Export actief; tijdens laden Export uitgeschakeld |
-| 3 | Klik Export | Spinner in de titelbalk; Home/Refresh/weekpijlen/kiezers uitgeschakeld; daarna groene balk "Exported." met "Saved in Exports/TEST-000: TEST_WeekReport_TEST-000_<YYYY>KW<ww>_ALL.pdf and ….csv" |
-| 4 | SharePoint > Exports > TEST-000: open de PDF | Pagina 1 Nederlands, pagina 2 tweede taal (of alleen pagina 1 als de taal Dutch is); infoblok Project name, Country, Project number, Project reference, Contractor "All contractors", Week; per contractor groepsregel + subtotaal, navy totaalrij; dezelfde getallen als het scherm (decimale komma); voettekst "Gegenereerd <datum tijd> door <jouw naam>" en "Pagina x van y" |
-| 5 | Open de CSV in Excel (dubbelklik, Nederlandse instellingen) | Kolommen netjes gescheiden (;), kop ProjectNumber…Hours, één regel per opgeslagen dag (ook opgeslagen 0), 7,5 als getal, geen vreemde tekens (BOM), datum yyyy-mm-dd |
-| 6 | Kies Contractor = één contractor; klik Export | Bestanden …_<EmployerCode>.pdf/.csv; PDF zonder totaalrij, alleen die contractor; taal pagina 2 = Language van die contractor (Contractors-scherm/SharePoint), anders meerderheid medewerkers |
-| 7 | Klik Export nogmaals (zelfde selectie) | Bestanden overschreven (versiegeschiedenis +1), opnieuw "Exported." |
-| 8 | Verander de week met een pijl en klik direct Export tijdens het laden | Export uitgeschakeld tot de nieuwe week geladen is |
-| 9 | Flowfout: hernoem in Templates tijdelijk weekreport.html (bv. weekreport-x.html), klik Export, zet de naam terug | Rode balk "Not exported." met de flowmelding; geen CSV gemaakt; app blijft bruikbaar (spinner weg, knoppen actief) |
-| 10 | Studio: Monitor tijdens een export | Drie of minder Translations-reads met filter op Language (gedelegeerd), twee flowaanroepen; geen Patch |
+| 1 | Home > tegel Week report > Project TEST-000, week W (datumkiezer of pijlen), Contractor = All contractors; wacht tot geladen | Tabel met A, B en C (C met –); Export actief; tijdens laden Export uitgeschakeld |
+| 2 | Contractor = A (TEST Employer); Export | Spinner; groene balk "Exported. Saved in Exports/TEST-000: TEST_WeekReport_TEST-000_<YYYY>KW<ww>_TEST-EMP.pdf and ….csv". PDF: 1 pagina (Report Language Dutch = pagina-1-taal), infoblok Contractor "TEST Employer · TEST-EMP", alleen A, geen totaalrij |
+| 3 | Contractor = All contractors; Export | Groen "Exported 2 of 3 contractors to Exports/TEST-000. <code C>: no hours, skipped." In Exports/TEST-000 per contractor een paar: …_TEST-EMP.pdf/.csv en …_<code B>.pdf/.csv; géén …_ALL; geen bestanden voor C |
+| 4 | Open de PDF van B | Pagina 1 Nederlands, pagina 2 Pools; alleen B (geen naam/uren van A of C), geen totaalrij; decimale komma; voettekst "Gegenereerd … door <naam>" en "Pagina x van y" |
+| 5 | Open de CSV van B in Excel (dubbelklik, Nederlandse instellingen) | Kolommen netjes (;), kop ProjectNumber…Hours, één regel per opgeslagen dag, 7,5 als getal, é/ł/ą correct, geen BOM-teken, datum yyyy-mm-dd, alleen regels van B |
+| 6 | Zelfde selectie nogmaals Export | Bestanden overschreven (versiegeschiedenis +1), opnieuw groen |
+| 7 | SharePoint: maak bij B Report Language leeg. In de app: Refresh, All contractors, Export | Amber "Partly exported. Exported 1 of 3 contractors … <code B>: no report language (column Report Language in the Employers list). Not exported. <code C>: no hours, skipped."; geen nieuwe bestanden voor B. Daarna: Contractor = B, Export → rood "Not exported. Nothing exported. <code B>: no report language …". Zet de taal van B terug |
+| 8 | Contractor = C; Export | Amber "Attention. Nothing exported. <code C>: no hours, skipped."; geen bestanden |
+| 9 | Translations: maak bij doc.colTrade / Polish de Text tijdelijk leeg (noteer de oude tekst). App: Contractor = B, Export | Rood "Not exported. Nothing exported. <code B>: texts missing in Translations (Polish: doc.colTrade). Not exported."; geen bestanden; daarna Contractor = A → wel geëxporteerd (Dutch-teksten compleet). Zet de tekst terug |
+| 10 | Flowfout: hernoem in Templates tijdelijk weekreport.html, Contractor = A, Export; zet de naam terug | Rood "Not exported. … TEST-EMP: PDF not confirmed (<flowmelding>). Check Exports/TEST-000."; geen CSV; spinner weg, knoppen actief |
+| 11 | Andere week via pijl, direct Export tijdens laden | Export uitgeschakeld tot geladen |
+| 12 | Studio Monitor tijdens stap 3 | Eén Translations-read (alle ~138 regels), per contractor twee flowaanroepen, geen Patch |
 
 Meld per stap PASS/FAIL; bij een importfout de exacte tekst.
