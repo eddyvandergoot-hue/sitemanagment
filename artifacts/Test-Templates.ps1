@@ -100,10 +100,44 @@ Check ($secs.Count -eq $pages) "sample-body.html: every page = named page + foot
 foreach ($sec in $secs) {
   $body = $sec.Groups[2].Value; $lg = $sec.Groups[1].Value
   $meta = [regex]::Matches($body, '<tr><th>([^<]+)</th><td>') | ForEach-Object { $_.Groups[1].Value }
-  Check (@($meta).Count -eq 5) "sample-body.html [$lg]: info block 5 rows (project name, number, reference, contractor, week)"
+  Check (@($meta).Count -eq 6) "sample-body.html [$lg]: info block 6 rows (project name, country, number, reference, contractor, week)"
   Check ($body -match '<th class="num total-col">[^<]+\([^)]+\)</th>') "sample-body.html [$lg]: Total header with unit"
   $bad = 0; foreach ($r in [regex]::Matches($body, '(?s)<tr[^>]*>(.*?)</tr>')) { $v = $r.Groups[1].Value; if ($v -match 'colspan="10"' -or $v -match '^<th>[^<]*</th><td>') { continue }; if ((Count $v 'class="num we"') -ne 2) { $bad++ } }
   Check ($bad -eq 0) "sample-body.html [$lg]: Sat/Sun cells class we in every table row"
+}
+
+# Translations import file (WEEKREPORT_PLAN.md 6.3): Key;Language;Text, UTF-8 with BOM, every key in every Workers.Language choice
+$cPath = Join-Path $tpl 'translations-weekreport.csv'
+Check (Test-Path $cPath) 'translations-weekreport.csv exists'
+if (Test-Path $cPath) {
+  $cb = [System.IO.File]::ReadAllBytes($cPath)
+  Check ($cb.Length -ge 3 -and $cb[0] -eq 0xEF -and $cb[1] -eq 0xBB -and $cb[2] -eq 0xBF) 'translations CSV: UTF-8 BOM'
+  $lines = @((ReadText $cPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
+  Check ($lines[0] -ceq 'Key;Language;Text') 'translations CSV: header Key;Language;Text'
+  $keys = @('doc.title', 'doc.projectName', 'doc.country', 'doc.projectNumber', 'doc.projectReference', 'doc.contractor', 'doc.contractorAll', 'doc.week', 'doc.weekRangeSep', 'doc.colName', 'doc.colTrade') + (1..7 | ForEach-Object { "doc.day$_" }) + @('doc.colTotal', 'doc.subtotal', 'doc.total', 'doc.footerGenerated', 'doc.footerPage')
+  $langs = 'Dutch', 'English', 'Polish', 'Romanian', 'German', 'Ukrainian'
+  $map = @{}; $badRows = 0
+  foreach ($ln in $lines[1..($lines.Count - 1)]) {
+    $f = $ln -split ';'
+    if ($f.Count -ne 3 -or $f[2].Trim() -eq '' -or $f[2] -ne $f[2].Trim()) { $badRows++; continue }
+    $map["$($f[0])|$($f[1])"] = $f[2]
+  }
+  Check ($badRows -eq 0) 'translations CSV: every row 3 fields, text not empty, no ; in text'
+  Check (($lines.Count - 1) -eq $map.Count) 'translations CSV: no duplicate Key+Language'
+  $missing = @(foreach ($k in $keys) { foreach ($l in $langs) { if (-not $map.ContainsKey("$k|$l")) { "$k|$l" } } })
+  Check ($missing.Count -eq 0) "translations CSV: $($keys.Count) keys x $($langs.Count) languages present$(if ($missing) { ' - missing ' + ($missing -join ', ') })"
+  $extra = @($map.Keys | Where-Object { $keys -notcontains ($_ -split '\|')[0] -or $langs -notcontains ($_ -split '\|')[1] })
+  Check ($extra.Count -eq 0) "translations CSV: only plan keys and Workers.Language choices$(if ($extra) { ' - ' + ($extra -join ', ') })"
+  $ph = @(foreach ($l in $langs) { if ($map["doc.footerGenerated|$l"] -notmatch '\{date\}' -or $map["doc.footerGenerated|$l"] -notmatch '\{user\}' -or $map["doc.footerPage|$l"] -notmatch '\{page\}' -or $map["doc.footerPage|$l"] -notmatch '\{pages\}') { $l } })
+  Check ($ph.Count -eq 0) "translations CSV: footer placeholders in every language$(if ($ph) { ' - ' + ($ph -join ', ') })"
+  Check ($map['doc.title|Ukrainian'] -match ('[' + [char]0x0400 + '-' + [char]0x04FF + ']')) 'translations CSV: Ukrainian in Cyrillic'
+  # Sample info block labels = CSV texts (nl = Dutch, en = English)
+  foreach ($sec in $secs) {
+    $lg = $sec.Groups[1].Value; $ln = @{ nl = 'Dutch'; en = 'English' }[$lg]
+    $meta = @([regex]::Matches($sec.Groups[2].Value, '<tr><th>([^<]+)</th><td>') | ForEach-Object { $_.Groups[1].Value })
+    $exp = @('doc.projectName', 'doc.country', 'doc.projectNumber', 'doc.projectReference', 'doc.contractor', 'doc.week') | ForEach-Object { $map["$_|$ln"] }
+    Check ((($meta -join '|') -ceq ($exp -join '|'))) "sample-body.html [$lg]: info labels = Translations CSV ($ln)"
+  }
 }
 
 # Tag balance (void elements and comments ignored)

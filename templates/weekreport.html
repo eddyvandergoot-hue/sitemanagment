@@ -8,6 +8,7 @@
   The template holds no language texts and no data. The flow replaces the BODY token (exactly once, in body) with Content,
   then every HEADER token with templates/header.html. Content = one section class "page" with lang per language,
   each page starting with the HEADER token. Tokens appear nowhere else. Arial only (E5); GEA palette (AGENTS.md).
+  Info block (table.meta) rows in this order: project name, country (Projects.Country), project number, project reference, contractor, week.
   Converter = Chromium (TP-EXPORT-01 T2): @page margin boxes and page counters are used for the page footer.
   Footer text per language comes from the app: a named page per section (style "page: wr-xx") plus one small
   @page wr-xx rule with only the footer content string; font, size and position are set here.

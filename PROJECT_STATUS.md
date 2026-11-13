@@ -31,7 +31,7 @@ Er is nog geen productieapp; er zijn alleen testimports, bewust, tot de functies
   - Test-Templates PASS en Edge-render 2 pagina's bekeken. Eddy uploadt opnieuw en draait T2 opnieuw.
 - Volgende: fase C (MS-030 + Export-knop op scrWeekReport). Geblokkeerd tot:
   - (a) Eddy's Studio-save met de flow in Incoming\ (MS-030).
-  - (b) De doc.*-sleutels in Translations zijn bevestigd (WEEKREPORT_PLAN 6.3). Eddy bouwt flow MS-029 "SiteManagement - Export file" met de hand (contract par. 6.5, bevestigd 11-11-2026). MS-030 (flow in de app) pas na MS-029 gedaan. Geen build tot dan.
+  - (b) Eddy importeert templates/translations-weekreport.csv in Translations (MS-032; 23 sleutels x 6 talen, namen vastgesteld 13-11-2026). Bestandsnaam 6.4 bevestigd 13-11-2026 (EmployerCode|ALL, TEST_, alleen projectmap). Infoblok krijgt Country (template + sample bijgewerkt; Eddy uploadt weekreport.html opnieuw, T2 opnieuw met de nieuwe sample-body.html). Eddy bouwt flow MS-029 "SiteManagement - Export file" met de hand (contract par. 6.5, bevestigd 11-11-2026). MS-030 (flow in de app) pas na MS-029 gedaan. Geen build tot dan.
 - Bekende beperkingen Workers-build (vastgelegd, niet blokkerend): (a) medewerker die bij het laden van de week al inactief is in Workers: Save van een nieuwe dag toont elke keer de algemene conflictmelding (nul writes; trace Reason Inactive); (b) PW Active=false met open periode wordt door de deactiveringscheck niet gezien (V1-gat); (c) de telling "actieve medewerkers" op Contractors is na een Workers-save verouderd tot Refresh op Contractors; (d) laadfouttekst van de workercache op Weekly Hours is Nederlands (UX-ronde 4b); (e) Home-tegel Weekly hours meldt "Choose project and team first" ook als alleen de caches verouderd zijn; (f) na een H18-conflict blijft varMastersReady false tot Project / team herlaadt (fail-closed). Overige oudere beperkingen (Savefix, Discard, smalle vensters, Home, datumkiezer): archief.
 - Alleen in Studio te controleren: Patch {Until: Blank()} wist de datum; JSON() van projecties; Sort op ID/Modified (delegatie); gedrag ModernDatePicker bij wijzigen van StartDate/EndDate tijdens Reset.
 
@@ -41,11 +41,11 @@ Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-
 ## Backlog cosmetica
 - PDF Week Report: handtekeningvakken "Akkoord contractor / site manager" (Eddy 12-11-2026; niet nu, tot nu toe nooit gebruikt). Later alleen een wijziging in de template.
 - Veld Report Language op het Contractors-scherm (MS-027 gedaan; metadata samengevoegd 10-11-2026).
-- Native-speaker-controle van de vertalingen (Translations) vóór livegang.
+- Native-speaker-controle van de vertalingen (Translations) vóór livegang: pl/ro/de/uk in templates/translations-weekreport.csv (Eddy 13-11-2026; teksten door Claude gemaakt, kort rapportstijl).
 - Weekpijlen naast de datumkiezer (Eddy 11-11-2026, zoals op Week Report): Hours Summary (scrWeeklyHours) heeft btnReportPreviousWeeks/btnReportNextWeeks in de footer (die bladeren door de weekkolommen); Weekly Hours (scrHours) en Project / team (Screen1) hebben geen weekpijlen. Niet nu (layout-freeze).
 - Nieuwe functie (backlog, Eddy 11-11-2026): UI-taalkeuze in de titelbalk (dropdown NL/EN/...), teksten uit de lijst Translations; de app-UI blijft voorlopig Engels.
 - Week Report smal (reviewer 11-11-2026, niet blokkerend): in de 44 px-dagkolom kunnen sub-/eindtotalen met decimalen (bv. "100,75") omslaan; "09-11" past in Inter met minder dan 1 px marge. Oplossen als Eddy het op telefoon ziet.
-- GEA-logo als PNG (officieel bestand uit de logobank) is nodig vóór fase C (PDF).
+- (Vervallen 12-11-2026: GEA-logo als PNG niet nodig; de Chromium-converter toont het officiële SVG, TP-EXPORT-01 T2.)
 - Home-tegel Tab-focus (TP-HOME-03 punt 6; geen prioriteit).
 
 ## Backlog functies

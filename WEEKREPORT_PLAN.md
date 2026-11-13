@@ -62,12 +62,12 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
   - Vertalingen: de Claude-chat levert een CSV voor import (sleutels uit fase C); native-speaker-controle vóór livegang (backlog).
 - Inhoud (opmaakfeedback Eddy 12-11-2026):
   - **Titelbalk:** documenttitel wit rechts in de logobalk.
-  - **Infoblok:** Project name (Projects.Title), Project number, Project reference, Contractor ("All contractors" of "naam · EmployerCode") en Week ("YYYY KWxx" + datumbereik). Location bestaat niet in Projects (AGENTS), dus geen locatieregel. Country is beschikbaar als Eddy die wil.
+  - **Infoblok:** Project name (Projects.Title), Project number, Project reference, Contractor ("All contractors" of "naam · EmployerCode") en Week ("YYYY KWxx" + datumbereik). Volgorde: Project name, Country (Projects.Country, keuzewaarde ongewijzigd; Eddy 13-11-2026), Project number, Project reference, Contractor, Week. Location bestaat niet in Projects (AGENTS), dus geen locatieregel.
   - **Tabel:** Name | Trade | Mon..Sun | Total met eenheid ("Totaal (uur)" / "Total (hrs)"), daarna subtotaal per contractor en een totaalrij.
   - **Voettekst per pagina:** "Gegenereerd <datum tijd> door <gebruiker>" links en "Pagina x van y" rechts. Gebruiker = User().FullName.
   - **Rijen:** als op het scherm (B3: ook weektotaal 0, dagen "–").
-- Sleutels in Translations die fase C nodig heeft (Language Dutch en English verplicht). Eddy controleert of ze in de lijst staan of voegt ze toe; de exacte namen zet ik vast vóór de bouw:
-  - **Kop en infoblok:** doc.title, doc.projectName, doc.projectNumber, doc.projectReference, doc.contractor, doc.contractorAll, doc.week, doc.weekRangeSep ("t/m" / "to").
+- Sleutels in Translations die fase C nodig heeft (Language Dutch en English verplicht). Namen vastgesteld 13-11-2026 (Eddy: "use doc.* keys from 6.3, no new names"; doc.country toegevoegd voor de Country-regel). Importbestand: templates/translations-weekreport.csv (Key;Language;Text, UTF-8 met BOM, ";"; 23 sleutels x 6 talen Dutch, English, Polish, Romanian, German, Ukrainian = 138 regels; Test-Templates controleert volledigheid, placeholders en dat de infolabels van sample-body.html gelijk zijn aan de CSV). Import in de lijst: MS-032. Native-speaker-controle pl/ro/de/uk: backlog.
+  - **Kop en infoblok:** doc.title, doc.projectName, doc.country, doc.projectNumber, doc.projectReference, doc.contractor, doc.contractorAll, doc.week, doc.weekRangeSep ("t/m" / "to").
   - **Tabel:** doc.colName, doc.colTrade, doc.day1..doc.day7, doc.colTotal ("Totaal (uur)" / "Total (hrs)"), doc.subtotal, doc.total.
   - **Voettekst:** doc.footerGenerated ("Gegenereerd {date} door {user}"), doc.footerPage ("Pagina {page} van {pages}").
 - Namen HTML-escapen (&, <, >, "). Daarnaast "{" in gegevens als `&#123;` schrijven, zodat een naam nooit een token ({{BODY}}/{{HEADER}}) kan vormen.
@@ -98,7 +98,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 
 ### 6.4 Bestandsnamen (B8) en map
 - H25 (Eddy 12-11-2026): één Export-klik = .pdf + .csv met dezelfde basisnaam, voorbeeld `Exports/<ProjectNumber>/WeekReport_<ProjectNumber>_<YYYY>KW<ww>.pdf/.csv`.
-- Besloten (Eddy 12-11-2026: "filename per 6.4"; punt 3 expliciet): basisnaam `[TEST_]WeekReport_<ProjectNumber>_<YYYY>KW<ww>_<EmployerCode>` + .pdf/.csv, map `Exports/<ProjectNumber>`, geen tijdstempel. De eerdere open punten:
+- Besloten (Eddy 12-11-2026: "filename per 6.4"; punt 3 expliciet): basisnaam `[TEST_]WeekReport_<ProjectNumber>_<YYYY>KW<ww>_<EmployerCode|ALL>` + .pdf/.csv, map `Exports/<ProjectNumber>`, geen tijdstempel. Interpretatie bevestigd door Eddy 13-11-2026: EmployerCode of ALL, prefix TEST_, alleen projectmap. Eén contractor gekozen = `_<EmployerCode>` (leeg: "EMP-" & Text(ID,"000")); "All contractors" = één bestandspaar `_ALL` met alle contractors (groepsregels + subtotalen, zoals sample-body.html). De eerdere open punten:
   1. Geen EmployerCode in de naam. Een Week Report is per project + contractor + week (WR1), en bij "All contractors" komen er per contractor twee bestanden. Twee contractors in dezelfde week krijgen dan dezelfde naam en overschrijven elkaar. Besloten: `_<EmployerCode>` erbij.
   2. Geen prefix "TEST_" voor TEST-projecten (E10, AGENTS Werkwijze). Besloten: prefix houden.
   3. Geen tijdstempel: BESLOTEN (Eddy 12-11-2026, T3 PASS). Opnieuw exporteren overschrijft; de versiegeschiedenis van Exports bewaart oud (de GEA-tenant laat oude versies automatisch verlopen). De lijsten zijn de historie: elke week kan opnieuw worden gemaakt (toont dan de actuele gegevens, inclusief latere correcties).
@@ -120,7 +120,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 - pdf: (1) lees TemplateName en header.html uit bibliotheek Templates (MS-031); (2) html = replace(template, '{{BODY}}', Content); (3) html = replace(html, '{{HEADER}}', header) (replace() vervangt alle voorkomens); (4) OneDrive tijdelijk .html -> Convert file (PDF) -> SharePoint Create file Exports/Folder -> tijdelijk bestand verwijderen. Volgorde BODY vóór HEADER is verplicht (de HEADER-tokens zitten in Content). Template of header niet gevonden = Status "Error" met Message, geen bestand.
 - Uitvoer (tekst): Status ("OK" | "Error"; de app vergelijkt hoofdletterongevoelig), FileUrl (klikbaar), Message.
 - BOM in Power Fx: Eddy noemde Char(65279). Char is volgens Microsoft bedoeld voor ASCII-codes; voor U+FEFF gebruikt de app UniChar(65279) (AGENTS, par. 6.1). Het resultaat in het bestand is hetzelfde: BOM EF BB BF.
-- Eén aanroep per bestand; één Export-klik = twee aanroepen (PDF + CSV, zelfde basisnaam); "All contractors" = per contractor twee aanroepen (zie open punt 6.4-1).
+- Eén aanroep per bestand; één Export-klik = twee aanroepen (PDF + CSV, zelfde basisnaam); "All contractors" = één bestandspaar met suffix `_ALL`, dus ook twee aanroepen (6.4, bevestigd 13-11-2026).
 - Flowtest (fase B): Content = inhoud van templates/sample-body.html, TemplateName "weekreport.html", Format "pdf", Folder "TEST-000"; verwacht een PDF van 2 pagina's gelijk aan de Edge-render van Test-Templates.ps1 -RenderPdf. Resultaat: PASS (TESTPLAN TP-EXPORT-01).
 
 ### 6.6 Toelating en foutafhandeling (fail-closed)

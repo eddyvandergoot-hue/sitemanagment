@@ -27,6 +27,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-029 | 9-11-2026 | Done 12-11-2026 (Eddy); flowtest T1-T4 PASS |
 | MS-030 | 9-11-2026 | Open (Eddy) |
 | MS-031 | 12-11-2026 | Done 12-11-2026 (Eddy) |
+| MS-032 | 13-11-2026 | Open (Eddy) |
 
 ---
 
@@ -286,3 +287,14 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   3. Zet de save in Incoming\ (bijvoorbeeld via Save as -> This computer).
   4. Meld de exacte naam waarmee de flow in Studio verschijnt (bv. 'SiteManagement-Exportfile'). Daarna neem ik alleen de flowkoppeling over in de .msapr, zoals bij MS-028: App Id 88e53928, de rest uit die save niet.
 - **Nodig voor fase C:** zonder deze save kan de Export-knop de flow niet aanroepen en faalt de Studio-import.
+
+## MS-032 — Documentteksten importeren in Translations
+
+- **Added:** 13-11-2026. **Status:** Open (Eddy).
+- **Reason:** fase C (Week Report-PDF) leest de doc.*-teksten uit de lijst Translations (WEEKREPORT_PLAN.md 6.3, WR5). Bron: templates/translations-weekreport.csv (23 sleutels x 6 talen = 138 regels; UTF-8 met BOM, scheiding ";").
+- **Stappen:**
+  1. Controleer in SharePoint de kolomnamen van Translations: Key (interne naam Title), Language (tekst), Text (meerdere regels). Wijken ze af, meld dat vóór de import.
+  2. Importeer de CSV (bv. openen in Excel en plakken in de rasterweergave van de lijst). Language exact zoals in de CSV: Dutch, English, Polish, Romanian, German, Ukrainian (= keuzes van Workers.Language).
+  3. Bestaande doc.*-regels met dezelfde Key + Language: vervangen, niet dubbel laten staan.
+  4. Controleer na de import: 138 regels met Key "doc.*", Oekraïense teksten in Cyrillisch leesbaar (geen ?-tekens), placeholders {date} {user} {page} {pages} ongewijzigd.
+- **Let op:** pl/ro/de/uk zijn nog niet door native speakers gecontroleerd (backlog). Wijzigingen in de lijst ook in de repo-CSV vastleggen.
