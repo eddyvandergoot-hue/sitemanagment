@@ -26,6 +26,7 @@ foreach ($list in 'Workers', 'Employers', 'Translations') {
     Check $m.Success "metadata: $list has column Language (internal name)"
     if (-not $m.Success) { continue }
     Check ($m.Groups[1].Value -eq 'Language') "metadata: $list.Language display name = Language (found '$($m.Groups[1].Value)')"
+    Check ($m.Groups[3].Value -match 'filterFunctions\\":\[\\"eq') "metadata: $list.Language supports filter eq (delegable)"
     Check ($m.Groups[3].Value -match 'IsChoice\\":true') "metadata: $list.Language is a choice column (found type '$($m.Groups[2].Value)'; a text column means the .msapr metadata is not refreshed: Studio Data > $list > Refresh, save to Incoming, merge)"
 }
 
