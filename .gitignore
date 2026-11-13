@@ -49,3 +49,6 @@ Assets/GEA_Logo_w_Claim_*
 Incoming/
 # Tile icon set v1: SVGs + README + preview are tracked; the delivery zip duplicates them
 Assets/Icons/*.zip
+
+# 3D: separate side track (Eddy 13-11-2026), not part of the app
+3D/

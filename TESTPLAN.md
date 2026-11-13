@@ -599,3 +599,4 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Kopje "Totaal (uur)" / "Total (hrs)".
 - Totaalrij navy met witte vette tekst; subtotaal lichtblauw.
 - Voettekst "Gegenereerd ... door Test User" links en paginanummer "1 / 2" rechts op elke pagina.
+- Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.

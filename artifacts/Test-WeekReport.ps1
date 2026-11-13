@@ -74,7 +74,7 @@ Assert-True ($idx['cmpWrMsgBar']['ComponentName'] -eq 'cmpMessageBar' -and (P 'c
 Assert-True ($screenText -notmatch '\bNotify\(') 'no Notify on scrWeekReport (messages via cmpMessageBar)'
 Assert-True ($idx['conWrBody']['Variant'] -eq 'AutoLayout' -and (P 'conWrBody.LayoutOverflowY') -eq '=LayoutOverflow.Scroll' -and (P 'conWrBody.LayoutOverflowX') -eq '=LayoutOverflow.Scroll' -and (P 'conWrCanvas.Width') -eq '=Max(Parent.Width-16,lblWrCols.Width+lblWrCols.Y+7*lblWrCols.X+lblWrCols.Height+96)' -and (P 'conWrBody.Height') -eq '=Max(0,cmpWrFooter.Y-Self.Y)') 'scrolling body between message bar and footer; horizontal scroll when the fixed-width table is wider than the screen, 16 px scrollbar reserve'
 Assert-True ($idx['cmpWrFooter']['ComponentName'] -eq 'cmpReportFooter' -and (P 'cmpWrFooter.Height') -eq '=68' -and (P 'cmpWrFooter.Y') -eq '=Parent.Height-Self.Height' -and (P 'cmpWrFooter.X') -eq '=0' -and (P 'cmpWrFooter.Width') -eq '=Parent.Width') 'footer = cmpReportFooter h68 anchored at the bottom'
-Assert-True ((P 'cmpWrFooter.ExportVisible') -eq '=false' -and (P 'cmpWrFooter.ExportEnabled') -eq '=false' -and (P 'cmpWrFooter.OnExport').StartsWith('=If(false,') -and (P 'cmpWrFooter.OnExport') -notmatch '\.Run\(|Patch\(|Launch\(') 'phase A: Export hidden and disabled; OnExport gated by the same (false) guard and does nothing'
+Assert-True ((P 'cmpWrFooter.ExportVisible') -eq '=true' -and (P 'cmpWrFooter.ExportEnabled') -ne '=false' -and (P 'cmpWrFooter.OnExport').StartsWith('=If(' + (P 'cmpWrFooter.ExportEnabled').Substring(1) + ',') -and (P 'cmpWrFooter.OnExport') -notmatch 'Patch\(|Launch\(') 'phase C: Export visible; OnExport starts with the ExportEnabled guard; no Patch/Launch (export details: Test-Export.ps1)'
 Assert-True (@([IO.File]::ReadAllText((Join-Path $srcDir '_EditorState.pa.yaml')) -split "`n" | Where-Object { $_.Trim() -eq '- scrWeekReport' }).Count -eq 1) 'scrWeekReport registered in _EditorState ScreensOrder'
 $homeDoc = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrHome.pa.yaml')))
 $hIdx = @{}; function Index-H($entries) { foreach ($e in $entries) { $n = @($e.Keys)[0]; $hIdx[$n] = $e[$n]; Index-H $e[$n]['Children'] } }; Index-H $homeDoc['Screens']['scrHome']['Children']
@@ -98,7 +98,9 @@ Assert-True ((P 'lblWrWeekKW.X') -eq '=btnWrNext.X+btnWrNext.Width+12' -and (P '
 
 # (3) No mutations --------------------------------------------------------------------------------------------------------
 $bare = Strip-Strings $screenText
-Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Choices)\(' -and $bare -notmatch '\.Run\(') 'no Patch/Remove/RemoveIf/Update/UpdateIf/SubmitForm/Defaults/flow/Launch and no Choices() on scrWeekReport'
+Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Choices)\(') 'no Patch/Remove/RemoveIf/Update/UpdateIf/SubmitForm/Defaults/Launch and no Choices() on scrWeekReport'
+$bareNoExport = Strip-Strings ((@($all.Keys | Where-Object { $_ -ne 'cmpWrFooter.OnExport' } | ForEach-Object { $all[$_] })) -join "`n")
+Assert-True ($bareNoExport -notmatch '\.Run\(' -and ([regex]::Matches((Strip-Strings (P 'cmpWrFooter.OnExport')), '\.Run\(')).Count -eq 2) 'phase C: the export flow is called only in cmpWrFooter.OnExport (exactly 2 calls: PDF + CSV)'
 $colTargets = @([regex]::Matches($bare, '\b(Collect|ClearCollect|Clear)\(\s*([^,\)]+)') | ForEach-Object { $_.Groups[2].Value.Trim() } | Sort-Object -Unique)
 Assert-True (@($colTargets | Where-Object { $_ -notmatch '^col[A-Z]\w*$' }).Count -eq 0) "Collect/ClearCollect/Clear only target local collections ($($colTargets.Count) targets, all col*)"
 Assert-True ($bare -notmatch "\b(Collect|ClearCollect|Clear|Patch|Remove|RemoveIf|Update|UpdateIf)\(\s*(Hours|Workers|Employers|Projects|'Project Workers'|'Assignment Periods')\b") 'no collection function is applied to a SharePoint list'
@@ -109,8 +111,8 @@ $hits = @([regex]::Matches($bare, "(?<![\w.'])($sources)(?![\w'])") | ForEach-Ob
 $hrec = '{HourID:entry.ID,EntryKey:Trim(entry.EntryKey&""),AssignmentID:entry.Assignment.Id,WorkDay:Date(Year(entry.''WorkDate''),Month(entry.''WorkDate''),Day(entry.''WorkDate'')),ContractorID:entry.Employer.Id,ContractorName:Trim(entry.Employer.Value&""),TradeRaw:Trim(entry.Trade.Value&""),HourValue:entry.Hours}'
 $allowedReads = @(
     'Refresh(Projects)', 'Refresh(Employers)', 'Refresh(Workers)', 'Refresh(Hours)', "Refresh('ProjectWorkers')", "Refresh('AssignmentPeriods')",
-    'ForAll(ProjectsAsp,{ID:p.ID,Title:Trim(p.Title&""),Number:Trim(p.''ProjectNumber''&""),Reference:Trim(p.''ProjectReference''&"")})',
-    'ForAll(EmployersAsemp,{ID:emp.ID,Name:Trim(emp.Title&""),Code:Trim(emp.''EmployerCode''&""),Active:Coalesce(emp.Active,true)})',
+    'ForAll(ProjectsAsp,{ID:p.ID,Title:Trim(p.Title&""),Number:Trim(p.''ProjectNumber''&""),Reference:Trim(p.''ProjectReference''&""),Country:Trim(p.Country.Value&"")})',
+    'ForAll(EmployersAsemp,{ID:emp.ID,Name:Trim(emp.Title&""),Code:Trim(emp.''EmployerCode''&""),Active:Coalesce(emp.Active,true),Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))})',
     'ForAll(WorkersAsw,{ID:w.ID,FirstName:Trim(w.''FirstName''&""),Surname:Trim(w.Surname&""),Code:Trim(w.''WorkerCode''&""),Trade:Trim(w.Trade.Value&""),EmployerID:w.Employer.Id,EmployerName:Trim(w.Employer.Value&""),Language:If(Trim(w.Language.Value&"")="Nederlands","Dutch",Trim(w.Language.Value&""))})',
     "Filter('ProjectWorkers',ProjectKey=varWrProjectKey)", "Filter('AssignmentPeriods',ProjectKey=varWrProjectKey)",
     "ForAll(Filter(Hours,StartsWith(EntryKey,varWrQueryPrefix)&&'WorkDate'>=varWrMonday&&'WorkDate'<varWrNextMonday)Asentry,$hrec)"
@@ -137,12 +139,12 @@ foreach ($gd in @(
 Assert-True ($loaderN2.IndexOf('If(IsEmpty(colWrLoadErrors)&&varWrQueryPaged,Clear(colWrPendHours);') -gt $loaderN2.IndexOf('Set(varWrQueryPaged,true)')) 'day batches only after a full week batch (varWrQueryPaged)'
 
 # (6) Staging: commit only after full success --------------------------------------------------------------------------
-$commits = @('ClearCollect(colWrRows,colWrPendRowsShown)', 'ClearCollect(colWrGroups,colWrPendGroups)', 'ClearCollect(colWrLines,Sort(colWrPendLines,SortKey,SortOrder.Ascending))', 'ClearCollect(colWrContractorItems,colWrPendContractorItems)', 'Set(varWrLoadState,"Loaded")', 'Set(varWrLoadedMonday,varWrMonday)', 'Set(varWrLoadedProjectID,varWrPendProjectID)')
+$commits = @('ClearCollect(colWrRows,colWrPendRowsShown)', 'ClearCollect(colWrGroups,colWrPendGroups)', 'ClearCollect(colWrLines,Sort(colWrPendLines,SortKey,SortOrder.Ascending))', 'ClearCollect(colWrContractorItems,colWrPendContractorItems)', 'ClearCollect(colWrExportFacts,colWrPendExportFacts)', 'Set(varWrLoadState,"Loaded")', 'Set(varWrLoadedMonday,varWrMonday)', 'Set(varWrLoadedProjectID,varWrPendProjectID)')
 $lastErr = $loaderN2.LastIndexOf('Collect(colWrLoadErrors')
 $commitBlock = $loaderN2.IndexOf('If(IsEmpty(colWrLoadErrors),ClearCollect(colWrRows,colWrPendRowsShown);')
 Assert-True ($commitBlock -gt $lastErr) 'report commit block = If(IsEmpty(colWrLoadErrors), ...) after the last error check'
 foreach ($c in $commits) { $i = $loaderN2.IndexOf($c); Assert-True ($i -gt $commitBlock -and ([regex]::Matches((Norm $screenText), [regex]::Escape($c))).Count -eq 1) "commit once, inside the success block: $c" }
-foreach ($v in 'colWrRows', 'colWrGroups', 'colWrLines', 'colWrContractorItems', 'colWrProjects', 'colWrEmployers', 'colWrWorkers') { Assert-True (([regex]::Matches($bare, "\b(Clear|Collect|ClearCollect)\($v\b")).Count -eq 1) "$v is written once (only by its commit)" }
+foreach ($v in 'colWrRows', 'colWrGroups', 'colWrLines', 'colWrContractorItems', 'colWrExportFacts', 'colWrProjects', 'colWrEmployers', 'colWrWorkers') { Assert-True (([regex]::Matches($bare, "\b(Clear|Collect|ClearCollect)\($v\b")).Count -eq 1) "$v is written once (only by its commit)" }
 $mCommit = $loaderN2.IndexOf('If(IsEmpty(colWrLoadErrors),ClearCollect(colWrProjects,')
 Assert-True ($mCommit -gt $loaderN2.IndexOf('If(CountRows(colWrPendWorkers)>=500') -and $mCommit -lt $loaderN2.IndexOf("Filter('ProjectWorkers'") -and $loaderN2.Contains('ClearCollect(colWrEmployers,colWrPendEmployers);ClearCollect(colWrWorkers,colWrPendWorkers);Set(varWrMastersReady,true)')) 'masters (Projects/Employers/Workers) are their own staging unit: committed only after their reads and 500 guards succeeded'
 Assert-True ($loaderN2.Contains('If(IsEmpty(colWrLoadErrors)&&(Coalesce(varWrForceRefresh,false)||!Coalesce(varWrMastersReady,false)),Set(varWrMastersReady,false);') -and (P "$scr.OnVisible").Contains('Set(varWrMastersReady,false)')) 'masters read once per visit (OnVisible) and again only on Refresh (force)'

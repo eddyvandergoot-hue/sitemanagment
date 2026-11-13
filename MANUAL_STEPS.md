@@ -25,9 +25,9 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-027 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
 | MS-028 | 9-11-2026 | Done 10-11-2026 (Eddy); metadata samengevoegd |
 | MS-029 | 9-11-2026 | Done 12-11-2026 (Eddy); flowtest T1-T4 PASS |
-| MS-030 | 9-11-2026 | Open (Eddy) |
+| MS-030 | 9-11-2026 | Done 13-11-2026 (Eddy); flowkoppeling samengevoegd (commit 74c37bf) |
 | MS-031 | 12-11-2026 | Done 12-11-2026 (Eddy) |
-| MS-032 | 13-11-2026 | Open (Eddy) |
+| MS-032 | 13-11-2026 | Done 13-11-2026 (Eddy); 138 items |
 
 ---
 
@@ -280,7 +280,9 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-030 — Flow toevoegen aan de app
 
-- **Added:** 9-11-2026. **Status:** Open (Eddy). MS-029 is gedaan, dus deze stap kan nu.
+- **Added:** 9-11-2026. **Status:** Done 13-11-2026 (Eddy): flow in Studio toegevoegd, save `Incoming\20261113-Site Management.msapp` (745701 bytes, SHA-256 0EDA514839D49C367C6F25ED04043754D61538EEEAAC18B384C9AB762D2AAFD1; kopie met Id e723e153-8a04-482e-94b4-761730022950, niet overgenomen). App in Power Apps hernoemd naar "SiteManagement" (Eddy); het bronbestand blijft Site Managment_VS.msapr.
+- **Samengevoegd (Claude, 13-11-2026, commit 74c37bf):** `msapp\References\DataSources.json` uit de save (verschil: nieuwe bron **SiteManagment-Exportfile**, weergavenaam "SiteManagment - Export file", flow-ID 22e34f1b-8ed5-4ab3-a193-d4bfb6aa41a6; trigger text..text_4 = Folder, FileName, Format, Content, TemplateName (optioneel); response status, fileurl, message; Project Workers alleen andere volgorde van de naamtoewijzing) en in Properties.json alleen LocalConnectionReferences (nieuw: logicflows-verbinding 05aa5755 voor de flow, OneDrive for Business 6c6381a7 als afhankelijkheid van de flow, SharePoint b4a62a3e met de flow als dependent). App Id 88e53928 en de rest van Properties.json ongewijzigd; geen ondertekende URL's. Niet overgenomen: Src, Templates.json, Resources.json, Header/PublishInfo/AppChecker.
+- **Gekoppelde flows in de app:** SiteManagment-Exportfile (nieuw) en de oude PowerAppV2-flow "PowerAppV2->LastIDinit,BatchCountinit,ReportHoursInit" (stond er al, niet gebruikt, niet verwijderd). GetWeeklyHoursData, SiteHoursConnector en FlowConfig zijn niet gekoppeld.
 - **Stappen:**
   1. Open de app in Studio en voeg via Data (of het Power Automate-paneel) de flow "SiteManagement - Export file" toe. Maak geen verbindingen zelf in YAML.
   2. Wijzig verder niets en sla op.
@@ -290,7 +292,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-032 — Documentteksten importeren in Translations
 
-- **Added:** 13-11-2026. **Status:** Open (Eddy).
+- **Added:** 13-11-2026. **Status:** Done 13-11-2026 (Eddy): CSV via de rasterweergave in Translations geplakt, 138 items (lijst was leeg). Weergave "Per key" (gegroepeerd op Key) toegevoegd.
 - **Reason:** fase C (Week Report-PDF) leest de doc.*-teksten uit de lijst Translations (WEEKREPORT_PLAN.md 6.3, WR5). Bron: templates/translations-weekreport.csv (23 sleutels x 6 talen = 138 regels; UTF-8 met BOM, scheiding ";").
 - **Stappen:**
   1. Controleer in SharePoint de kolomnamen van Translations: Key (interne naam Title), Language (tekst), Text (meerdere regels). Wijken ze af, meld dat vóór de import.
