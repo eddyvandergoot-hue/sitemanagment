@@ -306,7 +306,7 @@ App:
         wrMsgNothingExported: {en: "Nothing exported.", nl: ""},
         wrErrExportNoNumber: {en: "Project has no Project Number. Fix in Projects, then Refresh.", nl: ""},
         wrErrExportTexts: {en: "Document texts (Translations) not read:", nl: ""},
-        wrErrExportTextsLimit: {en: "500+ document texts in Translations: may be incomplete.", nl: ""},
+        wrErrExportTextsLimit: {en: "500+ document texts in Translations for {0}: may be incomplete.", nl: ""},
         wrErrExportBuild: {en: "Export content could not be built.", nl: ""},
         wrErrExportPdf: {en: "{0}: PDF not confirmed ({1}). Check Exports/{2}.", nl: ""},
         wrErrExportCsv: {en: "{0}: PDF saved, CSV not confirmed ({1}). Check Exports/{2}.", nl: ""},
