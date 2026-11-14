@@ -9,7 +9,8 @@ $fails = New-Object System.Collections.Generic.List[string]
 function Check([bool]$ok, [string]$msg) { if ($ok) { Write-Host "PASS  $msg" } else { Write-Host "FAIL  $msg"; $fails.Add($msg) } }
 function Count([string]$text, [string]$pat) { ([regex]::Matches($text, $pat)).Count }
 $utf8 = New-Object System.Text.UTF8Encoding $false
-function ReadText([string]$p) { [System.IO.File]::ReadAllText($p, $utf8) }
+function ReadText([string]$p) { $fs = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); try { $sr = New-Object IO.StreamReader($fs, $utf8); $sr.ReadToEnd() } finally { $fs.Dispose() } } # shared read: works while Excel has a CSV open
+function Read-SharedBytes([string]$p) { $fs = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); try { $ms = New-Object IO.MemoryStream; $fs.CopyTo($ms); , $ms.ToArray() } finally { $fs.Dispose() } } # reads also while Excel has the CSV open
 
 $hPath = Join-Path $tpl 'header.html'; $wPath = Join-Path $tpl 'weekreport.html'; $sPath = Join-Path $tpl 'sample-body.html'
 foreach ($p in $hPath, $wPath, $sPath) { Check (Test-Path $p) "exists: $(Split-Path $p -Leaf)" }
@@ -110,7 +111,7 @@ foreach ($sec in $secs) {
 $cPath = Join-Path $tpl 'translations-weekreport.csv'
 Check (Test-Path $cPath) 'translations-weekreport.csv exists'
 if (Test-Path $cPath) {
-  $cb = [System.IO.File]::ReadAllBytes($cPath)
+  $cb = Read-SharedBytes $cPath
   Check ($cb.Length -ge 3 -and $cb[0] -eq 0xEF -and $cb[1] -eq 0xBB -and $cb[2] -eq 0xBF) 'translations CSV: UTF-8 BOM'
   $lines = @((ReadText $cPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
   Check ($lines[0] -ceq 'Key;Language;Text') 'translations CSV: header Key;Language;Text'
@@ -136,7 +137,7 @@ if (Test-Path $cPath) {
   $dPath = Join-Path $tpl 'translations-weekreport-cs-fr.csv'
   Check (Test-Path $dPath) 'translations-weekreport-cs-fr.csv exists'
   if (Test-Path $dPath) {
-    $db = [System.IO.File]::ReadAllBytes($dPath)
+    $db = Read-SharedBytes $dPath
     Check ($db.Length -ge 3 -and $db[0] -eq 0xEF -and $db[1] -eq 0xBB -and $db[2] -eq 0xBF) 'cs-fr CSV: UTF-8 BOM'
     $dl = @((ReadText $dPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
     Check ($dl[0] -ceq 'Key;Language;Text') 'cs-fr CSV: header Key;Language;Text'

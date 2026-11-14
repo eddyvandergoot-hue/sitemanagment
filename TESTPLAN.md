@@ -601,11 +601,12 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Voettekst "Gegenereerd ... door Test User" links en paginanummer "Pagina x van y" (EN: "Page x of y") rechts op elke pagina.
 - Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.
 
-## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c4-20261114_195358, SHA-256 9DF18A0ADDA2AAA5450711C83C863C76D19E3CB7E22961816C33FEA3DAE5F37D; alleen TEST-000; DECISIONS H26-H30, MS-033)
-Vervangt de eerdere versies (builds c-20261113_230804 en c3-20261114_002529; niet getest). Nieuw in c4: pagina-1-taal uit de lijst AppSettings (Key report.primaryLanguage), Translations per benodigde taal zonder vaste limiet, 8 talen (Czech en French erbij).
+## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c5-20261114_235939, SHA-256 2F04BFCBC4C198EBFC3742BDB93E48AFF0DD63B2EE5F39D517BAC51947DEA4A8; alleen TEST-000; DECISIONS H26-H30, MS-033)
+Vervangt de eerdere versies (builds c-20261113_230804 en c3-20261114_002529; niet getest). Nieuw in c4: pagina-1-taal uit de lijst AppSettings (Key report.primaryLanguage), Translations per benodigde taal zonder vaste limiet, 8 talen (Czech en French erbij). c5 (vervangt c4, die bij import 4 fouten in cmpWrFooter.OnExport gaf): CSV-volgorde via Sort met één sleutel in plaats van SortByColumns; verder gelijk aan c4.
 
 Voorbereiding
-- V1 Import: make.powerapps.com > Apps > Import app > From file; controleer eerst de SHA-256. Open in Studio (Edit). Controleer:
+- V1 Openen: controleer eerst de SHA-256 (PowerShell: `Get-FileHash <pad> -Algorithm SHA256`). Power Apps Studio > Open > Browse files > kies het .msapp-bestand van c5. Controleer:
+  - Geen fout in cmpWrFooter.OnExport (scrWeekReport), vooral niet op Pos, DayIndex, HourID of Sort. De waarschuwingen bij scrWeeklyHours btnBuildReport en cmpField.Items zijn bestaand.
   - Data (linkerbalk, cilinder-icoon): AppSettings, Translations en Employers staan erin. Ontbreekt AppSettings of toont OnExport (cmpWrFooter) een fout op AppSettings: Data > Add data > SharePoint > GEASiteManagment > AppSettings, en meld het.
   - App checker zonder fouten bij scrWeekReport. Meld een importfout exact.
 - V2 SharePoint-gegevens (alleen lezen, niets wijzigen):

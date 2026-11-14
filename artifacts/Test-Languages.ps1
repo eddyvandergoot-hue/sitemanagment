@@ -30,7 +30,8 @@ foreach ($list in 'Workers', 'Employers', 'Translations') {
     Check ($m.Groups[3].Value -match 'IsChoice\\":true') "metadata: $list.Language is a choice column (found type '$($m.Groups[2].Value)'; a text column means the .msapr metadata is not refreshed: Studio Data > $list > Refresh, save to Incoming, merge)"
 }
 
-$csv = [IO.File]::ReadAllLines((Join-Path $projectRoot 'templates\translations-weekreport.csv'), [Text.Encoding]::UTF8) | Select-Object -Skip 1 | Where-Object { $_.Trim() }
+function Read-SharedBytes([string]$p) { $fs = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); try { $ms = New-Object IO.MemoryStream; $fs.CopyTo($ms); , $ms.ToArray() } finally { $fs.Dispose() } } # reads also while Excel has the CSV open
+$csv = ([Text.Encoding]::UTF8.GetString((Read-SharedBytes (Join-Path $projectRoot 'templates\translations-weekreport.csv'))).TrimStart([char]0xFEFF) -split "`r?`n") | Select-Object -Skip 1 | Where-Object { $_.Trim() }
 $csvLangs = @($csv | ForEach-Object { $_.Split(';')[1] } | Sort-Object -Unique)
 Check ((($csvLangs | Sort-Object) -join ',') -ceq (($languages | Sort-Object) -join ',')) "translations CSV: exactly the eight spellings, case-sensitive, no spaces ($($csvLangs -join ', '))"
 $bad = @($csv | Where-Object { $p = $_.Split(';'); $p[1] -cne $p[1].Trim() })

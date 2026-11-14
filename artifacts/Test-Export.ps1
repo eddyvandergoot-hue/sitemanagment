@@ -186,7 +186,8 @@ Assert-True (([regex]::Matches($onExp, '"English"')).Count -eq 1 -and $onExp.Con
 Assert-True ($loader -notmatch 'ReportLanguage' -and $loader -notmatch 'w\.Language' -and $loaderN.Contains('Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))') -and $loaderN.Contains('Country:Trim(p.Country.Value&"")')) 'H27: worker-majority language removed from the loader; Employers.Language and Projects.Country in the existing master projections (no extra read)'
 
 # (5) Keys (23) from templates/translations-weekreport.csv -------------------------------------------------------------------
-$csvLines = [IO.File]::ReadAllLines((Join-Path $tplDir 'translations-weekreport.csv'), [Text.Encoding]::UTF8) | Select-Object -Skip 1 | Where-Object { $_.Trim() }
+function Read-SharedBytes([string]$p) { $fs = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); try { $ms = New-Object IO.MemoryStream; $fs.CopyTo($ms); , $ms.ToArray() } finally { $fs.Dispose() } } # reads also while Excel has the CSV open
+$csvLines = ([Text.Encoding]::UTF8.GetString((Read-SharedBytes (Join-Path $tplDir 'translations-weekreport.csv'))).TrimStart([char]0xFEFF) -split "`r?`n") | Select-Object -Skip 1 | Where-Object { $_.Trim() }
 $tr = @($csvLines | ForEach-Object { $p = $_.Split(';'); [pscustomobject]@{ Key = $p[0]; Lang = $p[1]; Text = ($p[2..($p.Count - 1)] -join ';') } })
 $keys = @($tr | ForEach-Object Key | Select-Object -Unique)
 Assert-True ($keys.Count -eq 23) "translations-weekreport.csv: 23 doc.* keys"
@@ -344,6 +345,9 @@ $exp10 = $bom + $hdr + $crlf +
 $csv10 = (Invoke-Fx 'LookUp(colWrExpBuilt,ContractorID=10).Csv').Value
 if ($csv10 -cne $exp10) { throw "FAIL CSV EMP-010:`n$($csv10.Replace($crlf,'<CRLF>'))`nexpected:`n$($exp10.Replace($crlf,'<CRLF>'))" }
 Assert-True $true 'CSV EMP-010: one line per stored Hours record incl. stored 0, sorted as the report (row position, day); historical EmployerName; RFC 4180 quoting only for ; " or line break; decimal comma; ISO 2026 KW53 across the year end; no line of another contractor'
+$sortKey = 'Text(Pos,"000000") & "|" & Text(DayIndex,"0") & "|" & Text(HourID,"0000000000")'
+Assert-True ($onExp.Contains('ForAll(Sort(Filter(colWrExportFacts As ef,') -and $onExp.Contains($sortKey + ',SortOrder.Ascending) As f,') -and $onExp -notmatch 'SortByColumns') 'CSV order via Sort with one text key (row position, day, Hours ID); no SortByColumns (Studio c4: Pos/DayIndex/HourID not recognized in SortByColumns on Filter(... As f))'
+Assert-Eval ('Concat(Sort(Table({Pos:2,DayIndex:0,HourID:12},{Pos:1,DayIndex:3,HourID:5},{Pos:2,DayIndex:0,HourID:3},{Pos:10,DayIndex:0,HourID:1},{Pos:2,DayIndex:1,HourID:2}),' + $sortKey + ',SortOrder.Ascending),Text(HourID),",")') '5,3,12,2,1' 'sort key = SortByColumns(Pos, DayIndex, HourID): position 10 after 2 (zero padded), same position + day ordered by Hours ID'
 Assert-Eval 'LookUp(colWrExpBuilt,ContractorID=20).Csv' ($bom + $hdr + $crlf + 'P-1000;"Ref; A";B-1;Beta;WKR-002;Bram Test;Welder;2027-01-03;2026;53;3' + $crlf) 'CSV B-1: only its lines; its worker with week total 0 dropped; TEST Employer facts (not in the report rows) dropped'
 Assert-Eval 'Concat(colWrExpBuilt,Base,",")' 'WeekReport_P-1000_2026KW53_EMP-010,WeekReport_P-1000_2026KW53_B-1' 'All contractors: N file pairs with _<EmployerCode>'
 
