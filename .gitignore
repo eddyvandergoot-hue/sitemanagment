@@ -17,6 +17,8 @@ fonts/
 
 # Data, documents, images
 *.csv
+# Exception: document texts for Translations (source for MS-032, read by Test-Languages/Test-Templates; no personal data)
+!templates/translations-weekreport*.csv
 *.pdf
 *.png
 *.jpg

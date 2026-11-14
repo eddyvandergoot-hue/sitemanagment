@@ -1,0 +1,185 @@
+﻿Key;Language;Text
+doc.title;Dutch;Weekrapport
+doc.title;English;Week report
+doc.title;Polish;Raport tygodniowy
+doc.title;Romanian;Raport săptămânal
+doc.title;German;Wochenbericht
+doc.title;Ukrainian;Тижневий звіт
+doc.title;Czech;Týdenní výkaz
+doc.title;French;Rapport hebdomadaire
+doc.projectName;Dutch;Projectnaam
+doc.projectName;English;Project name
+doc.projectName;Polish;Nazwa projektu
+doc.projectName;Romanian;Denumire proiect
+doc.projectName;German;Projektname
+doc.projectName;Ukrainian;Назва проєкту
+doc.projectName;Czech;Název projektu
+doc.projectName;French;Nom du projet
+doc.country;Dutch;Land
+doc.country;English;Country
+doc.country;Polish;Kraj
+doc.country;Romanian;Țară
+doc.country;German;Land
+doc.country;Ukrainian;Країна
+doc.country;Czech;Země
+doc.country;French;Pays
+doc.projectNumber;Dutch;Projectnummer
+doc.projectNumber;English;Project number
+doc.projectNumber;Polish;Numer projektu
+doc.projectNumber;Romanian;Număr proiect
+doc.projectNumber;German;Projektnummer
+doc.projectNumber;Ukrainian;Номер проєкту
+doc.projectNumber;Czech;Číslo projektu
+doc.projectNumber;French;Numéro de projet
+doc.projectReference;Dutch;Projectreferentie
+doc.projectReference;English;Project reference
+doc.projectReference;Polish;Referencja projektu
+doc.projectReference;Romanian;Referință proiect
+doc.projectReference;German;Projektreferenz
+doc.projectReference;Ukrainian;Референс проєкту
+doc.projectReference;Czech;Reference projektu
+doc.projectReference;French;Référence du projet
+doc.contractor;Dutch;Aannemer
+doc.contractor;English;Contractor
+doc.contractor;Polish;Podwykonawca
+doc.contractor;Romanian;Subcontractor
+doc.contractor;German;Auftragnehmer
+doc.contractor;Ukrainian;Підрядник
+doc.contractor;Czech;Subdodavatel
+doc.contractor;French;Sous-traitant
+doc.contractorAll;Dutch;Alle aannemers
+doc.contractorAll;English;All contractors
+doc.contractorAll;Polish;Wszyscy podwykonawcy
+doc.contractorAll;Romanian;Toți subcontractorii
+doc.contractorAll;German;Alle Auftragnehmer
+doc.contractorAll;Ukrainian;Усі підрядники
+doc.contractorAll;Czech;Všichni subdodavatelé
+doc.contractorAll;French;Tous les sous-traitants
+doc.week;Dutch;Week
+doc.week;English;Week
+doc.week;Polish;Tydzień
+doc.week;Romanian;Săptămâna
+doc.week;German;Woche
+doc.week;Ukrainian;Тиждень
+doc.week;Czech;Týden
+doc.week;French;Semaine
+doc.weekRangeSep;Dutch;t/m
+doc.weekRangeSep;English;to
+doc.weekRangeSep;Polish;do
+doc.weekRangeSep;Romanian;până la
+doc.weekRangeSep;German;bis
+doc.weekRangeSep;Ukrainian;по
+doc.weekRangeSep;Czech;až
+doc.weekRangeSep;French;au
+doc.colName;Dutch;Naam
+doc.colName;English;Name
+doc.colName;Polish;Imię i nazwisko
+doc.colName;Romanian;Nume
+doc.colName;German;Name
+doc.colName;Ukrainian;Ім’я та прізвище
+doc.colName;Czech;Jméno
+doc.colName;French;Nom
+doc.colTrade;Dutch;Vak
+doc.colTrade;English;Trade
+doc.colTrade;Polish;Zawód
+doc.colTrade;Romanian;Meserie
+doc.colTrade;German;Gewerk
+doc.colTrade;Ukrainian;Фах
+doc.colTrade;Czech;Profese
+doc.colTrade;French;Métier
+doc.day1;Dutch;Ma
+doc.day1;English;Mon
+doc.day1;Polish;Pon
+doc.day1;Romanian;Lun
+doc.day1;German;Mo
+doc.day1;Ukrainian;Пн
+doc.day1;Czech;Po
+doc.day1;French;Lun
+doc.day2;Dutch;Di
+doc.day2;English;Tue
+doc.day2;Polish;Wt
+doc.day2;Romanian;Mar
+doc.day2;German;Di
+doc.day2;Ukrainian;Вт
+doc.day2;Czech;Út
+doc.day2;French;Mar
+doc.day3;Dutch;Wo
+doc.day3;English;Wed
+doc.day3;Polish;Śr
+doc.day3;Romanian;Mie
+doc.day3;German;Mi
+doc.day3;Ukrainian;Ср
+doc.day3;Czech;St
+doc.day3;French;Mer
+doc.day4;Dutch;Do
+doc.day4;English;Thu
+doc.day4;Polish;Czw
+doc.day4;Romanian;Joi
+doc.day4;German;Do
+doc.day4;Ukrainian;Чт
+doc.day4;Czech;Čt
+doc.day4;French;Jeu
+doc.day5;Dutch;Vr
+doc.day5;English;Fri
+doc.day5;Polish;Pt
+doc.day5;Romanian;Vin
+doc.day5;German;Fr
+doc.day5;Ukrainian;Пт
+doc.day5;Czech;Pá
+doc.day5;French;Ven
+doc.day6;Dutch;Za
+doc.day6;English;Sat
+doc.day6;Polish;Sob
+doc.day6;Romanian;Sâm
+doc.day6;German;Sa
+doc.day6;Ukrainian;Сб
+doc.day6;Czech;So
+doc.day6;French;Sam
+doc.day7;Dutch;Zo
+doc.day7;English;Sun
+doc.day7;Polish;Ndz
+doc.day7;Romanian;Dum
+doc.day7;German;So
+doc.day7;Ukrainian;Нд
+doc.day7;Czech;Ne
+doc.day7;French;Dim
+doc.colTotal;Dutch;Totaal (uur)
+doc.colTotal;English;Total (hrs)
+doc.colTotal;Polish;Suma (godz.)
+doc.colTotal;Romanian;Total (ore)
+doc.colTotal;German;Gesamt (Std.)
+doc.colTotal;Ukrainian;Разом (год)
+doc.colTotal;Czech;Celkem (hod.)
+doc.colTotal;French;Total (h)
+doc.subtotal;Dutch;Subtotaal
+doc.subtotal;English;Subtotal
+doc.subtotal;Polish;Suma częściowa
+doc.subtotal;Romanian;Subtotal
+doc.subtotal;German;Zwischensumme
+doc.subtotal;Ukrainian;Проміжний підсумок
+doc.subtotal;Czech;Mezisoučet
+doc.subtotal;French;Sous-total
+doc.total;Dutch;Totaal
+doc.total;English;Total
+doc.total;Polish;Suma
+doc.total;Romanian;Total
+doc.total;German;Gesamt
+doc.total;Ukrainian;Разом
+doc.total;Czech;Celkem
+doc.total;French;Total
+doc.footerGenerated;Dutch;Gegenereerd {date} door {user}
+doc.footerGenerated;English;Generated {date} by {user}
+doc.footerGenerated;Polish;Wygenerowano {date} przez {user}
+doc.footerGenerated;Romanian;Generat {date} de {user}
+doc.footerGenerated;German;Erstellt am {date} von {user}
+doc.footerGenerated;Ukrainian;Створено {date}, автор {user}
+doc.footerGenerated;Czech;Vygenerováno {date} uživatelem {user}
+doc.footerGenerated;French;Généré le {date} par {user}
+doc.footerPage;Dutch;Pagina {page} van {pages}
+doc.footerPage;English;Page {page} of {pages}
+doc.footerPage;Polish;Strona {page} z {pages}
+doc.footerPage;Romanian;Pagina {page} din {pages}
+doc.footerPage;German;Seite {page} von {pages}
+doc.footerPage;Ukrainian;Сторінка {page} з {pages}
+doc.footerPage;Czech;Strana {page} z {pages}
+doc.footerPage;French;Page {page} sur {pages}

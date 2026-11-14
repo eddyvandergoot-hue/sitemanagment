@@ -28,9 +28,10 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-030 | 9-11-2026 | Done 13-11-2026 (Eddy); flowkoppeling samengevoegd (commit 74c37bf) |
 | MS-031 | 12-11-2026 | Done 12-11-2026 (Eddy) |
 | MS-032 | 13-11-2026 | Done 13-11-2026 (Eddy); 138 items |
-| MS-033 | 13-11-2026 | Open (Eddy) |
-| MS-034 | 13-11-2026 | Open (Eddy); aanpak akkoord 14-11-2026 |
-| MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language nu keuze + index; metadata-refresh nog nodig |
+| MS-033 | 13-11-2026 | Done 14-11-2026 (Eddy); metadata samengevoegd 14-11-2026 |
+| MS-034 | 13-11-2026 | Stap 1 done 14-11-2026 (Eddy); Require nog uit (wacht op Contractors-veld) |
+| MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language keuze + index; metadata ververst en samengevoegd 14-11-2026 |
+| MS-036 | 14-11-2026 | Open (Eddy) |
 
 ---
 
@@ -309,18 +310,18 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-033 — Lijst AppSettings (primaire rapporttaal)
 
-- **Added:** 13-11-2026. **Status:** Open (Eddy).
+- **Added:** 13-11-2026. **Status:** Done 14-11-2026 (Eddy): lijst AppSettings (Key = hernoemde Title, Value), item report.primaryLanguage = Dutch; in Studio toegevoegd, Translations en Employers ververst; save `Incoming\20261114-SiteManagement.msapp` (SHA-256 C6C784794CED198C07829EC3D74FE0C22E12EA29D97B2D4E90C744C5CE42FC39). **Samengevoegd 14-11-2026 (Claude):** DataSources.json uit die save (Translations.Language keuze, Employers) + LocalConnectionReferences; App Id 88e53928. Let op: in die save ontbreekt de databron AppSettings (Studio laat een ongebruikte databron vermoedelijk weg bij opslaan). De definitie van AppSettings komt daarom uit de eerdere save `Incoming\20261114-Site Management.msapp` (zelfde lijst-ID 5d247665-b8a2-4178-a6f8-90c66b53ca42; daar heet de kolom nog Title, niet Key: de app gebruikt de interne naam Title). Controle bij de import van build c4: TP-EXPORT-02 V1. De app leest nu `Filter(AppSettings, Title = "report.primaryLanguage")`; ontbreekt de sleutel, is Value leeg, staat hij er twee keer in of faalt de read: geen export, rode melding. ReportPrimaryLanguage is weg.
 - **Reason:** DECISIONS.md H27: de taal van pagina 1 van de Week Report-PDF is een instelling (standaard Dutch), geen vaste waarde in formules. Er is geen bestaande configuratielijst in de app (FlowConfig is een flow, niet gekoppeld). Tot deze stap gedaan is gebruikt de app één named formula `ReportPrimaryLanguage = "Dutch"` in App.Formulas.
 - **Stappen:**
   1. Maak op https://geacloud.sharepoint.com/sites/GEASiteManagment de lijst **AppSettings**: kolom Title hernoemen naar **Key** (interne naam blijft Title, enkele regel tekst, verplicht, unieke waarden afdwingen), kolom **Value** (enkele regel tekst). Geen andere kolommen.
-  2. Item toevoegen: Key `report.primaryLanguage`, Value `Dutch` (zelfde schrijfwijze als de keuzes van Language: Dutch, English, Polish, Romanian, German, Ukrainian).
+  2. Item toevoegen: Key `report.primaryLanguage`, Value `Dutch` (zelfde schrijfwijze als de keuzes van Language: Dutch, English, Polish, Czech, Romanian, Ukrainian, German, French).
   3. Rechten: lezen voor alle app-gebruikers; wijzigen alleen eigenaren.
   4. Open de app in Studio, voeg via Data de lijst AppSettings toe, wijzig verder niets, sla op en zet het bestand in `Incoming\` (zoals MS-030). Meld bestandsnaam en SHA-256.
 - **Daarna (Claude):** metadata samenvoegen (DataSources.json + LocalConnectionReferences, zoals MS-028/MS-030) en ReportPrimaryLanguage vervangen door een lookup in AppSettings (Key = "report.primaryLanguage"). Fail-closed (Eddy 14-11-2026, H29): sleutel ontbreekt, lege Value of leesfout = geen export, rode melding. Geen bouw vóór de Incoming-save.
 
 ## MS-034 — Employers: rapporttaal (kolom Language) verplicht
 
-- **Added:** 13-11-2026. **Status:** Open (Eddy).
+- **Added:** 13-11-2026. **Status:** Stap 1 done 14-11-2026 (Eddy): weergavenaam "Language", ingevuld bij alle Employers (één echte contractor heeft Czech). Require staat nog uit (stap 2-3 open, na het Contractors-veld).
 - **Reason:** DECISIONS.md H27: pagina 2 van de Week Report-PDF is de rapporttaal van de contractor (Employers, kolom **Language**: interne naam en weergavenaam volgens de metadata), zonder terugval. Een lege waarde blokkeert de export voor die contractor (rode melding). Daarom verplicht in SharePoint.
 - **Stappen:**
   1. Nu: vul Language in bij alle bestaande Employers (actief en inactief) via een weergave met filter Language is leeg. Dit volstaat voor de export (lege taal = rode melding, geen export voor die contractor).
@@ -330,10 +331,21 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-035 — Translations: index op Language
 
-- **Added:** 14-11-2026. **Status:** Done 14-11-2026 (Eddy, 00:30-00:40): Translations.Language van tekst naar **Choice** (Dutch, English, Polish, Romanian, German, Ukrainian), verplicht, waarden behouden (138), index verwijderd en opnieuw gemaakt op Language. De app leest nu `Filter(Translations, Language.Value = <taal>)` (gedelegeerd). **Nog open:** de metadata in Incoming\20261114-Site Management.msapp toont Language nog als tekst (niet ververst; Test-Languages FAIL). In Studio: Data > Translations > ... > Refresh, dan opslaan naar Incoming (mag samen met MS-033).
+- **Added:** 14-11-2026. **Status:** Done 14-11-2026 (Eddy, 00:30-00:40): Translations.Language van tekst naar **Choice** (Dutch, English, Polish, Romanian, German, Ukrainian), verplicht, waarden behouden (138), index verwijderd en opnieuw gemaakt op Language. De app leest nu `Filter(Translations, Language.Value = <taal>)` (gedelegeerd). **Metadata:** ververst in Incoming\20261114-SiteManagement.msapp en samengevoegd 14-11-2026 (Test-Languages PASS). Sinds 14-11-2026 8 keuzes (Czech en French erbij, Eddy).
 - **Reason:** DECISIONS.md H29: de Week Report-export leest Translations per taal met `Filter(Translations, Language = <taal>)` (gedelegeerd). Een index op Language houdt die read werkend als de lijst later groot wordt (andere documenten). Lokale metadata bewijst geen index (AGENTS); controleer online.
 - **Stappen:** lijst Translations > List settings > Indexed columns > Create a new index > kolom **Language** (enkele regel tekst). Geen andere wijziging.
-- **Controle:** Indexed columns toont Language. Meld het als de index niet kan (bv. kolomtype). Controleer ook dat Language overal exact gespeld is (Dutch, English, Polish, Romanian, German, Ukrainian; geen spatie ervoor of erna): de read vergelijkt nu exact op de server; een afwijkende spelling geeft bij de export "texts missing".
+- **Controle:** Indexed columns toont Language. Meld het als de index niet kan (bv. kolomtype). Controleer ook dat Language overal exact gespeld is (Dutch, English, Polish, Czech, Romanian, Ukrainian, German, French; geen spatie ervoor of erna): de read vergelijkt nu exact op de server; een afwijkende spelling geeft bij de export "texts missing".
+
+## MS-036 — Translations: teksten voor Czech en French
+
+- **Added:** 14-11-2026. **Status:** Open (Eddy).
+- **Reason:** Czech en French zijn sinds 14-11-2026 keuzes in Workers.Language, Employers.Language en Translations.Language (H30). Zonder deze teksten geeft de export voor een contractor met Czech of French de rode melding "texts missing in Translations" (geen export voor die contractor).
+- **Bron:** templates/translations-weekreport-cs-fr.csv (46 regels = 23 sleutels x Czech + French; UTF-8 met BOM, scheiding ";", kop Key;Language;Text). De volledige lijst staat in templates/translations-weekreport.csv (184 regels = 23 x 8).
+- **Stappen:**
+  1. Open de lijst Translations > Edit in grid view.
+  2. Plak de 46 regels uit translations-weekreport-cs-fr.csv (zonder de kopregel) zoals bij MS-032. Language moet de keuze Czech of French worden; controleer dat geen regel leeg blijft.
+  3. Controle: weergave "Per key" toont per sleutel 8 talen; filter Language = Czech geeft 23 items, French 23 items. Totaal 184.
+- **Daarna:** TP-EXPORT-02 stap 11. Native-speaker-controle van cs/fr staat in de backlog (PROJECT_STATUS).
 
 ## Procedure — Nieuwe taal (H30)
 
@@ -341,5 +353,5 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Stappen:**
   1. Voeg de taal met exact dezelfde spelling (Engelse naam, hoofdletter, geen spaties) toe als keuze in **Workers.Language**, **Employers.Language** en **Translations.Language**.
   2. Voeg in Translations de 23 doc.*-regels toe voor die taal (zelfde Key als Dutch; doc.contractorAll en doc.total mogen leeg, die worden niet gebruikt). Leg ze ook vast in templates/translations-weekreport.csv.
-  3. Meld het aan Claude: taalcode toevoegen in de app (Switch in scrWeekReport, bv. "fr") en in Test-Languages; maximaal 6 talen per export (H29).
+  3. Meld het aan Claude: taalcode toevoegen in de app (Switch in scrWeekReport, ISO 639-1, bv. "fr") en in Test-Languages/Test-Templates. Geen vaste limiet op het aantal talen per export (Eddy 14-11-2026); de app leest per benodigde taal één keer.
   4. Controle: vergelijk online de drie keuzelijsten (de keuzewaarden staan niet in de app-metadata).

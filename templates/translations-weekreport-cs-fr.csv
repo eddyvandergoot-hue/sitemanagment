@@ -1,0 +1,47 @@
+﻿Key;Language;Text
+doc.title;Czech;Týdenní výkaz
+doc.title;French;Rapport hebdomadaire
+doc.projectName;Czech;Název projektu
+doc.projectName;French;Nom du projet
+doc.country;Czech;Země
+doc.country;French;Pays
+doc.projectNumber;Czech;Číslo projektu
+doc.projectNumber;French;Numéro de projet
+doc.projectReference;Czech;Reference projektu
+doc.projectReference;French;Référence du projet
+doc.contractor;Czech;Subdodavatel
+doc.contractor;French;Sous-traitant
+doc.contractorAll;Czech;Všichni subdodavatelé
+doc.contractorAll;French;Tous les sous-traitants
+doc.week;Czech;Týden
+doc.week;French;Semaine
+doc.weekRangeSep;Czech;až
+doc.weekRangeSep;French;au
+doc.colName;Czech;Jméno
+doc.colName;French;Nom
+doc.colTrade;Czech;Profese
+doc.colTrade;French;Métier
+doc.day1;Czech;Po
+doc.day1;French;Lun
+doc.day2;Czech;Út
+doc.day2;French;Mar
+doc.day3;Czech;St
+doc.day3;French;Mer
+doc.day4;Czech;Čt
+doc.day4;French;Jeu
+doc.day5;Czech;Pá
+doc.day5;French;Ven
+doc.day6;Czech;So
+doc.day6;French;Sam
+doc.day7;Czech;Ne
+doc.day7;French;Dim
+doc.colTotal;Czech;Celkem (hod.)
+doc.colTotal;French;Total (h)
+doc.subtotal;Czech;Mezisoučet
+doc.subtotal;French;Sous-total
+doc.total;Czech;Celkem
+doc.total;French;Total
+doc.footerGenerated;Czech;Vygenerováno {date} uživatelem {user}
+doc.footerGenerated;French;Généré le {date} par {user}
+doc.footerPage;Czech;Strana {page} z {pages}
+doc.footerPage;French;Page {page} sur {pages}

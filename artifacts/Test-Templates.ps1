@@ -115,7 +115,7 @@ if (Test-Path $cPath) {
   $lines = @((ReadText $cPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
   Check ($lines[0] -ceq 'Key;Language;Text') 'translations CSV: header Key;Language;Text'
   $keys = @('doc.title', 'doc.projectName', 'doc.country', 'doc.projectNumber', 'doc.projectReference', 'doc.contractor', 'doc.contractorAll', 'doc.week', 'doc.weekRangeSep', 'doc.colName', 'doc.colTrade') + (1..7 | ForEach-Object { "doc.day$_" }) + @('doc.colTotal', 'doc.subtotal', 'doc.total', 'doc.footerGenerated', 'doc.footerPage')
-  $langs = 'Dutch', 'English', 'Polish', 'Romanian', 'German', 'Ukrainian'
+  $langs = 'Dutch', 'English', 'Polish', 'Czech', 'Romanian', 'Ukrainian', 'German', 'French'  # Eddy 14-11-2026: 8 languages (H30)
   $map = @{}; $badRows = 0
   foreach ($ln in $lines[1..($lines.Count - 1)]) {
     $f = $ln -split ';'
@@ -131,6 +131,20 @@ if (Test-Path $cPath) {
   $ph = @(foreach ($l in $langs) { if ($map["doc.footerGenerated|$l"] -notmatch '\{date\}' -or $map["doc.footerGenerated|$l"] -notmatch '\{user\}' -or $map["doc.footerPage|$l"] -notmatch '\{page\}' -or $map["doc.footerPage|$l"] -notmatch '\{pages\}') { $l } })
   Check ($ph.Count -eq 0) "translations CSV: footer placeholders in every language$(if ($ph) { ' - ' + ($ph -join ', ') })"
   Check ($map['doc.title|Ukrainian'] -match ('[' + [char]0x0400 + '-' + [char]0x04FF + ']')) 'translations CSV: Ukrainian in Cyrillic'
+  Check ($map['doc.projectNumber|Czech'] -match ('[' + [char]0x0100 + '-' + [char]0x017F + ']') -and $map['doc.projectNumber|French'] -match ([char]0x00E9)) 'translations CSV: Czech and French with diacritics (UTF-8 kept)'
+  # Delta file for MS-036 (Eddy 14-11-2026): only Czech + French, rows identical to the full file
+  $dPath = Join-Path $tpl 'translations-weekreport-cs-fr.csv'
+  Check (Test-Path $dPath) 'translations-weekreport-cs-fr.csv exists'
+  if (Test-Path $dPath) {
+    $db = [System.IO.File]::ReadAllBytes($dPath)
+    Check ($db.Length -ge 3 -and $db[0] -eq 0xEF -and $db[1] -eq 0xBB -and $db[2] -eq 0xBF) 'cs-fr CSV: UTF-8 BOM'
+    $dl = @((ReadText $dPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
+    Check ($dl[0] -ceq 'Key;Language;Text') 'cs-fr CSV: header Key;Language;Text'
+    $drows = @($dl[1..($dl.Count - 1)])
+    Check ($drows.Count -eq 46 -and @($drows | Where-Object { ($_ -split ';')[1] -notin 'Czech', 'French' }).Count -eq 0) "cs-fr CSV: 46 rows (23 keys x Czech + French), no other language (found $($drows.Count))"
+    $diff = @($drows | Where-Object { $f = $_ -split ';'; $map["$($f[0])|$($f[1])"] -cne $f[2] })
+    Check ($diff.Count -eq 0) "cs-fr CSV: every row equal to the full CSV$(if ($diff) { ' - ' + ($diff -join ', ') })"
+  }
   # Sample info block labels = CSV texts (nl = Dutch, en = English)
   foreach ($sec in $secs) {
     $lg = $sec.Groups[1].Value; $ln = @{ nl = 'Dutch'; en = 'English' }[$lg]
