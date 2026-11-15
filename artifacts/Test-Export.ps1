@@ -144,12 +144,31 @@ $pdfArgs = Split-FxArgs (Get-Balanced $onExp ($runs[0].Index + $runs[0].Length -
 $csvArgs = Split-FxArgs (Get-Balanced $onExp ($runs[1].Index + $runs[1].Length - 1))
 Assert-True ($pdfArgs.Count -eq 5 -and ($pdfArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|b.Base|"pdf"|b.Html|{text_4:"weekreport.html"}') 'PDF call: Run(Folder, FileName, "pdf", Content, {text_4: "weekreport.html"}) per contractor'
 Assert-True ($csvArgs.Count -eq 4 -and ($csvArgs | ForEach-Object { $_.Trim() }) -join '|' -ceq 'varWrExpFolder|b.Base|"csv"|b.Csv') 'CSV call: Run(Folder, FileName, "csv", Content) (same base name, no TemplateName)'
-Assert-True ($onExpN.Contains("If(IsEmpty(colWrExportErrors),ClearCollect(colWrExpResults,") -and $onExpN.Contains("ForAll(colWrExpBuiltAsb,With({pdf:IfError(With({rr:'SiteManagment-Exportfile'.Run(") -and $onExpN.Contains("With({csv:If(pdf.Ok,IfError(With({rr:'SiteManagment-Exportfile'.Run(")) 'one PDF + CSV pair per built contractor file; flow calls only without collected errors; each call in IfError; CSV only after PDF OK'
-$flowResFx = '{Ok:Lower(Trim(rr.status & ""))="ok" && !IsBlank(Trim(rr.fileurl & "")),Msg:Trim(rr.message & "")}'
-Assert-True (([regex]::Matches($onExp, [regex]::Escape($flowResFx))).Count -eq 2 -and ([regex]::Matches($onExp, [regex]::Escape('{Ok:false,Msg:Coalesce(FirstError.Message,"?")}'))).Count -eq 2) 'both results: OK only with status ok (case-insensitive) and a non-empty fileurl; an error gives Ok false with the error text'
+# c6 (Eddy 15-11-2026, TP-EXPORT-02 step 2/3: bare "Nothing exported.", no flow run): every flow call is collected as a raw row in
+# colWrExpFlow (Collect + IfError, no nested With around Run); OK/messages are derived after the ForAll, so a call that never
+# returns still leaves a result with a reason ("flow call did not return" + the error of the ForAll).
+Assert-True ($onExpN.Contains("If(IsEmpty(colWrExportErrors),ClearCollect(colWrExpResults,") -and $onExpN.Contains("IfError(CountRows(ForAll(colWrExpBuiltAsb,Collect(colWrExpFlow,{Base:b.Base,Kind:`"pdf`",R:IfError('SiteManagment-Exportfile'.Run(") -and $onExpN.Contains("Collect(colWrExpFlow,If(CountIf(colWrExpFlow,Base=b.Base&&Kind=`"pdf`"&&Lower(Trim(R.status&`"`"))=`"ok`"&&!IsBlank(Trim(R.fileurl&`"`")))>0,{Base:b.Base,Kind:`"csv`",R:IfError('SiteManagment-Exportfile'.Run(") -and $onExpN.Contains('))>=0,Set(varWrExpRunErr,Coalesce(FirstError.Message,"?"));false);')) 'one PDF + CSV call per built contractor file, each raw response collected, CSV only after PDF OK, the whole ForAll in IfError (varWrExpRunErr)'
+Assert-True ($onExp -notmatch "With\(\{rr:'SiteManagment-Exportfile'" -and ([regex]::Matches((Get-Norm $onExp), [regex]::Escape("R:IfError('SiteManagment-Exportfile'.Run("))).Count -eq 2 -and ([regex]::Matches((Get-Norm $onExp), [regex]::Escape('),' + '{status:"Error",fileurl:"",message:Substitute(If(LangNl&&!IsBlank(T.wrExportCallFailed.nl),T.wrExportCallFailed.nl,T.wrExportCallFailed.en),"{0}",Coalesce(FirstError.Message,"?"))}' + ')}'))).Count -eq 2) 'review B1 (c6): IfError directly around each Run (an error inside a record field is not caught by an IfError around the record); the fallback is a response with status Error and "flow call failed: <error>"'
+$resBuiltFx = Get-CallArg $onExp 'Collect(colWrExpResults,ForAll(colWrExpBuilt' 1
+Assert-True ($resBuiltFx.StartsWith('ForAll(colWrExpBuilt As b,With({p:LookUp(colWrExpFlow,Base=b.Base && Kind="pdf"),c:LookUp(colWrExpFlow,Base=b.Base && Kind="csv")}')) 'results of the built files derived after the ForAll from the collected responses (one per built file, also when a call never returned)'
+$pOkFx = 'With({p:{Base:"x",R:RR}},!IsBlank(p.Base) && Lower(Trim(p.R.status & ""))="ok" && !IsBlank(Trim(p.R.fileurl & "")))'
+Assert-True ($resBuiltFx.Contains('pOk:!IsBlank(p.Base) && Lower(Trim(p.R.status & ""))="ok" && !IsBlank(Trim(p.R.fileurl & ""))') -and $resBuiltFx.Contains('cOk:!IsBlank(c.Base) && Lower(Trim(c.R.status & ""))="ok" && !IsBlank(Trim(c.R.fileurl & ""))')) 'PDF/CSV OK only with a collected response, status ok (case-insensitive) and a non-empty fileurl'
 foreach ($c in @(@('{status:"OK",fileurl:"https://x/f",message:""}', $true, 'status OK + url'), @('{status:"ok",fileurl:"u",message:""}', $true, 'status lower-case ok'), @('{status:"Error",fileurl:"u",message:"m"}', $false, 'status Error'), @('{status:"OK",fileurl:"  ",message:""}', $false, 'status OK but empty fileurl (not confirmed)'), @('If(false,{status:"",fileurl:"",message:""})', $false, 'blank result'))) {
-    Assert-Eval "With({rr:$($c[0])},$flowResFx).Ok" $c[1] "flow result OK = $($c[1]) for $($c[2])"
+    Assert-Eval ($pOkFx.Replace('RR', $c[0])) $c[1] "flow result OK = $($c[1]) for $($c[2])"
 }
+$fbFx = 'IfError(Error({Kind:ErrorKind.Custom,Message:"Connection not configured"}),{status:"Error",fileurl:"",message:Substitute(If(LangNl && !IsBlank(T.wrExportCallFailed.nl),T.wrExportCallFailed.nl,T.wrExportCallFailed.en),"{0}",Coalesce(FirstError.Message,"?"))})'
+Assert-Eval "With({LangNl:false},$fbFx).message" 'flow call failed: Connection not configured' 'review N5 (c6): a flow call that raises an error gives a response with status Error and the error text (the c5 cause: the error stayed inside a record field)'
+Set-FxVar 'varWrExpFolder' '"TEST-000"'; Set-FxVar 'colWrExpBuilt' 'Table({Code:"EMP-005",Base:"B5"})'; Set-FxVar 'varWrExpRunErr' '""'
+Set-FxVar 'colWrExpFlow' "Table({Base:`"B5`",Kind:`"pdf`",R:With({LangNl:false},$fbFx)},{Base:`"B5`",Kind:`"csvskipped`",R:If(false,{status:`"`",fileurl:`"`",message:`"`"})})"
+Assert-Eval "First($resBuiltFx).Msg" 'EMP-005: PDF not confirmed (flow call failed: Connection not configured). Check Exports/TEST-000.' 'review N5 (c6): TP-EXPORT-02 step 2 with a failing flow call -> red with the real error text'
+foreach ($tn in 'Status', 'Flow') { $ti = $onExp.IndexOf("Trace(`"DIAG|Export|$tn`","); $tb = Get-Balanced $onExp ($ti + 5); Assert-True ($ti -gt 0 -and $tb -notmatch '\b(Code|Name|Base|Folder|User|Msg|Message)\s*:' -and $tb -notmatch 'RunError:varWrExpRunErr') "review N3/N4 (c6): trace DIAG|Export|$tn has no names, codes or free error text (whole argument checked)" }
+Set-FxVar 'varWrExpFolder' '"TEST-000"'
+Set-FxVar 'colWrExpBuilt' 'Table({Code:"EMP-005",Base:"B5"},{Code:"EMP-004",Base:"B4"},{Code:"EMP-007",Base:"B7"},{Code:"EMP-008",Base:"B8"})'
+$okR = '{status:"OK",fileurl:"https://x",message:""}'; $noR = 'If(false,{status:"",fileurl:"",message:""})'
+Set-FxVar 'colWrExpFlow' ("Table({Base:`"B5`",Kind:`"pdf`",R:$okR},{Base:`"B5`",Kind:`"csv`",R:$okR},{Base:`"B4`",Kind:`"pdf`",R:{status:`"Error`",fileurl:`"`",message:`"no template`"}},{Base:`"B4`",Kind:`"csvskipped`",R:$noR},{Base:`"B8`",Kind:`"pdf`",R:$okR})")
+Set-FxVar 'varWrExpRunErr' '"The flow could not be started"'
+Set-FxValue 'wrRes' (Invoke-Fx $resBuiltFx)
+Assert-Eval 'Concat(wrRes,Code & "=" & If(PdfOk,"P","p") & If(CsvOk,"C","c") & ":" & Msg,"|")' 'EMP-005=PC:|EMP-004=pc:EMP-004: PDF not confirmed (no template). Check Exports/TEST-000.|EMP-007=pc:EMP-007: PDF not confirmed (flow call did not return: The flow could not be started). Check Exports/TEST-000.|EMP-008=Pc:EMP-008: PDF saved, CSV not confirmed (flow call did not return: The flow could not be started). Check Exports/TEST-000.' 'c6 results: OK pair; flow status Error with its message; PDF call never returned -> reason + ForAll error (Eddy 15-11: no bare message); CSV call never returned'
 $iPdf = $onExpN.IndexOf("'SiteManagment-Exportfile'.Run(")
 Assert-True ($onExpN.IndexOf('ClearCollect(colWrExpBuilt,') -lt $iPdf -and $onExpN.IndexOf('ClearCollect(colWrDocRead,') -ge 0 -and $onExpN.IndexOf('ClearCollect(colWrDocRead,') -lt $iPdf -and $onExpN.IndexOf('ClearCollect(colWrSettings,') -lt $onExpN.IndexOf('ClearCollect(colWrExpJobs,')) 'order: AppSettings read, Translations read and all local building first, then the flow calls'
 Assert-True ($onExp -notmatch '"ALL"' -and $onExp -notmatch '_ALL') 'H26: no _ALL file any more (one file pair per contractor)'
@@ -378,8 +397,10 @@ Assert-True (([regex]::Matches($msgBlk, 'Set\(varAdmMsgBody,IfError\(')).Count -
 $sumFx = $onExp.Substring($onExp.LastIndexOf('Set(varWrExpOkN,'))
 $sumFx = $sumFx.Substring(0, $sumFx.IndexOf('Set(varWrBusy,false);')).Trim().TrimEnd(';')
 function Test-Msg([string]$results, [string]$jobs, [string]$errors, [string]$kind, [string]$headKey, [string]$body, [string]$label) {
+    $jobs = [regex]::Replace($jobs, '\{Code:("[^"]*")\}', '{Code:$1,Status:"Ready"}')  # colWrExpJobs2 always has Status (c6 diagnostics count Ready)
     Set-FxVar 'colWrExpResults' $results; Set-FxVar 'colWrExpJobs2' $jobs; Set-FxVar 'colWrExportErrors' $errors
     Set-FxVar 'colWrExpBuilt' 'Table({Base:"TEST_WeekReport_TEST-000_2026KW46_EMP-901"})'; Set-FxVar 'varWrExpFolder' '"TEST-000"'
+    if (-not $script:keepDiag) { Set-FxVar 'varWrExpStep' '"result"'; Set-FxVar 'varWrExpRunErr' '""'; Set-FxVar 'colWrExpFlow' 'Filter(Table({Base:"",Kind:"",R:If(false,{status:"",fileurl:"",message:""})}),false)' }; Set-FxVar 'varWrExpDiag' '""'
     foreach ($v in 'varAdmMsgKind', 'varAdmMsgHead', 'varAdmMsgBody', 'varWrExpOkN', 'varWrExpFiles', 'varWrExpFailN', 'varWrExpNotes') { Set-FxVar $v $(if ($v -like 'varWrExp*N' -or $v -eq 'varWrExpFiles') { '0' } else { '""' }) }
     Invoke-FxStatements $sumFx
     Assert-Eval 'varAdmMsgKind & "|" & varAdmMsgHead & "|" & varAdmMsgBody' "$kind|$((Invoke-Fx "T.$headKey.en").Value)|$body" "message: $label"
@@ -412,5 +433,52 @@ Test-Msg 'Table({Code:"EMP-901",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:
 Test-Msg 'Table({Code:"EMP-905",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E5."},{Code:"EMP-901",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E1."},{Code:"EMP-904",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E4."},{Code:"EMP-902",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E2."},{Code:"EMP-903",Status:"NoLanguage",PdfOk:false,CsvOk:false,Msg:"E3."})' 'Table({Code:"EMP-901"},{Code:"EMP-902"},{Code:"EMP-903"},{Code:"EMP-904"},{Code:"EMP-905"})' $noErr 'Error' 'admHeadNotExported' 'Nothing exported. E1. E2. E3. (+2 more)' 'review 6: notes sorted by Contractor Code, max 3 + "(+n more)" (parallel ForAll order does not matter)'
 Test-Msg 'Filter(Table({Code:"",Status:"",PdfOk:false,CsvOk:false,Msg:""}),false)' $j1 'Table({Message:"Project has no Project Number. Fix in Projects, then Refresh."})' 'Error' 'admHeadNotExported' 'Nothing exported. Project has no Project Number. Fix in Projects, then Refresh.' 'collected error before any flow call -> red, zero flow calls'
 
+# c6 (Eddy 15-11-2026, bug 1): a failed export never shows a bare "Nothing exported." - TP-EXPORT-02 step 2 reproduced: one Ready
+# contractor, built file, no flow response at all (ForAll stopped before any result) -> the internal reason with the step and counts.
+$script:keepDiag = $true
+Set-FxVar 'varWrExpStep' '"flow"'; Set-FxVar 'varWrExpRunErr' '"The flow could not be started"'; Set-FxVar 'colWrExpFlow' 'Filter(Table({Base:"",Kind:"",R:If(false,{status:"",fileurl:"",message:""})}),false)'
+Test-Msg 'Filter(Table({Code:"",Status:"",PdfOk:false,CsvOk:false,Msg:""}),false)' 'Table({Code:"EMP-005",Status:"Ready"})' $noErr 'Error' 'admHeadNotExported' 'Nothing exported. Internal check failed (step flow, contractors 1, ready 1, files built 1, flow results 0, error: The flow could not be started).' 'c6 bug 1: results missing for a Ready contractor -> red with the internal reason (step, counts, error), never bare'
+Set-FxVar 'varWrExpRunErr' '""'
+Test-Msg 'Filter(Table({Code:"",Status:"",PdfOk:false,CsvOk:false,Msg:""}),false)' 'Table({Code:"EMP-005",Status:"Ready"})' 'Table({Message:""})' 'Error' 'admHeadNotExported' 'Nothing exported. Internal check failed (step flow, contractors 1, ready 1, files built 1, flow results 0).' 'c6 bug 1: a collected error without text -> internal reason instead of an empty line'
+$script:keepDiag = $false
+Assert-Eval 'T.wrErrExportJobInternal.en & "|" & T.wrExportNoReturn.en & "|" & T.wrMsgInternal.en' '{0}: internal check failed ({1}). Not exported.|flow call did not return|Internal check failed ({0}).' 'c6: texts for an unknown status, a call that never returned and the internal fallback'
+Assert-True ($resultsFx.Contains('"MissingTexts",Substitute(Substitute(') -and $resultsFx.Contains('Substitute(Substitute(If(LangNl && !IsBlank(T.wrErrExportJobInternal.nl),T.wrErrExportJobInternal.nl,T.wrErrExportJobInternal.en),"{0}",j.Code),"{1}","status " & j.Status))')) 'c6 bug 1: unknown status -> "<code>: internal check failed (status x)" (no longer reported as missing texts)'
+Set-FxVar 'colWrExpJobs2' 'Table({Code:"EMP-009",Base:"B9",Status:"Weird",MissingKeys:""})'
+Assert-Eval "First($resultsFx).Msg" 'EMP-009: internal check failed (status Weird). Not exported.' 'c6 bug 1: unknown status message evaluated'
+foreach ($st in 'settings', 'jobs', 'texts', 'status', 'build', 'flow', 'result') { Assert-True ($onExp.Contains("Set(varWrExpStep,`"$st`")")) "c6: step marker $st (named in the internal reason)" }
+Assert-True ($onExp.Contains('Trace("DIAG|Export|Status",') -and $onExp.Contains('Trace("DIAG|Export|Flow",') -and $onExp -notmatch 'Trace\("DIAG\|Export\|(Status|Flow)",[^)]*\b(Code|Name|Base|Folder|User)\b') 'c6: Monitor traces after the status step (jobs, ready, statuses, languages, texts) and after the flow step (calls, OK counts, run error), no names or codes'
+
+# c6: reproduction with the data shape of TP-EXPORT-02 (Eddy 15-11-2026): AppSettings Title/Value text, Translations Language as a
+# Choice record (full 184-row CSV), Employers.Language Choice via the loader projection, Test Contracter 2 (EMP-005, Dutch,
+# 11,5 h: Mon 7,5 Sat 4), page-1 language Dutch (same language = 1 page). The app reaches the flow step: status Ready, file built Ok.
+Set-FxVar 'AppSettings' 'Table({Title:"report.primaryLanguage",Value:"Dutch"})'
+Set-FxVar 'colWrSettings' (Get-CallArg $onExp 'ClearCollect(colWrSettings,' 1); Set-FxVar 'varWrSetN' $setNFx; Set-FxVar 'varWrDocLang1' $setLangFx
+Assert-Eval 'varWrDocLang1 & "|" & varWrSetN' 'Dutch|1' 'repro: AppSettings Title/Value -> page-1 language Dutch'
+Set-FxVar 'Translations' ('Table(' + ((@($tr) | ForEach-Object { '{Title:' + (ConvertTo-FxString $_.Key) + ',Language:{Value:' + (ConvertTo-FxString $_.Lang) + '},Text:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')')
+Assert-Eval 'CountRows(Translations)' 184 'repro: Translations 184 rows, Language as a Choice record'
+$empProj = [regex]::Match($loader, 'ClearCollect\(colWrPendEmployers,ForAll\(Employers As emp,(\{[^;]*?\})\)\)').Groups[1].Value
+Assert-True ($empProj.Replace(' ', '').Contains('Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))')) 'repro: Employers projection of the loader found (Language Choice .Value)'
+Set-FxVar 'colWrEmployers' ("ForAll(Table({ID:5,Title:`"Test Contracter 2`",'Employer Code':`"EMP-005`",Language:{Value:`"Dutch`"},Country:{Value:`"Netherlands`"},Active:true}) As emp,$empProj)")
+Assert-Eval 'First(colWrEmployers).Language' 'Dutch' 'repro: Employers.Language Choice -> "Dutch" in colWrEmployers'
+Set-Week 'Date(2026,11,9)'
+Set-FxVar 'varWrLoadedProject' '{ID:1,Title:"Test project",Country:"Netherlands",Number:"TEST-000",Reference:"Ref",Display:"x"}'; Set-FxVar 'varWrLoadedIsTest' 'true'; Set-FxVar 'varWrExpFolder' $folderFx
+Set-FxVar 'colWrGroups' 'Table({ContractorID:5,ContractorName:"Test Contracter 2",EmployerCode:"EMP-005",SortName:"a",WeekTotal:11.5})'
+Set-FxVar 'varWrExpContractorID' '5'
+Set-FxVar 'colWrExpJobs' $jobsFx
+Assert-Eval 'Concat(colWrExpJobs,Code & "|" & Lang2 & "|" & Text(HoursTotal),",")' 'EMP-005|Dutch|11.5' 'repro: one job EMP-005, page-2 language Dutch, 11,5 h'
+Assert-Eval "CountRows($langsFx)" 0 'repro: no second language to read (contractor language Dutch = page-1 language)'
+Set-FxVar 'colWrDocLangs' 'Table({L:"Dutch"})'
+Set-FxValue 'wrRead' (Invoke-Fx $readFx)
+Assert-Eval 'Concat(wrRead,RL & ":" & CountRows(Part),"|")' 'Dutch:23' 'repro: one Translations read for Dutch (Language.Value = "Dutch"), 23 rows'
+Set-FxVar 'colWrDocAll' 'ForAll(First(wrRead).Part As u,{Lang:u.Lang,Key:u.Key,Txt:u.Txt})'
+Set-DocTexts 'Table({L:"Dutch"})'
+Assert-Eval 'CountRows(colWrDocTexts) & "|" & CountIf(colWrDocTexts,Missing)' '21|0' 'repro: 21 required Dutch texts, none missing'
+Set-FxVar 'colWrExpJobs2' $jobs2Fx
+Assert-Eval 'First(colWrExpJobs2).Status' 'Ready' 'repro: EMP-005 status Ready (Dutch = page-1 language: 21 texts needed, 1 page)'
+Set-FxVar 'colWrRows' 'Table({WorkerID:1,ContractorID:5,WorkerCode:"WKR-001",WorkerName:"Test Dutch",EmployerCode:"EMP-005",WeekTotal:11.5})'
+Set-FxVar 'colWrExportFacts' 'Table({HourID:1,WorkerID:1,ContractorID:5,EmployerName:"Test Contracter 2",DayIndex:0,WorkDay:Date(2026,11,9),HourValue:7.5,Trade:"Fitter",Pos:1},{HourID:2,WorkerID:1,ContractorID:5,EmployerName:"Test Contracter 2",DayIndex:5,WorkDay:Date(2026,11,14),HourValue:4,Trade:"Fitter",Pos:1})'
+Set-FxVar 'colWrLines' ('Table(' + ((Get-Line 'Header' 100000 5 'Test Contracter 2' 'EMP-005' '' 'false' @(0, 0, 0, 0, 0, 0, 0) 0), (Get-Line 'Row' 100001 5 'Test Dutch' 'WKR-001' 'Fitter' 'false' @(7.5, $nb, $nb, $nb, $nb, 4, $nb) 11.5), (Get-Line 'Subtotal' 199999 5 'Subtotal' 'EMP-005' '' 'false' @(7.5, 0, 0, 0, 0, 4, 0) 11.5) -join ',') + ')')
+Set-FxVar 'colWrExpLines' $linesFx; Set-FxVar 'colWrExpCsvRows' $csvRowsFx; Set-FxVar 'colWrExpBuilt' $builtFx
+Assert-Eval 'Concat(colWrExpBuilt,Code & ":" & Text(Pages) & ":" & If(Ok,"ok","BAD"),",")' 'EMP-005:1:ok' 'repro: file built, 1 page, integrity Ok -> the app reaches the flow call with this data (cause is at or after the flow call)'
 Write-Output 'Test-Export: admission guard (parity + cases), busy flag, flow calls (per contractor: PDF 5 args with TemplateName, CSV 4 args after PDF OK, results checked), page-1 language from AppSettings (fail-closed), per-language delegable Translations reads (no fixed limit, 500 guard each), 23 keys, no fallback (missing text blocks), page languages (primary setting + Employers.Language), jobs per contractor (H26), statuses NoHours/NoLanguage/MissingTexts, PDF Content = sample-body.html, escaping, CSS footer, file names, CSV per contractor, integrity, result messages verified locally.'
 Write-Output 'NOT verified locally: Studio import and binding (flow optional parameter record {text_4:...}, flow calls inside ForAll, Ungroup, User().FullName, Text(...,"nl-NL") in Studio, UniChar), delegation/Monitor of the AppSettings and Translations reads (Filter inside ForAll over the needed languages), flow run and PDF rendering, real SharePoint data.'

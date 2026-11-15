@@ -601,11 +601,20 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Voettekst "Gegenereerd ... door Test User" links en paginanummer "Pagina x van y" (EN: "Page x of y") rechts op elke pagina.
 - Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.
 
-## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c5-20261114_235939, SHA-256 2F04BFCBC4C198EBFC3742BDB93E48AFF0DD63B2EE5F39D517BAC51947DEA4A8; alleen TEST-000; DECISIONS H26-H30, MS-033)
+## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c6-20261115_213846, SHA-256 B9FDC990F9983F8950C39F955DBEB54257D0291E4ADF8DF890A4731B5A9FD494; alleen TEST-000; DECISIONS H26-H30, MS-033)
 Vervangt de eerdere versies (builds c-20261113_230804 en c3-20261114_002529; niet getest). Nieuw in c4: pagina-1-taal uit de lijst AppSettings (Key report.primaryLanguage), Translations per benodigde taal zonder vaste limiet, 8 talen (Czech en French erbij). c5 (vervangt c4, die bij import 4 fouten in cmpWrFooter.OnExport gaf): CSV-volgorde via Sort met één sleutel in plaats van SortByColumns; verder gelijk aan c4.
 
+Resultaat c5 (Eddy 15-11-2026): V1-V6 gedaan, stap 1 PASS, stap 2 en 3 FAIL: rood "Not exported. Nothing exported." zonder reden, geen run in de flowgeschiedenis.
+c6 (vervangt c5): elke melding noemt de reden (nooit kaal "Nothing exported."); flowaanroepen worden per contractor vastgelegd, ook als een aanroep niet terugkomt ("flow call did not return: <fout>"); Monitor-traces DIAG|Export|Status en DIAG|Export|Flow. V2-V6 hoeven niet opnieuw (testdata staat er nog); V1 wel (nieuw bestand).
+
+Hertest c6 eerst (vóór de rest van de tabel):
+- H1 Monitor: Studio, linkerbalk Advanced tools (moersleutel-icoon) > Open monitor. Laat het Monitor-tabblad open, ga terug naar Studio, start de preview (F5) en voer stap 2 uit (Week report, TEST-000, week W, Contractor = Test Contracter 2, Export).
+- H2 Noteer de volledige rode/amber/groene melding letterlijk.
+- H3 Noteer in Monitor de regels DIAG|Export|Status (Jobs, Ready, Statuses, Primary, Langs, Texts, Missing) en DIAG|Export|Flow (Built, Calls, PdfOk, CsvOk, RunError), en een eventuele foutregel bij de flowaanroep (kolom Result/Status).
+- H4 Flow run history: is er nu een run? Zo ja, status en foutstap.
+- Verwacht: groen als de flow werkt; anders rood met reden, bijv. "Nothing exported. EMP-005: PDF not confirmed (flow call did not return: <fout>). Check Exports/TEST-000." Meld de tekst; daarmee is de oorzaak bekend.
 Voorbereiding
-- V1 Openen: controleer eerst de SHA-256 (PowerShell: `Get-FileHash <pad> -Algorithm SHA256`). Power Apps Studio > Open > Browse files > kies het .msapp-bestand van c5. Controleer:
+- V1 Openen: controleer eerst de SHA-256 (PowerShell: `Get-FileHash <pad> -Algorithm SHA256`). Power Apps Studio > Open > Browse files > kies het .msapp-bestand van c6. Controleer:
   - Geen fout in cmpWrFooter.OnExport (scrWeekReport), vooral niet op Pos, DayIndex, HourID of Sort. De waarschuwingen bij scrWeeklyHours btnBuildReport en cmpField.Items zijn bestaand.
   - Data (linkerbalk, cilinder-icoon): AppSettings, Translations en Employers staan erin. Ontbreekt AppSettings of toont OnExport (cmpWrFooter) een fout op AppSettings: Data > Add data > SharePoint > GEASiteManagment > AppSettings, en meld het.
   - App checker zonder fouten bij scrWeekReport. Meld een importfout exact.
