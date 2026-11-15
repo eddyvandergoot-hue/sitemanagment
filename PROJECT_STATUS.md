@@ -92,6 +92,6 @@ Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-
 - Verwijderen van artifacts\Logo_download\20261026-Sitemanagment_logo.msapp (read-only SAS-token verlopen 27-10-2026; lokaal, gitignored) mag door Eddy.
 
 ## Open MS-items (MANUAL_STEPS.md)
-- Open: MS-036 (Czech/French-teksten in Translations, 46 regels), MS-034 stap 2-3 ("Require" pas aan nadat Contractors het veld heeft). Gedaan 14-11-2026: MS-033, MS-034 stap 1, MS-035. Gedaan: MS-027, MS-028, MS-029 (12-11), MS-030 (13-11), MS-031 (12-11), MS-032 (13-11). Bibliotheek Exports: gedaan 9-11-2026.
+- Open: MS-034 stap 2-3 ("Require" pas aan nadat Contractors het veld heeft). Gedaan 14-11-2026: MS-033, MS-034 stap 1, MS-035, MS-036 (Czech/French 46 regels; dubbel geplakte regels verwijderd, Translations 184 = 23 x 8). Gedaan: MS-027, MS-028, MS-029 (12-11), MS-030 (13-11), MS-031 (12-11), MS-032 (13-11). Bibliotheek Exports: gedaan 9-11-2026.
 - MS-012 (Worker Contacts): deels gedaan; open: groep Site Supervisors + unieke rechten + opschonen versiegeschiedenis Workers. MS-021 (rechten Site Supervisors): uitgesteld tot go-live.
 - Gedaan (details MANUAL_STEPS.md): MS-005/009/010/013-020/022/025/026. Employer Code: flow MS-019 vult "EMP-" + ID; Worker Code: flow MS-017 vult "WKR-" + ID.

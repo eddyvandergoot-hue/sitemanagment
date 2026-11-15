@@ -31,7 +31,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-033 | 13-11-2026 | Done 14-11-2026 (Eddy); metadata samengevoegd 14-11-2026 |
 | MS-034 | 13-11-2026 | Stap 1 done 14-11-2026 (Eddy); Require nog uit (wacht op Contractors-veld) |
 | MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language keuze + index; metadata ververst en samengevoegd 14-11-2026 |
-| MS-036 | 14-11-2026 | Open (Eddy) |
+| MS-036 | 14-11-2026 | Gedaan (Eddy 14-11-2026) |
 
 ---
 
@@ -338,7 +338,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-036 — Translations: teksten voor Czech en French
 
-- **Added:** 14-11-2026. **Status:** Open (Eddy).
+- **Added:** 14-11-2026. **Status:** Gedaan (Eddy 14-11-2026; vastgelegd 15-11-2026).
+- **Uitvoering (Eddy):** 46 regels Czech/French geplakt; de eerste keer twee keer geplakt, de 46 dubbele regels verwijderd. Resultaat: Translations 184 items, weergave "Per key" toont per sleutel 8 talen (23 x 8, geen dubbele meer). Functionele controle in de app: TP-EXPORT-02 stap 11.
 - **Reason:** Czech en French zijn sinds 14-11-2026 keuzes in Workers.Language, Employers.Language en Translations.Language (H30). Zonder deze teksten geeft de export voor een contractor met Czech of French de rode melding "texts missing in Translations" (geen export voor die contractor).
 - **Bron:** templates/translations-weekreport-cs-fr.csv (46 regels = 23 sleutels x Czech + French; UTF-8 met BOM, scheiding ";", kop Key;Language;Text). De volledige lijst staat in templates/translations-weekreport.csv (184 regels = 23 x 8).
 - **Stappen:**
