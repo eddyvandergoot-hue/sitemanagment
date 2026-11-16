@@ -85,6 +85,7 @@ Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-
 - Home-tegel Tab-focus (TP-HOME-03 punt 6; geen prioriteit).
 
 ## Backlog functies
+- v1.1/v1.2 telefoonlayout (Eddy 16-11-2026): de app is op telefoon nog niet goed. Aanpak: alleen de veldschermen telefoon-geoptimaliseerd, geen volledige telefoonversie. Eddy stuurt later screenshots en een lijst met veldtaken; daarna ontwerp per scherm.
 - Lasstickerregister (Eddy 12-11-2026, na Week Report): uitgifteregister van lasstickerreeksen per lasser (sticker → lasser, werkgever, project, periode), innamebewijs als PDF via de exportflow. Alleen ontwerp: WELDSTICKERS_PLAN.md; open vragen V1-V9 (o.a. serie gebonden aan project) eerst beslissen. Geen MS-items aangemaakt.
 - Optie "Worker Code direct na aanmaken": de app schrijft WKR-<ID> meteen na het aanmaken; flow MS-017 blijft terugval (nu verschijnt de code na ongeveer 1 minuut). Botst met de AGENTS-regel "de app schrijft Worker Code nooit" en met de uniciteit van field_1; vereist Eddy's besluit en een formaatcontrole tegen flow MS-017 vóór bouw.
 - UX 4b, Weekly Hours (Eddy 15-11-2026): Save is actief zonder wijzigingen direct na laden en na opslaan (goedgekeurd scherm; UX). Onderzoeken bij UX 4b; niet nu (layout-freeze).
