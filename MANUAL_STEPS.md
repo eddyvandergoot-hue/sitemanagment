@@ -32,6 +32,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-034 | 13-11-2026 | Stap 1 done 14-11-2026 (Eddy); Require nog uit (wacht op Contractors-veld) |
 | MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language keuze + index; metadata ververst en samengevoegd 14-11-2026 |
 | MS-036 | 14-11-2026 | Gedaan (Eddy 14-11-2026) |
+| MS-037 | 16-11-2026 | Open (Eddy): flow "SiteManagement - Export file" corrigeren (CSV-map, extensies, retry) |
 
 ---
 
@@ -348,6 +349,32 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   3. Controle: weergave "Per key" toont per sleutel 8 talen; filter Language = Czech geeft 23 items, French 23 items. Totaal 184.
 - **Daarna:** TP-EXPORT-02 stap 11. Native-speaker-controle van cs/fr staat in de backlog (PROJECT_STATUS).
 
+## MS-037 — Flow "SiteManagement - Export file": CSV-map, extensies en retry
+
+- **Added:** 16-11-2026. **Status:** Open (Eddy).
+- **Reden:** TP-EXPORT-02 c6 (Eddy 16-11-2026): de PDF-aanroep werkt; de CSV-aanroep geeft in de app "UnexpectedError" en de run blijft op Running staan. Review van de flowexport (Incoming\Flows\Sitemanage-Exportfile_20261116094746.zip, geschoonde kopie flows/SiteManagement-Export-file.definition.json) tegen het contract WEEKREPORT_PLAN par. 6.5.
+- **Bevindingen:**
+  - F1 (blokkerend, CSV): Case_CSV > Create file, Folder Path = `/Exports/@{triggerBody()?['text_1']}@{triggerBody()?['text_3']}` = FileName + de hele CSV-inhoud als mapnaam (BOM, regeleinden, ";", aanhalingstekens, honderden tekens). Moet `/Exports/@{triggerBody()?['text']}` (Folder) zijn, zoals in de PDF-tak.
+  - F2 (blokkerend, contract): File Name is in beide takken alleen FileName (`text_1`). Het contract zegt "FileName zonder extensie"; de flow moet `.csv` en `.pdf` toevoegen. De huidige PDF heet dus waarschijnlijk zonder `.pdf` (controleer in Exports/TEST-000).
+  - F3 (waarschijnlijke verklaring van de vastgelopen run, niet bewezen): geen enkele actie heeft een retry-instelling, dus Power Automate gebruikt de standaard (tot 4 herhalingen met oplopende wachttijd). Een Create file met dit ongeldige pad kan zo lang opnieuw geprobeerd worden dat de run op Running blijft staan terwijl de app de aanroep al als fout ("UnexpectedError") afsluit. Open in de vastgelopen run Try > Switch > Case_CSV > Create file: staat daar een herhaling of foutcode, dan is dit bevestigd. Na F1 verdwijnt de directe oorzaak; met retry None komt een fout voortaan meteen bij de Catch.
+  - F4 (klein): CSV antwoordt Status "Ok", PDF "OK". De app vergelijkt hoofdletterongevoelig; zet beide op "OK" volgens het contract.
+  - F5 (klein): PDF FileUrl = `Create_file_2` body/Path (serverpad, niet klikbaar); CSV gebruikt Get file properties {Link}. Contract: FileUrl klikbaar. Zet PDF ook op Get file properties 1 > Link to item.
+  - Gecontroleerd en goed: trigger (Power Apps V2) met Folder/FileName/Format/Content verplicht en TemplateName optioneel; Switch op Format met cases `csv` en `pdf` en default "Unknown format"; vier Respond-acties met status/fileurl/message; Catch-Respond draait na Try Failed/TimedOut; PDF-volgorde template -> header -> BODY -> HEADER -> OneDrive .html -> Convert -> SharePoint -> tijdelijk bestand verwijderen; geen concurrency-instelling op de trigger (er is dus geen wachtrij door de flowinstellingen).
+- **Stappen (Power Automate, make.powerautomate.com > My flows > SiteManagement - Export file > Edit):**
+  1. Klap **Try > Switch > Case_CSV** open, klik **Create file**.
+     - **Folder Path:** wis de inhoud en typ `/Exports/`; kies daarna uit Dynamic content (trigger "Power Apps (V2)") **Folder**. Resultaat: `/Exports/` + Folder, niets anders.
+     - **File Name:** wis de inhoud, kies **FileName** uit Dynamic content en typ direct erachter `.csv`.
+     - **File Content:** laat staan (Content).
+  2. Zelfde **Create file** > **...** > **Settings** > **Retry Policy** = **None** > Done.
+  3. Klap **Case_PDF** open, klik **Create file 2** (de SharePoint-actie na Convert file).
+     - **File Name:** wis de inhoud, kies **FileName** en typ direct erachter `.pdf`.
+     - **...** > **Settings** > **Retry Policy** = **None**.
+  4. Zet ook **Retry Policy = None** op: Get template, Get header, Create file 1 (OneDrive), Convert file, Delete file 1, Get file properties en Get file properties 1.
+  5. **Respond to a Power App or flow** (in Case_CSV): Status `OK` (hoofdletters).
+  6. **Respond to a Power App or flow 1** (in Case_PDF): FileUrl wissen en kiezen uit Dynamic content **Get file properties 1 > Link to item**.
+  7. **Save**. Annuleer de vastgelopen run: My flows > flow > Run history > open de run die Running staat > **Cancel run**.
+  8. Verwijder in Exports/TEST-000 een eventuele PDF zonder extensie (bestand `TEST_WeekReport_...` zonder `.pdf`) en een eventuele vreemde map die met `TEST_WeekReport` begint.
+- **Daarna:** TP-EXPORT-02 stap 2 opnieuw (Test Contracter 2): verwacht groen "Exported. Saved in Exports/TEST-000: ….pdf and ….csv", twee bestanden met extensie, run history twee runs Succeeded. Stuur na de wijziging een nieuwe flowexport naar Incoming\Flows, dan vergelijk ik hem met flows/SiteManagement-Export-file.definition.json.
 ## Procedure — Nieuwe taal (H30)
 
 - **Wanneer:** een nieuwe rapport- of medewerkerstaal is nodig.

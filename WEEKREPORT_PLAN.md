@@ -106,6 +106,7 @@ Bron: AGENTS.md (Export, Admin screen pattern, Uren en rapportage), DECISIONS.md
 - Eerder (9-11-2026, vervangen door H25 tenzij Eddy anders kiest): `[TEST_]<ProjectNumber>_<YYYY>-KW<ww>_<EmployerCode>_<yyyymmdd-hhmm>`; Hours Summary: `[TEST_]<ProjectNumber>_<yyyymmdd>-<yyyymmdd>_<EmployerCode|ALL>_<yyyymmdd-hhmm>` (Hours Summary blijft alleen CSV, E1). Folder was `<ProjectNumber>/<ISO-jaar>`.
 
 ### 6.5 Flowcontract (B9, Eddy 9-11-2026; flow gebouwd en getest 12-11-2026, MS-029 gedaan)
+- Geschoonde flowdefinitie (export 16-11-2026, zonder gebruikers-, tenant- en connection-ID's): flows/SiteManagement-Export-file.definition.json. Afwijkingen van dit contract en de fixstappen: MANUAL_STEPS MS-037.
 - Gebouwd (Eddy 12-11-2026):
   - Trigger-invoer in deze volgorde: Folder, FileName, Format, Content, TemplateName (optioneel).
   - Uitvoer: Status, FileUrl, Message.

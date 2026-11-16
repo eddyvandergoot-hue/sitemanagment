@@ -1,0 +1,541 @@
+{
+  "name": "<flow-id>",
+  "id": "/providers/Microsoft.Flow/flows/<flow-id>",
+  "type": "Microsoft.Flow/flows",
+  "properties": {
+    "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+    "displayName": "SiteManagement - Export file",
+    "definition": {
+      "metadata": {
+        "workflowEntityId": null,
+        "processAdvisorMetadata": null,
+        "flowChargedByPaygo": null,
+        "flowclientsuspensionreason": "None",
+        "flowclientsuspensiontime": null,
+        "flowclientsuspensionreasondetails": null,
+        "creator": {
+          "id": "<redacted>",
+          "type": "User",
+          "tenantId": "<redacted>"
+        },
+        "provisioningMethod": "FromDefinition",
+        "failureAlertSubscription": true,
+        "clientLastModifiedTime": "2026-11-16T09:29:22.8332394Z",
+        "lastModifiedBy": "<redacted>",
+        "connectionKeySavedTimeKey": "2026-11-16T09:29:22.8332394Z",
+        "creationSource": "Portal",
+        "modifiedSources": "Portal"
+      },
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "description": "Please enter your input",
+                  "title": "Folder",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_1": {
+                  "description": "Please enter your input",
+                  "title": "FileName",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_2": {
+                  "description": "Please enter your input",
+                  "title": "Format",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_3": {
+                  "description": "Please enter your input",
+                  "title": "Content",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_4": {
+                  "description": "Please enter your input",
+                  "title": "TemplateName",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "text",
+                "text_1",
+                "text_2",
+                "text_3"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Try": {
+          "actions": {
+            "Switch": {
+              "cases": {
+                "Case_CSV": {
+                  "case": "csv",
+                  "actions": {
+                    "Create_file": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
+                          "folderPath": "/Exports/@{triggerBody()?['text_1']}@{triggerBody()?['text_3']}",
+                          "name": "@triggerBody()?['text_1']",
+                          "body": "@triggerBody()?['text_3']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "CreateFile"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "Get_file_properties": {
+                      "runAfter": {
+                        "Create_file": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
+                          "table": "6e3e7d2b-d0b5-48e1-875d-f98869a14912",
+                          "id": "@outputs('Create_file')?['body/ItemId']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetFileItem"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      }
+                    },
+                    "Respond_to_a_Power_App_or_flow": {
+                      "runAfter": {
+                        "Get_file_properties": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Response",
+                      "kind": "PowerApp",
+                      "inputs": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "title": "Status",
+                              "type": "string",
+                              "x-ms-content-hint": "TEXT",
+                              "x-ms-dynamically-added": true
+                            },
+                            "fileurl": {
+                              "title": "FileUrl",
+                              "type": "string",
+                              "x-ms-content-hint": "TEXT",
+                              "x-ms-dynamically-added": true
+                            },
+                            "message": {
+                              "title": "Message",
+                              "type": "string",
+                              "x-ms-content-hint": "TEXT",
+                              "x-ms-dynamically-added": true
+                            }
+                          },
+                          "additionalProperties": {}
+                        },
+                        "statusCode": 200,
+                        "body": {
+                          "status": "Ok",
+                          "fileurl": "@{outputs('Get_file_properties')?['body/{Link}']}",
+                          "message": "CSV saved"
+                        }
+                      }
+                    }
+                  }
+                },
+                "Case_PDF": {
+                  "case": "pdf",
+                  "actions": {
+                    "Get_header": {
+                      "runAfter": {
+                        "Get_template": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
+                          "path": "/Templates/header.html",
+                          "inferContentType": true
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetFileContentByPath"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      }
+                    },
+                    "ContentIn": {
+                      "runAfter": {
+                        "Get_header": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@triggerBody()?['text_3']"
+                    },
+                    "Merge": {
+                      "runAfter": {
+                        "ContentIn": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Compose",
+                      "inputs": "@replace(replace(string(body('Get_template')\r\n), '{{BODY}}', string(outputs('ContentIn')\r\n)), '{{HEADER}}', string(body('Get_header')))"
+                    },
+                    "Convert_file": {
+                      "runAfter": {
+                        "Create_file_1": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "id": "@outputs('Create_file_1')?['body/Id']",
+                          "type": "PDF"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+                          "connectionName": "shared_onedriveforbusiness",
+                          "operationId": "ConvertFile"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      }
+                    },
+                    "Create_file_1": {
+                      "runAfter": {
+                        "Merge": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "folderPath": "/SiteManagmentTemp",
+                          "name": "@concat(guid(), '.html')",
+                          "body": "@outputs('Merge')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+                          "connectionName": "shared_onedriveforbusiness",
+                          "operationId": "CreateFile"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "Create_file_2": {
+                      "runAfter": {
+                        "Convert_file": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
+                          "folderPath": "/Exports/@{triggerBody()?['text']}",
+                          "name": "@triggerBody()?['text_1']",
+                          "body": "@body('Convert_file')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "CreateFile"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      },
+                      "runtimeConfiguration": {
+                        "contentTransfer": {
+                          "transferMode": "Chunked"
+                        }
+                      }
+                    },
+                    "Respond_to_a_Power_App_or_flow_1": {
+                      "runAfter": {
+                        "Get_file_properties_1": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "Response",
+                      "kind": "PowerApp",
+                      "inputs": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "title": "Status",
+                              "type": "string",
+                              "x-ms-content-hint": "TEXT",
+                              "x-ms-dynamically-added": true
+                            },
+                            "fileurl": {
+                              "title": "FileUrl",
+                              "type": "string",
+                              "x-ms-content-hint": "TEXT",
+                              "x-ms-dynamically-added": true
+                            },
+                            "message": {
+                              "title": "Message",
+                              "type": "string",
+                              "x-ms-content-hint": "TEXT",
+                              "x-ms-dynamically-added": true
+                            }
+                          },
+                          "additionalProperties": {}
+                        },
+                        "statusCode": 200,
+                        "body": {
+                          "status": "OK",
+                          "fileurl": "@{outputs('Create_file_2')?['body/Path']}",
+                          "message": "PDF saved"
+                        }
+                      }
+                    },
+                    "Get_file_properties_1": {
+                      "runAfter": {
+                        "Delete_file_1": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
+                          "table": "6e3e7d2b-d0b5-48e1-875d-f98869a14912",
+                          "id": "@outputs('Create_file_2')?['body/ItemId']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetFileItem"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      }
+                    },
+                    "Get_template": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
+                          "path": "/Templates/@{triggerBody()?['text_4']}",
+                          "inferContentType": true
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "GetFileContentByPath"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      }
+                    },
+                    "Delete_file_1": {
+                      "runAfter": {
+                        "Create_file_2": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "id": "@outputs('Create_file_1')?['body/Id']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+                          "connectionName": "shared_onedriveforbusiness",
+                          "operationId": "DeleteFile"
+                        },
+                        "authentication": {
+                          "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                          "type": "Raw"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "default": {
+                "actions": {
+                  "Respond_to_a_Power_App_or_flow_3": {
+                    "type": "Response",
+                    "kind": "PowerApp",
+                    "inputs": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "title": "Status",
+                            "type": "string",
+                            "x-ms-content-hint": "TEXT",
+                            "x-ms-dynamically-added": true
+                          },
+                          "fileurl": {
+                            "title": "FileUrl",
+                            "type": "string",
+                            "x-ms-content-hint": "TEXT",
+                            "x-ms-dynamically-added": true
+                          },
+                          "message": {
+                            "title": "Message",
+                            "type": "string",
+                            "x-ms-content-hint": "TEXT",
+                            "x-ms-dynamically-added": true
+                          }
+                        },
+                        "additionalProperties": {}
+                      },
+                      "statusCode": 200,
+                      "body": {
+                        "status": "Error",
+                        "message": "Unknown format"
+                      }
+                    }
+                  }
+                }
+              },
+              "expression": "@triggerBody()?['text_2']",
+              "type": "Switch"
+            }
+          },
+          "runAfter": {},
+          "type": "Scope"
+        },
+        "Respond_to_a_Power_App_or_flow_2": {
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "title": "Status",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "fileurl": {
+                  "title": "FileUrl",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "message": {
+                  "title": "Message",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "additionalProperties": {}
+            },
+            "statusCode": 200,
+            "body": {
+              "status": "Error",
+              "message": "Export failed, see flow run history"
+            }
+          }
+        }
+      }
+    },
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "connectionName": "<redacted>",
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+        "tier": "NotSpecified",
+        "apiName": "sharepointonline",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      },
+      "shared_onedriveforbusiness": {
+        "connectionName": "<redacted>",
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+        "tier": "NotSpecified",
+        "apiName": "onedriveforbusiness",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      }
+    },
+    "flowFailureAlertSubscribed": false,
+    "isManaged": false
+  }
+}
