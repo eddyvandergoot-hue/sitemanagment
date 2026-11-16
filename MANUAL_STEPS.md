@@ -2,6 +2,17 @@
 
 SharePoint and Power Automate changes that Claude Code cannot make. Done by hand; click-by-click steps and flow code come from the Claude chat. Rules for logging them: **AGENTS.md**. Not read by Claude Code unless a task says so.
 
+**Werkwijze (vaste regel Eddy 16-11-2026, ook in AGENTS.md):** Claude maakt waar mogelijk een kant-en-klaar bestand; Eddy importeert of plakt alleen.
+- Flows: importpakket (zip) uit Eddy's laatste export, alleen definition.json gewijzigd; Import Package (Legacy) > Update existing (of Create as new voor een nieuwe flow).
+- App: Src > .msapp (pack).
+- PDF-templates: HTML-bestand voor de bibliotheek Templates.
+- Translations, AppSettings en andere gegevens: CSV voor plakken in de rasterweergave.
+- Nieuwe SharePoint-lijst: .xlsx met kolommen, typen en voorbeeldrijen > New > List > From Excel; daarna de kolomtypen controleren.
+- Lijst- of kolomopmaak: JSON voor Format column / Format view.
+- Controles: lokale scripts (artifacts\).
+Handklikstappen alleen als er geen importroute is (rechten, keuzes bewerken, heel kleine wijzigingen). Elke MS-stap noemt het bestand dat Claude levert, of waarom de stap handmatig is ("Waarom handmatig: ...").
+Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie)? Zo ja, dan lijsten, kolommen en rechten via een script.
+
 | ID | Added | Status |
 |---|---|---|
 | MS-001 | ≤ 24-10-2026 | Done 25-10-2026 (Eddy) |
@@ -33,7 +44,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language keuze + index; metadata ververst en samengevoegd 14-11-2026 |
 | MS-036 | 14-11-2026 | Gedaan (Eddy 14-11-2026) |
 | MS-037 | 16-11-2026 | Done 16-11-2026 (Eddy): fix1 geïmporteerd als Update van flow 22e34f1b; TP-EXPORT-02 stap 2-4 PASS |
-| MS-038 | 16-11-2026 | Open (Eddy): AppSettings csv.separator en csv.decimalSeparator |
+| MS-038 | 16-11-2026 | Done 16-11-2026 (Eddy): AppSettings csv.separator "," en csv.decimalSeparator "," |
+| MS-039 | 16-11-2026 | Done 16-11-2026 (Eddy): 384 landregels in Translations (568) |
 
 ---
 

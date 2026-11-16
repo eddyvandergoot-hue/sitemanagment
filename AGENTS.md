@@ -2,6 +2,10 @@
 
 Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande app en de werkwijze van de Excel/VBA-versie. Begin elke opdracht met het lezen van de lokale bronbestanden. Documentkaart: README.md. Lees ROADMAP.md, MANUAL_STEPS.md, DECISIONS.md en NEXT_COMMANDS.md alleen als de opdracht erom vraagt. Archieven (*_ARCHIVE.md) niet lezen tenzij gevraagd.
 
+## Werkwijze artefacten (vaste regel Eddy 16-11-2026)
+- Claude maakt waar mogelijk het bestand; Eddy importeert of plakt alleen. Flows: importpakket uit Eddy's laatste export (alleen definition.json gewijzigd), Import Package > Update existing / Create as new. App: Src > .msapp. PDF-templates: HTML. Translations/AppSettings/gegevens: CSV voor plakken in de rasterweergave. Nieuwe SharePoint-lijst: .xlsx met kolommen, typen en voorbeeldrijen (New > List > From Excel; kolomtypen daarna controleren). Lijst-/kolomopmaak: JSON (Format column/view). Controles: lokale scripts.
+- Handklikstappen alleen zonder importroute (rechten, keuzes bewerken, heel kleine wijzigingen); elke MS-stap noemt het geleverde bestand of "Waarom handmatig: ...". Open (IT): PnP PowerShell bij GEA toegestaan? Zo ja: lijsten, kolommen en rechten via script.
+
 ## Project, paden, git
 - Projectmap = bronmap = git-root: C:\Users\vandergoot.ed\Dev\Sitemanagment (Src, artifacts, Site Managment_VS.msapr, docs). Pack vanuit de projectmap.
 - De oude OneDrive-map (OneDrive - GEA\Projects\Development\Sitemanagment) is een alleen-lezen backup; schrijf daar nooit. Scripts in artifacts gebruiken alleen paden relatief aan $PSScriptRoot; pointerbestanden (artifacts/*-backup.txt, *-builddir.txt, *-buildpath.txt) bevatten paden relatief aan de bronmap. Geen absolute paden in scripts of pointers.
