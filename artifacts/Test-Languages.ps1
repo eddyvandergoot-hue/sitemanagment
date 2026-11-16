@@ -36,6 +36,9 @@ $csvLangs = @($csv | ForEach-Object { $_.Split(';')[1] } | Sort-Object -Unique)
 Check ((($csvLangs | Sort-Object) -join ',') -ceq (($languages | Sort-Object) -join ',')) "translations CSV: exactly the eight spellings, case-sensitive, no spaces ($($csvLangs -join ', '))"
 $bad = @($csv | Where-Object { $p = $_.Split(';'); $p[1] -cne $p[1].Trim() })
 Check ($bad.Count -eq 0) 'translations CSV: no leading/trailing spaces in Language'
+$ccsv = ([Text.Encoding]::UTF8.GetString((Read-SharedBytes (Join-Path $projectRoot 'templates\translations-countries.csv'))).TrimStart([char]0xFEFF) -split "`r?`n") | Select-Object -Skip 1 | Where-Object { $_.Trim() }
+$ccLangs = @($ccsv | ForEach-Object { $_.Split(';')[1] } | Sort-Object -Unique)
+Check ((($ccLangs | Sort-Object) -join ',') -ceq (($languages | Sort-Object) -join ',') -and @($ccsv | Where-Object { $p = $_.Split(';'); $p[1] -cne $p[1].Trim() }).Count -eq 0) "countries CSV (H33): exactly the eight spellings, case-sensitive, no spaces ($($ccLangs -join ', '))"
 
 $wr = [IO.File]::ReadAllText((Join-Path $projectRoot 'Src\scrWeekReport.pa.yaml'))
 $sw = [regex]::Match($wr, 'Switch\(pg\.L,((?:"[A-Za-z]+","[a-z]{2}",?)+),"und"\)')
@@ -52,6 +55,7 @@ $zp = [IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Managment
 try { $pe = $zp.Entries | Where-Object FullName -eq 'msapp\Properties.json'; $sr = New-Object IO.StreamReader($pe.Open()); $propsRaw = $sr.ReadToEnd(); $sr.Close() } finally { $zp.Dispose() }
 $lcr = ($propsRaw | ConvertFrom-Json).LocalConnectionReferences
 $tbl = if ($d) { [string]$d.TableName } else { '' }
-Check ($tbl -ne '' -and $lcr.Contains('\"AppSettings\":{\"tableName\":\"' + $tbl + '\"}') -or $lcr.Contains('"AppSettings":{"tableName":"' + $tbl + '"}')) "metadata: AppSettings tableName in Properties.json LocalConnectionReferences = DataSources.json ($tbl) (review N4)"Write-Output 'NOT verified locally: the choice values of Workers.Language, Employers.Language and Translations.Language in SharePoint (not in the .msapr metadata); use the MANUAL_STEPS procedure "Nieuwe taal" and compare the three lists online.'
+Check ($tbl -ne '' -and $lcr.Contains('\"AppSettings\":{\"tableName\":\"' + $tbl + '\"}') -or $lcr.Contains('"AppSettings":{"tableName":"' + $tbl + '"}')) "metadata: AppSettings tableName in Properties.json LocalConnectionReferences = DataSources.json ($tbl) (review N4)"
+Write-Output 'NOT verified locally: the choice values of Workers.Language, Employers.Language and Translations.Language in SharePoint (not in the .msapr metadata); use the MANUAL_STEPS procedure "Nieuwe taal" and compare the three lists online.'
 if ($fails -gt 0) { Write-Output "Test-Languages: $fails FAIL"; exit 1 }
 Write-Output 'Test-Languages: all PASS'

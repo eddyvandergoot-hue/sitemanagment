@@ -146,6 +146,34 @@ if (Test-Path $cPath) {
     $diff = @($drows | Where-Object { $f = $_ -split ';'; $map["$($f[0])|$($f[1])"] -cne $f[2] })
     Check ($diff.Count -eq 0) "cs-fr CSV: every row equal to the full CSV$(if ($diff) { ' - ' + ($diff -join ', ') })"
   }
+  # Country names (H33, Eddy 16-11-2026): Key country.<Projects.Country value>, every country in all 8 languages; missing = raw value in the PDF
+  $kPath = Join-Path $tpl 'translations-countries.csv'
+  Check (Test-Path $kPath) 'translations-countries.csv exists'
+  if (Test-Path $kPath) {
+    $kb = Read-SharedBytes $kPath
+    Check ($kb.Length -ge 3 -and $kb[0] -eq 0xEF -and $kb[1] -eq 0xBB -and $kb[2] -eq 0xBF) 'countries CSV: UTF-8 BOM'
+    $kl = @((ReadText $kPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
+    Check ($kl[0] -ceq 'Key;Language;Text') 'countries CSV: header Key;Language;Text'
+    $kmap = @{}; $kbad = 0
+    foreach ($ln in $kl[1..($kl.Count - 1)]) {
+      $f = $ln -split ';'
+      if ($f.Count -ne 3 -or $f[0] -notmatch '^country\.\S' -or $f[0] -ne $f[0].Trim() -or $f[2].Trim() -eq '' -or $f[2] -ne $f[2].Trim()) { $kbad++; continue }
+      $kmap["$($f[0])|$($f[1])"] = $f[2]
+    }
+    Check ($kbad -eq 0) 'countries CSV: every row 3 fields, key country.<value> without outer spaces, text not empty, no ; in text'
+    Check (($kl.Count - 1) -eq $kmap.Count) 'countries CSV: no duplicate Key+Language'
+    $ckeys = @($kmap.Keys | ForEach-Object { ($_ -split '\|')[0] } | Sort-Object -Unique)
+    $cmiss = @(foreach ($k in $ckeys) { foreach ($l in $langs) { if (-not $kmap.ContainsKey("$k|$l")) { "$k|$l" } } })
+    Check ($cmiss.Count -eq 0 -and ($kl.Count - 1) -eq $ckeys.Count * $langs.Count) "countries CSV: $($ckeys.Count) countries x $($langs.Count) languages = $($kl.Count - 1) rows$(if ($cmiss) { ' - missing ' + ($cmiss -join ', ') })"
+    $cxl = @($kmap.Keys | Where-Object { $langs -notcontains ($_ -split '\|')[1] })
+    Check ($cxl.Count -eq 0) "countries CSV: only Workers.Language choices$(if ($cxl) { ' - ' + ($cxl -join ', ') })"
+    $cen = @(foreach ($k in $ckeys) { if ($kmap["$k|English"] -cne $k.Substring(8)) { $k } })
+    Check ($cen.Count -eq 0) "countries CSV: English text = the choice value in the key$(if ($cen) { ' - ' + ($cen -join ', ') })"
+    Check ($kmap['country.Netherlands|Dutch'] -ceq 'Nederland' -and $kmap['country.Netherlands|Polish'] -ceq 'Holandia' -and $kmap['country.Netherlands|English'] -ceq 'Netherlands') 'countries CSV: Netherlands = Nederland (nl) / Holandia (pl) (default choice of Projects.Country)'
+    Check (@($ckeys | Where-Object { $kmap["$_|Ukrainian"] -notmatch ('[' + [char]0x0400 + '-' + [char]0x04FF + ']') }).Count -eq 0) 'countries CSV: Ukrainian in Cyrillic'
+    Check (@($ckeys | Where-Object { $map.ContainsKey("$_|Dutch") }).Count -eq 0) 'countries CSV: no overlap with the doc.* keys'
+    Check ((23 + $ckeys.Count) -lt 500) "Translations per language below the 500-row read limit (23 doc + $($ckeys.Count) country)"
+  }
   # Sample info block labels = CSV texts (nl = Dutch, en = English)
   foreach ($sec in $secs) {
     $lg = $sec.Groups[1].Value; $ln = @{ nl = 'Dutch'; en = 'English' }[$lg]

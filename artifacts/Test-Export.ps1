@@ -246,7 +246,10 @@ foreach ($k in $keys) { foreach ($lg in 'Dutch', 'English', 'Polish', 'Czech', '
 Assert-True $true 'every key has a text in all eight languages in the CSV (a delivered language never blocks)'
 
 # (6) Interpreter: jobs per contractor, document texts, status ---------------------------------------------------------------
-function Get-DocAll([string[]]$langs) { return 'Table(' + ((@($tr | Where-Object { $langs -contains $_.Lang }) | ForEach-Object { '{Lang:' + (ConvertTo-FxString $_.Lang) + ',Key:' + (ConvertTo-FxString $_.Key) + ',Txt:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')' }
+# Country names (H33): rows of templates/translations-countries.csv are in the same Translations read; Get-DocAll returns both like SharePoint would
+$trC = @(([Text.Encoding]::UTF8.GetString((Read-SharedBytes (Join-Path $tplDir 'translations-countries.csv'))).TrimStart([char]0xFEFF) -split "`r?`n") | Select-Object -Skip 1 | Where-Object { $_.Trim() } | ForEach-Object { $p = $_.Split(';'); [pscustomobject]@{ Key = $p[0]; Lang = $p[1]; Text = $p[2] } })
+Assert-True ($trC.Count -gt 0 -and @($trC | Where-Object { $_.Key -notlike 'country.*' }).Count -eq 0) "translations-countries.csv: $($trC.Count) country.* rows"
+function Get-DocAll([string[]]$langs) { return 'Table(' + ((@(@($tr) + @($trC) | Where-Object { $langs -contains $_.Lang }) | ForEach-Object { '{Lang:' + (ConvertTo-FxString $_.Lang) + ',Key:' + (ConvertTo-FxString $_.Key) + ',Txt:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')' }
 $jobsFx = Get-CallArg $onExp 'ClearCollect(colWrExpJobs,' 1
 $jobs2Fx = Get-CallArg $onExp 'ClearCollect(colWrExpJobs2,' 1
 $textsFx = Get-CallArg $onExp 'ClearCollect(colWrDocTexts,' 1
@@ -354,6 +357,34 @@ Assert-True $true 'PDF Content (EMP-901: nl file + en file, concatenated) is byt
 Assert-True (([regex]::Matches($html, '\{\{HEADER\}\}')).Count -eq 2 -and $html -notmatch '\{\{BODY\}\}' -and $html -notmatch '<script|<img|<link|url\(' -and $html -notmatch 'TEST Contractor B|EMP-902|class="total"') 'H26 privacy: the EMP-901 file holds no data of another contractor and no grand total'
 $html1 = (Invoke-Fx 'LookUp(colWrExpBuilt,Code="EMP-902").Html1 & LookUp(colWrExpBuilt,Code="EMP-902").Html2').Value
 Assert-True (([regex]::Matches($html1, '<section ')).Count -eq 1 -and $html1.Contains('<tr><th>Aannemer</th><td>TEST Contractor B &middot; EMP-902</td></tr>') -and $html1 -notmatch 'TEST Employer|EMP-901|class="total"' -and ([regex]::Matches($html1, '<tr class="subtotal">')).Count -eq 1) 'contractor language Dutch = page-1 language: 1 page, only its own group + subtotal'
+# H33 (Eddy 16-11-2026): country in the info block = Translations key country.<Projects.Country> in the page language; missing = raw value, never a block
+Assert-True ($html.Contains('<tr><th>Land</th><td>Nederland</td></tr>') -and $html.Contains('<tr><th>Country</th><td>Netherlands</td></tr>')) 'H33: country translated per page language (nl Nederland, en Netherlands)'
+Assert-True ($onExp.Contains('Trace("DIAG|Export|CountryText",TraceSeverity.Warning,') -and -not $textsFx.Contains('country.')) 'H33: missing country text is only a Monitor warning (DIAG|Export|CountryText), not a required key (no MissingTexts block)'
+$countryCase = {
+    param($country, $docAll, $emp901Lang, $expect, $label)
+    Set-FxVar 'varWrLoadedProject' ('{ID:1,Title:"Test project",Country:' + $country + ',Number:"TEST-000",Reference:"Test project reference",Display:"x"}')
+    Set-FxVar 'colWrEmployers' ('Table({ID:901,Language:"' + $emp901Lang + '"},{ID:902,Language:"Dutch"})')
+    Set-FxVar 'colWrExpJobs' $jobsFx
+    Set-FxVar 'colWrDocAll' $docAll
+    Set-DocTexts ('Table({L:"Dutch"},{L:"' + $emp901Lang + '"})')
+    Set-FxVar 'colWrExpJobs2' $jobs2Fx
+    Set-FxVar 'colWrExpLines' $linesFx
+    Set-FxVar 'colWrExpCsvRows' $csvRowsFx
+    Set-FxVar 'colWrExpBuilt' $builtFx
+    $st = (Invoke-Fx 'Concat(colWrExpJobs2,Status,",") & "|" & Concat(colWrExpBuilt,If(Ok,"ok","BAD"),",")').Value
+    $cells = @([regex]::Matches((Invoke-Fx 'LookUp(colWrExpBuilt,Code="EMP-901").Html1 & LookUp(colWrExpBuilt,Code="EMP-901").Html2').Value, '<tr><th>(?:Land|Country|Kraj)</th><td>([^<]*)</td></tr>') | ForEach-Object { $_.Groups[1].Value }) -join '|'
+    Assert-True ($st -ceq 'Ready,Ready|ok,ok' -and $cells -ceq $expect) "H33: $label (country cells '$cells', status $st)"
+}
+& $countryCase '"Netherlands"' (Get-DocAll @('Dutch', 'Polish')) 'Polish' 'Nederland|Holandia' 'Eddy retest EMP-004: Land Nederland (nl file) / Kraj Holandia (pl file)'
+& $countryCase '" netherlands "' (Get-DocAll @('Dutch', 'Polish')) 'Polish' 'Nederland|Holandia' 'key match trims and ignores case of the choice value'
+& $countryCase '"Atlantis & <Co>"' (Get-DocAll @('Dutch', 'Polish')) 'Polish' 'Atlantis &amp; &lt;Co&gt;|Atlantis &amp; &lt;Co&gt;' 'country without a translation row: raw value (HTML-escaped) on every page, export not blocked'
+& $countryCase '"Netherlands"' ('Filter(' + (Get-DocAll @('Dutch', 'Polish')) + ',!(Lang="Polish" && Key="country.Netherlands"))') 'Polish' 'Nederland|Netherlands' 'translation missing in one language only: that page shows the raw value, the other is translated'
+& $countryCase '"Netherlands"' ('ForAll(' + (Get-DocAll @('Dutch', 'Polish')) + ' As d,{Lang:d.Lang,Key:d.Key,Txt:If(d.Key="country.Netherlands","",d.Txt)})') 'Polish' 'Netherlands|Netherlands' 'empty translation text: raw value'
+& $countryCase '""' (Get-DocAll @('Dutch', 'Polish')) 'Polish' '|' 'no country on the project: empty cell (no lookup of key "country.")'
+& $countryCase '"Netherlands"' ('ForAll(' + (Get-DocAll @('Dutch', 'Polish')) + ' As d,{Lang:d.Lang,Key:d.Key,Txt:If(d.Key="country.Netherlands" && d.Lang="Dutch","A&B <{x}>",d.Txt)})') 'Polish' 'A&amp;B &lt;&#123;x}&gt;|Holandia' 'translated country text HTML-escaped, { as &#123;'
+Set-FxVar 'varWrLoadedProject' '{ID:1,Title:"Test project",Country:"Netherlands",Number:"TEST-000",Reference:"Test project reference",Display:"x"}'
+Set-FxVar 'colWrEmployers' 'Table({ID:901,Language:"English"},{ID:902,Language:"Dutch"})'
+Set-FxVar 'colWrExpJobs' $jobsFx
 # escaping: data and texts HTML-escaped, "{" as &#123;; footer as a CSS string
 Set-FxVar 'colWrLines' ('Table(' + (Get-Line 'Header' 100000 901 'A&B <x> "q" {{HEADER}}' 'E{1}' '' 'false' @(0, 0, 0, 0, 0, 0, 0) 0).Replace('"A&B <x> "q" {{HEADER}}"', '"A&B <x> ""q"" {{HEADER}}"') + ',' + (Get-Line 'Row' 100001 901 'Test <W>' 'WKR-1' 'Fit;ter' 'false' @(7.5, 0, $nb, 2.25, 10, $nb, $nb) 19.75) + ',' + (Get-Line 'Subtotal' 199999 901 'Subtotal' 'E{1}' '' 'false' @(7.5, 0, 0, 2.25, 10, 0, 0) 19.75) + ')')
 Set-FxVar 'colWrExpLines' $linesFx

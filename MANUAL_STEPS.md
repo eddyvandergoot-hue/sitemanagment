@@ -391,11 +391,23 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 - **Wanneer welke waarde:** kies `csv.separator` gelijk aan de lijstscheiding van de pc's die de CSV openen (Windows: Taal en regio > Aanvullende instellingen > Lijstscheidingsteken). Pc's met verschillende lijstscheidingen kunnen niet tegelijk met dubbelklikken bediend worden; daar werkt Excel > Data > From Text/CSV.
 - **Daarna:** TP-EXPORT-02 c7 stap 5a/5b.
 
+## MS-039 — Translations: landnamen (country.*) plakken
+
+- **Added:** 16-11-2026. **Status:** Open (Eddy).
+- **Reden:** v1.0.0 (Eddy 16-11-2026): het Land in het PDF-infoblok (Projects.Country) moet in de paginataal staan; nu staat overal "Netherlands". Vanaf build c8 leest de app de vertaling uit Translations, Key `country.<keuzewaarde>` (DECISIONS H33). Ontbreekt een regel, dan toont de PDF de ruwe waarde (geen blokkade).
+- **Bron:** templates/translations-countries.csv: 384 regels = 48 landen x 8 talen (UTF-8 met BOM, scheiding ";", kop Key;Language;Text). Daarna Translations 568 items (184 + 384); per taal 71 (ruim onder de 500-grens).
+- **Stappen:**
+  1. Open de lijst Translations > Edit in grid view.
+  2. Plak de 384 regels uit translations-countries.csv (zonder de kopregel) zoals bij MS-036, in delen als het plakken traag is. Language moet de keuze worden; controleer dat geen regel leeg blijft en dat niets dubbel geplakt is.
+  3. Controle: filter Language = Dutch geeft 71 items, Polish 71; totaal 568. Zoek `country.Netherlands`: 8 regels (Dutch Nederland, Polish Holandia).
+  4. Vergelijk de keuzes van **Projects.Country** (lijst Projects > kolom Country > Column settings > Edit) met de landen in de CSV: de Key na `country.` moet exact de keuzewaarde zijn (de app negeert hoofdletters en spaties aan begin/eind). Staat een keuze er niet in, meld de exacte waarde aan Claude (dan komt er een regel per taal bij); zonder regel toont de PDF de Engelse keuzewaarde.
+- **Daarna:** TP-EXPORT-02 c8 stap 4.
+
 ## Procedure — Nieuwe taal (H30)
 
 - **Wanneer:** een nieuwe rapport- of medewerkerstaal is nodig.
 - **Stappen:**
   1. Voeg de taal met exact dezelfde spelling (Engelse naam, hoofdletter, geen spaties) toe als keuze in **Workers.Language**, **Employers.Language** en **Translations.Language**.
-  2. Voeg in Translations de 23 doc.*-regels toe voor die taal (zelfde Key als Dutch; doc.contractorAll en doc.total mogen leeg, die worden niet gebruikt). Leg ze ook vast in templates/translations-weekreport.csv.
+  2. Voeg in Translations de 23 doc.*-regels toe voor die taal (zelfde Key als Dutch; doc.contractorAll en doc.total mogen leeg, die worden niet gebruikt). Leg ze ook vast in templates/translations-weekreport.csv. Voeg ook de country.*-regels voor die taal toe (templates/translations-countries.csv, H33; ontbrekend = Engelse landnaam in de PDF).
   3. Meld het aan Claude: taalcode toevoegen in de app (Switch in scrWeekReport, ISO 639-1, bv. "fr") en in Test-Languages/Test-Templates. Geen vaste limiet op het aantal talen per export (Eddy 14-11-2026); de app leest per benodigde taal één keer.
   4. Controle: vergelijk online de drie keuzelijsten (de keuzewaarden staan niet in de app-metadata).
