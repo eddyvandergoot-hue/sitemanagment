@@ -100,7 +100,7 @@ Assert-True ((P 'lblWrWeekKW.X') -eq '=btnWrNext.X+btnWrNext.Width+12' -and (P '
 $bare = Strip-Strings $screenText
 Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Choices)\(') 'no Patch/Remove/RemoveIf/Update/UpdateIf/SubmitForm/Defaults/Launch and no Choices() on scrWeekReport'
 $bareNoExport = Strip-Strings ((@($all.Keys | Where-Object { $_ -ne 'cmpWrFooter.OnExport' } | ForEach-Object { $all[$_] })) -join "`n")
-Assert-True ($bareNoExport -notmatch '\.Run\(' -and ([regex]::Matches((Strip-Strings (P 'cmpWrFooter.OnExport')), '\.Run\(')).Count -eq 2) 'phase C: the export flow is called only in cmpWrFooter.OnExport (exactly 2 calls: PDF + CSV)'
+Assert-True ($bareNoExport -notmatch '\.Run\(' -and ([regex]::Matches((Strip-Strings (P 'cmpWrFooter.OnExport')), '\.Run\(')).Count -eq 3) 'phase C: the export flow is called only in cmpWrFooter.OnExport (exactly 3 calls: PDF language 1, PDF language 2 (H31), CSV)'
 $colTargets = @([regex]::Matches($bare, '\b(Collect|ClearCollect|Clear)\(\s*([^,\)]+)') | ForEach-Object { $_.Groups[2].Value.Trim() } | Sort-Object -Unique)
 Assert-True (@($colTargets | Where-Object { $_ -notmatch '^col[A-Z]\w*$' }).Count -eq 0) "Collect/ClearCollect/Clear only target local collections ($($colTargets.Count) targets, all col*)"
 Assert-True ($bare -notmatch "\b(Collect|ClearCollect|Clear|Patch|Remove|RemoveIf|Update|UpdateIf)\(\s*(Hours|Workers|Employers|Projects|'Project Workers'|'Assignment Periods')\b") 'no collection function is applied to a SharePoint list'
@@ -226,7 +226,7 @@ Assert-Eval 'Concat(colWrPendContractorItems,Value,"; ")' 'All contractors; Alph
 Run-Pipeline 'TEST-000'
 Assert-Eval 'varWrPendExcluded' 0 'TEST rule: on a TEST- project nothing is excluded'
 Assert-Eval 'Concat(Sort(colWrPendGroups,SortName),Display,"; ")' 'Alpha BV (EMP-010); Beta (BETA-1); TEST Employer (EMP-099)' 'TEST project: TEST Employer group shown'
-foreach ($c in @(@('TEST-000', $true), @(' TEST-001', $true), @('P-1000', $false), @('test-000', $false), @('XTEST-000', $false))) {
+foreach ($c in @(@('TEST-000', $true), @(' TEST-001', $true), @('P-1000', $false), @('test-000', $true), @('Test-000', $true), @('XTEST-000', $false))) {  # H32 (Eddy 16-11-2026): case-insensitive
     $isTestFx = ($steps | Where-Object Target -eq 'varWrPendIsTest').Expr
     Assert-Eval "With({varWrPendProject:{Number:`"$($c[0])`"}},$isTestFx)" $c[1] "TEST project detection '$($c[0])' -> $($c[1]) (Project Number starts with TEST-, trimmed)"
 }

@@ -601,12 +601,24 @@ Hertest T2 na de PDF-opmaakfeedback (Eddy 12-11-2026): Eddy uploadt templates/he
 - Voettekst "Gegenereerd ... door Test User" links en paginanummer "Pagina x van y" (EN: "Page x of y") rechts op elke pagina.
 - Resultaat hertest T2 (Eddy 13-11-2026): PASS (regel Country, voettekst Pagina x van y, navy totaalrij, grijze za/zo). weekreport.html opnieuw geupload.
 
-## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c6-20261115_213846, SHA-256 B9FDC990F9983F8950C39F955DBEB54257D0291E4ADF8DF890A4731B5A9FD494; alleen TEST-000; DECISIONS H26-H30, MS-033)
+## TP-EXPORT-02 Week Report Export per contractor (fase C; build weekreport-export-c7-20261116_124518, SHA-256 CCF4F8D0FEDEDD8C1B51A7021BD6758DB8E13DC324911E923ACC87A55BF7776C; flow fix1; alleen TEST-000; DECISIONS H26-H30, MS-033)
 Vervangt de eerdere versies (builds c-20261113_230804 en c3-20261114_002529; niet getest). Nieuw in c4: pagina-1-taal uit de lijst AppSettings (Key report.primaryLanguage), Translations per benodigde taal zonder vaste limiet, 8 talen (Czech en French erbij). c5 (vervangt c4, die bij import 4 fouten in cmpWrFooter.OnExport gaf): CSV-volgorde via Sort met één sleutel in plaats van SortByColumns; verder gelijk aan c4.
 
 Resultaat c5 (Eddy 15-11-2026): V1-V6 gedaan, stap 1 PASS, stap 2 en 3 FAIL: rood "Not exported. Nothing exported." zonder reden, geen run in de flowgeschiedenis.
 c6 (vervangt c5): elke melding noemt de reden (nooit kaal "Nothing exported."); flowaanroepen worden per contractor vastgelegd, ook als een aanroep niet terugkomt ("flow call did not return: <fout>"); Monitor-traces DIAG|Export|Status en DIAG|Export|Flow. V2-V6 hoeven niet opnieuw (testdata staat er nog); V1 wel (nieuw bestand).
 
+Resultaat c6 + flow fix1 (Eddy 16-11-2026): stap 2, 3, 4 PASS; stap 5 FAIL (Excel met regio decimaal "," en lijstscheiding "," splitste 7,5 in 7 | 5); bestanden zonder TEST_ bij projectnummer "Test-000".
+c7 (vervangt c6): CSV met alle tekst-, datum- en urenvelden tussen aanhalingstekens, scheidingsteken/decimaalteken uit AppSettings (H32, MS-038); TEST-herkenning hoofdletterongevoelig; één PDF per taal `<basis>_<taalcode>.pdf` (H31), CSV `<basis>.csv`. Flow fix1 blijft ongewijzigd.
+
+Hertest c7 (na MS-038; V1 met het nieuwe bestand, V2-V6 niet opnieuw):
+- C0 Opruimen: verwijder in Exports/<map> de bestanden uit c6 (`<basis>.pdf` met twee pagina's, zonder taalcode), zodat alleen c7-bestanden overblijven.
+- C1 Contractor = Test Contracter 2 (Dutch), Export: groen "Exported. Saved in Exports/<map>: TEST_WeekReport_<nr>_<YYYY>KW<ww>_<code>_nl.pdf, …_<code>.csv". In de map: 1 PDF (`_nl`) en 1 CSV, beide met TEST_-prefix (ook als het projectnummer "Test-000" is).
+- C2 Contractor = Test-Employer2 (Polish), Export: twee PDF's `…_nl.pdf` en `…_pl.pdf` (elk één taal, "Pagina 1 van 1" / Poolse voettekst) en één CSV.
+- C3 All contractors, Export: groen "Exported x of y …"; per contractor met uren 1 of 2 PDF's + 1 CSV; test Contracter 3 overgeslagen.
+- 5a CSV in Excel op je eigen pc (lijstscheiding "," en decimaal ","): dubbelklik de CSV van Test Contracter 2. Zie je alles in kolom A, controleer dan of `csv.separator` gelijk is aan de lijstscheiding van je pc (bij "," dus `,`), Export opnieuw en open opnieuw. Verwacht: kolommen netjes, Hours 7,5 en 4 als getal in één kolom.
+- 5b Zelfde CSV met lijstscheiding ";" (Windows Instellingen > Tijd en taal > Taal en regio > Beheer-instellingen voor de regio > Aanvullende instellingen > Lijstscheidingsteken ";"; Excel opnieuw starten), met `csv.separator` `;`: Hours 7,5 in één kolom. Zet je instelling daarna terug.
+- 5c AppSettings `csv.separator` tijdelijk op `|`: Export geeft rood "AppSettings csv.separator: value '|' not allowed (allowed: ; ,)…", geen bestanden. Zet terug.
+- Meld per stap PASS/FAIL en welke `csv.separator` op de GEA-pc's werkt.
 Hertest c6 eerst (vóór de rest van de tabel):
 - H1 Monitor: Studio, linkerbalk Advanced tools (moersleutel-icoon) > Open monitor. Laat het Monitor-tabblad open, ga terug naar Studio, start de preview (F5) en voer stap 2 uit (Week report, TEST-000, week W, Contractor = Test Contracter 2, Export).
 - H2 Noteer de volledige rode/amber/groene melding letterlijk.

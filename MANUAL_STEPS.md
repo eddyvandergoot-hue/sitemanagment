@@ -32,7 +32,8 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-034 | 13-11-2026 | Stap 1 done 14-11-2026 (Eddy); Require nog uit (wacht op Contractors-veld) |
 | MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language keuze + index; metadata ververst en samengevoegd 14-11-2026 |
 | MS-036 | 14-11-2026 | Gedaan (Eddy 14-11-2026) |
-| MS-037 | 16-11-2026 | Open (Eddy): fix1-pakket importeren (Update existing flow 22e34f1b) |
+| MS-037 | 16-11-2026 | Done 16-11-2026 (Eddy): fix1 geïmporteerd als Update van flow 22e34f1b; TP-EXPORT-02 stap 2-4 PASS |
+| MS-038 | 16-11-2026 | Open (Eddy): AppSettings csv.separator en csv.decimalSeparator |
 
 ---
 
@@ -351,7 +352,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-037 — Flow "SiteManagement - Export file": CSV-map, extensies en retry
 
-- **Added:** 16-11-2026. **Status:** Open (Eddy).
+- **Added:** 16-11-2026. **Status:** Done 16-11-2026 (Eddy: geïmporteerd als Update van flow 22e34f1b; stap 2, 3 en 4 PASS: pdf + csv met extensie, groen).
 - **Reden:** TP-EXPORT-02 c6 (Eddy 16-11-2026): de PDF-aanroep werkt; de CSV-aanroep geeft in de app "UnexpectedError" en de run blijft op Running staan. Review van de flowexport (Incoming\Flows\Sitemanage-Exportfile_20261116094746.zip, geschoonde kopie flows/SiteManagement-Export-file.definition.json) tegen het contract WEEKREPORT_PLAN par. 6.5.
 - **Bevindingen:**
   - F1 (blokkerend, CSV): Case_CSV > Create file, Folder Path = `/Exports/@{triggerBody()?['text_1']}@{triggerBody()?['text_3']}` = FileName + de hele CSV-inhoud als mapnaam (BOM, regeleinden, ";", aanhalingstekens, honderden tekens). Moet `/Exports/@{triggerBody()?['text']}` (Folder) zijn, zoals in de PDF-tak.
@@ -376,7 +377,20 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   5. **Import** > wacht op "All package resources were successfully imported".
   6. Open de flow > controleer bovenaan dat hij **On** staat (anders **Turn on**). Controleer in Details > Run only users dat SharePoint en OneDrive nog op "Provided by run-only user" staan (zoals voor de import).
   7. Optioneel ter controle: Edit > Case_CSV > Create file toont Folder Path `/Exports/` + Folder en File Name FileName + `.csv`; ... > Settings bij een actie toont Retry Policy Fixed interval, Count 2, Interval PT5S. Niets opslaan als je niets wijzigt.
-  8. Ruim in Exports/TEST-000 een PDF zonder extensie op, en een eventuele vreemde map die met `TEST_WeekReport` begint.- **Daarna:** TP-EXPORT-02 stap 2 opnieuw (Test Contracter 2): verwacht groen "Exported. Saved in Exports/TEST-000: ….pdf and ….csv", twee bestanden met extensie, run history twee runs Succeeded. Stuur na de wijziging een nieuwe flowexport naar Incoming\Flows, dan vergelijk ik hem met flows/SiteManagement-Export-file.definition.json.
+  8. Ruim in Exports/TEST-000 een PDF zonder extensie op, en een eventuele vreemde map die met `TEST_WeekReport` begint.
+- **Daarna:** TP-EXPORT-02 stap 2 opnieuw (Test Contracter 2): verwacht groen "Exported. Saved in Exports/TEST-000: ….pdf and ….csv", twee bestanden met extensie, run history twee runs Succeeded. Stuur na de wijziging een nieuwe flowexport naar Incoming\Flows, dan vergelijk ik hem met flows/SiteManagement-Export-file.definition.json.
+
+## MS-038 — AppSettings: CSV-scheidingsteken en decimaalteken
+
+- **Added:** 16-11-2026. **Status:** Open (Eddy).
+- **Reden:** TP-EXPORT-02 c6 stap 5 (Eddy 16-11-2026): de GEA-pc's hebben decimaal "," en lijstscheiding ","; Excel splitste 7,5 in 7 | 5. Vanaf build c7 zet de app alle tekst-, datum- en urenvelden tussen aanhalingstekens en leest het scheidingsteken en het decimaalteken uit AppSettings (DECISIONS H32). Excel splitst bij dubbelklikken op de lijstscheiding van de pc: "7,5" blijft één veld zodra csv.separator gelijk is aan die lijstscheiding. Excel > Data > From Text/CSV werkt altijd (scheidingsteken kiezen in het venster). Ontbreekt een sleutel, dan geldt de standaard; een dubbele sleutel of een andere waarde geeft rood (geen export).
+- **Stappen:** SharePoint GEASiteManagment > lijst **AppSettings** > **+ New** (twee keer):
+  1. Key `csv.separator`, Value `,` (toegestaan: `;` of `,`). Voor de GEA-pc's met lijstscheiding "," is `,` naar verwachting juist; stap 5a van TP-EXPORT-02 c7 beslist. Zonder deze regel gebruikt de app `;`.
+  2. Key `csv.decimalSeparator`, Value `,` (toegestaan: `,` of `.`).
+  - Exact deze spelling, geen spaties. Elke sleutel precies één keer.
+- **Wanneer welke waarde:** kies `csv.separator` gelijk aan de lijstscheiding van de pc's die de CSV openen (Windows: Taal en regio > Aanvullende instellingen > Lijstscheidingsteken). Pc's met verschillende lijstscheidingen kunnen niet tegelijk met dubbelklikken bediend worden; daar werkt Excel > Data > From Text/CSV.
+- **Daarna:** TP-EXPORT-02 c7 stap 5a/5b.
+
 ## Procedure — Nieuwe taal (H30)
 
 - **Wanneer:** een nieuwe rapport- of medewerkerstaal is nodig.
