@@ -105,8 +105,8 @@
                       "inputs": {
                         "parameters": {
                           "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
-                          "folderPath": "/Exports/@{triggerBody()?['text_1']}@{triggerBody()?['text_3']}",
-                          "name": "@triggerBody()?['text_1']",
+                          "folderPath": "/Exports/@{triggerBody()?['text']}",
+                          "name": "@{triggerBody()?['text_1']}.csv",
                           "body": "@triggerBody()?['text_3']"
                         },
                         "host": {
@@ -117,6 +117,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       },
                       "runtimeConfiguration": {
@@ -146,6 +151,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       }
                     },
@@ -184,7 +194,7 @@
                         },
                         "statusCode": 200,
                         "body": {
-                          "status": "Ok",
+                          "status": "OK",
                           "fileurl": "@{outputs('Get_file_properties')?['body/{Link}']}",
                           "message": "CSV saved"
                         }
@@ -216,6 +226,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       }
                     },
@@ -257,6 +272,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       }
                     },
@@ -281,6 +301,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       },
                       "runtimeConfiguration": {
@@ -300,7 +325,7 @@
                         "parameters": {
                           "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
                           "folderPath": "/Exports/@{triggerBody()?['text']}",
-                          "name": "@triggerBody()?['text_1']",
+                          "name": "@{triggerBody()?['text_1']}.pdf",
                           "body": "@body('Convert_file')"
                         },
                         "host": {
@@ -311,6 +336,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       },
                       "runtimeConfiguration": {
@@ -355,7 +385,7 @@
                         "statusCode": 200,
                         "body": {
                           "status": "OK",
-                          "fileurl": "@{outputs('Create_file_2')?['body/Path']}",
+                          "fileurl": "@{outputs('Get_file_properties_1')?['body/{Link}']}",
                           "message": "PDF saved"
                         }
                       }
@@ -381,6 +411,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       }
                     },
@@ -400,6 +435,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       }
                     },
@@ -422,6 +462,11 @@
                         "authentication": {
                           "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
                           "type": "Raw"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
                         }
                       }
                     }

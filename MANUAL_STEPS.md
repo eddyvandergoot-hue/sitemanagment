@@ -32,7 +32,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 | MS-034 | 13-11-2026 | Stap 1 done 14-11-2026 (Eddy); Require nog uit (wacht op Contractors-veld) |
 | MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language keuze + index; metadata ververst en samengevoegd 14-11-2026 |
 | MS-036 | 14-11-2026 | Gedaan (Eddy 14-11-2026) |
-| MS-037 | 16-11-2026 | Open (Eddy): flow "SiteManagement - Export file" corrigeren (CSV-map, extensies, retry) |
+| MS-037 | 16-11-2026 | Open (Eddy): fix1-pakket importeren (Update existing flow 22e34f1b) |
 
 ---
 
@@ -360,21 +360,23 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
   - F4 (klein): CSV antwoordt Status "Ok", PDF "OK". De app vergelijkt hoofdletterongevoelig; zet beide op "OK" volgens het contract.
   - F5 (klein): PDF FileUrl = `Create_file_2` body/Path (serverpad, niet klikbaar); CSV gebruikt Get file properties {Link}. Contract: FileUrl klikbaar. Zet PDF ook op Get file properties 1 > Link to item.
   - Gecontroleerd en goed: trigger (Power Apps V2) met Folder/FileName/Format/Content verplicht en TemplateName optioneel; Switch op Format met cases `csv` en `pdf` en default "Unknown format"; vier Respond-acties met status/fileurl/message; Catch-Respond draait na Try Failed/TimedOut; PDF-volgorde template -> header -> BODY -> HEADER -> OneDrive .html -> Convert -> SharePoint -> tijdelijk bestand verwijderen; geen concurrency-instelling op de trigger (er is dus geen wachtrij door de flowinstellingen).
-- **Stappen (Power Automate, make.powerautomate.com > My flows > SiteManagement - Export file > Edit):**
-  1. Klap **Try > Switch > Case_CSV** open, klik **Create file**.
-     - **Folder Path:** wis de inhoud en typ `/Exports/`; kies daarna uit Dynamic content (trigger "Power Apps (V2)") **Folder**. Resultaat: `/Exports/` + Folder, niets anders.
-     - **File Name:** wis de inhoud, kies **FileName** uit Dynamic content en typ direct erachter `.csv`.
-     - **File Content:** laat staan (Content).
-  2. Zelfde **Create file** > **...** > **Settings** > **Retry Policy** = **None** > Done.
-  3. Klap **Case_PDF** open, klik **Create file 2** (de SharePoint-actie na Convert file).
-     - **File Name:** wis de inhoud, kies **FileName** en typ direct erachter `.pdf`.
-     - **...** > **Settings** > **Retry Policy** = **None**.
-  4. Zet ook **Retry Policy = None** op: Get template, Get header, Create file 1 (OneDrive), Convert file, Delete file 1, Get file properties en Get file properties 1.
-  5. **Respond to a Power App or flow** (in Case_CSV): Status `OK` (hoofdletters).
-  6. **Respond to a Power App or flow 1** (in Case_PDF): FileUrl wissen en kiezen uit Dynamic content **Get file properties 1 > Link to item**.
-  7. **Save**. Annuleer de vastgelopen run: My flows > flow > Run history > open de run die Running staat > **Cancel run**.
-  8. Verwijder in Exports/TEST-000 een eventuele PDF zonder extensie (bestand `TEST_WeekReport_...` zonder `.pdf`) en een eventuele vreemde map die met `TEST_WeekReport` begint.
-- **Daarna:** TP-EXPORT-02 stap 2 opnieuw (Test Contracter 2): verwacht groen "Exported. Saved in Exports/TEST-000: ….pdf and ….csv", twee bestanden met extensie, run history twee runs Succeeded. Stuur na de wijziging een nieuwe flowexport naar Incoming\Flows, dan vergelijk ik hem met flows/SiteManagement-Export-file.definition.json.
+- **Werkwijze (Eddy 16-11-2026):** flowwijzigingen via import van een pakket, niet in de designer. Claude past alleen definition.json aan in een kopie van Eddy's export; manifest, connections en ID's blijven gelijk.
+- **Pakket fix1:** artifacts\flows\SiteManagement-Export-file-fix1.zip (4010 bytes, SHA-256 372AF1B4D3819AA1EE922990A58CD31EBCF89E35BD877433C0BA82DE34E2BDC4; niet in git). Gemaakt uit Incoming\Flows\Sitemanage-Exportfile_20261116094746.zip; alleen definition.json gewijzigd (de andere 4 entries byte-gelijk; terugdraaien van de 5 wijzigingen geeft exact het origineel).
+- **Wijzigingen in fix1:**
+  1. Case_CSV > Create file: Folder Path = `/Exports/@{triggerBody()?['text']}` (Folder).
+  2. File Name = `@{triggerBody()?['text_1']}.csv` (Case_CSV > Create file) en `@{triggerBody()?['text_1']}.pdf` (Case_PDF > Create file 2).
+  3. Retry Policy op alle 9 SharePoint/OneDrive-acties = fixed, 2 keer, interval PT5S (de app wacht synchroon; begrensd in plaats van de standaard tot 4 oplopende herhalingen).
+  4. CSV-antwoord Status = `OK`.
+  5. PDF-antwoord FileUrl = Get file properties 1 > Link (`body/{Link}`), klikbaar.
+- **Stappen (import):**
+  1. Annuleer eerst de vastgelopen run: make.powerautomate.com > My flows > SiteManagement - Export file > Run history (All runs) > open de run die Running staat > Cancel run.
+  2. My flows > **Import** > **Import Package (Legacy)** > **Upload** > kies `SiteManagement-Export-file-fix1.zip` > wacht tot het pakket gelezen is.
+  3. Bij de flow (Resource type Flow) > **Import setup** (Action "Create as new") > kies **Update** > selecteer de bestaande flow **SiteManagement - Export file** (ID 22e34f1b…) > **Save**. Niet "Create as new": dan krijgt de flow een nieuw ID en verliest de app de koppeling.
+  4. Bij de verbindingen (SharePoint en OneDrive for Business, Related resources) > **Select during import** > kies je bestaande verbinding > **Save**. Doe dit voor beide.
+  5. **Import** > wacht op "All package resources were successfully imported".
+  6. Open de flow > controleer bovenaan dat hij **On** staat (anders **Turn on**). Controleer in Details > Run only users dat SharePoint en OneDrive nog op "Provided by run-only user" staan (zoals voor de import).
+  7. Optioneel ter controle: Edit > Case_CSV > Create file toont Folder Path `/Exports/` + Folder en File Name FileName + `.csv`; ... > Settings bij een actie toont Retry Policy Fixed interval, Count 2, Interval PT5S. Niets opslaan als je niets wijzigt.
+  8. Ruim in Exports/TEST-000 een PDF zonder extensie op, en een eventuele vreemde map die met `TEST_WeekReport` begint.- **Daarna:** TP-EXPORT-02 stap 2 opnieuw (Test Contracter 2): verwacht groen "Exported. Saved in Exports/TEST-000: ….pdf and ….csv", twee bestanden met extensie, run history twee runs Succeeded. Stuur na de wijziging een nieuwe flowexport naar Incoming\Flows, dan vergelijk ik hem met flows/SiteManagement-Export-file.definition.json.
 ## Procedure — Nieuwe taal (H30)
 
 - **Wanneer:** een nieuwe rapport- of medewerkerstaal is nodig.
