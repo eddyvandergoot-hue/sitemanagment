@@ -46,6 +46,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-037 | 16-11-2026 | Done 16-11-2026 (Eddy): fix1 geïmporteerd als Update van flow 22e34f1b; TP-EXPORT-02 stap 2-4 PASS |
 | MS-038 | 16-11-2026 | Done 16-11-2026 (Eddy): AppSettings csv.separator "," en csv.decimalSeparator "," |
 | MS-039 | 16-11-2026 | Done 16-11-2026 (Eddy): 384 landregels in Translations (568) |
+| MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
 
 ---
 
@@ -414,6 +415,14 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   3. Controle: filter Language = Dutch geeft 71 items, Polish 71; totaal 568. Zoek `country.Netherlands`: 8 regels (Dutch Nederland, Polish Holandia).
   4. Vergelijk de keuzes van **Projects.Country** (lijst Projects > kolom Country > Column settings > Edit) met de landen in de CSV: de Key na `country.` moet exact de keuzewaarde zijn (de app negeert hoofdletters en spaties aan begin/eind). Staat een keuze er niet in, meld de exacte waarde aan Claude (dan komt er een regel per taal bij); zonder regel toont de PDF de Engelse keuzewaarde.
 - **Daarna:** TP-EXPORT-02 c8 stap 4.
+
+## MS-040 — Oude cloudkopieën van de app opruimen (later)
+
+- **Added:** 16-11-2026. **Status:** Open, later (Eddy). Niet nu.
+- **Reden:** v1.0.0 is gepubliceerd in de cloud-app "SiteManagement" (cloud App ID 5d595ec0-97d7-49f5-80b4-09a65cfa1e30; vervangt de oorspronkelijke "Site Managment"). Eerdere Studio-saves in de cloud staan nog als losse apps en worden niet gebruikt: 20261114-SiteManagement, 20261113-Site Management, Site Managment 10-11-2026, 20261104…, 20261102Components, 20261031…, 20261027…, 20262610…, 20261026… (2x).
+- **Waarom handmatig:** apps verwijderen kan alleen in make.powerapps.com (Apps > … > Delete); er is geen importroute.
+- **Stappen (pas na bevestiging, één voor één):** controleer per kopie dat het niet de cloud-app 5d595ec0-97d7-49f5-80b4-09a65cfa1e30 is (Details > App ID) en dat niemand hem gebruikt (gedeeld met / laatst geopend); verwijder daarna. Verwijder nooit "SiteManagement".
+- **Voorkomen:** Studio "Save as" voor Incoming altijd naar "This computer", nooit in de cloud.
 
 ## Procedure — Nieuwe taal (H30)
 

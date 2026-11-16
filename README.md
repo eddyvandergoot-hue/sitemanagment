@@ -31,6 +31,8 @@ One topic, one file. Other files link here instead of repeating content.
 | **Site Management** (app in Power Apps: "SiteManagement", hernoemd 13-11-2026; bronbestand blijft Site Managment_VS.msapr; SharePoint-site GEASiteManagment ongewijzigd) | Power Apps canvas + SharePoint Lists + Power Automate | `C:\Users\vandergoot.ed\Dev\Sitemanagment` | Private GitHub `eddyvandergoot-hue/sitemanagment` |
 | **pidtracker** | React/Vite + FastAPI/SQLite (+ React Three Fiber for 3D) | Linux ZBook + Windows | `eddyvandergoot-hue/PID-Tracker` |
 
+App IDs (two different things): **cloud App ID 5d595ec0-97d7-49f5-80b4-09a65cfa1e30** = the published app "SiteManagement" in Power Apps (v1.0.0, published 16-11-2026 by replacing the original cloud app "Site Managment"); **88e53928** = internal document ID inside the .msapp/.msapr (Properties.json), not the cloud App ID. Older cloud copies from earlier Studio saves are unused (cleanup: MANUAL_STEPS MS-040). Studio "Save as" for Incoming: always "This computer", never the cloud.
+
 Old OneDrive folder `OneDrive - GEA\Projects\Development\Sitemanagment\SiteManagement_20261019_232919` = read-only backup. Never write there.
 
 SharePoint site: `https://geacloud.sharepoint.com/sites/GEASiteManagment`  Lists: Projects, Employers, Workers, Project Workers, Hours.

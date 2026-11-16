@@ -4,6 +4,8 @@
 
 Goedgekeurd door Eddy op 16-11-2026 na de Studio-test TP-EXPORT-02 (c7-hertest en c8 stap 4 PASS). Tags: `v1.0.0` en `approved-20261116-weekreport-c8`. De Src van deze release is gelijk aan testbuild c8 (`weekreport-export-c8-20261116_201344`, SHA-256 `D76BD5A8557948213B0637EB763BC9586C00D2ED217BCC051DA803DC6B528BE8`).
 
+Gepubliceerd door Eddy op 16-11-2026 als cloud-app "SiteManagement" (vervangt de oorspronkelijke "Site Managment"; cloud App ID 5d595ec0-97d7-49f5-80b4-09a65cfa1e30).
+
 Power Apps canvas-app (Power Apps Studio, browser) op SharePoint-lijsten, met één Power Automate-flow voor het schrijven van exportbestanden. Bij deze release hoort geen .msapp en geen persoonsgegevens; het pakket maak je uit de bron (zie Publiceren).
 
 ### Inhoud

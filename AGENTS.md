@@ -22,6 +22,7 @@ Bestaande Power Apps canvas-app voor site management; bouw voort op de bestaande
 
 ## Bestaande app
 - Screen1 (zichtbaar "Project / team"): medewerkers selecteren en koppelen aan project en team. scrHours ("Weekly Hours"): uren invoeren in een weektabel, Mon t/m Sun. scrWeeklyHours ("Hours Summary"): administratieve samenvatting per week en medewerker/werkgever, met periodetotaal. Interne schermnamen en verwijzingen blijven.
+- Gepubliceerde app (v1.0.0, Eddy 16-11-2026): cloud-app "SiteManagement" (vervangt de oorspronkelijke "Site Managment"), cloud App ID 5d595ec0-97d7-49f5-80b4-09a65cfa1e30. 88e53928 is de interne document-ID in de .msapp/.msapr (Properties.json), niet de cloud App ID; niet verwarren. Publiceren alleen door Eddy. Studio "Save as" voor Incoming altijd "This computer", nooit in de cloud (oude cloudkopieën: MS-040).
 - Bronnen: Projects, Employers, Workers, 'Project Workers', Hours; SharePoint-site https://geacloud.sharepoint.com/sites/GEASiteManagment. Testbuilds gebruiken dezelfde site en lijst-ID's; wijzig of vervang verbindingen niet. Een testapp schrijft bij expliciet opslaan naar dezelfde gegevens.
 - Behoud Screen1, scrHours, bestaande verbindingen en werkende ureninvoer; wijzig ander onderdeel alleen indien noodzakelijk en licht dit toe. Latere onderdelen (nog niet gebouwd): beheerschermen (plan: ADMIN_PLAN.md), WorkPackages/planning/jobcards, foto's en bijlagen, documentgeneratie en consent agreements.
 
