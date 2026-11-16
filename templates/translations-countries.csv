@@ -1,0 +1,385 @@
+﻿Key;Language;Text
+country.Austria;Dutch;Oostenrijk
+country.Austria;English;Austria
+country.Austria;Polish;Austria
+country.Austria;Czech;Rakousko
+country.Austria;Romanian;Austria
+country.Austria;Ukrainian;Австрія
+country.Austria;German;Österreich
+country.Austria;French;Autriche
+country.Belgium;Dutch;België
+country.Belgium;English;Belgium
+country.Belgium;Polish;Belgia
+country.Belgium;Czech;Belgie
+country.Belgium;Romanian;Belgia
+country.Belgium;Ukrainian;Бельгія
+country.Belgium;German;Belgien
+country.Belgium;French;Belgique
+country.Bulgaria;Dutch;Bulgarije
+country.Bulgaria;English;Bulgaria
+country.Bulgaria;Polish;Bułgaria
+country.Bulgaria;Czech;Bulharsko
+country.Bulgaria;Romanian;Bulgaria
+country.Bulgaria;Ukrainian;Болгарія
+country.Bulgaria;German;Bulgarien
+country.Bulgaria;French;Bulgarie
+country.Croatia;Dutch;Kroatië
+country.Croatia;English;Croatia
+country.Croatia;Polish;Chorwacja
+country.Croatia;Czech;Chorvatsko
+country.Croatia;Romanian;Croația
+country.Croatia;Ukrainian;Хорватія
+country.Croatia;German;Kroatien
+country.Croatia;French;Croatie
+country.Cyprus;Dutch;Cyprus
+country.Cyprus;English;Cyprus
+country.Cyprus;Polish;Cypr
+country.Cyprus;Czech;Kypr
+country.Cyprus;Romanian;Cipru
+country.Cyprus;Ukrainian;Кіпр
+country.Cyprus;German;Zypern
+country.Cyprus;French;Chypre
+country.Czechia;Dutch;Tsjechië
+country.Czechia;English;Czechia
+country.Czechia;Polish;Czechy
+country.Czechia;Czech;Česko
+country.Czechia;Romanian;Cehia
+country.Czechia;Ukrainian;Чехія
+country.Czechia;German;Tschechien
+country.Czechia;French;Tchéquie
+country.Czech Republic;Dutch;Tsjechië
+country.Czech Republic;English;Czech Republic
+country.Czech Republic;Polish;Czechy
+country.Czech Republic;Czech;Česká republika
+country.Czech Republic;Romanian;Republica Cehă
+country.Czech Republic;Ukrainian;Чехія
+country.Czech Republic;German;Tschechien
+country.Czech Republic;French;République tchèque
+country.Denmark;Dutch;Denemarken
+country.Denmark;English;Denmark
+country.Denmark;Polish;Dania
+country.Denmark;Czech;Dánsko
+country.Denmark;Romanian;Danemarca
+country.Denmark;Ukrainian;Данія
+country.Denmark;German;Dänemark
+country.Denmark;French;Danemark
+country.Estonia;Dutch;Estland
+country.Estonia;English;Estonia
+country.Estonia;Polish;Estonia
+country.Estonia;Czech;Estonsko
+country.Estonia;Romanian;Estonia
+country.Estonia;Ukrainian;Естонія
+country.Estonia;German;Estland
+country.Estonia;French;Estonie
+country.Finland;Dutch;Finland
+country.Finland;English;Finland
+country.Finland;Polish;Finlandia
+country.Finland;Czech;Finsko
+country.Finland;Romanian;Finlanda
+country.Finland;Ukrainian;Фінляндія
+country.Finland;German;Finnland
+country.Finland;French;Finlande
+country.France;Dutch;Frankrijk
+country.France;English;France
+country.France;Polish;Francja
+country.France;Czech;Francie
+country.France;Romanian;Franța
+country.France;Ukrainian;Франція
+country.France;German;Frankreich
+country.France;French;France
+country.Germany;Dutch;Duitsland
+country.Germany;English;Germany
+country.Germany;Polish;Niemcy
+country.Germany;Czech;Německo
+country.Germany;Romanian;Germania
+country.Germany;Ukrainian;Німеччина
+country.Germany;German;Deutschland
+country.Germany;French;Allemagne
+country.Greece;Dutch;Griekenland
+country.Greece;English;Greece
+country.Greece;Polish;Grecja
+country.Greece;Czech;Řecko
+country.Greece;Romanian;Grecia
+country.Greece;Ukrainian;Греція
+country.Greece;German;Griechenland
+country.Greece;French;Grèce
+country.Hungary;Dutch;Hongarije
+country.Hungary;English;Hungary
+country.Hungary;Polish;Węgry
+country.Hungary;Czech;Maďarsko
+country.Hungary;Romanian;Ungaria
+country.Hungary;Ukrainian;Угорщина
+country.Hungary;German;Ungarn
+country.Hungary;French;Hongrie
+country.Ireland;Dutch;Ierland
+country.Ireland;English;Ireland
+country.Ireland;Polish;Irlandia
+country.Ireland;Czech;Irsko
+country.Ireland;Romanian;Irlanda
+country.Ireland;Ukrainian;Ірландія
+country.Ireland;German;Irland
+country.Ireland;French;Irlande
+country.Italy;Dutch;Italië
+country.Italy;English;Italy
+country.Italy;Polish;Włochy
+country.Italy;Czech;Itálie
+country.Italy;Romanian;Italia
+country.Italy;Ukrainian;Італія
+country.Italy;German;Italien
+country.Italy;French;Italie
+country.Latvia;Dutch;Letland
+country.Latvia;English;Latvia
+country.Latvia;Polish;Łotwa
+country.Latvia;Czech;Lotyšsko
+country.Latvia;Romanian;Letonia
+country.Latvia;Ukrainian;Латвія
+country.Latvia;German;Lettland
+country.Latvia;French;Lettonie
+country.Lithuania;Dutch;Litouwen
+country.Lithuania;English;Lithuania
+country.Lithuania;Polish;Litwa
+country.Lithuania;Czech;Litva
+country.Lithuania;Romanian;Lituania
+country.Lithuania;Ukrainian;Литва
+country.Lithuania;German;Litauen
+country.Lithuania;French;Lituanie
+country.Luxembourg;Dutch;Luxemburg
+country.Luxembourg;English;Luxembourg
+country.Luxembourg;Polish;Luksemburg
+country.Luxembourg;Czech;Lucembursko
+country.Luxembourg;Romanian;Luxemburg
+country.Luxembourg;Ukrainian;Люксембург
+country.Luxembourg;German;Luxemburg
+country.Luxembourg;French;Luxembourg
+country.Malta;Dutch;Malta
+country.Malta;English;Malta
+country.Malta;Polish;Malta
+country.Malta;Czech;Malta
+country.Malta;Romanian;Malta
+country.Malta;Ukrainian;Мальта
+country.Malta;German;Malta
+country.Malta;French;Malte
+country.Netherlands;Dutch;Nederland
+country.Netherlands;English;Netherlands
+country.Netherlands;Polish;Holandia
+country.Netherlands;Czech;Nizozemsko
+country.Netherlands;Romanian;Țările de Jos
+country.Netherlands;Ukrainian;Нідерланди
+country.Netherlands;German;Niederlande
+country.Netherlands;French;Pays-Bas
+country.Poland;Dutch;Polen
+country.Poland;English;Poland
+country.Poland;Polish;Polska
+country.Poland;Czech;Polsko
+country.Poland;Romanian;Polonia
+country.Poland;Ukrainian;Польща
+country.Poland;German;Polen
+country.Poland;French;Pologne
+country.Portugal;Dutch;Portugal
+country.Portugal;English;Portugal
+country.Portugal;Polish;Portugalia
+country.Portugal;Czech;Portugalsko
+country.Portugal;Romanian;Portugalia
+country.Portugal;Ukrainian;Португалія
+country.Portugal;German;Portugal
+country.Portugal;French;Portugal
+country.Romania;Dutch;Roemenië
+country.Romania;English;Romania
+country.Romania;Polish;Rumunia
+country.Romania;Czech;Rumunsko
+country.Romania;Romanian;România
+country.Romania;Ukrainian;Румунія
+country.Romania;German;Rumänien
+country.Romania;French;Roumanie
+country.Slovakia;Dutch;Slowakije
+country.Slovakia;English;Slovakia
+country.Slovakia;Polish;Słowacja
+country.Slovakia;Czech;Slovensko
+country.Slovakia;Romanian;Slovacia
+country.Slovakia;Ukrainian;Словаччина
+country.Slovakia;German;Slowakei
+country.Slovakia;French;Slovaquie
+country.Slovenia;Dutch;Slovenië
+country.Slovenia;English;Slovenia
+country.Slovenia;Polish;Słowenia
+country.Slovenia;Czech;Slovinsko
+country.Slovenia;Romanian;Slovenia
+country.Slovenia;Ukrainian;Словенія
+country.Slovenia;German;Slowenien
+country.Slovenia;French;Slovénie
+country.Spain;Dutch;Spanje
+country.Spain;English;Spain
+country.Spain;Polish;Hiszpania
+country.Spain;Czech;Španělsko
+country.Spain;Romanian;Spania
+country.Spain;Ukrainian;Іспанія
+country.Spain;German;Spanien
+country.Spain;French;Espagne
+country.Sweden;Dutch;Zweden
+country.Sweden;English;Sweden
+country.Sweden;Polish;Szwecja
+country.Sweden;Czech;Švédsko
+country.Sweden;Romanian;Suedia
+country.Sweden;Ukrainian;Швеція
+country.Sweden;German;Schweden
+country.Sweden;French;Suède
+country.United Kingdom;Dutch;Verenigd Koninkrijk
+country.United Kingdom;English;United Kingdom
+country.United Kingdom;Polish;Wielka Brytania
+country.United Kingdom;Czech;Spojené království
+country.United Kingdom;Romanian;Regatul Unit
+country.United Kingdom;Ukrainian;Велика Британія
+country.United Kingdom;German;Vereinigtes Königreich
+country.United Kingdom;French;Royaume-Uni
+country.Norway;Dutch;Noorwegen
+country.Norway;English;Norway
+country.Norway;Polish;Norwegia
+country.Norway;Czech;Norsko
+country.Norway;Romanian;Norvegia
+country.Norway;Ukrainian;Норвегія
+country.Norway;German;Norwegen
+country.Norway;French;Norvège
+country.Switzerland;Dutch;Zwitserland
+country.Switzerland;English;Switzerland
+country.Switzerland;Polish;Szwajcaria
+country.Switzerland;Czech;Švýcarsko
+country.Switzerland;Romanian;Elveția
+country.Switzerland;Ukrainian;Швейцарія
+country.Switzerland;German;Schweiz
+country.Switzerland;French;Suisse
+country.Iceland;Dutch;IJsland
+country.Iceland;English;Iceland
+country.Iceland;Polish;Islandia
+country.Iceland;Czech;Island
+country.Iceland;Romanian;Islanda
+country.Iceland;Ukrainian;Ісландія
+country.Iceland;German;Island
+country.Iceland;French;Islande
+country.Serbia;Dutch;Servië
+country.Serbia;English;Serbia
+country.Serbia;Polish;Serbia
+country.Serbia;Czech;Srbsko
+country.Serbia;Romanian;Serbia
+country.Serbia;Ukrainian;Сербія
+country.Serbia;German;Serbien
+country.Serbia;French;Serbie
+country.Ukraine;Dutch;Oekraïne
+country.Ukraine;English;Ukraine
+country.Ukraine;Polish;Ukraina
+country.Ukraine;Czech;Ukrajina
+country.Ukraine;Romanian;Ucraina
+country.Ukraine;Ukrainian;Україна
+country.Ukraine;German;Ukraine
+country.Ukraine;French;Ukraine
+country.Turkey;Dutch;Turkije
+country.Turkey;English;Turkey
+country.Turkey;Polish;Turcja
+country.Turkey;Czech;Turecko
+country.Turkey;Romanian;Turcia
+country.Turkey;Ukrainian;Туреччина
+country.Turkey;German;Türkei
+country.Turkey;French;Turquie
+country.Türkiye;Dutch;Turkije
+country.Türkiye;English;Türkiye
+country.Türkiye;Polish;Turcja
+country.Türkiye;Czech;Turecko
+country.Türkiye;Romanian;Turcia
+country.Türkiye;Ukrainian;Туреччина
+country.Türkiye;German;Türkei
+country.Türkiye;French;Turquie
+country.United States;Dutch;Verenigde Staten
+country.United States;English;United States
+country.United States;Polish;Stany Zjednoczone
+country.United States;Czech;Spojené státy
+country.United States;Romanian;Statele Unite
+country.United States;Ukrainian;Сполучені Штати
+country.United States;German;Vereinigte Staaten
+country.United States;French;États-Unis
+country.Canada;Dutch;Canada
+country.Canada;English;Canada
+country.Canada;Polish;Kanada
+country.Canada;Czech;Kanada
+country.Canada;Romanian;Canada
+country.Canada;Ukrainian;Канада
+country.Canada;German;Kanada
+country.Canada;French;Canada
+country.Mexico;Dutch;Mexico
+country.Mexico;English;Mexico
+country.Mexico;Polish;Meksyk
+country.Mexico;Czech;Mexiko
+country.Mexico;Romanian;Mexic
+country.Mexico;Ukrainian;Мексика
+country.Mexico;German;Mexiko
+country.Mexico;French;Mexique
+country.Brazil;Dutch;Brazilië
+country.Brazil;English;Brazil
+country.Brazil;Polish;Brazylia
+country.Brazil;Czech;Brazílie
+country.Brazil;Romanian;Brazilia
+country.Brazil;Ukrainian;Бразилія
+country.Brazil;German;Brasilien
+country.Brazil;French;Brésil
+country.China;Dutch;China
+country.China;English;China
+country.China;Polish;Chiny
+country.China;Czech;Čína
+country.China;Romanian;China
+country.China;Ukrainian;Китай
+country.China;German;China
+country.China;French;Chine
+country.India;Dutch;India
+country.India;English;India
+country.India;Polish;Indie
+country.India;Czech;Indie
+country.India;Romanian;India
+country.India;Ukrainian;Індія
+country.India;German;Indien
+country.India;French;Inde
+country.Singapore;Dutch;Singapore
+country.Singapore;English;Singapore
+country.Singapore;Polish;Singapur
+country.Singapore;Czech;Singapur
+country.Singapore;Romanian;Singapore
+country.Singapore;Ukrainian;Сінгапур
+country.Singapore;German;Singapur
+country.Singapore;French;Singapour
+country.Australia;Dutch;Australië
+country.Australia;English;Australia
+country.Australia;Polish;Australia
+country.Australia;Czech;Austrálie
+country.Australia;Romanian;Australia
+country.Australia;Ukrainian;Австралія
+country.Australia;German;Australien
+country.Australia;French;Australie
+country.Saudi Arabia;Dutch;Saoedi-Arabië
+country.Saudi Arabia;English;Saudi Arabia
+country.Saudi Arabia;Polish;Arabia Saudyjska
+country.Saudi Arabia;Czech;Saúdská Arábie
+country.Saudi Arabia;Romanian;Arabia Saudită
+country.Saudi Arabia;Ukrainian;Саудівська Аравія
+country.Saudi Arabia;German;Saudi-Arabien
+country.Saudi Arabia;French;Arabie saoudite
+country.United Arab Emirates;Dutch;Verenigde Arabische Emiraten
+country.United Arab Emirates;English;United Arab Emirates
+country.United Arab Emirates;Polish;Zjednoczone Emiraty Arabskie
+country.United Arab Emirates;Czech;Spojené arabské emiráty
+country.United Arab Emirates;Romanian;Emiratele Arabe Unite
+country.United Arab Emirates;Ukrainian;Обʼєднані Арабські Емірати
+country.United Arab Emirates;German;Vereinigte Arabische Emirate
+country.United Arab Emirates;French;Émirats arabes unis
+country.Qatar;Dutch;Qatar
+country.Qatar;English;Qatar
+country.Qatar;Polish;Katar
+country.Qatar;Czech;Katar
+country.Qatar;Romanian;Qatar
+country.Qatar;Ukrainian;Катар
+country.Qatar;German;Katar
+country.Qatar;French;Qatar
+country.South Africa;Dutch;Zuid-Afrika
+country.South Africa;English;South Africa
+country.South Africa;Polish;Republika Południowej Afryki
+country.South Africa;Czech;Jihoafrická republika
+country.South Africa;Romanian;Africa de Sud
+country.South Africa;Ukrainian;Південна Африка
+country.South Africa;German;Südafrika
+country.South Africa;French;Afrique du Sud
