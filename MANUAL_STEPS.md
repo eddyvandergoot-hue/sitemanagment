@@ -382,7 +382,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-038 — AppSettings: CSV-scheidingsteken en decimaalteken
 
-- **Added:** 16-11-2026. **Status:** Open (Eddy).
+- **Added:** 16-11-2026. **Status:** Done 16-11-2026 (Eddy): csv.separator `,` en csv.decimalSeparator `,` toegevoegd; TP-EXPORT-02 c7 stap 5a PASS (Excel Hours 7,5 en 3 elk in één kolom), 5c PASS.
 - **Reden:** TP-EXPORT-02 c6 stap 5 (Eddy 16-11-2026): de GEA-pc's hebben decimaal "," en lijstscheiding ","; Excel splitste 7,5 in 7 | 5. Vanaf build c7 zet de app alle tekst-, datum- en urenvelden tussen aanhalingstekens en leest het scheidingsteken en het decimaalteken uit AppSettings (DECISIONS H32). Excel splitst bij dubbelklikken op de lijstscheiding van de pc: "7,5" blijft één veld zodra csv.separator gelijk is aan die lijstscheiding. Excel > Data > From Text/CSV werkt altijd (scheidingsteken kiezen in het venster). Ontbreekt een sleutel, dan geldt de standaard; een dubbele sleutel of een andere waarde geeft rood (geen export).
 - **Stappen:** SharePoint GEASiteManagment > lijst **AppSettings** > **+ New** (twee keer):
   1. Key `csv.separator`, Value `,` (toegestaan: `;` of `,`). Voor de GEA-pc's met lijstscheiding "," is `,` naar verwachting juist; stap 5a van TP-EXPORT-02 c7 beslist. Zonder deze regel gebruikt de app `;`.
@@ -393,7 +393,7 @@ SharePoint and Power Automate changes that Claude Code cannot make. Done by hand
 
 ## MS-039 — Translations: landnamen (country.*) plakken
 
-- **Added:** 16-11-2026. **Status:** Open (Eddy).
+- **Added:** 16-11-2026. **Status:** Done 16-11-2026 (Eddy): 384 landregels geplakt, Translations 568 items; TP-EXPORT-02 c8 stap 4 PASS (Land Nederland / Kraj Holandia).
 - **Reden:** v1.0.0 (Eddy 16-11-2026): het Land in het PDF-infoblok (Projects.Country) moet in de paginataal staan; nu staat overal "Netherlands". Vanaf build c8 leest de app de vertaling uit Translations, Key `country.<keuzewaarde>` (DECISIONS H33). Ontbreekt een regel, dan toont de PDF de ruwe waarde (geen blokkade).
 - **Bron:** templates/translations-countries.csv: 384 regels = 48 landen x 8 talen (UTF-8 met BOM, scheiding ";", kop Key;Language;Text). Daarna Translations 568 items (184 + 384); per taal 71 (ruim onder de 500-grens).
 - **Stappen:**
