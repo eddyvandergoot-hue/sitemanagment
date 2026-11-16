@@ -20,9 +20,9 @@
         },
         "provisioningMethod": "FromDefinition",
         "failureAlertSubscription": true,
-        "clientLastModifiedTime": "2026-11-16T09:29:22.8332394Z",
+        "clientLastModifiedTime": "2026-11-16T10:34:37.6190805Z",
         "lastModifiedBy": "<redacted>",
-        "connectionKeySavedTimeKey": "2026-11-16T09:29:22.8332394Z",
+        "connectionKeySavedTimeKey": "2026-11-16T10:31:30.3897935Z",
         "creationSource": "Portal",
         "modifiedSources": "Portal"
       },
