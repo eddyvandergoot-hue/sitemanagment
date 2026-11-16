@@ -47,6 +47,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-038 | 16-11-2026 | Done 16-11-2026 (Eddy): AppSettings csv.separator "," en csv.decimalSeparator "," |
 | MS-039 | 16-11-2026 | Done 16-11-2026 (Eddy): 384 landregels in Translations (568) |
 | MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
+| MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
 
 ---
 
@@ -423,6 +424,13 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 - **Waarom handmatig:** apps verwijderen kan alleen in make.powerapps.com (Apps > … > Delete); er is geen importroute.
 - **Stappen (pas na bevestiging, één voor één):** controleer per kopie dat het niet de cloud-app 5d595ec0-97d7-49f5-80b4-09a65cfa1e30 is (Details > App ID) en dat niemand hem gebruikt (gedeeld met / laatst geopend); verwijder daarna. Verwijder nooit "SiteManagement".
 - **Voorkomen:** Studio "Save as" voor Incoming altijd naar "This computer", nooit in de cloud.
+
+## MS-041 — Verbinding Microsoft Translator V2 (H34)
+
+- **Added/Done:** 16-11-2026 (Eddy). **Status:** Done.
+- **Uitgevoerd:** in Power Automate een verbinding "Translator SiteManagement" voor de connector Microsoft Translator V2 (Standard), zonder subscription key. Status Connected, geen DLP-blokkade. Microsoft Translator V3 is afgewezen (vereist een Azure-resource).
+- **Waarom handmatig:** een verbinding aanmaken vraagt om je eigen aanmelding; er is geen importroute.
+- **Daarna (bij de bouw van werkpakketten):** Claude levert de vertaalflow als importpakket (Create as new). Bij het importeren kies je deze verbinding.
 
 ## Procedure — Nieuwe taal (H30)
 

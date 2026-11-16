@@ -159,6 +159,45 @@ De grootte is een schatting: S = één bouwronde, M = 2-3 rondes, L = meerdere r
 
 J kan los, na Eddy's privacybesluit.
 
+### 5.1 Ontwerp: vertaling van werkinstructies (H34, Eddy 16-11-2026; niet gebouwd)
+
+**Doel:** de job card ook in de taal van het team of de contractor (taal 2), zonder alles met de hand te vertalen.
+
+**SharePoint, lijst WorkPackages** (deel van onderdeel D). Naast de bestaande velden Work Instructions en Completion Check (taal 1):
+- `Language2`: keuze, dezelfde 8 waarden als Workers/Employers/Translations (H30);
+- `Work Instructions 2` en `Completion Check 2`: meerdere regels tekst;
+- `Translation Status`: keuze Draft / Checked, standaard leeg;
+- `Translation Checked By`: persoon;
+- `Translation Checked`: datum.
+
+De kolomnamen worden definitief bij het maken van de lijst (.xlsx-import) en daarna in de metadata gecontroleerd.
+
+**Flow "SiteManagement - Translate text"** (nieuw, importpakket, Create as new):
+- **Trigger:** Power Apps V2 met de invoer `text`, `from` en `to` (ISO 639-1-codes, zelfde mapping als de Week Report-export: nl, en, pl, cs, ro, uk, de, fr).
+- **Actie:** Microsoft Translator V2 "Translate text" via de verbinding "Translator SiteManagement" (MS-041).
+- **Respond:** `status` (OK | Error), `text`, `message`.
+- Geen andere stappen, geen opslag en geen bedrijfslogica. De exacte operationId en parameternamen van de connectoractie worden bij de bouw gecontroleerd; niets verzinnen.
+
+**App, scherm WorkPackages (beheerpatroon):**
+1. Knop "Translate" (secundair) naast de taal-2-velden. Actief alleen als er een record geselecteerd is, `Language2` gevuld en anders dan taal 1, taal 1 niet leeg, en er geen onopgeslagen wijziging of lopende load/save is. Dezelfde voorwaarde geldt als eerste OnSelect-voorwaarde.
+2. Twee aanroepen, één per veld; alleen die twee velden worden verstuurd.
+3. Het resultaat komt in de concepttekst van `Work Instructions 2` / `Completion Check 2` en de status wordt Draft. Er wordt niet automatisch opgeslagen: Eddy controleert, past aan en slaat op met Save.
+4. Fout, limiet of storing: amber "Not translated. <reden>. Paste the translation manually." De velden blijven bewerkbaar, dus handmatig plakken kan altijd.
+5. "Mark checked" (of de switch Checked) zet Checked, Checked By (huidige gebruiker) en de datum. Elke latere wijziging van taal 1 of taal 2 zet de status terug naar Draft.
+
+**Job card (onderdeel F):**
+- Taal 2 wordt alleen afgedrukt bij status Checked.
+- Bij Draft of een lege status komt alleen taal 1 in de PDF, met de amber melding "Language 2 not checked; job card in <taal 1> only".
+- De vaste labels van de job card komen uit Translations (doc.jc*-sleutels), net als bij het Week Report.
+
+**Privacy en grenzen:**
+- Alleen instructietekst gaat naar Microsoft Translator. Daarom staan in de UI-hint en in AGENTS: geen namen, telefoonnummers of adressen in deze velden.
+- Er gaan geen persoonsvelden of -records naar de flow.
+- Lange teksten: de limiet van de connector wordt bij de bouw gecontroleerd. Boven de limiet volgt een melding en handmatig plakken; er wordt niet stilzwijgend afgekapt.
+- Wit-Russisch (`be`) alleen als V6 "ja" is en Translator V2 de taal ondersteunt.
+
+**Grootte:** S bovenop D (één flowpakket, twee knoppen, vijf kolommen).
+
 ## 6. Vragen voor Eddy
 
 1. **V1 Consent-tekst:** de consent en het veiligheidsplan zijn nu invulbare PDF's per taal. Mogen de vaste teksten als HTML-template nagebouwd worden (teksten per taal in Translations)? Of moet het originele PDF-formulier blijven? Dat laatste kan niet met standaardconnectors (premium Adobe/Encodian nodig). Wie is eigenaar van de juridische tekst?
@@ -170,7 +209,7 @@ J kan los, na Eddy's privacybesluit.
 7. **V7 Job Card-bijlagen:** PDF-bijlagen achter de job card samenvoegen kan alleen met een premium connector. Is een job card met een lijst links naar de bijlagen voldoende, met foto's in de PDF?
 8. **V8 P&ID-onderdelen:** het werkboek bevat geen P&ID-gegevens, alleen "Drawing Reference" per WP. Wat bedoel je met P&ID parts: koppeling met de P&ID-tracker (ander project) of een onderdelenlijst per WP?
 9. **V9 Werkpakketten per project of per team:** de WP-ID is in Excel per werkboek (= project) uniek. In de app WP-<ID> globaal, of `<projectnummer>-WP-###`?
-10. **V10 Talen van de Job Card:** alleen Engels zoals nu, of ook in de taal van het team/contractor?
+10. **V10 Talen van de Job Card** (deels beantwoord 16-11-2026: taal 2 via Translator, H34 en 5.1; open: is de job card altijd tweetalig, of alleen als Language2 gevuld is?): alleen Engels zoals nu, of ook in de taal van het team/contractor?
 
 ## 7. Niet migreren
 - Het brede urenraster (kolom per medewerker), de Power Query HoursLog en de herstelmacro: vervangen door de lijst Hours.
