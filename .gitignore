@@ -54,3 +54,8 @@ Assets/Icons/*.zip
 
 # 3D: separate side track (Eddy 13-11-2026), not part of the app
 3D/
+# Excel workbooks (customer/personal data; Eddy 16-11-2026): never commit
+*.xlsm
+*.xlsx
+*.xlsb
+*.xls

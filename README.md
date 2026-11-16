@@ -10,6 +10,7 @@ Power Apps canvas app on SharePoint Lists for GEA site management: project/team 
 | Rules: data, keys, load/save safety, delegation, way of working, GEA colors/fonts, week labels, export spec | **AGENTS.md** | Yes |
 | Current status, current baseline build, open items | **PROJECT_STATUS.md** | Yes |
 | Released versions (scope, known limits, publishing) | RELEASE_NOTES.md | No |
+| Excel/VBA migration inventory (structure, mapping, proposals, questions) | EXCEL_MIGRATION.md | No |
 | Plan, phases, open decisions | **ROADMAP.md** | Only when the task says so |
 | Build plan admin screens (Contractors, Projects, Workers) | **ADMIN_PLAN.md** | Only when the task says so |
 | Plan Week Report + PDF/CSV export (decisions taken, phase A built) | **WEEKREPORT_PLAN.md** | Only when the task says so |
@@ -48,7 +49,7 @@ Sitemanagment/
 │  └─ <build-name>/          Packed test builds (*.msapp) — git-ignored
 ├─ templates/                PDF templates (header.html, weekreport.html, sample-body.html; DECISIONS.md H25, copy in SP library Templates)
 ├─ .claude/agents/          Subagents: powerfx-logic, powerfx-ui, verifier, reviewer, docs-keeper
-├─ README.md  AGENTS.md  PROJECT_STATUS.md  RELEASE_NOTES.md  ROADMAP.md  ADMIN_PLAN.md  WEEKREPORT_PLAN.md  WELDSTICKERS_PLAN.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md  SECURITY.md  RISK_ANALYSIS.md  *_ARCHIVE.md
+├─ README.md  AGENTS.md  PROJECT_STATUS.md  RELEASE_NOTES.md  EXCEL_MIGRATION.md  ROADMAP.md  ADMIN_PLAN.md  WEEKREPORT_PLAN.md  WELDSTICKERS_PLAN.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md  SECURITY.md  RISK_ANALYSIS.md  *_ARCHIVE.md
 └─ Assets/ (GEA logo, only GEA_logo_white.svg tracked)  .gitignore
 ```
 
