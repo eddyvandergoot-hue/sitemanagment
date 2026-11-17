@@ -174,6 +174,24 @@ if (Test-Path $cPath) {
     Check (@($ckeys | Where-Object { $map.ContainsKey("$_|Dutch") }).Count -eq 0) 'countries CSV: no overlap with the doc.* keys'
     Check ((23 + $ckeys.Count) -lt 500) "Translations per language below the 500-row read limit (23 doc + $($ckeys.Count) country)"
   }
+  # Consent texts (H36, Eddy 17-11-2026): consent.idShown + consent.footer in the 8 app languages + Belarusian (V6)
+  $nPath = Join-Path $tpl 'translations-consent.csv'
+  Check (Test-Path $nPath) 'translations-consent.csv exists'
+  if (Test-Path $nPath) {
+    $nb = Read-SharedBytes $nPath
+    Check ($nb.Length -ge 3 -and $nb[0] -eq 0xEF -and $nb[1] -eq 0xBB -and $nb[2] -eq 0xBF) 'consent CSV: UTF-8 BOM'
+    $nl = @((ReadText $nPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
+    Check ($nl[0] -ceq 'Key;Language;Text') 'consent CSV: header Key;Language;Text'
+    $nmap = @{}; $nbad = 0
+    foreach ($ln in $nl[1..($nl.Count - 1)]) { $f = $ln -split ';'; if ($f.Count -ne 3 -or $f[0] -notmatch '^consent\.\w+$' -or $f[2].Trim() -eq '' -or $f[2] -ne $f[2].Trim()) { $nbad++; continue }; $nmap["$($f[0])|$($f[1])"] = $f[2] }
+    Check ($nbad -eq 0 -and ($nl.Count - 1) -eq $nmap.Count) 'consent CSV: every row 3 fields, key consent.<name>, text not empty, no duplicates'
+    $nlangs = @($langs) + 'Belarusian'
+    $nmiss = @(foreach ($k in 'consent.idShown', 'consent.footer') { foreach ($l in $nlangs) { if (-not $nmap.ContainsKey("$k|$l")) { "$k|$l" } } })
+    Check ($nmiss.Count -eq 0 -and ($nl.Count - 1) -eq 18) "consent CSV: consent.idShown + consent.footer x 9 languages = 18 rows$(if ($nmiss) { ' - missing ' + ($nmiss -join ', ') })"
+    Check ($nmap['consent.idShown|Dutch'] -ceq 'Paspoort/ID getoond') 'consent CSV: Dutch consent.idShown = "Paspoort/ID getoond" (H36)'
+    $nf = @(foreach ($l in $nlangs) { $t = $nmap["consent.footer|$l"]; if ($t -notmatch '^GEA INTERNAL \| ' -or $t -notmatch 'FOR-010\.040 \(20-03-2023\)' -or $t -notmatch '\{page\}' -or $t -notmatch '\{pages\}') { $l } })
+    Check ($nf.Count -eq 0) "consent CSV: footer starts with GEA INTERNAL, names FOR-010.040 (20-03-2023), has {page} and {pages} in every language$(if ($nf) { ' - ' + ($nf -join ', ') })"
+  }
   # Sample info block labels = CSV texts (nl = Dutch, en = English)
   foreach ($sec in $secs) {
     $lg = $sec.Groups[1].Value; $ln = @{ nl = 'Dutch'; en = 'English' }[$lg]

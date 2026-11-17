@@ -1,0 +1,19 @@
+﻿Key;Language;Text
+consent.idShown;Dutch;Paspoort/ID getoond
+consent.idShown;English;Passport/ID shown
+consent.idShown;Polish;Paszport/dowód osobisty okazany
+consent.idShown;Czech;Pas/průkaz totožnosti předložen
+consent.idShown;Romanian;Pașaport/act de identitate prezentat
+consent.idShown;Ukrainian;Паспорт/посвідчення особи предʼявлено
+consent.idShown;German;Reisepass/Ausweis vorgezeigt
+consent.idShown;French;Passeport/pièce d'identité présenté
+consent.idShown;Belarusian;Пашпарт/пасведчанне асобы прадʼяўлена
+consent.footer;Dutch;GEA INTERNAL | gebaseerd op FOR-010.040 (20-03-2023) | app-versie | Nederlandse versie | Pagina {page} van {pages}
+consent.footer;English;GEA INTERNAL | based on FOR-010.040 (20-03-2023) | app version | English version | Page {page} of {pages}
+consent.footer;Polish;GEA INTERNAL | na podstawie FOR-010.040 (20-03-2023) | wersja aplikacji | wersja polska | Strona {page} z {pages}
+consent.footer;Czech;GEA INTERNAL | podle FOR-010.040 (20-03-2023) | verze aplikace | česká verze | Strana {page} z {pages}
+consent.footer;Romanian;GEA INTERNAL | pe baza FOR-010.040 (20-03-2023) | versiunea aplicației | versiunea în limba română | Pagina {page} din {pages}
+consent.footer;Ukrainian;GEA INTERNAL | на основі FOR-010.040 (20-03-2023) | версія застосунку | українська версія | Сторінка {page} з {pages}
+consent.footer;German;GEA INTERNAL | basierend auf FOR-010.040 (20-03-2023) | App-Version | deutsche Version | Seite {page} von {pages}
+consent.footer;French;GEA INTERNAL | d'après FOR-010.040 (20-03-2023) | version application | version française | Page {page} sur {pages}
+consent.footer;Belarusian;GEA INTERNAL | на аснове FOR-010.040 (20-03-2023) | версія праграмы | беларуская версія | Старонка {page} з {pages}

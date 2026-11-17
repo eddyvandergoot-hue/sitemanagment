@@ -48,6 +48,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-039 | 16-11-2026 | Done 16-11-2026 (Eddy): 384 landregels in Translations (568) |
 | MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
 | MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
+| MS-042 | 17-11-2026 | Open (Eddy): consentteksten plakken in Translations (translations-consent.csv); niet dringend |
 
 ---
 
@@ -431,6 +432,17 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 - **Uitgevoerd:** in Power Automate een verbinding "Translator SiteManagement" voor de connector Microsoft Translator V2 (Standard), zonder subscription key. Status Connected, geen DLP-blokkade. Microsoft Translator V3 is afgewezen (vereist een Azure-resource).
 - **Waarom handmatig:** een verbinding aanmaken vraagt om je eigen aanmelding; er is geen importroute.
 - **Daarna (bij de bouw van werkpakketten):** Claude levert de vertaalflow als importpakket (Create as new). Bij het importeren kies je deze verbinding.
+
+## MS-042 — Consentteksten in Translations (H36)
+
+- **Added:** 17-11-2026. **Status:** Open (Eddy). Niet dringend: de consent is nog niet gebouwd.
+- **Bestand:** `templates/translations-consent.csv` (UTF-8 met BOM, scheiding ";", kop Key;Language;Text). Het bevat 18 regels: `consent.idShown` en `consent.footer` × 9 talen.
+- **Stappen:**
+  1. Open Translations > Edit in grid view.
+  2. Plak de 16 regels van de 8 bestaande talen, zonder de kopregel en zonder de 2 Belarusian-regels.
+  3. Plak de 2 Belarusian-regels pas na de procedure "Nieuwe taal" (Belarusian als keuze in Workers, Employers en Translations; V6).
+  4. Controleer: zoek op `consent.`; er staan 16 regels, en na Belarusian 18.
+- **Let op:** de overige `consent.*`-teksten (titel, checklist, PBM, handtekening) volgen zodra Eddy de officiële FOR-010.040-teksten levert (CONSENT_PLAN.md 3). Laat alle talen behalve Dutch en English nog door een moedertaalspreker controleren.
 
 ## Procedure — Nieuwe taal (H30)
 
