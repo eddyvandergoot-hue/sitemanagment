@@ -443,6 +443,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   2. Plak translations-consent-8.csv zonder de kopregel. Plak in delen als het traag gaat en controleer dat niets dubbel geplakt is.
   3. Plak translations-consent-be.csv pas na MS-043 stap 1 (Belarusian als keuze).
   4. Controle: zoek op `consent.`; je vindt 720 regels, en 810 na Belarusian. Per taal staan er dan 161 regels in Translations (23 doc + 48 land + 90 consent), ruim onder de 500.
+- **Wijziging 17-11-2026 (H38):** `consent.lblSignature` is nu neutraal "Handtekening:" (zonder "(Fill & Sign)"). Had je translations-consent-8.csv al eerder geplakt, pas dan in Translations de 8 regels van consent.lblSignature aan (of plak die regels opnieuw).
 - **Let op:** NL, PL, UK en BE zijn letterlijk overgenomen uit de voorbeeldformulieren, met de wijzigingen van H36. EN, CS, RO, DE en FR zijn vertaald vanuit NL; hun voettekst zegt "unofficial translation" (in de eigen taal). Al het niet-Nederlandse moet nog door een moedertaalspreker gecontroleerd worden (backlog).
 ## MS-043 — Belarusian als 9e taal (H37, V6)
 

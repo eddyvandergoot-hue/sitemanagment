@@ -800,12 +800,12 @@ consent.lblDate;Ukrainian;Дата
 consent.lblDate;German;Datum
 consent.lblDate;French;Date
 consent.lblDate;Belarusian;Дата
-consent.lblSignature;Dutch;Handtekening (Fill & Sign):
-consent.lblSignature;English;Signature (Fill & Sign):
-consent.lblSignature;Polish;Podpis (Fill & Sign):
-consent.lblSignature;Czech;Podpis (Fill & Sign):
-consent.lblSignature;Romanian;Semnătura (Fill & Sign):
-consent.lblSignature;Ukrainian;Підпис (Fill & Sign):
-consent.lblSignature;German;Unterschrift (Fill & Sign):
-consent.lblSignature;French;Signature (Fill & Sign) :
-consent.lblSignature;Belarusian;Подпіс (Fill & Sign):
+consent.lblSignature;Dutch;Handtekening:
+consent.lblSignature;English;Signature:
+consent.lblSignature;Polish;Podpis:
+consent.lblSignature;Czech;Podpis:
+consent.lblSignature;Romanian;Semnătura:
+consent.lblSignature;Ukrainian;Підпис:
+consent.lblSignature;German;Unterschrift:
+consent.lblSignature;French;Signature :
+consent.lblSignature;Belarusian;Подпіс:

@@ -22,12 +22,12 @@ Stand 17-11-2026. Ontwerp, niet gebouwd. Besluit: DECISIONS.md H36. Achtergrond:
 1. **Kop:** GEA-logo (officieel bestand), titel (`consent.title`) en taal.
 2. **Medewerker:** naam (First Name + Surname) en functie (Workers.Trade, volledig uitgeschreven). Geen adres en geen telefoon.
 3. **Werkgever (contractor):** naam, adres, postcode/plaats en telefoon uit Employers.
-4. **Klant:** naam, plaats en telefoon. De bron volgt uit V4 van EXCEL_MIGRATION: klantvelden op Projects of een lijst Customers.
+4. **Klant (H38):** naam, plaats en telefoon uit de lijst Customers, via de lookup Customer op het project.
 5. **Project:** projectnummer en VGM-toezichthouder (Projects.SiteManagers; de telefoon volgt uit onderdeel A).
-6. **Introductiechecklist:** de punten van het origineel als `consent.check*`-sleutels, waarbij het ID-punt is vervangen door `consent.idShown`.
+6. **Introductiechecklist:** de 13 punten van het origineel (`consent.intro*`), waarbij het ID-punt is vervangen door `consent.idShown`, plus de twee vrije regels van het origineel als lege regels (H38, geen tekst).
 7. **PBM:** de punten van het origineel (`consent.ppe*`).
 8. **Opmerkingen:** een leeg vak.
-9. **Handtekening:** medewerker (naam en datum) en GEA (toezichthouder en datum). De lijnen zijn leeg en worden met de hand getekend (V5 open).
+9. **Handtekening (H38):** naam, datum en "Handtekening:" (neutraal label). Eddy laat tekenen in Adobe (Fill & Sign, touch of getypt); op papier werkt het label ook.
 10. **Voettekst** per pagina: `consent.footer`.
 
 De exacte teksten en de volgorde van checklist en PBM komen uit Eddy's voorbeeld-PDF's per taal (`Incoming\Examples\Forms\`, gitignored; H37). Die zijn alleen een voorbeeld van de huidige werkwijze; de app wordt app-eigen gebouwd met HTML-template, Translations en de export-flow. De vaste teksten worden letterlijk overgenomen, met de wijzigingen van H36. Een ontbrekende taal wordt vertaald vanuit NL; de voettekst krijgt dan "unofficial translation" en de taal komt in de backlog voor moedertaalcontrole. Er komen geen namen of persoonswaarden uit de voorbeelden in de repo.
@@ -71,8 +71,8 @@ De exacte teksten en de volgorde van checklist en PBM komen uit Eddy's voorbeeld
   - De voettekst is de app-versie.
 ## 6. Open vragen
 - **V11** — beantwoord 17-11-2026 (H37): alleen de taal van de medewerker.
-- **V5** (EXCEL_MIGRATION): ondertekenen op papier met een scan uploaden, of digitaal? En wie ontvangt het getekende pakket?
-- **V4** (EXCEL_MIGRATION): de bron van de klantgegevens.
+- **V5** (EXCEL_MIGRATION): ondertekenen in Adobe (H38). Nog open: wie ontvangt het getekende pakket en hoe lang wordt het bewaard?
+- **V4** — beantwoord 17-11-2026 (H38): lijst Customers.
 - **V6** — beantwoord 17-11-2026 (H37): Belarusian wordt 9e taal (MS-043).
-- **Fill & Sign:** het label "Handtekening (Fill & Sign):" komt letterlijk uit het voorbeeld (Acrobat). In de app wordt op papier getekend (V5). Mag "(Fill & Sign)" weg? Dat is alleen een tekstwijziging in Translations.
-- **Extra introductieregels:** het voorbeeldformulier heeft twee vrije velden (aanvullende introductie en details) zonder vaste tekst. Komen die in de app als lege regels terug?
+- **Handtekeninglabel** — beantwoord 17-11-2026 (H38): neutraal "Handtekening:" in alle talen.
+- **Extra introductieregels** — beantwoord 17-11-2026 (H38): ja, als twee lege regels.
