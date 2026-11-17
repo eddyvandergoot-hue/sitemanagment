@@ -489,10 +489,10 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 - **Added:** 17-11-2026. **Status:** Open (Eddy, eenmalig). Daarna levert en importeert Claude lijstgegevens zelf (werkwijze Eddy 17-11-2026); het plakken in de rasterweergave vervalt.
 - **Waarom deze route:** Graph PowerShell (route 1) is geblokkeerd door GEA Conditional Access. Met een apparaatcode is de aanmelding geldig, maar het apparaat moet "managed by GEA" zijn. Bij de interactieve Windows-aanmelding kwam er geen token.
-- **Bestand:** `artifacts\flows\SiteManagement-Import-rows-v1.zip` (niet in git). Maak het opnieuw met `py -E -P flows\make_import_rows_package.py`; dat gebruikt je laatste export van de Export-flow in Incoming\Flows.
+- **Bestand:** `artifacts\flows\SiteManagement-Import-rows-v2.zip` (niet in git; v2 17-11-2026: v1 gaf bij importeren of aanzetten "nested at level 9 ... maximum nesting limit of 8"; v2 heeft maximaal diepte 4 en geen OneDrive-verbinding meer, controle artifacts/Test-FlowNesting.ps1). Maak het opnieuw met `py -E -P flows\make_import_rows_package.py`; dat gebruikt je laatste export van de Export-flow in Incoming\Flows.
 - **Stappen:**
   1. SharePoint GEASiteManagment > New > Document library, naam **Imports**. Waarom handmatig: er is geen importroute voor een bibliotheek.
-  2. Power Automate > My flows > Import > Import Package (Legacy). Upload de zip en kies bij de flow **Create as new**; de naam is al "SiteManagement - Import rows". Kies bij SharePoint je bestaande verbinding en kies bij OneDrive ook je bestaande verbinding (die wordt niet gebruikt). Klik Import.
+  2. Power Automate > My flows > Import > Import Package (Legacy). Upload de zip en kies bij de flow **Create as new**; de naam is al "SiteManagement - Import rows". Kies bij SharePoint je bestaande verbinding (vanaf v2 is er geen OneDrive-verbinding meer). Is de flow uit v1 al aangemaakt, kies dan **Update** > "SiteManagement - Import rows" in plaats van Create as new. Klik Import.
   3. Open de flow en controleer dat de trigger "When a file is created (properties only)" de bibliotheek **Imports** toont. Zie je een fout of een lege bibliotheek, kies dan Imports in de keuzelijst en klik Save. Zet de flow aan (Turn on).
   4. Open de bibliotheek Imports en klik **Sync**, zodat hij in Verkenner staat (OneDrive). Geef Claude het lokale pad. Claude zet daar voortaan de CSV-bestanden neer en leest de resultaten.
 - **Werking (voor controle):**

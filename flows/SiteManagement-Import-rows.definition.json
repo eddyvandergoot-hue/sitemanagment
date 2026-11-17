@@ -52,14 +52,14 @@
           },
           "runAfter": {}
         },
-        "Init_Added": {
+        "Init_RowResult": {
           "type": "InitializeVariable",
           "inputs": {
             "variables": [
               {
-                "name": "Added",
-                "type": "integer",
-                "value": 0
+                "name": "RowResult",
+                "type": "string",
+                "value": ""
               }
             ]
           },
@@ -69,79 +69,11 @@
             ]
           }
         },
-        "Init_Updated": {
-          "type": "InitializeVariable",
-          "inputs": {
-            "variables": [
-              {
-                "name": "Updated",
-                "type": "integer",
-                "value": 0
-              }
-            ]
-          },
-          "runAfter": {
-            "Init_Added": [
-              "Succeeded"
-            ]
-          }
-        },
-        "Init_Exists": {
-          "type": "InitializeVariable",
-          "inputs": {
-            "variables": [
-              {
-                "name": "Exists",
-                "type": "integer",
-                "value": 0
-              }
-            ]
-          },
-          "runAfter": {
-            "Init_Updated": [
-              "Succeeded"
-            ]
-          }
-        },
-        "Init_Duplicates": {
-          "type": "InitializeVariable",
-          "inputs": {
-            "variables": [
-              {
-                "name": "Duplicates",
-                "type": "integer",
-                "value": 0
-              }
-            ]
-          },
-          "runAfter": {
-            "Init_Exists": [
-              "Succeeded"
-            ]
-          }
-        },
-        "Init_Errors": {
-          "type": "InitializeVariable",
-          "inputs": {
-            "variables": [
-              {
-                "name": "Errors",
-                "type": "integer",
-                "value": 0
-              }
-            ]
-          },
-          "runAfter": {
-            "Init_Duplicates": [
-              "Succeeded"
-            ]
-          }
-        },
         "FullPath": {
           "type": "Compose",
           "inputs": "@triggerOutputs()?['body/{FullPath}']",
           "runAfter": {
-            "Init_Errors": [
+            "Init_RowResult": [
               "Succeeded"
             ]
           }
@@ -194,746 +126,83 @@
             ]
           }
         },
-        "Check_file": {
+        "Check_ignore": {
           "type": "If",
           "expression": {
-            "and": [
-              {
-                "equals": [
-                  "@length(body('PathParts'))",
-                  2
-                ]
-              },
-              {
-                "equals": [
-                  "@first(body('PathParts'))",
-                  "Imports"
-                ]
-              },
-              {
-                "not": {
+            "not": {
+              "and": [
+                {
                   "equals": [
-                    "@outputs('ListName')",
-                    "Done"
+                    "@length(body('PathParts'))",
+                    2
+                  ]
+                },
+                {
+                  "equals": [
+                    "@first(body('PathParts'))",
+                    "Imports"
+                  ]
+                },
+                {
+                  "not": {
+                    "equals": [
+                      "@outputs('ListName')",
+                      "Done"
+                    ]
+                  }
+                },
+                {
+                  "endsWith": [
+                    "@toLower(outputs('FileName'))",
+                    ".csv"
                   ]
                 }
-              },
-              {
-                "endsWith": [
-                  "@toLower(outputs('FileName'))",
-                  ".csv"
-                ]
-              }
-            ]
+              ]
+            }
           },
           "actions": {
-            "Process": {
-              "type": "Scope",
-              "actions": {
-                "Wait_for_upload": {
-                  "type": "Wait",
-                  "inputs": {
-                    "interval": {
-                      "count": 15,
-                      "unit": "Second"
-                    }
-                  },
-                  "runAfter": {}
-                },
-                "Get_file_content": {
-                  "type": "OpenApiConnection",
-                  "inputs": {
-                    "parameters": {
-                      "path": "/@{outputs('FullPath')}",
-                      "inferContentType": false,
-                      "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
-                    },
-                    "host": {
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-                      "connectionName": "shared_sharepointonline",
-                      "operationId": "GetFileContentByPath"
-                    },
-                    "retryPolicy": {
-                      "type": "fixed",
-                      "count": 2,
-                      "interval": "PT5S"
-                    },
-                    "authentication": "@parameters('$authentication')"
-                  },
-                  "runAfter": {
-                    "Wait_for_upload": [
-                      "Succeeded"
-                    ]
-                  }
-                },
-                "Text": {
-                  "type": "Compose",
-                  "inputs": "@replace(replace(base64ToString(body('Get_file_content')?['$content']), decodeUriComponent('%EF%BB%BF'), ''), decodeUriComponent('%0D'), '')",
-                  "runAfter": {
-                    "Get_file_content": [
-                      "Succeeded"
-                    ]
-                  }
-                },
-                "Lines": {
-                  "type": "Compose",
-                  "inputs": "@split(outputs('Text'), decodeUriComponent('%0A'))",
-                  "runAfter": {
-                    "Text": [
-                      "Succeeded"
-                    ]
-                  }
-                },
-                "Fields": {
-                  "type": "Select",
-                  "inputs": {
-                    "from": "@split(first(outputs('Lines')), ';')",
-                    "select": "@if(equals(trim(item()), 'Key'), 'Title', trim(item()))"
-                  },
-                  "runAfter": {
-                    "Lines": [
-                      "Succeeded"
-                    ]
-                  }
-                },
-                "Rows": {
-                  "type": "Query",
-                  "inputs": {
-                    "from": "@skip(outputs('Lines'), 1)",
-                    "where": "@not(equals(trim(item()), ''))"
-                  },
-                  "runAfter": {
-                    "Fields": [
-                      "Succeeded"
-                    ]
-                  }
-                },
-                "Check_header": {
-                  "type": "If",
-                  "expression": {
-                    "and": [
-                      {
-                        "contains": [
-                          "@createArray('Translations', 'AppSettings', 'Customers', 'ProjectSafety')",
-                          "@outputs('ListName')"
-                        ]
-                      },
-                      {
-                        "contains": [
-                          "@body('Fields')",
-                          "Title"
-                        ]
-                      },
-                      {
-                        "or": [
-                          {
-                            "not": {
-                              "equals": [
-                                "@outputs('ListName')",
-                                "Translations"
-                              ]
-                            }
-                          },
-                          {
-                            "contains": [
-                              "@body('Fields')",
-                              "Language"
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  "actions": {
-                    "Apply_to_each_row": {
-                      "type": "Foreach",
-                      "foreach": "@body('Rows')",
-                      "actions": {
-                        "Row": {
-                          "type": "Scope",
-                          "actions": {
-                            "Parts": {
-                              "type": "Compose",
-                              "inputs": "@split(items('Apply_to_each_row'), ';')",
-                              "runAfter": {}
-                            },
-                            "Check_columns": {
-                              "type": "If",
-                              "expression": {
-                                "less": [
-                                  "@length(outputs('Parts'))",
-                                  "@length(body('Fields'))"
-                                ]
-                              },
-                              "actions": {
-                                "Err_columns_count": {
-                                  "type": "IncrementVariable",
-                                  "inputs": {
-                                    "name": "Errors",
-                                    "value": 1
-                                  },
-                                  "runAfter": {}
-                                },
-                                "Log_columns": {
-                                  "type": "AppendToStringVariable",
-                                  "inputs": {
-                                    "name": "Log",
-                                    "value": "-;-;ERROR;column count @{length(outputs('Parts'))} < header: @{items('Apply_to_each_row')}@{decodeUriComponent('%0A')}"
-                                  },
-                                  "runAfter": {
-                                    "Err_columns_count": [
-                                      "Succeeded"
-                                    ]
-                                  }
-                                }
-                              },
-                              "else": {
-                                "actions": {
-                                  "Form_values": {
-                                    "type": "Select",
-                                    "inputs": {
-                                      "from": "@range(0, length(body('Fields')))",
-                                      "select": {
-                                        "FieldName": "@body('Fields')[item()]",
-                                        "FieldValue": "@if(equals(item(), sub(length(body('Fields')), 1)), join(skip(outputs('Parts'), item()), ';'), outputs('Parts')[item()])"
-                                      }
-                                    },
-                                    "runAfter": {}
-                                  },
-                                  "FV_title": {
-                                    "type": "Query",
-                                    "inputs": {
-                                      "from": "@body('Form_values')",
-                                      "where": "@equals(item()?['FieldName'], 'Title')"
-                                    },
-                                    "runAfter": {
-                                      "Form_values": [
-                                        "Succeeded"
-                                      ]
-                                    }
-                                  },
-                                  "FV_language": {
-                                    "type": "Query",
-                                    "inputs": {
-                                      "from": "@body('Form_values')",
-                                      "where": "@equals(item()?['FieldName'], 'Language')"
-                                    },
-                                    "runAfter": {
-                                      "FV_title": [
-                                        "Succeeded"
-                                      ]
-                                    }
-                                  },
-                                  "TitleVal": {
-                                    "type": "Compose",
-                                    "inputs": "@trim(coalesce(first(body('FV_title'))?['FieldValue'], ''))",
-                                    "runAfter": {
-                                      "FV_language": [
-                                        "Succeeded"
-                                      ]
-                                    }
-                                  },
-                                  "LangVal": {
-                                    "type": "Compose",
-                                    "inputs": "@if(equals(outputs('ListName'), 'Translations'), trim(coalesce(first(body('FV_language'))?['FieldValue'], '')), '')",
-                                    "runAfter": {
-                                      "TitleVal": [
-                                        "Succeeded"
-                                      ]
-                                    }
-                                  },
-                                  "KeyFilter": {
-                                    "type": "Compose",
-                                    "inputs": "@if(equals(outputs('ListName'), 'Translations'), concat('Title eq ''', replace(outputs('TitleVal'), '''', ''''''), ''' and Language eq ''', replace(outputs('LangVal'), '''', ''''''), ''''), concat('Title eq ''', replace(outputs('TitleVal'), '''', ''''''), ''''))",
-                                    "runAfter": {
-                                      "LangVal": [
-                                        "Succeeded"
-                                      ]
-                                    }
-                                  },
-                                  "Check_key": {
-                                    "type": "If",
-                                    "expression": {
-                                      "or": [
-                                        {
-                                          "equals": [
-                                            "@outputs('TitleVal')",
-                                            ""
-                                          ]
-                                        },
-                                        {
-                                          "and": [
-                                            {
-                                              "equals": [
-                                                "@outputs('ListName')",
-                                                "Translations"
-                                              ]
-                                            },
-                                            {
-                                              "equals": [
-                                                "@outputs('LangVal')",
-                                                ""
-                                              ]
-                                            }
-                                          ]
-                                        }
-                                      ]
-                                    },
-                                    "actions": {
-                                      "Err_key": {
-                                        "type": "IncrementVariable",
-                                        "inputs": {
-                                          "name": "Errors",
-                                          "value": 1
-                                        },
-                                        "runAfter": {}
-                                      },
-                                      "Log_key": {
-                                        "type": "AppendToStringVariable",
-                                        "inputs": {
-                                          "name": "Log",
-                                          "value": "@{outputs('TitleVal')};@{outputs('LangVal')};ERROR;empty key@{decodeUriComponent('%0A')}"
-                                        },
-                                        "runAfter": {
-                                          "Err_key": [
-                                            "Succeeded"
-                                          ]
-                                        }
-                                      }
-                                    },
-                                    "else": {
-                                      "actions": {
-                                        "Get_existing": {
-                                          "type": "OpenApiConnection",
-                                          "inputs": {
-                                            "parameters": {
-                                              "parameters/method": "GET",
-                                              "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items?$select=Id&$top=10&$filter=@{encodeUriComponent(outputs('KeyFilter'))}",
-                                              "parameters/headers": {
-                                                "Accept": "application/json;odata=nometadata",
-                                                "Content-Type": "application/json;odata=nometadata"
-                                              },
-                                              "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
-                                            },
-                                            "host": {
-                                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-                                              "connectionName": "shared_sharepointonline",
-                                              "operationId": "HttpRequest"
-                                            },
-                                            "retryPolicy": {
-                                              "type": "fixed",
-                                              "count": 2,
-                                              "interval": "PT5S"
-                                            },
-                                            "authentication": "@parameters('$authentication')"
-                                          },
-                                          "runAfter": {}
-                                        },
-                                        "Existing_count": {
-                                          "type": "Compose",
-                                          "inputs": "@length(body('Get_existing')?['value'])",
-                                          "runAfter": {
-                                            "Get_existing": [
-                                              "Succeeded"
-                                            ]
-                                          }
-                                        },
-                                        "Switch_existing": {
-                                          "type": "Switch",
-                                          "expression": "@if(greater(outputs('Existing_count'), 1), 'many', string(outputs('Existing_count')))",
-                                          "cases": {
-                                            "Case_new": {
-                                              "case": "0",
-                                              "actions": {
-                                                "Create_item": {
-                                                  "type": "OpenApiConnection",
-                                                  "inputs": {
-                                                    "parameters": {
-                                                      "parameters/method": "POST",
-                                                      "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/AddValidateUpdateItemUsingPath",
-                                                      "parameters/headers": {
-                                                        "Accept": "application/json;odata=nometadata",
-                                                        "Content-Type": "application/json;odata=nometadata"
-                                                      },
-                                                      "parameters/body": "@{json(concat('{\"formValues\":', string(body('Form_values')), ',\"bNewDocumentUpdate\":false}'))}",
-                                                      "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
-                                                    },
-                                                    "host": {
-                                                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-                                                      "connectionName": "shared_sharepointonline",
-                                                      "operationId": "HttpRequest"
-                                                    },
-                                                    "retryPolicy": {
-                                                      "type": "fixed",
-                                                      "count": 2,
-                                                      "interval": "PT5S"
-                                                    },
-                                                    "authentication": "@parameters('$authentication')"
-                                                  },
-                                                  "runAfter": {}
-                                                },
-                                                "Create_errors": {
-                                                  "type": "Query",
-                                                  "inputs": {
-                                                    "from": "@body('Create_item')?['value']",
-                                                    "where": "@equals(item()?['HasException'], true)"
-                                                  },
-                                                  "runAfter": {
-                                                    "Create_item": [
-                                                      "Succeeded"
-                                                    ]
-                                                  }
-                                                },
-                                                "Check_create": {
-                                                  "type": "If",
-                                                  "expression": {
-                                                    "greater": [
-                                                      "@length(body('Create_errors'))",
-                                                      0
-                                                    ]
-                                                  },
-                                                  "actions": {
-                                                    "Err_create": {
-                                                      "type": "IncrementVariable",
-                                                      "inputs": {
-                                                        "name": "Errors",
-                                                        "value": 1
-                                                      },
-                                                      "runAfter": {}
-                                                    },
-                                                    "Log_create_err": {
-                                                      "type": "AppendToStringVariable",
-                                                      "inputs": {
-                                                        "name": "Log",
-                                                        "value": "@{outputs('TitleVal')};@{outputs('LangVal')};ERROR;@{first(body('Create_errors'))?['FieldName']}: @{first(body('Create_errors'))?['ErrorMessage']}@{decodeUriComponent('%0A')}"
-                                                      },
-                                                      "runAfter": {
-                                                        "Err_create": [
-                                                          "Succeeded"
-                                                        ]
-                                                      }
-                                                    }
-                                                  },
-                                                  "else": {
-                                                    "actions": {
-                                                      "Count_added": {
-                                                        "type": "IncrementVariable",
-                                                        "inputs": {
-                                                          "name": "Added",
-                                                          "value": 1
-                                                        },
-                                                        "runAfter": {}
-                                                      },
-                                                      "Log_added": {
-                                                        "type": "AppendToStringVariable",
-                                                        "inputs": {
-                                                          "name": "Log",
-                                                          "value": "@{outputs('TitleVal')};@{outputs('LangVal')};ADDED;id @{first(body('Create_item')?['value'])?['ItemId']}@{decodeUriComponent('%0A')}"
-                                                        },
-                                                        "runAfter": {
-                                                          "Count_added": [
-                                                            "Succeeded"
-                                                          ]
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  "runAfter": {
-                                                    "Create_errors": [
-                                                      "Succeeded"
-                                                    ]
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            "Case_one": {
-                                              "case": "1",
-                                              "actions": {
-                                                "Check_mode": {
-                                                  "type": "If",
-                                                  "expression": {
-                                                    "equals": [
-                                                      "@outputs('Upsert')",
-                                                      true
-                                                    ]
-                                                  },
-                                                  "actions": {
-                                                    "Update_item": {
-                                                      "type": "OpenApiConnection",
-                                                      "inputs": {
-                                                        "parameters": {
-                                                          "parameters/method": "POST",
-                                                          "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items(@{first(body('Get_existing')?['value'])?['Id']})/ValidateUpdateListItem",
-                                                          "parameters/headers": {
-                                                            "Accept": "application/json;odata=nometadata",
-                                                            "Content-Type": "application/json;odata=nometadata"
-                                                          },
-                                                          "parameters/body": "@{json(concat('{\"formValues\":', string(body('Form_values')), ',\"bNewDocumentUpdate\":false}'))}",
-                                                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
-                                                        },
-                                                        "host": {
-                                                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-                                                          "connectionName": "shared_sharepointonline",
-                                                          "operationId": "HttpRequest"
-                                                        },
-                                                        "retryPolicy": {
-                                                          "type": "fixed",
-                                                          "count": 2,
-                                                          "interval": "PT5S"
-                                                        },
-                                                        "authentication": "@parameters('$authentication')"
-                                                      },
-                                                      "runAfter": {}
-                                                    },
-                                                    "Update_errors": {
-                                                      "type": "Query",
-                                                      "inputs": {
-                                                        "from": "@body('Update_item')?['value']",
-                                                        "where": "@equals(item()?['HasException'], true)"
-                                                      },
-                                                      "runAfter": {
-                                                        "Update_item": [
-                                                          "Succeeded"
-                                                        ]
-                                                      }
-                                                    },
-                                                    "Check_update": {
-                                                      "type": "If",
-                                                      "expression": {
-                                                        "greater": [
-                                                          "@length(body('Update_errors'))",
-                                                          0
-                                                        ]
-                                                      },
-                                                      "actions": {
-                                                        "Err_update": {
-                                                          "type": "IncrementVariable",
-                                                          "inputs": {
-                                                            "name": "Errors",
-                                                            "value": 1
-                                                          },
-                                                          "runAfter": {}
-                                                        },
-                                                        "Log_update_err": {
-                                                          "type": "AppendToStringVariable",
-                                                          "inputs": {
-                                                            "name": "Log",
-                                                            "value": "@{outputs('TitleVal')};@{outputs('LangVal')};ERROR;@{first(body('Update_errors'))?['FieldName']}: @{first(body('Update_errors'))?['ErrorMessage']}@{decodeUriComponent('%0A')}"
-                                                          },
-                                                          "runAfter": {
-                                                            "Err_update": [
-                                                              "Succeeded"
-                                                            ]
-                                                          }
-                                                        }
-                                                      },
-                                                      "else": {
-                                                        "actions": {
-                                                          "Count_updated": {
-                                                            "type": "IncrementVariable",
-                                                            "inputs": {
-                                                              "name": "Updated",
-                                                              "value": 1
-                                                            },
-                                                            "runAfter": {}
-                                                          },
-                                                          "Log_updated": {
-                                                            "type": "AppendToStringVariable",
-                                                            "inputs": {
-                                                              "name": "Log",
-                                                              "value": "@{outputs('TitleVal')};@{outputs('LangVal')};UPDATED;id @{first(body('Get_existing')?['value'])?['Id']}@{decodeUriComponent('%0A')}"
-                                                            },
-                                                            "runAfter": {
-                                                              "Count_updated": [
-                                                                "Succeeded"
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      },
-                                                      "runAfter": {
-                                                        "Update_errors": [
-                                                          "Succeeded"
-                                                        ]
-                                                      }
-                                                    }
-                                                  },
-                                                  "else": {
-                                                    "actions": {
-                                                      "Count_exists": {
-                                                        "type": "IncrementVariable",
-                                                        "inputs": {
-                                                          "name": "Exists",
-                                                          "value": 1
-                                                        },
-                                                        "runAfter": {}
-                                                      },
-                                                      "Log_exists": {
-                                                        "type": "AppendToStringVariable",
-                                                        "inputs": {
-                                                          "name": "Log",
-                                                          "value": "@{outputs('TitleVal')};@{outputs('LangVal')};EXISTS;id @{first(body('Get_existing')?['value'])?['Id']}@{decodeUriComponent('%0A')}"
-                                                        },
-                                                        "runAfter": {
-                                                          "Count_exists": [
-                                                            "Succeeded"
-                                                          ]
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  "runAfter": {}
-                                                }
-                                              }
-                                            }
-                                          },
-                                          "default": {
-                                            "actions": {
-                                              "Dup_ids": {
-                                                "type": "Select",
-                                                "inputs": {
-                                                  "from": "@body('Get_existing')?['value']",
-                                                  "select": "@string(item()?['Id'])"
-                                                },
-                                                "runAfter": {}
-                                              },
-                                              "Count_duplicate": {
-                                                "type": "IncrementVariable",
-                                                "inputs": {
-                                                  "name": "Duplicates",
-                                                  "value": 1
-                                                },
-                                                "runAfter": {
-                                                  "Dup_ids": [
-                                                    "Succeeded"
-                                                  ]
-                                                }
-                                              },
-                                              "Log_duplicate": {
-                                                "type": "AppendToStringVariable",
-                                                "inputs": {
-                                                  "name": "Log",
-                                                  "value": "@{outputs('TitleVal')};@{outputs('LangVal')};DUPLICATE;ids @{join(body('Dup_ids'), ' ')} (not changed)@{decodeUriComponent('%0A')}"
-                                                },
-                                                "runAfter": {
-                                                  "Count_duplicate": [
-                                                    "Succeeded"
-                                                  ]
-                                                }
-                                              }
-                                            }
-                                          },
-                                          "runAfter": {
-                                            "Existing_count": [
-                                              "Succeeded"
-                                            ]
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "runAfter": {
-                                      "KeyFilter": [
-                                        "Succeeded"
-                                      ]
-                                    }
-                                  }
-                                }
-                              },
-                              "runAfter": {
-                                "Parts": [
-                                  "Succeeded"
-                                ]
-                              }
-                            }
-                          },
-                          "runAfter": {}
-                        },
-                        "Row_failed": {
-                          "type": "Scope",
-                          "actions": {
-                            "Count_row_error": {
-                              "type": "IncrementVariable",
-                              "inputs": {
-                                "name": "Errors",
-                                "value": 1
-                              },
-                              "runAfter": {}
-                            },
-                            "Log_row_error": {
-                              "type": "AppendToStringVariable",
-                              "inputs": {
-                                "name": "Log",
-                                "value": "-;-;ERROR;request failed (see run history): @{items('Apply_to_each_row')}@{decodeUriComponent('%0A')}"
-                              },
-                              "runAfter": {
-                                "Count_row_error": [
-                                  "Succeeded"
-                                ]
-                              }
-                            }
-                          },
-                          "runAfter": {
-                            "Row": [
-                              "Failed",
-                              "TimedOut"
-                            ]
-                          }
-                        }
-                      },
-                      "runtimeConfiguration": {
-                        "concurrency": {
-                          "repetitions": 1
-                        }
-                      },
-                      "runAfter": {}
-                    }
-                  },
-                  "else": {
-                    "actions": {
-                      "Count_header_error": {
-                        "type": "IncrementVariable",
-                        "inputs": {
-                          "name": "Errors",
-                          "value": 1
-                        },
-                        "runAfter": {}
-                      },
-                      "Log_header": {
-                        "type": "AppendToStringVariable",
-                        "inputs": {
-                          "name": "Log",
-                          "value": "-;-;ERROR;list not allowed or header without Title (Translations: Key/Title + Language): @{first(outputs('Lines'))}@{decodeUriComponent('%0A')}"
-                        },
-                        "runAfter": {
-                          "Count_header_error": [
-                            "Succeeded"
-                          ]
-                        }
-                      }
-                    }
-                  },
-                  "runAfter": {
-                    "Rows": [
-                      "Succeeded"
-                    ]
-                  }
+            "Ignore": {
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Succeeded"
+              },
+              "runAfter": {}
+            }
+          },
+          "else": {
+            "actions": {}
+          },
+          "runAfter": {
+            "Stamp": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Process": {
+          "type": "Scope",
+          "actions": {
+            "Wait_for_upload": {
+              "type": "Wait",
+              "inputs": {
+                "interval": {
+                  "count": 15,
+                  "unit": "Second"
                 }
               },
               "runAfter": {}
             },
-            "Write_result": {
+            "Get_file_content": {
               "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
-                  "folderPath": "/Imports/Done",
-                  "name": "@{outputs('Stamp')}_@{outputs('FileName')}.result.csv",
-                  "body": "@{concat(decodeUriComponent('%EF%BB%BF'), 'Summary;List=', outputs('ListName'), ';File=', outputs('FileName'), ';Mode=', if(outputs('Upsert'), 'upsert', 'add-only'), ';Rows=', string(length(body('Rows'))), ';Added=', string(variables('Added')), ';Updated=', string(variables('Updated')), ';Exists=', string(variables('Exists')), ';Duplicates=', string(variables('Duplicates')), ';Errors=', string(variables('Errors')), decodeUriComponent('%0A'), 'Key;Language;Result;Detail', decodeUriComponent('%0A'), variables('Log'))}",
+                  "path": "/@{outputs('FullPath')}",
+                  "inferContentType": false,
                   "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
                   "connectionName": "shared_sharepointonline",
-                  "operationId": "CreateFile"
+                  "operationId": "GetFileContentByPath"
                 },
                 "retryPolicy": {
                   "type": "fixed",
@@ -943,58 +212,544 @@
                 "authentication": "@parameters('$authentication')"
               },
               "runAfter": {
-                "Process": [
-                  "Succeeded",
-                  "Failed",
-                  "TimedOut"
+                "Wait_for_upload": [
+                  "Succeeded"
                 ]
               }
             },
-            "Move_to_Done": {
-              "type": "OpenApiConnection",
-              "inputs": {
-                "parameters": {
-                  "parameters/method": "POST",
-                  "parameters/uri": "_api/web/GetFileByServerRelativeUrl('/sites/GEASiteManagment/@{replace(outputs('FullPath'), '''', '''''')}')/moveto(newurl='/sites/GEASiteManagment/Imports/Done/@{replace(concat(outputs('Stamp'), '_', outputs('FileName')), '''', '''''')}',flags=1)",
-                  "parameters/headers": {
-                    "Accept": "application/json;odata=nometadata",
-                    "Content-Type": "application/json;odata=nometadata"
-                  },
-                  "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
-                },
-                "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-                  "connectionName": "shared_sharepointonline",
-                  "operationId": "HttpRequest"
-                },
-                "retryPolicy": {
-                  "type": "fixed",
-                  "count": 2,
-                  "interval": "PT5S"
-                },
-                "authentication": "@parameters('$authentication')"
-              },
+            "Text": {
+              "type": "Compose",
+              "inputs": "@replace(replace(base64ToString(body('Get_file_content')?['$content']), decodeUriComponent('%EF%BB%BF'), ''), decodeUriComponent('%0D'), '')",
               "runAfter": {
-                "Write_result": [
-                  "Succeeded",
-                  "Failed"
+                "Get_file_content": [
+                  "Succeeded"
                 ]
               }
-            }
-          },
-          "else": {
-            "actions": {
-              "Ignore": {
-                "type": "Terminate",
-                "inputs": {
-                  "runStatus": "Succeeded"
+            },
+            "Lines": {
+              "type": "Compose",
+              "inputs": "@split(outputs('Text'), decodeUriComponent('%0A'))",
+              "runAfter": {
+                "Text": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Fields": {
+              "type": "Select",
+              "inputs": {
+                "from": "@split(first(outputs('Lines')), ';')",
+                "select": "@if(equals(trim(item()), 'Key'), 'Title', trim(item()))"
+              },
+              "runAfter": {
+                "Lines": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Rows": {
+              "type": "Query",
+              "inputs": {
+                "from": "@skip(outputs('Lines'), 1)",
+                "where": "@not(equals(trim(item()), ''))"
+              },
+              "runAfter": {
+                "Fields": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "HeaderOK": {
+              "type": "Compose",
+              "inputs": "@and(contains(createArray('Translations', 'AppSettings', 'Customers', 'ProjectSafety'), outputs('ListName')), contains(body('Fields'), 'Title'), or(not(equals(outputs('ListName'), 'Translations')), contains(body('Fields'), 'Language')))",
+              "runAfter": {
+                "Rows": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Log_header": {
+              "type": "AppendToStringVariable",
+              "inputs": {
+                "name": "Log",
+                "value": "@{if(outputs('HeaderOK'), '', concat('-;-;ERROR;list not allowed or header without Title (Translations: Key/Title + Language): ', first(outputs('Lines')), decodeUriComponent('%0A')))}"
+              },
+              "runAfter": {
+                "HeaderOK": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Apply_to_each_row": {
+              "type": "Foreach",
+              "foreach": "@if(outputs('HeaderOK'), body('Rows'), createArray())",
+              "actions": {
+                "Row": {
+                  "type": "Scope",
+                  "actions": {
+                    "Parts": {
+                      "type": "Compose",
+                      "inputs": "@split(items('Apply_to_each_row'), ';')",
+                      "runAfter": {}
+                    },
+                    "Form_values": {
+                      "type": "Select",
+                      "inputs": {
+                        "from": "@range(0, length(body('Fields')))",
+                        "select": {
+                          "FieldName": "@body('Fields')[item()]",
+                          "FieldValue": "@if(greaterOrEquals(item(), length(outputs('Parts'))), '', if(equals(item(), sub(length(body('Fields')), 1)), join(skip(outputs('Parts'), item()), ';'), outputs('Parts')[item()]))"
+                        }
+                      },
+                      "runAfter": {
+                        "Parts": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "FV_title": {
+                      "type": "Query",
+                      "inputs": {
+                        "from": "@body('Form_values')",
+                        "where": "@equals(item()?['FieldName'], 'Title')"
+                      },
+                      "runAfter": {
+                        "Form_values": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "FV_language": {
+                      "type": "Query",
+                      "inputs": {
+                        "from": "@body('Form_values')",
+                        "where": "@equals(item()?['FieldName'], 'Language')"
+                      },
+                      "runAfter": {
+                        "FV_title": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "TitleVal": {
+                      "type": "Compose",
+                      "inputs": "@trim(coalesce(first(body('FV_title'))?['FieldValue'], ''))",
+                      "runAfter": {
+                        "FV_language": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "LangVal": {
+                      "type": "Compose",
+                      "inputs": "@if(equals(outputs('ListName'), 'Translations'), trim(coalesce(first(body('FV_language'))?['FieldValue'], '')), '')",
+                      "runAfter": {
+                        "TitleVal": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "RowError": {
+                      "type": "Compose",
+                      "inputs": "@if(less(length(outputs('Parts')), length(body('Fields'))), concat('column count ', string(length(outputs('Parts'))), ' < header'), if(or(equals(outputs('TitleVal'), ''), and(equals(outputs('ListName'), 'Translations'), equals(outputs('LangVal'), ''))), 'empty key', ''))",
+                      "runAfter": {
+                        "LangVal": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "KeyFilter": {
+                      "type": "Compose",
+                      "inputs": "@if(equals(outputs('ListName'), 'Translations'), concat('Title eq ''', replace(outputs('TitleVal'), '''', ''''''), ''' and Language eq ''', replace(outputs('LangVal'), '''', ''''''), ''''), concat('Title eq ''', replace(outputs('TitleVal'), '''', ''''''), ''''))",
+                      "runAfter": {
+                        "RowError": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Get_existing": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "parameters/method": "GET",
+                          "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items?$select=Id&$top=10&$filter=@{encodeUriComponent(outputs('KeyFilter'))}",
+                          "parameters/headers": {
+                            "Accept": "application/json;odata=nometadata",
+                            "Content-Type": "application/json;odata=nometadata"
+                          },
+                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                          "connectionName": "shared_sharepointonline",
+                          "operationId": "HttpRequest"
+                        },
+                        "retryPolicy": {
+                          "type": "fixed",
+                          "count": 2,
+                          "interval": "PT5S"
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      },
+                      "runAfter": {
+                        "KeyFilter": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Existing_count": {
+                      "type": "Compose",
+                      "inputs": "@length(coalesce(body('Get_existing')?['value'], createArray()))",
+                      "runAfter": {
+                        "Get_existing": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "RowAction": {
+                      "type": "Compose",
+                      "inputs": "@if(not(equals(outputs('RowError'), '')), 'ERROR', if(equals(outputs('Existing_count'), 0), 'ADD', if(equals(outputs('Existing_count'), 1), if(outputs('Upsert'), 'UPDATE', 'EXISTS'), 'DUPLICATE')))",
+                      "runAfter": {
+                        "Existing_count": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Switch_action": {
+                      "type": "Switch",
+                      "expression": "@outputs('RowAction')",
+                      "cases": {
+                        "Case_add": {
+                          "case": "ADD",
+                          "actions": {
+                            "Create_item": {
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "parameters/method": "POST",
+                                  "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/AddValidateUpdateItemUsingPath",
+                                  "parameters/headers": {
+                                    "Accept": "application/json;odata=nometadata",
+                                    "Content-Type": "application/json;odata=nometadata"
+                                  },
+                                  "parameters/body": "@{json(concat('{\"formValues\":', string(body('Form_values')), ',\"bNewDocumentUpdate\":false}'))}",
+                                  "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                                  "connectionName": "shared_sharepointonline",
+                                  "operationId": "HttpRequest"
+                                },
+                                "retryPolicy": {
+                                  "type": "fixed",
+                                  "count": 2,
+                                  "interval": "PT5S"
+                                },
+                                "authentication": "@parameters('$authentication')"
+                              },
+                              "runAfter": {}
+                            },
+                            "Create_errors": {
+                              "type": "Query",
+                              "inputs": {
+                                "from": "@body('Create_item')?['value']",
+                                "where": "@equals(item()?['HasException'], true)"
+                              },
+                              "runAfter": {
+                                "Create_item": [
+                                  "Succeeded"
+                                ]
+                              }
+                            },
+                            "Set_result_add": {
+                              "type": "SetVariable",
+                              "inputs": {
+                                "name": "RowResult",
+                                "value": "@if(greater(length(body('Create_errors')), 0), concat('ERROR;', first(body('Create_errors'))?['FieldName'], ': ', first(body('Create_errors'))?['ErrorMessage']), concat('ADDED;id ', string(first(body('Create_item')?['value'])?['ItemId'])))"
+                              },
+                              "runAfter": {
+                                "Create_errors": [
+                                  "Succeeded"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "Case_update": {
+                          "case": "UPDATE",
+                          "actions": {
+                            "Update_item": {
+                              "type": "OpenApiConnection",
+                              "inputs": {
+                                "parameters": {
+                                  "parameters/method": "POST",
+                                  "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items(@{first(body('Get_existing')?['value'])?['Id']})/ValidateUpdateListItem",
+                                  "parameters/headers": {
+                                    "Accept": "application/json;odata=nometadata",
+                                    "Content-Type": "application/json;odata=nometadata"
+                                  },
+                                  "parameters/body": "@{json(concat('{\"formValues\":', string(body('Form_values')), ',\"bNewDocumentUpdate\":false}'))}",
+                                  "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                                  "connectionName": "shared_sharepointonline",
+                                  "operationId": "HttpRequest"
+                                },
+                                "retryPolicy": {
+                                  "type": "fixed",
+                                  "count": 2,
+                                  "interval": "PT5S"
+                                },
+                                "authentication": "@parameters('$authentication')"
+                              },
+                              "runAfter": {}
+                            },
+                            "Update_errors": {
+                              "type": "Query",
+                              "inputs": {
+                                "from": "@body('Update_item')?['value']",
+                                "where": "@equals(item()?['HasException'], true)"
+                              },
+                              "runAfter": {
+                                "Update_item": [
+                                  "Succeeded"
+                                ]
+                              }
+                            },
+                            "Set_result_update": {
+                              "type": "SetVariable",
+                              "inputs": {
+                                "name": "RowResult",
+                                "value": "@if(greater(length(body('Update_errors')), 0), concat('ERROR;', first(body('Update_errors'))?['FieldName'], ': ', first(body('Update_errors'))?['ErrorMessage']), concat('UPDATED;id ', string(first(body('Get_existing')?['value'])?['Id'])))"
+                              },
+                              "runAfter": {
+                                "Update_errors": [
+                                  "Succeeded"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "Case_exists": {
+                          "case": "EXISTS",
+                          "actions": {
+                            "Set_result_exists": {
+                              "type": "SetVariable",
+                              "inputs": {
+                                "name": "RowResult",
+                                "value": "@concat('EXISTS;id ', string(first(body('Get_existing')?['value'])?['Id']))"
+                              },
+                              "runAfter": {}
+                            }
+                          }
+                        },
+                        "Case_duplicate": {
+                          "case": "DUPLICATE",
+                          "actions": {
+                            "Dup_ids": {
+                              "type": "Select",
+                              "inputs": {
+                                "from": "@body('Get_existing')?['value']",
+                                "select": "@string(item()?['Id'])"
+                              },
+                              "runAfter": {}
+                            },
+                            "Set_result_duplicate": {
+                              "type": "SetVariable",
+                              "inputs": {
+                                "name": "RowResult",
+                                "value": "@concat('DUPLICATE;ids ', join(body('Dup_ids'), ' '), ' (not changed)')"
+                              },
+                              "runAfter": {
+                                "Dup_ids": [
+                                  "Succeeded"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "default": {
+                        "actions": {
+                          "Set_result_error": {
+                            "type": "SetVariable",
+                            "inputs": {
+                              "name": "RowResult",
+                              "value": "@concat('ERROR;', outputs('RowError'), ': ', items('Apply_to_each_row'))"
+                            },
+                            "runAfter": {}
+                          }
+                        }
+                      },
+                      "runAfter": {
+                        "RowAction": [
+                          "Succeeded"
+                        ]
+                      }
+                    },
+                    "Log_row": {
+                      "type": "AppendToStringVariable",
+                      "inputs": {
+                        "name": "Log",
+                        "value": "@{outputs('TitleVal')};@{outputs('LangVal')};@{variables('RowResult')}@{decodeUriComponent('%0A')}"
+                      },
+                      "runAfter": {
+                        "Switch_action": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  },
+                  "runAfter": {}
                 },
-                "runAfter": {}
+                "Log_row_failed": {
+                  "type": "AppendToStringVariable",
+                  "inputs": {
+                    "name": "Log",
+                    "value": "-;-;ERROR;request failed (see run history): @{items('Apply_to_each_row')}@{decodeUriComponent('%0A')}"
+                  },
+                  "runAfter": {
+                    "Row": [
+                      "Failed",
+                      "TimedOut"
+                    ]
+                  }
+                }
+              },
+              "runtimeConfiguration": {
+                "concurrency": {
+                  "repetitions": 1
+                }
+              },
+              "runAfter": {
+                "Log_header": [
+                  "Succeeded"
+                ]
               }
             }
           },
           "runAfter": {
-            "Stamp": [
+            "Check_ignore": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Count_added": {
+          "type": "Query",
+          "inputs": {
+            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "where": "@contains(item(), ';ADDED;')"
+          },
+          "runAfter": {
+            "Process": [
+              "Succeeded",
+              "Failed",
+              "TimedOut"
+            ]
+          }
+        },
+        "Count_updated": {
+          "type": "Query",
+          "inputs": {
+            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "where": "@contains(item(), ';UPDATED;')"
+          },
+          "runAfter": {
+            "Count_added": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Count_exists": {
+          "type": "Query",
+          "inputs": {
+            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "where": "@contains(item(), ';EXISTS;')"
+          },
+          "runAfter": {
+            "Count_updated": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Count_duplicate": {
+          "type": "Query",
+          "inputs": {
+            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "where": "@contains(item(), ';DUPLICATE;')"
+          },
+          "runAfter": {
+            "Count_exists": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Count_error": {
+          "type": "Query",
+          "inputs": {
+            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "where": "@contains(item(), ';ERROR;')"
+          },
+          "runAfter": {
+            "Count_duplicate": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Write_result": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "folderPath": "/Imports/Done",
+              "name": "@{outputs('Stamp')}_@{outputs('FileName')}.result.csv",
+              "body": "@{concat(decodeUriComponent('%EF%BB%BF'), 'Summary;List=', outputs('ListName'), ';File=', outputs('FileName'), ';Mode=', if(outputs('Upsert'), 'upsert', 'add-only'), ';Rows=', string(length(body('Rows'))), ';Added=', string(length(body('Count_added'))), ';Updated=', string(length(body('Count_updated'))), ';Exists=', string(length(body('Count_exists'))), ';Duplicates=', string(length(body('Count_duplicate'))), ';Errors=', string(length(body('Count_error'))), decodeUriComponent('%0A'), 'Key;Language;Result;Detail', decodeUriComponent('%0A'), variables('Log'))}",
+              "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "CreateFile"
+            },
+            "retryPolicy": {
+              "type": "fixed",
+              "count": 2,
+              "interval": "PT5S"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runAfter": {
+            "Count_error": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Move_to_Done": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "parameters/method": "POST",
+              "parameters/uri": "_api/web/GetFileByServerRelativeUrl('/sites/GEASiteManagment/@{replace(outputs('FullPath'), '''', '''''')}')/moveto(newurl='/sites/GEASiteManagment/Imports/Done/@{replace(concat(outputs('Stamp'), '_', outputs('FileName')), '''', '''''')}',flags=1)",
+              "parameters/headers": {
+                "Accept": "application/json;odata=nometadata",
+                "Content-Type": "application/json;odata=nometadata"
+              },
+              "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "HttpRequest"
+            },
+            "retryPolicy": {
+              "type": "fixed",
+              "count": 2,
+              "interval": "PT5S"
+            },
+            "authentication": "@parameters('$authentication')"
+          },
+          "runAfter": {
+            "Write_result": [
               "Succeeded"
             ]
           }
@@ -1007,13 +762,6 @@
         "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
         "tier": "NotSpecified",
         "apiName": "sharepointonline",
-        "isProcessSimpleApiReferenceConversionAlreadyDone": false
-      },
-      "shared_onedriveforbusiness": {
-        "source": "Embedded",
-        "id": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
-        "tier": "NotSpecified",
-        "apiName": "onedriveforbusiness",
         "isProcessSimpleApiReferenceConversionAlreadyDone": false
       }
     },
