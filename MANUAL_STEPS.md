@@ -48,10 +48,11 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-039 | 16-11-2026 | Done 16-11-2026 (Eddy): 384 landregels in Translations (568) |
 | MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
 | MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
-| MS-042 | 17-11-2026 | Open (Eddy): consentteksten plakken in Translations (translations-consent-8.csv 720 + -be.csv 90); niet dringend |
+| MS-042 | 17-11-2026 | Deels (1111 van 1288): ontbrekende consent-8-regels via de importflow (na MS-046); -be.csv na MS-043 |
 | MS-043 | 17-11-2026 | Open (Eddy): Belarusian als 9e taal (keuzes + plakbestanden *-be.csv) |
 | MS-044 | 17-11-2026 | Ontwerp, pas na Eddy's akkoord: lijsten Customers en ProjectSafety via From Excel |
 | MS-045 | 17-11-2026 | Ontwerp, pas na MS-044: uniek, lookups (ProjectSafety.Project, Projects.Customer), Active standaard Ja |
+| MS-046 | 17-11-2026 | Open (Eddy, eenmalig): bibliotheek Imports + importpakket "SiteManagement - Import rows" (Create as new) + Sync; daarna importeert Claude lijstgegevens |
 
 ---
 
@@ -438,7 +439,8 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-042 — Consentteksten in Translations (H36, H37)
 
-- **Added:** 17-11-2026. **Status:** Open (Eddy). Niet dringend: de consent is nog niet gebouwd.
+- **Added:** 17-11-2026. **Status:** Deels geplakt. Op 17-11-2026 telde Translations 1111 regels; verwacht na translations-consent-8.csv is 1288, dus er ontbreken er circa 177. **Nieuwe route (17-11-2026):** niet meer plakken. Na MS-046 zet Claude translations-consent-8.csv in Imports/Translations/ (alleen toevoegen). De flow voegt de ontbrekende regels toe en meldt EXISTS en DUPLICATE; dubbele regels worden alleen opgesomd, niet verwijderd. De stappen hieronder zijn alleen nog een terugvaloptie.
+- Niet dringend: de consent is nog niet gebouwd.
 - **Bestanden** (UTF-8 met BOM, scheiding ";", kop Key;Language;Text): `templates/translations-consent-8.csv` (720 regels = 90 sleutels × 8 bestaande talen) en `templates/translations-consent-be.csv` (90 regels Belarusian). Bron en controle: `templates/translations-consent.csv` (810 regels, Test-Templates).
 - **Stappen:**
   1. Open Translations > Edit in grid view.
@@ -482,6 +484,29 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   5. Projects > Add column > Lookup: naam **Customer**, bron Customers, kolom Title, één waarde, niet verplicht.
   6. Laat Projects."Customer Name" (tekst) staan; die verwijderen we pas na jouw akkoord (D4).
   7. Studio: Data > Add data > Customers en ProjectSafety; Projects > Refresh; Save as > This computer > Incoming. Daarna voegt Claude de metadata samen.
+
+## MS-046 — Importroute voor lijstgegevens: flow "SiteManagement - Import rows" (eenmalig)
+
+- **Added:** 17-11-2026. **Status:** Open (Eddy, eenmalig). Daarna levert en importeert Claude lijstgegevens zelf (werkwijze Eddy 17-11-2026); het plakken in de rasterweergave vervalt.
+- **Waarom deze route:** Graph PowerShell (route 1) is geblokkeerd door GEA Conditional Access. Met een apparaatcode is de aanmelding geldig, maar het apparaat moet "managed by GEA" zijn. Bij de interactieve Windows-aanmelding kwam er geen token.
+- **Bestand:** `artifacts\flows\SiteManagement-Import-rows-v1.zip` (niet in git). Maak het opnieuw met `py -E -P flows\make_import_rows_package.py`; dat gebruikt je laatste export van de Export-flow in Incoming\Flows.
+- **Stappen:**
+  1. SharePoint GEASiteManagment > New > Document library, naam **Imports**. Waarom handmatig: er is geen importroute voor een bibliotheek.
+  2. Power Automate > My flows > Import > Import Package (Legacy). Upload de zip en kies bij de flow **Create as new**; de naam is al "SiteManagement - Import rows". Kies bij SharePoint je bestaande verbinding en kies bij OneDrive ook je bestaande verbinding (die wordt niet gebruikt). Klik Import.
+  3. Open de flow en controleer dat de trigger "When a file is created (properties only)" de bibliotheek **Imports** toont. Zie je een fout of een lege bibliotheek, kies dan Imports in de keuzelijst en klik Save. Zet de flow aan (Turn on).
+  4. Open de bibliotheek Imports en klik **Sync**, zodat hij in Verkenner staat (OneDrive). Geef Claude het lokale pad. Claude zet daar voortaan de CSV-bestanden neer en leest de resultaten.
+- **Werking (voor controle):**
+  - **Invoer:** een CSV in `Imports/<Lijst>/`. Toegestane lijsten: Translations, AppSettings, Customers, ProjectSafety.
+  - **Formaat:** UTF-8, ";" als scheidingsteken, kopregel met interne kolomnamen ("Key" telt als Title), geen aanhalingstekens. Alleen de laatste kolom mag ";" bevatten.
+  - **Sleutel:** voor Translations Title + Language, anders Title.
+  - **Standaard alleen toevoegen:** bestaat de sleutel al, dan EXISTS en geen wijziging. Bijwerken alleen als de bestandsnaam begint met `upsert_`. Meerdere rijen met dezelfde sleutel: DUPLICATE, niets gewijzigd en niets verwijderd.
+  - **De flow verwijdert nooit iets.**
+  - **Na afloop:** het resultaat staat in `Imports/Done/<tijd>_<bestand>.result.csv` (eerste regel Summary met Added/Updated/Exists/Duplicates/Errors). Het bronbestand wordt verplaatst naar Imports/Done.
+- **Beperkingen v1:**
+  - Datumkolommen moeten in de regionale notatie van de site staan.
+  - Lookups als ID.
+  - Gegevens met regeleinden kunnen niet.
+  - Nog niet online getest: de eerste run (MS-042) is de acceptatietest.
 
 ## Procedure — Nieuwe taal (H30)
 
