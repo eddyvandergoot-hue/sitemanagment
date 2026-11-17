@@ -185,16 +185,19 @@ De kolomnamen worden definitief bij het maken van de lijst (.xlsx-import) en daa
 4. Fout, limiet of storing: amber "Not translated. <reden>. Paste the translation manually." De velden blijven bewerkbaar, dus handmatig plakken kan altijd.
 5. "Mark checked" (of de switch Checked) zet Checked, Checked By (huidige gebruiker) en de datum. Elke latere wijziging van taal 1 of taal 2 zet de status terug naar Draft.
 
-**Job card (onderdeel F):**
-- Taal 2 wordt alleen afgedrukt bij status Checked.
-- Bij Draft of een lege status komt alleen taal 1 in de PDF, met de amber melding "Language 2 not checked; job card in <taal 1> only".
+**Job card (onderdeel F; H35, V10 beantwoord 16-11-2026):**
+- **Language2 leeg:** één PDF in taal 1.
+- **Language2 gevuld en Checked:** daarnaast een tweede, eigen PDF in taal 2 met eigen paginanummering, zoals H31: `<basis>_<taalcode>.pdf`, met de taal-1-PDF eerst en PDF 2 pas als PDF 1 gelukt is.
+- **Language2 gevuld en Draft (of een lege status):** alleen de PDF in taal 1, met de amber melding "Language 2 not checked; job card in <taal 1> only".
 - De vaste labels van de job card komen uit Translations (doc.jc*-sleutels), net als bij het Week Report.
+
+**Wit-Russisch (`be`, H35):** als Translator V2 de taal niet ondersteunt (te controleren bij de bouw), kan het alleen met handmatig plakken. De knop Translate is dan voor die taal uitgeschakeld, met de hint "Machine translation not available for Belarusian. Paste the translation manually." Checked en de tweede PDF werken verder gewoon.
 
 **Privacy en grenzen:**
 - Alleen instructietekst gaat naar Microsoft Translator. Daarom staan in de UI-hint en in AGENTS: geen namen, telefoonnummers of adressen in deze velden.
 - Er gaan geen persoonsvelden of -records naar de flow.
 - Lange teksten: de limiet van de connector wordt bij de bouw gecontroleerd. Boven de limiet volgt een melding en handmatig plakken; er wordt niet stilzwijgend afgekapt.
-- Wit-Russisch (`be`) alleen als V6 "ja" is en Translator V2 de taal ondersteunt.
+- Wit-Russisch (`be`): de taal komt er alleen als V6 "ja" is; machinevertaling alleen als Translator V2 de taal ondersteunt (zie hierboven).
 
 **Grootte:** S bovenop D (één flowpakket, twee knoppen, vijf kolommen).
 
@@ -209,7 +212,7 @@ De kolomnamen worden definitief bij het maken van de lijst (.xlsx-import) en daa
 7. **V7 Job Card-bijlagen:** PDF-bijlagen achter de job card samenvoegen kan alleen met een premium connector. Is een job card met een lijst links naar de bijlagen voldoende, met foto's in de PDF?
 8. **V8 P&ID-onderdelen:** het werkboek bevat geen P&ID-gegevens, alleen "Drawing Reference" per WP. Wat bedoel je met P&ID parts: koppeling met de P&ID-tracker (ander project) of een onderdelenlijst per WP?
 9. **V9 Werkpakketten per project of per team:** de WP-ID is in Excel per werkboek (= project) uniek. In de app WP-<ID> globaal, of `<projectnummer>-WP-###`?
-10. **V10 Talen van de Job Card** (deels beantwoord 16-11-2026: taal 2 via Translator, H34 en 5.1; open: is de job card altijd tweetalig, of alleen als Language2 gevuld is?): alleen Engels zoals nu, of ook in de taal van het team/contractor?
+10. **V10 Talen van de Job Card** — BEANTWOORD 16-11-2026 (H34, H35, 5.1): alleen tweetalig als Language2 gevuld is; taal 2 als eigen PDF, alleen bij Checked. Oorspronkelijke vraag: alleen Engels zoals nu, of ook in de taal van het team/contractor?
 
 ## 7. Niet migreren
 - Het brede urenraster (kolom per medewerker), de Power Query HoursLog en de herstelmacro: vervangen door de lijst Hours.
