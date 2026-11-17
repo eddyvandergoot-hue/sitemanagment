@@ -50,6 +50,8 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
 | MS-042 | 17-11-2026 | Open (Eddy): consentteksten plakken in Translations (translations-consent-8.csv 720 + -be.csv 90); niet dringend |
 | MS-043 | 17-11-2026 | Open (Eddy): Belarusian als 9e taal (keuzes + plakbestanden *-be.csv) |
+| MS-044 | 17-11-2026 | Ontwerp, pas na Eddy's akkoord: lijsten Customers en ProjectSafety via From Excel |
+| MS-045 | 17-11-2026 | Ontwerp, pas na MS-044: uniek, lookups (ProjectSafety.Project, Projects.Customer), Active standaard Ja |
 
 ---
 
@@ -442,7 +444,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   1. Open Translations > Edit in grid view.
   2. Plak translations-consent-8.csv zonder de kopregel. Plak in delen als het traag gaat en controleer dat niets dubbel geplakt is.
   3. Plak translations-consent-be.csv pas na MS-043 stap 1 (Belarusian als keuze).
-  4. Controle: zoek op `consent.`; je vindt 720 regels, en 810 na Belarusian. Per taal staan er dan 161 regels in Translations (23 doc + 48 land + 90 consent), ruim onder de 500.
+  4. Controle: zoek op `consent.`; je vindt 720 regels, en 810 na Belarusian. Totaal Translations: was 568 (184 doc + 384 land), wordt 1288 na translations-consent-8.csv, en 1449 na alle Belarusian-regels (23 + 48 + 90 = 161). Per taal 161 regels, ruim onder de 500.
 - **Wijziging 17-11-2026 (H38):** `consent.lblSignature` is nu neutraal "Handtekening:" (zonder "(Fill & Sign)"). Had je translations-consent-8.csv al eerder geplakt, pas dan in Translations de 8 regels van consent.lblSignature aan (of plak die regels opnieuw).
 - **Let op:** NL, PL, UK en BE zijn letterlijk overgenomen uit de voorbeeldformulieren, met de wijzigingen van H36. EN, CS, RO, DE en FR zijn vertaald vanuit NL; hun voettekst zegt "unofficial translation" (in de eigen taal). Al het niet-Nederlandse moet nog door een moedertaalspreker gecontroleerd worden (backlog).
 ## MS-043 — Belarusian als 9e taal (H37, V6)
@@ -453,8 +455,33 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   1. Voeg in **Workers.Language**, **Employers.Language** en **Translations.Language** de keuze `Belarusian` toe: exact deze spelling, met hoofdletter en zonder spaties (procedure "Nieuwe taal", stap 1).
   2. Translations > Edit in grid view: plak `templates/translations-weekreport-be.csv` (23 regels) en `templates/translations-countries-be.csv` (48 regels), zonder kopregel.
   3. Plak `templates/translations-consent-be.csv` (90 regels, MS-042).
-  4. Controle: filter Language = Belarusian geeft 161 regels (23 + 48 + 90).
+  4. Controle: filter Language = Belarusian geeft 161 regels (23 + 48 + 90). Totaal Translations daarna 1449 (als MS-042 gedaan is: 1288 + 161).
 - **Let op:** de taalcode `be` in de app volgt bij de volgende build. Tot dan geeft het Week Report voor een contractor met Language = Belarusian rood "no file language code" (geen export). Kies Belarusian dus nog niet bij een contractor met uren die geëxporteerd moeten worden. Alle Belarusian-teksten moeten nog door een moedertaalspreker gecontroleerd worden.
+
+## MS-044 — Lijsten Customers en ProjectSafety (From Excel; DESIGN_CUSTOMERS_SAFETY.md)
+
+- **Added:** 17-11-2026. **Status:** Ontwerp. Pas uitvoeren na Eddy's akkoord op het ontwerp.
+- **Bestanden:** `artifacts\lists\Customers.xlsx` (4 kolommen) en `artifacts\lists\ProjectSafety.xlsx` (18 kolommen). Ze staan niet in git; maak ze opnieuw met `py -E -P artifacts\lists\make_list_templates.py`.
+- **Stappen:**
+  1. Ga naar SharePoint GEASiteManagment > New > List > From Excel en upload Customers.xlsx (tabel tblCustomers).
+  2. Controleer de kolomtypen in het importvenster: Title en City = Single line of text. Phone = Single line of text (niet Number). Active = Yes/No; biedt het venster dat niet aan, kies dan tekst en zet het type daarna om. Lijstnaam: **Customers**.
+  3. Doe hetzelfde met ProjectSafety.xlsx (tabel tblProjectSafety), lijstnaam **ProjectSafety**. PlanStartDate = Date. AssemblyPoint = Multiple lines of text (plain). Alle telefoonnummers en 112 = Single line of text (niet Number). De rest = Single line of text.
+  4. Controleer dat Title gebruikt is voor de kolom "Title" uit Excel (geen tweede, lege Title). Zie je toch een extra kolom, meld het: dan pas ik het ontwerp aan.
+  5. ProjectSafety: verander de voorbeeldrij in TEST-000 (Title = het ID van TEST-000 als tekst) of verwijder hem. Customers: laat "TEST Customer" staan (TEST-regel) en verwijder "TEST Customer 2".
+- **Daarna:** MS-045.
+
+## MS-045 — Uniek, lookups en standaardwaarden (na MS-044)
+
+- **Added:** 17-11-2026. **Status:** Ontwerp.
+- **Waarom handmatig:** unieke waarden, lookupkolommen en standaardwaarden kun je niet via een Excel-import instellen.
+- **Stappen:**
+  1. Customers > kolom Title (Customer Name): Require = Yes, Enforce unique values = Yes. Weergavenaam "Customer Name".
+  2. Customers > Active: standaard Yes.
+  3. ProjectSafety > Title: Require = Yes, Enforce unique values = Yes (ProjectKey).
+  4. ProjectSafety > Add column > Lookup: naam **Project**, bron Projects, kolom Title.
+  5. Projects > Add column > Lookup: naam **Customer**, bron Customers, kolom Title, één waarde, niet verplicht.
+  6. Laat Projects."Customer Name" (tekst) staan; die verwijderen we pas na jouw akkoord (D4).
+  7. Studio: Data > Add data > Customers en ProjectSafety; Projects > Refresh; Save as > This computer > Incoming. Daarna voegt Claude de metadata samen.
 
 ## Procedure — Nieuwe taal (H30)
 
