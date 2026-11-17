@@ -41,16 +41,38 @@ De exacte teksten en de volgorde van checklist en PBM komen uit Eddy's voorbeeld
 - **Registratie:** lijst ConsentAgreements (onderdeel C van EXCEL_MIGRATION; kolommen bij de bouw als .xlsx).
 - **Veiligheidsplan deel 1:** zat in Excel in hetzelfde pakket. Volgt als apart ontwerp, met de gegevens van onderdeel A.
 
-## 5. Teksten
+## 5. Teksten (compleet 17-11-2026)
 
-- **Al geleverd:** `templates/translations-consent.csv` met `consent.idShown` en `consent.footer` in 9 talen: de 8 app-talen plus Belarusian.
-- **Moedertaalcontrole:** alle talen behalve Dutch en English moeten nog door een moedertaalspreker gecontroleerd worden. Dat staat in de backlog bij de bestaande vertaalcontrole.
-- **Belarusian** is nog geen keuze in Translations.Language. Plak de 2 Belarusian-regels pas na de procedure "Nieuwe taal" (MANUAL_STEPS; V6).
-- **Nog te leveren:** de overige `consent.*`-sleutels (titel, sectiekoppen, checklist, PBM, handtekeningregels). Die komen uit het officiële formulier (zie 3).
-
+- **Bestand:** `templates/translations-consent.csv` bevat 90 sleutels `consent.*` × 9 talen = 810 regels. Plakbestanden: `-8.csv` (720 regels) en `-be.csv` (90 regels), zie MS-042.
+- **Bron:**
+  - NL, PL, UK en BE komen letterlijk uit de voorbeeldformulieren (`Incoming\Examples\Forms\Declaration_Of_Consent_<NL|PL|UA|BY>_Editable.pdf`; alleen vaste teksten, geen ingevulde waarden).
+  - EN, CS, RO, DE en FR zijn vertaald vanuit NL, met "unofficial translation" (in de eigen taal) in de voettekst.
+  - Al het niet-Nederlandse moet nog door een moedertaalspreker gecontroleerd worden (backlog).
+- **Sleutels (volgorde = het document):**
+  - **Kop en voet:** formsLabel, title, footer.
+  - **Medewerker:**
+    - secWorker, lblName, lblRole;
+    - lblWorkerType met optGpbe / optThirdParty (keuze "Werknemer: GPBE / Derden").
+  - **Werkgever:** secEmployer, lblOrgName, lblAddress, lblPostcodeCity, lblPhone.
+  - **Klant/project:** secCustomer, lblCity, lblProjectNumber, lblSupervisor.
+  - **Introductie:**
+    - kop secIntro;
+    - 13 punten: introSiteTour, introWork, introSafetyPlan1, introSafetyRules2, introCustomerRules, introFireEscape, introAlarmNumbers, introPpeChecklist, **idShown**, introA1, introLimosa, introLmra, introVca.
+  - **PBM-tabel:**
+    - kop en kolommen: secPpe, ppeColPpe/Protection/Application/YesNo;
+    - ppeSecEmployer, gevolgd door 15 regels ppe<X> + ppe<X>Use: Helmet, BumpCap, Shoes, Goggles, Gloves, WeldingHelmet, Earplugs, Earmuffs, Workwear, FrClothing, HiVis, Jacket, Training, FirstAid, Extinguisher;
+    - beschermingswaarden prot*: Head, Feet, Eyes, Hands, Ears, Body, Environment;
+    - ppeSecGea, met ppeOverall, lblQuantity en lblSize.
+  - **Opmerkingen:** secRemarks, remark1-6.
+  - **Handtekening:** secSignature, signatureStatement, lblName, lblDate, lblSignature.
+- **H36 toegepast:**
+  - Geen labels voor het woonadres, de postcode/woonplaats en de telefoon van de medewerker. lblAddress, lblPostcodeCity en lblPhone horen alleen bij werkgever en klant.
+  - idShown vervangt "Kopie paspoort/ID ingeleverd".
+  - De voettekst is de app-versie.
 ## 6. Open vragen
 - **V11** — beantwoord 17-11-2026 (H37): alleen de taal van de medewerker.
 - **V5** (EXCEL_MIGRATION): ondertekenen op papier met een scan uploaden, of digitaal? En wie ontvangt het getekende pakket?
 - **V4** (EXCEL_MIGRATION): de bron van de klantgegevens.
 - **V6** — beantwoord 17-11-2026 (H37): Belarusian wordt 9e taal (MS-043).
-- **Bron:** de originele FOR-010.040-teksten in alle talen (Eddy).
+- **Fill & Sign:** het label "Handtekening (Fill & Sign):" komt letterlijk uit het voorbeeld (Acrobat). In de app wordt op papier getekend (V5). Mag "(Fill & Sign)" weg? Dat is alleen een tekstwijziging in Translations.
+- **Extra introductieregels:** het voorbeeldformulier heeft twee vrije velden (aanvullende introductie en details) zonder vaste tekst. Komen die in de app als lege regels terug?

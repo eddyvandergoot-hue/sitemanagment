@@ -199,12 +199,27 @@ if (Test-Path $cPath) {
     foreach ($ln in $nl[1..($nl.Count - 1)]) { $f = $ln -split ';'; if ($f.Count -ne 3 -or $f[0] -notmatch '^consent\.\w+$' -or $f[2].Trim() -eq '' -or $f[2] -ne $f[2].Trim()) { $nbad++; continue }; $nmap["$($f[0])|$($f[1])"] = $f[2] }
     Check ($nbad -eq 0 -and ($nl.Count - 1) -eq $nmap.Count) 'consent CSV: every row 3 fields, key consent.<name>, text not empty, no duplicates'
     $nlangs = @($langs)
-    $nmiss = @(foreach ($k in 'consent.idShown', 'consent.footer') { foreach ($l in $nlangs) { if (-not $nmap.ContainsKey("$k|$l")) { "$k|$l" } } })
-    Check ($nmiss.Count -eq 0 -and ($nl.Count - 1) -eq 18) "consent CSV: consent.idShown + consent.footer x 9 languages = 18 rows$(if ($nmiss) { ' - missing ' + ($nmiss -join ', ') })"
-    Check ($nmap['consent.idShown|Dutch'] -ceq 'Paspoort/ID getoond') 'consent CSV: Dutch consent.idShown = "Paspoort/ID getoond" (H36)'
+    $nkeys = @($nmap.Keys | ForEach-Object { ($_ -split '\|')[0] } | Sort-Object -Unique)
+    $nmiss = @(foreach ($k in $nkeys) { foreach ($l in $nlangs) { if (-not $nmap.ContainsKey("$k|$l")) { "$k|$l" } } })
+    Check ($nmiss.Count -eq 0 -and $nkeys.Count -ge 90 -and ($nl.Count - 1) -eq $nkeys.Count * $nlangs.Count) "consent CSV: $($nkeys.Count) keys x $($nlangs.Count) languages = $($nl.Count - 1) rows, every key in every language$(if ($nmiss) { ' - missing ' + ($nmiss -join ', ') })"
+    $need = 'consent.title', 'consent.footer', 'consent.secWorker', 'consent.secEmployer', 'consent.secCustomer', 'consent.lblSupervisor', 'consent.secIntro', 'consent.idShown', 'consent.secPpe', 'consent.ppeOverall', 'consent.secRemarks', 'consent.secSignature', 'consent.signatureStatement'
+    Check (@($need | Where-Object { $nkeys -notcontains $_ }).Count -eq 0) 'consent CSV: structure of FOR-010.040 present (title, worker, employer, customer, VGM supervisor, introduction, PPE, remarks, signature, footer)'
+    Check ($nmap['consent.idShown|Dutch'] -ceq 'Paspoort/ID getoond.') 'consent CSV: Dutch consent.idShown = "Paspoort/ID getoond." (H36)'
+    $h36 = @($nmap.GetEnumerator() | Where-Object { $_.Value -match 'Huisadres|Kopie paspoort|Adres zamieszkania|Home address' })
+    Check ($h36.Count -eq 0 -and @($nkeys | Where-Object { $_ -match 'Home|Address2|WorkerPhone|IdCopy' }).Count -eq 0) "consent CSV: H36 applied (no worker home address/phone labels, no passport copy)$(if ($h36) { ' - ' + (($h36 | ForEach-Object Key) -join ', ') })"
     $nf = @(foreach ($l in $nlangs) { $t = $nmap["consent.footer|$l"]; if ($t -notmatch '^GEA INTERNAL \| ' -or $t -notmatch 'FOR-010\.040 \(20-03-2023\)' -or $t -notmatch '\{page\}' -or $t -notmatch '\{pages\}') { $l } })
     Check ($nf.Count -eq 0) "consent CSV: footer starts with GEA INTERNAL, names FOR-010.040 (20-03-2023), has {page} and {pages} in every language$(if ($nf) { ' - ' + ($nf -join ', ') })"
-  }
+    $uo = @{ English = 'unofficial translation'; Czech = '(neofici'; Romanian = '(traducere neofici'; German = '(inoffizielle'; French = '(traduction non officielle)' }
+    Check (@($uo.Keys | Where-Object { -not $nmap["consent.footer|$_"].Contains($uo[$_]) }).Count -eq 0 -and @('Dutch', 'Polish', 'Ukrainian', 'Belarusian' | Where-Object { $nmap["consent.footer|$_"] -match 'nofficial|neofic|nieofic|\(traduc|\(inoff' }).Count -eq 0) 'consent CSV: languages without an official example (en, cs, ro, de, fr) say "unofficial translation" in the footer; nl/pl/uk/be (from the example forms) do not'
+    foreach ($cd in @(@{ F = 'translations-consent-8.csv'; L = @($nlangs | Where-Object { $_ -ne 'Belarusian' }) }, @{ F = 'translations-consent-be.csv'; L = @('Belarusian') })) {
+      $cp = Join-Path $tpl $cd.F
+      Check (Test-Path $cp) "$($cd.F) exists"
+      if (Test-Path $cp) {
+        $cl = @((ReadText $cp).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
+        $crows = @($cl[1..($cl.Count - 1)])
+        Check ((Read-SharedBytes $cp)[0] -eq 0xEF -and $cl[0] -ceq 'Key;Language;Text' -and $crows.Count -eq $nkeys.Count * $cd.L.Count -and @($crows | Where-Object { $f = $_ -split ';'; $cd.L -notcontains $f[1] -or $nmap["$($f[0])|$($f[1])"] -cne $f[2] }).Count -eq 0) "$($cd.F): $($nkeys.Count * $cd.L.Count) rows, only $($cd.L -join '/'), every row equal to the full file"
+      }
+    }  }
   # Sample info block labels = CSV texts (nl = Dutch, en = English)
   foreach ($sec in $secs) {
     $lg = $sec.Groups[1].Value; $ln = @{ nl = 'Dutch'; en = 'English' }[$lg]

@@ -1,0 +1,91 @@
+﻿Key;Language;Text
+consent.formsLabel;Belarusian;ФОРМЫ
+consent.title;Belarusian;ЗАЯВА АБ ЗГОДЗЕ
+consent.footer;Belarusian;GEA INTERNAL | на аснове FOR-010.040 (20-03-2023) | версія праграмы | Беларускі пераклад | Старонка {page} з {pages}
+consent.secWorker;Belarusian;АСАБІСТЫЯ ДАНЫЯ РАБОТНІКА
+consent.lblName;Belarusian;Імя і прозвішча
+consent.lblRole;Belarusian;Пасада
+consent.lblWorkerType;Belarusian;Работнік:
+consent.optGpbe;Belarusian;GPBE
+consent.optThirdParty;Belarusian;Іншая арганізацыя
+consent.secEmployer;Belarusian;НАЙМАЛЬНІК / АГЕНЦТВА ЧАСОВАЙ ЗАНЯТАСЦІ
+consent.lblOrgName;Belarusian;Назва
+consent.lblAddress;Belarusian;Адрас
+consent.lblPostcodeCity;Belarusian;Паштовы індэкс і населены пункт
+consent.lblPhone;Belarusian;Нумар тэлефона
+consent.secCustomer;Belarusian;ЗАКАЗЧЫК
+consent.lblCity;Belarusian;Населены пункт
+consent.lblProjectNumber;Belarusian;Нумар праекта
+consent.lblSupervisor;Belarusian;Інспектар GEA па бяспецы, здароўі і наваколлі
+consent.secIntro;Belarusian;УВОДНЫ ІНСТРУКТАЖ (PVP, ЧАСТКА 3)
+consent.introSiteTour;Belarusian;Праведзена азнаямляльная экскурсія па аб’екце праекта.
+consent.introWork;Belarusian;Пройдзены інструктаж адносна работ, якія будуць выконвацца.
+consent.introSafetyPlan1;Belarusian;Змест часткі 1 Плана бяспекі праекта вядомы (PVP, частка 1).
+consent.introSafetyRules2;Belarusian;Змест агульных правіл паводзін і патрабаванняў бяспекі вядомы (PVP, частка 2, DOC-030.xxx).
+consent.introCustomerRules;Belarusian;Патрабаванні бяспекі і ўнутраныя правілы заказчыка вядомыя.
+consent.introFireEscape;Belarusian;Размяшчэнне і выкарыстанне сродкаў пажаратушэння і шляхоў эвакуацыі вядомыя (аварыйны план BPN).
+consent.introAlarmNumbers;Belarusian;Размяшчэнне картак экстранага выкліку з тэлефонамі аварыйна-выратавальных службаў вядомае.
+consent.introPpeChecklist;Belarusian;Праверка паводле пераліку СІА праведзена, пералік запоўнены (гл. наступную старонку).
+consent.idShown;Belarusian;Пашпарт / пасведчанне асобы прад’яўлена.
+consent.introA1;Belarusian;Даведка A1 пададзена (для замежных работнікаў, якія працуюць у Нідэрландах / Бельгіі).
+consent.introLimosa;Belarusian;Дэкларацыя Limosa (для замежных работнікаў, якія працуюць у Бельгіі).
+consent.introLmra;Belarusian;Ёсць картка LMRA.
+consent.introVca;Belarusian;Ёсць дзейны сертыфікат VCA.
+consent.secPpe;Belarusian;СРОДКІ ІНДЫВІДУАЛЬНАЙ АБАРОНЫ (СІА)
+consent.ppeColPpe;Belarusian;СІА
+consent.ppeColProtection;Belarusian;Абарона
+consent.ppeColApplication;Belarusian;Прымяненне
+consent.ppeColYesNo;Belarusian;Так / Не
+consent.ppeSecEmployer;Belarusian;СІА, ВЫДАДЗЕНЫЯ НАЙМАЛЬНІКАМ / АГЕНЦТВАМ ЧАСОВАЙ ЗАНЯТАСЦІ
+consent.ppeHelmet;Belarusian;Ахоўная каска
+consent.ppeHelmetUse;Belarusian;Там, дзе прадметы, якія падаюць, могуць выклікаць траўмы.
+consent.ppeBumpCap;Belarusian;Ахоўная кепка
+consent.ppeBumpCapUse;Belarusian;Там, дзе можна ўдарыцца галавой.
+consent.ppeShoes;Belarusian;Ахоўны абутак S3
+consent.ppeShoesUse;Belarusian;На будаўнічых пляцоўках і ў майстэрнях.
+consent.ppeGoggles;Belarusian;Ахоўныя / пылаахоўныя акуляры
+consent.ppeGogglesUse;Belarusian;Пры шліфаванні, сячэнні, свідраванні, траўленні і працы ў запыленым асяроддзі.
+consent.ppeGloves;Belarusian;Ахоўныя пальчаткі
+consent.ppeGlovesUse;Belarusian;Пры работах з рызыкай траўмавання рук.
+consent.ppeWeldingHelmet;Belarusian;Зварачная маска
+consent.ppeWeldingHelmetUse;Belarusian;Пры TIG / электрычнай зварцы.
+consent.ppeEarplugs;Belarusian;Вушныя ўкладышы
+consent.ppeEarplugsUse;Belarusian;Пры ўзроўні шуму да 85 dB(A).
+consent.ppeEarmuffs;Belarusian;Берушы / індывідуальныя ўкладышы
+consent.ppeEarmuffsUse;Belarusian;Пры ўзроўні шуму да 90 dB(A).
+consent.ppeWorkwear;Belarusian;Рабочае адзенне
+consent.ppeWorkwearUse;Belarusian;Падчас выканання работ.
+consent.ppeFrClothing;Belarusian;Вогнеўстойлівае рабочае адзенне
+consent.ppeFrClothingUse;Belarusian;Пры зварцы і шліфаванні.
+consent.ppeHiVis;Belarusian;Флуарэсцэнтная сігнальная камізэлька
+consent.ppeHiVisUse;Belarusian;На будаўнічых пляцоўках.
+consent.ppeJacket;Belarusian;Курткі
+consent.ppeJacketUse;Belarusian;У халоднае надвор’е і пры ападках.
+consent.ppeTraining;Belarusian;Навучанне
+consent.ppeTrainingUse;Belarusian;Наяўнасць сертыфіката па асновах бяспекі.
+consent.ppeFirstAid;Belarusian;Аптэчка
+consent.ppeFirstAidUse;Belarusian;Дапамога пры (нязначных) траўмах.
+consent.ppeExtinguisher;Belarusian;Вогнетушыцель
+consent.ppeExtinguisherUse;Belarusian;Тушэнне пажараў.
+consent.protHead;Belarusian;Галава
+consent.protFeet;Belarusian;Ступні
+consent.protEyes;Belarusian;Вочы
+consent.protHands;Belarusian;Рукі
+consent.protEars;Belarusian;Вушы
+consent.protBody;Belarusian;Цела
+consent.protEnvironment;Belarusian;Наваколле
+consent.ppeSecGea;Belarusian;СІА, ВЫДАДЗЕНЫЯ GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeOverall;Belarusian;Камбінезон
+consent.lblQuantity;Belarusian;Кольк.:
+consent.lblSize;Belarusian;Памер:
+consent.secRemarks;Belarusian;ЗАЎВАГІ І КАМЕНТАРЫІ
+consent.remark1;Belarusian;Работнік асабіста адказвае за выкарыстанне, догляд і замену СІА.
+consent.remark2;Belarusian;Калі работнік не мае абавязковых СІА, іх выдае GPBE. Выдаткі на іх выстаўляюцца наймальніку.
+consent.remark3;Belarusian;Адзенне і СІА, выдадзеныя GPBE, перадаюцца работніку ў часовае карыстанне. Пасля завяршэння праекта іх неабходна вярнуць. У выпадку страты або крадзяжу кошт спаганяецца з работніка.
+consent.remark4;Belarusian;Калі прымяняецца Checkinatwork, GPBE выдае бэйджы для рэгістрацыі на тэрмінале Suivo. У выпадку страты бэйджа спаганяецца 25 еўра.
+consent.remark5;Belarusian;Калі дагаворам не прадугледжана іншае, іншыя спецыяльныя сродкі бяспекі, такія як страховачныя прывязі, рыштунак для ўздыму, будаўнічыя рыштаванні, процівагазы і г.д., выдае GPBE. Работнік адказвае за заказ і правільнае прымяненне выдадзеных сродкаў бяспекі.
+consent.remark6;Belarusian;Невыкананне патрабаванняў бяспекі можа прывесці да выдалення з рабочай пляцоўкі. Калі пасля вуснага папярэджання выяўлена паўторнае парушэнне, выдаецца пісьмовае папярэджанне паводле формы «Папярэджанне аб небяспечным выкананні работ» (FOR-130.001).
+consent.secSignature;Belarusian;ПОДПІС РАБОТНІКА
+consent.signatureStatement;Belarusian;Запаўняючы гэты дакумент, работнік пацвярджае, што цалкам азнаёмлены з тэмамі, пазначанымі падчас уводнага інструктажу, і абавязваецца выконваць узгодненыя правілы бяспекі:
+consent.lblDate;Belarusian;Дата
+consent.lblSignature;Belarusian;Подпіс (Fill & Sign):

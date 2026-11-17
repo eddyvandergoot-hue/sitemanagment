@@ -1,19 +1,811 @@
 ﻿Key;Language;Text
-consent.idShown;Dutch;Paspoort/ID getoond
-consent.idShown;English;Passport/ID shown
-consent.idShown;Polish;Paszport/dowód osobisty okazany
-consent.idShown;Czech;Pas/průkaz totožnosti předložen
-consent.idShown;Romanian;Pașaport/act de identitate prezentat
-consent.idShown;Ukrainian;Паспорт/посвідчення особи предʼявлено
-consent.idShown;German;Reisepass/Ausweis vorgezeigt
-consent.idShown;French;Passeport/pièce d'identité présenté
-consent.idShown;Belarusian;Пашпарт/пасведчанне асобы прадʼяўлена
+consent.formsLabel;Dutch;FORMULIEREN
+consent.formsLabel;English;FORMS
+consent.formsLabel;Polish;FORMULARZE
+consent.formsLabel;Czech;FORMULÁŘE
+consent.formsLabel;Romanian;FORMULARE
+consent.formsLabel;Ukrainian;ФОРМИ
+consent.formsLabel;German;FORMULARE
+consent.formsLabel;French;FORMULAIRES
+consent.formsLabel;Belarusian;ФОРМЫ
+consent.title;Dutch;AKKOORD VERKLARING
+consent.title;English;DECLARATION OF CONSENT
+consent.title;Polish;OŚWIADCZENIE ZGODY
+consent.title;Czech;PROHLÁŠENÍ O SOUHLASU
+consent.title;Romanian;DECLARAȚIE DE ACORD
+consent.title;Ukrainian;ЗАЯВА ПРО ЗГОДУ
+consent.title;German;EINVERSTÄNDNISERKLÄRUNG
+consent.title;French;DÉCLARATION D'ACCORD
+consent.title;Belarusian;ЗАЯВА АБ ЗГОДЗЕ
 consent.footer;Dutch;GEA INTERNAL | gebaseerd op FOR-010.040 (20-03-2023) | app-versie | Nederlandse versie | Pagina {page} van {pages}
-consent.footer;English;GEA INTERNAL | based on FOR-010.040 (20-03-2023) | app version | English version | Page {page} of {pages}
-consent.footer;Polish;GEA INTERNAL | na podstawie FOR-010.040 (20-03-2023) | wersja aplikacji | wersja polska | Strona {page} z {pages}
-consent.footer;Czech;GEA INTERNAL | podle FOR-010.040 (20-03-2023) | verze aplikace | česká verze | Strana {page} z {pages}
-consent.footer;Romanian;GEA INTERNAL | pe baza FOR-010.040 (20-03-2023) | versiunea aplicației | versiunea în limba română | Pagina {page} din {pages}
-consent.footer;Ukrainian;GEA INTERNAL | на основі FOR-010.040 (20-03-2023) | версія застосунку | українська версія | Сторінка {page} з {pages}
-consent.footer;German;GEA INTERNAL | basierend auf FOR-010.040 (20-03-2023) | App-Version | deutsche Version | Seite {page} von {pages}
-consent.footer;French;GEA INTERNAL | d'après FOR-010.040 (20-03-2023) | version application | version française | Page {page} sur {pages}
-consent.footer;Belarusian;GEA INTERNAL | на аснове FOR-010.040 (20-03-2023) | версія праграмы | беларуская версія | Старонка {page} з {pages}
+consent.footer;English;GEA INTERNAL | based on FOR-010.040 (20-03-2023) | app version | English version (unofficial translation) | Page {page} of {pages}
+consent.footer;Polish;GEA INTERNAL | na podstawie FOR-010.040 (20-03-2023) | wersja aplikacji | Wersja polska | Strona {page} z {pages}
+consent.footer;Czech;GEA INTERNAL | podle FOR-010.040 (20-03-2023) | verze aplikace | česká verze (neoficiální překlad) | Strana {page} z {pages}
+consent.footer;Romanian;GEA INTERNAL | pe baza FOR-010.040 (20-03-2023) | versiunea aplicației | versiunea în limba română (traducere neoficială) | Pagina {page} din {pages}
+consent.footer;Ukrainian;GEA INTERNAL | на основі FOR-010.040 (20-03-2023) | версія застосунку | Український переклад | Сторінка {page} з {pages}
+consent.footer;German;GEA INTERNAL | basierend auf FOR-010.040 (20-03-2023) | App-Version | deutsche Version (inoffizielle Übersetzung) | Seite {page} von {pages}
+consent.footer;French;GEA INTERNAL | d'après FOR-010.040 (20-03-2023) | version application | version française (traduction non officielle) | Page {page} sur {pages}
+consent.footer;Belarusian;GEA INTERNAL | на аснове FOR-010.040 (20-03-2023) | версія праграмы | Беларускі пераклад | Старонка {page} з {pages}
+consent.secWorker;Dutch;PERSOONLIJKE GEGEVENS WERKNEMER
+consent.secWorker;English;EMPLOYEE PERSONAL DETAILS
+consent.secWorker;Polish;DANE OSOBOWE PRACOWNIKA
+consent.secWorker;Czech;OSOBNÍ ÚDAJE ZAMĚSTNANCE
+consent.secWorker;Romanian;DATE PERSONALE ALE ANGAJATULUI
+consent.secWorker;Ukrainian;ОСОБИСТІ ДАНІ ПРАЦІВНИКА
+consent.secWorker;German;PERSÖNLICHE DATEN DES MITARBEITERS
+consent.secWorker;French;DONNÉES PERSONNELLES DU TRAVAILLEUR
+consent.secWorker;Belarusian;АСАБІСТЫЯ ДАНЫЯ РАБОТНІКА
+consent.lblName;Dutch;Naam
+consent.lblName;English;Name
+consent.lblName;Polish;Imię i nazwisko
+consent.lblName;Czech;Jméno a příjmení
+consent.lblName;Romanian;Nume și prenume
+consent.lblName;Ukrainian;Ім’я та прізвище
+consent.lblName;German;Name
+consent.lblName;French;Nom
+consent.lblName;Belarusian;Імя і прозвішча
+consent.lblRole;Dutch;Functie
+consent.lblRole;English;Position
+consent.lblRole;Polish;Stanowisko
+consent.lblRole;Czech;Funkce
+consent.lblRole;Romanian;Funcție
+consent.lblRole;Ukrainian;Посада
+consent.lblRole;German;Funktion
+consent.lblRole;French;Fonction
+consent.lblRole;Belarusian;Пасада
+consent.lblWorkerType;Dutch;Werknemer:
+consent.lblWorkerType;English;Employee:
+consent.lblWorkerType;Polish;Pracownik:
+consent.lblWorkerType;Czech;Zaměstnanec:
+consent.lblWorkerType;Romanian;Angajat:
+consent.lblWorkerType;Ukrainian;Працівник:
+consent.lblWorkerType;German;Mitarbeiter:
+consent.lblWorkerType;French;Travailleur :
+consent.lblWorkerType;Belarusian;Работнік:
+consent.optGpbe;Dutch;GPBE
+consent.optGpbe;English;GPBE
+consent.optGpbe;Polish;GPBE
+consent.optGpbe;Czech;GPBE
+consent.optGpbe;Romanian;GPBE
+consent.optGpbe;Ukrainian;GPBE
+consent.optGpbe;German;GPBE
+consent.optGpbe;French;GPBE
+consent.optGpbe;Belarusian;GPBE
+consent.optThirdParty;Dutch;Derden
+consent.optThirdParty;English;Third party
+consent.optThirdParty;Polish;Firma zewnętrzna
+consent.optThirdParty;Czech;Třetí strana
+consent.optThirdParty;Romanian;Terți
+consent.optThirdParty;Ukrainian;Стороння організація
+consent.optThirdParty;German;Dritte
+consent.optThirdParty;French;Tiers
+consent.optThirdParty;Belarusian;Іншая арганізацыя
+consent.secEmployer;Dutch;WERKGEVER / UITZENDORGANISATIE
+consent.secEmployer;English;EMPLOYER / EMPLOYMENT AGENCY
+consent.secEmployer;Polish;PRACODAWCA / AGENCJA PRACY
+consent.secEmployer;Czech;ZAMĚSTNAVATEL / PERSONÁLNÍ AGENTURA
+consent.secEmployer;Romanian;ANGAJATOR / AGENȚIE DE MUNCĂ TEMPORARĂ
+consent.secEmployer;Ukrainian;РОБОТОДАВЕЦЬ / АГЕНЦІЯ ТИМЧАСОВОЇ ЗАЙНЯТОСТІ
+consent.secEmployer;German;ARBEITGEBER / ZEITARBEITSFIRMA
+consent.secEmployer;French;EMPLOYEUR / AGENCE D'INTÉRIM
+consent.secEmployer;Belarusian;НАЙМАЛЬНІК / АГЕНЦТВА ЧАСОВАЙ ЗАНЯТАСЦІ
+consent.lblOrgName;Dutch;Naam
+consent.lblOrgName;English;Name
+consent.lblOrgName;Polish;Nazwa
+consent.lblOrgName;Czech;Název
+consent.lblOrgName;Romanian;Denumire
+consent.lblOrgName;Ukrainian;Назва
+consent.lblOrgName;German;Name
+consent.lblOrgName;French;Nom
+consent.lblOrgName;Belarusian;Назва
+consent.lblAddress;Dutch;Adres
+consent.lblAddress;English;Address
+consent.lblAddress;Polish;Adres
+consent.lblAddress;Czech;Adresa
+consent.lblAddress;Romanian;Adresă
+consent.lblAddress;Ukrainian;Адреса
+consent.lblAddress;German;Adresse
+consent.lblAddress;French;Adresse
+consent.lblAddress;Belarusian;Адрас
+consent.lblPostcodeCity;Dutch;Postcode en woonplaats
+consent.lblPostcodeCity;English;Postcode and city
+consent.lblPostcodeCity;Polish;Kod pocztowy i miejscowość
+consent.lblPostcodeCity;Czech;PSČ a obec
+consent.lblPostcodeCity;Romanian;Cod poștal și localitate
+consent.lblPostcodeCity;Ukrainian;Поштовий індекс і населений пункт
+consent.lblPostcodeCity;German;Postleitzahl und Ort
+consent.lblPostcodeCity;French;Code postal et localité
+consent.lblPostcodeCity;Belarusian;Паштовы індэкс і населены пункт
+consent.lblPhone;Dutch;Telefoonnummer
+consent.lblPhone;English;Phone number
+consent.lblPhone;Polish;Numer telefonu
+consent.lblPhone;Czech;Telefonní číslo
+consent.lblPhone;Romanian;Număr de telefon
+consent.lblPhone;Ukrainian;Номер телефону
+consent.lblPhone;German;Telefonnummer
+consent.lblPhone;French;Numéro de téléphone
+consent.lblPhone;Belarusian;Нумар тэлефона
+consent.secCustomer;Dutch;KLANT
+consent.secCustomer;English;CUSTOMER
+consent.secCustomer;Polish;KLIENT
+consent.secCustomer;Czech;ZÁKAZNÍK
+consent.secCustomer;Romanian;CLIENT
+consent.secCustomer;Ukrainian;ЗАМОВНИК
+consent.secCustomer;German;KUNDE
+consent.secCustomer;French;CLIENT
+consent.secCustomer;Belarusian;ЗАКАЗЧЫК
+consent.lblCity;Dutch;Plaats
+consent.lblCity;English;City
+consent.lblCity;Polish;Miejscowość
+consent.lblCity;Czech;Obec
+consent.lblCity;Romanian;Localitate
+consent.lblCity;Ukrainian;Населений пункт
+consent.lblCity;German;Ort
+consent.lblCity;French;Localité
+consent.lblCity;Belarusian;Населены пункт
+consent.lblProjectNumber;Dutch;Projectnummer
+consent.lblProjectNumber;English;Project number
+consent.lblProjectNumber;Polish;Numer projektu
+consent.lblProjectNumber;Czech;Číslo projektu
+consent.lblProjectNumber;Romanian;Număr proiect
+consent.lblProjectNumber;Ukrainian;Номер проєкту
+consent.lblProjectNumber;German;Projektnummer
+consent.lblProjectNumber;French;Numéro de projet
+consent.lblProjectNumber;Belarusian;Нумар праекта
+consent.lblSupervisor;Dutch;VGM-toezichthouder GEA
+consent.lblSupervisor;English;GEA HSE supervisor
+consent.lblSupervisor;Polish;Osoba nadzorująca VGM w GEA
+consent.lblSupervisor;Czech;Dozor BOZP GEA
+consent.lblSupervisor;Romanian;Supervizor SSM GEA
+consent.lblSupervisor;Ukrainian;Інспектор GEA з безпеки, здоров’я та довкілля
+consent.lblSupervisor;German;SGU-Aufsichtsperson GEA
+consent.lblSupervisor;French;Superviseur SSE GEA
+consent.lblSupervisor;Belarusian;Інспектар GEA па бяспецы, здароўі і наваколлі
+consent.secIntro;Dutch;INTRODUCTIE (PVP DEEL 3)
+consent.secIntro;English;INTRODUCTION (PVP PART 3)
+consent.secIntro;Polish;WPROWADZENIE (PVP, CZĘŚĆ 3)
+consent.secIntro;Czech;ÚVODNÍ INSTRUKTÁŽ (PVP ČÁST 3)
+consent.secIntro;Romanian;INSTRUIRE INTRODUCTIVĂ (PVP PARTEA 3)
+consent.secIntro;Ukrainian;ВСТУПНИЙ ІНСТРУКТАЖ (PVP, ЧАСТИНА 3)
+consent.secIntro;German;EINWEISUNG (PVP TEIL 3)
+consent.secIntro;French;INTRODUCTION (PVP PARTIE 3)
+consent.secIntro;Belarusian;УВОДНЫ ІНСТРУКТАЖ (PVP, ЧАСТКА 3)
+consent.introSiteTour;Dutch;Rondleiding projectlocatie is uitgevoerd.
+consent.introSiteTour;English;A tour of the project site has been given.
+consent.introSiteTour;Polish;Przeprowadzono oprowadzenie po terenie projektu.
+consent.introSiteTour;Czech;Prohlídka místa projektu byla provedena.
+consent.introSiteTour;Romanian;Turul locației proiectului a fost efectuat.
+consent.introSiteTour;Ukrainian;Проведено ознайомчу екскурсію об’єктом проєкту.
+consent.introSiteTour;German;Rundgang über das Projektgelände wurde durchgeführt.
+consent.introSiteTour;French;La visite du site du projet a été effectuée.
+consent.introSiteTour;Belarusian;Праведзена азнаямляльная экскурсія па аб’екце праекта.
+consent.introWork;Dutch;Introductie over de uit te voeren werkzaamheden gehad.
+consent.introWork;English;An introduction to the work to be carried out has been received.
+consent.introWork;Polish;Przeprowadzono instruktaż dotyczący wykonywanych prac.
+consent.introWork;Czech;Úvodní instruktáž k prováděným pracím byla absolvována.
+consent.introWork;Romanian;A fost primită instruirea privind lucrările care urmează să fie executate.
+consent.introWork;Ukrainian;Пройдено інструктаж щодо робіт, які виконуватимуться.
+consent.introWork;German;Einweisung in die auszuführenden Arbeiten erhalten.
+consent.introWork;French;Introduction reçue sur les travaux à réaliser.
+consent.introWork;Belarusian;Пройдзены інструктаж адносна работ, якія будуць выконвацца.
+consent.introSafetyPlan1;Dutch;Inhoud deel 1 van het Project Veiligheidsplan is bekend (PVP Deel 1).
+consent.introSafetyPlan1;English;The content of part 1 of the Project Safety Plan is known (PVP Part 1).
+consent.introSafetyPlan1;Polish;Znana jest treść części 1 Planu Bezpieczeństwa Projektu (PVP, część 1).
+consent.introSafetyPlan1;Czech;Obsah části 1 Bezpečnostního plánu projektu je znám (PVP část 1).
+consent.introSafetyPlan1;Romanian;Conținutul părții 1 a Planului de securitate al proiectului este cunoscut (PVP partea 1).
+consent.introSafetyPlan1;Ukrainian;Зміст частини 1 Плану безпеки проєкту відомий (PVP, частина 1).
+consent.introSafetyPlan1;German;Inhalt von Teil 1 des Projekt-Sicherheitsplans ist bekannt (PVP Teil 1).
+consent.introSafetyPlan1;French;Le contenu de la partie 1 du Plan de sécurité du projet est connu (PVP partie 1).
+consent.introSafetyPlan1;Belarusian;Змест часткі 1 Плана бяспекі праекта вядомы (PVP, частка 1).
+consent.introSafetyRules2;Dutch;Inhoud de algemene gedragsregels en veiligheidsvoorschriften is bekend (PVP Deel 2, DOC-030.xxx).
+consent.introSafetyRules2;English;The general rules of conduct and safety regulations are known (PVP Part 2, DOC-030.xxx).
+consent.introSafetyRules2;Polish;Znane są ogólne zasady postępowania i przepisy bezpieczeństwa (PVP, część 2, DOC-030.xxx).
+consent.introSafetyRules2;Czech;Obsah obecných pravidel chování a bezpečnostních předpisů je znám (PVP část 2, DOC-030.xxx).
+consent.introSafetyRules2;Romanian;Conținutul regulilor generale de conduită și al prescripțiilor de securitate este cunoscut (PVP partea 2, DOC-030.xxx).
+consent.introSafetyRules2;Ukrainian;Зміст загальних правил поведінки та вимог безпеки відомий (PVP, частина 2, DOC-030.xxx).
+consent.introSafetyRules2;German;Inhalt der allgemeinen Verhaltensregeln und Sicherheitsvorschriften ist bekannt (PVP Teil 2, DOC-030.xxx).
+consent.introSafetyRules2;French;Le contenu des règles générales de conduite et des consignes de sécurité est connu (PVP partie 2, DOC-030.xxx).
+consent.introSafetyRules2;Belarusian;Змест агульных правіл паводзін і патрабаванняў бяспекі вядомы (PVP, частка 2, DOC-030.xxx).
+consent.introCustomerRules;Dutch;Inhoud van veiligheidseisen en de huisregels van de klant zijn bekend.
+consent.introCustomerRules;English;The safety requirements and house rules of the customer are known.
+consent.introCustomerRules;Polish;Znane są wymagania bezpieczeństwa i regulamin obowiązujący u klienta.
+consent.introCustomerRules;Czech;Obsah bezpečnostních požadavků a vnitřního řádu zákazníka je znám.
+consent.introCustomerRules;Romanian;Conținutul cerințelor de securitate și al regulamentului intern al clientului este cunoscut.
+consent.introCustomerRules;Ukrainian;Вимоги безпеки та внутрішні правила замовника відомі.
+consent.introCustomerRules;German;Inhalt der Sicherheitsanforderungen und der Hausordnung des Kunden ist bekannt.
+consent.introCustomerRules;French;Le contenu des exigences de sécurité et du règlement intérieur du client est connu.
+consent.introCustomerRules;Belarusian;Патрабаванні бяспекі і ўнутраныя правілы заказчыка вядомыя.
+consent.introFireEscape;Dutch;Plaats en gebruik van blusapparatuur en vluchtwegen is bekend (Bedrijfsnoodplan BPN).
+consent.introFireEscape;English;The location and use of fire-fighting equipment and escape routes are known (company emergency plan BPN).
+consent.introFireEscape;Polish;Znane są lokalizacje i sposób użycia sprzętu gaśniczego oraz drogi ewakuacyjne (BPN).
+consent.introFireEscape;Czech;Umístění a použití hasicích prostředků a únikových cest je známo (havarijní plán BPN).
+consent.introFireEscape;Romanian;Amplasarea și utilizarea echipamentelor de stingere și a căilor de evacuare sunt cunoscute (plan de urgență BPN).
+consent.introFireEscape;Ukrainian;Розташування й використання засобів пожежогасіння та шляхів евакуації відомі (аварійний план BPN).
+consent.introFireEscape;German;Standort und Gebrauch der Löschgeräte und Fluchtwege sind bekannt (betrieblicher Notfallplan BPN).
+consent.introFireEscape;French;L'emplacement et l'utilisation des équipements d'extinction et des voies d'évacuation sont connus (plan d'urgence BPN).
+consent.introFireEscape;Belarusian;Размяшчэнне і выкарыстанне сродкаў пажаратушэння і шляхоў эвакуацыі вядомыя (аварыйны план BPN).
+consent.introAlarmNumbers;Dutch;Locatie alarmkaarten met telefoonnummers van hulpverlenende instanties is bekend.
+consent.introAlarmNumbers;English;The location of the alarm cards with the phone numbers of the emergency services is known.
+consent.introAlarmNumbers;Polish;Znana jest lokalna karta alarmowa z numerami telefonów służb ratunkowych.
+consent.introAlarmNumbers;Czech;Umístění poplachových karet s telefonními čísly záchranných složek je známo.
+consent.introAlarmNumbers;Romanian;Amplasarea cardurilor de alarmă cu numerele de telefon ale serviciilor de urgență este cunoscută.
+consent.introAlarmNumbers;Ukrainian;Розташування карток екстреного виклику з телефонами аварійно-рятувальних служб відоме.
+consent.introAlarmNumbers;German;Standort der Alarmkarten mit den Telefonnummern der Rettungsdienste ist bekannt.
+consent.introAlarmNumbers;French;L'emplacement des cartes d'alarme avec les numéros des services de secours est connu.
+consent.introAlarmNumbers;Belarusian;Размяшчэнне картак экстранага выкліку з тэлефонамі аварыйна-выратавальных службаў вядомае.
+consent.introPpeChecklist;Dutch;Checklist PBM’s uitgevoerd en ingevuld (zie volgende pagina).
+consent.introPpeChecklist;English;PPE checklist carried out and completed (see next page).
+consent.introPpeChecklist;Polish;Wypełniono listę kontrolną środków ochrony indywidualnej (PBM) na następnej stronie.
+consent.introPpeChecklist;Czech;Kontrolní seznam OOP proveden a vyplněn (viz další strana).
+consent.introPpeChecklist;Romanian;Lista de verificare EIP efectuată și completată (vezi pagina următoare).
+consent.introPpeChecklist;Ukrainian;Перевірку за переліком ЗІЗ проведено, перелік заповнено (див. наступну сторінку).
+consent.introPpeChecklist;German;PSA-Checkliste durchgeführt und ausgefüllt (siehe nächste Seite).
+consent.introPpeChecklist;French;Liste de contrôle des EPI effectuée et remplie (voir page suivante).
+consent.introPpeChecklist;Belarusian;Праверка паводле пераліку СІА праведзена, пералік запоўнены (гл. наступную старонку).
+consent.idShown;Dutch;Paspoort/ID getoond.
+consent.idShown;English;Passport/ID shown.
+consent.idShown;Polish;Okazano paszport / dokument tożsamości.
+consent.idShown;Czech;Pas/průkaz totožnosti předložen.
+consent.idShown;Romanian;Pașaport/act de identitate prezentat.
+consent.idShown;Ukrainian;Паспорт / посвідчення особи пред’явлено.
+consent.idShown;German;Reisepass/Ausweis vorgezeigt.
+consent.idShown;French;Passeport/pièce d'identité présenté.
+consent.idShown;Belarusian;Пашпарт / пасведчанне асобы прад’яўлена.
+consent.introA1;Dutch;A1 verklaring ingeleverd (voor buitenlandse medewerkers, werkend in NL/BE).
+consent.introA1;English;A1 certificate handed in (for foreign employees working in NL/BE).
+consent.introA1;Polish;Przekazano zaświadczenie A1 (pracownicy zagraniczni pracujący w NL/BE).
+consent.introA1;Czech;Potvrzení A1 odevzdáno (pro zahraniční zaměstnance pracující v NL/BE).
+consent.introA1;Romanian;Certificatul A1 predat (pentru angajații străini care lucrează în NL/BE).
+consent.introA1;Ukrainian;Довідку A1 надано (для іноземних працівників, які працюють у Нідерландах / Бельгії).
+consent.introA1;German;A1-Bescheinigung abgegeben (für ausländische Mitarbeiter, die in NL/BE arbeiten).
+consent.introA1;French;Certificat A1 remis (pour les travailleurs étrangers travaillant aux Pays-Bas/en Belgique).
+consent.introA1;Belarusian;Даведка A1 пададзена (для замежных работнікаў, якія працуюць у Нідэрландах / Бельгіі).
+consent.introLimosa;Dutch;Limosa-aangifte (voor buitenlandse medewerkers, werkend in België).
+consent.introLimosa;English;Limosa declaration (for foreign employees working in Belgium).
+consent.introLimosa;Polish;Dokonano zgłoszenia Limosa (pracownicy zagraniczni pracujący w Belgii).
+consent.introLimosa;Czech;Hlášení Limosa (pro zahraniční zaměstnance pracující v Belgii).
+consent.introLimosa;Romanian;Declarația Limosa (pentru angajații străini care lucrează în Belgia).
+consent.introLimosa;Ukrainian;Декларація Limosa (для іноземних працівників, які працюють у Бельгії).
+consent.introLimosa;German;Limosa-Meldung (für ausländische Mitarbeiter, die in Belgien arbeiten).
+consent.introLimosa;French;Déclaration Limosa (pour les travailleurs étrangers travaillant en Belgique).
+consent.introLimosa;Belarusian;Дэкларацыя Limosa (для замежных работнікаў, якія працуюць у Бельгіі).
+consent.introLmra;Dutch;In het bezit van LMRA pasje.
+consent.introLmra;English;In possession of an LMRA card.
+consent.introLmra;Polish;Pracownik posiada kartę LMRA.
+consent.introLmra;Czech;Držitel karty LMRA.
+consent.introLmra;Romanian;Posesor al cardului LMRA.
+consent.introLmra;Ukrainian;Наявна картка LMRA.
+consent.introLmra;German;Im Besitz einer LMRA-Karte.
+consent.introLmra;French;En possession d'une carte LMRA.
+consent.introLmra;Belarusian;Ёсць картка LMRA.
+consent.introVca;Dutch;In het bezit zijn van een geldig VCA certificaat.
+consent.introVca;English;In possession of a valid VCA certificate.
+consent.introVca;Polish;Pracownik posiada ważny certyfikat VCA.
+consent.introVca;Czech;Držitel platného certifikátu VCA.
+consent.introVca;Romanian;Posesor al unui certificat VCA valabil.
+consent.introVca;Ukrainian;Наявний чинний сертифікат VCA.
+consent.introVca;German;Im Besitz eines gültigen VCA-Zertifikats.
+consent.introVca;French;En possession d'un certificat VCA valide.
+consent.introVca;Belarusian;Ёсць дзейны сертыфікат VCA.
+consent.secPpe;Dutch;PERSOONLIJKE BESCHERMINGSMIDDELEN (PBM)
+consent.secPpe;English;PERSONAL PROTECTIVE EQUIPMENT (PPE)
+consent.secPpe;Polish;ŚRODKI OCHRONY INDYWIDUALNEJ (PBM)
+consent.secPpe;Czech;OSOBNÍ OCHRANNÉ PROSTŘEDKY (OOP)
+consent.secPpe;Romanian;ECHIPAMENT INDIVIDUAL DE PROTECȚIE (EIP)
+consent.secPpe;Ukrainian;ЗАСОБИ ІНДИВІДУАЛЬНОГО ЗАХИСТУ (ЗІЗ)
+consent.secPpe;German;PERSÖNLICHE SCHUTZAUSRÜSTUNG (PSA)
+consent.secPpe;French;ÉQUIPEMENTS DE PROTECTION INDIVIDUELLE (EPI)
+consent.secPpe;Belarusian;СРОДКІ ІНДЫВІДУАЛЬНАЙ АБАРОНЫ (СІА)
+consent.ppeColPpe;Dutch;PBM
+consent.ppeColPpe;English;PPE
+consent.ppeColPpe;Polish;Środek ochrony
+consent.ppeColPpe;Czech;OOP
+consent.ppeColPpe;Romanian;EIP
+consent.ppeColPpe;Ukrainian;ЗІЗ
+consent.ppeColPpe;German;PSA
+consent.ppeColPpe;French;EPI
+consent.ppeColPpe;Belarusian;СІА
+consent.ppeColProtection;Dutch;Bescherming
+consent.ppeColProtection;English;Protection
+consent.ppeColProtection;Polish;Chroni
+consent.ppeColProtection;Czech;Ochrana
+consent.ppeColProtection;Romanian;Protecție
+consent.ppeColProtection;Ukrainian;Захист
+consent.ppeColProtection;German;Schutz
+consent.ppeColProtection;French;Protection
+consent.ppeColProtection;Belarusian;Абарона
+consent.ppeColApplication;Dutch;Toepassing
+consent.ppeColApplication;English;Application
+consent.ppeColApplication;Polish;Zastosowanie
+consent.ppeColApplication;Czech;Použití
+consent.ppeColApplication;Romanian;Utilizare
+consent.ppeColApplication;Ukrainian;Застосування
+consent.ppeColApplication;German;Anwendung
+consent.ppeColApplication;French;Utilisation
+consent.ppeColApplication;Belarusian;Прымяненне
+consent.ppeColYesNo;Dutch;J / N
+consent.ppeColYesNo;English;Y / N
+consent.ppeColYesNo;Polish;T / N
+consent.ppeColYesNo;Czech;A / N
+consent.ppeColYesNo;Romanian;D / N
+consent.ppeColYesNo;Ukrainian;Так / Ні
+consent.ppeColYesNo;German;J / N
+consent.ppeColYesNo;French;O / N
+consent.ppeColYesNo;Belarusian;Так / Не
+consent.ppeSecEmployer;Dutch;PBM’S VERSTREKT DOOR WERKGEVER / UITZENDORGANISATIE
+consent.ppeSecEmployer;English;PPE PROVIDED BY THE EMPLOYER / EMPLOYMENT AGENCY
+consent.ppeSecEmployer;Polish;DOSTARCZONE PRZEZ PRACODAWCĘ / AGENCJĘ PRACY
+consent.ppeSecEmployer;Czech;OOP POSKYTNUTÉ ZAMĚSTNAVATELEM / PERSONÁLNÍ AGENTUROU
+consent.ppeSecEmployer;Romanian;EIP FURNIZATE DE ANGAJATOR / AGENȚIA DE MUNCĂ TEMPORARĂ
+consent.ppeSecEmployer;Ukrainian;ЗІЗ, НАДАНІ РОБОТОДАВЦЕМ / АГЕНЦІЄЮ ТИМЧАСОВОЇ ЗАЙНЯТОСТІ
+consent.ppeSecEmployer;German;PSA, BEREITGESTELLT VOM ARBEITGEBER / VON DER ZEITARBEITSFIRMA
+consent.ppeSecEmployer;French;EPI FOURNIS PAR L'EMPLOYEUR / L'AGENCE D'INTÉRIM
+consent.ppeSecEmployer;Belarusian;СІА, ВЫДАДЗЕНЫЯ НАЙМАЛЬНІКАМ / АГЕНЦТВАМ ЧАСОВАЙ ЗАНЯТАСЦІ
+consent.ppeHelmet;Dutch;Veiligheidshelm
+consent.ppeHelmet;English;Safety helmet
+consent.ppeHelmet;Polish;Hełm ochronny
+consent.ppeHelmet;Czech;Ochranná přilba
+consent.ppeHelmet;Romanian;Cască de protecție
+consent.ppeHelmet;Ukrainian;Захисна каска
+consent.ppeHelmet;German;Schutzhelm
+consent.ppeHelmet;French;Casque de sécurité
+consent.ppeHelmet;Belarusian;Ахоўная каска
+consent.ppeHelmetUse;Dutch;Op plaatsen waar vallende voorwerpen letsel kunnen veroorzaken.
+consent.ppeHelmetUse;English;Where falling objects can cause injury.
+consent.ppeHelmetUse;Polish;W miejscach, gdzie spadające przedmioty mogą spowodować obrażenia.
+consent.ppeHelmetUse;Czech;Na místech, kde mohou padající předměty způsobit zranění.
+consent.ppeHelmetUse;Romanian;În locurile unde obiectele care cad pot provoca vătămări.
+consent.ppeHelmetUse;Ukrainian;Там, де предмети, що падають, можуть спричинити травми.
+consent.ppeHelmetUse;German;An Orten, an denen herabfallende Gegenstände Verletzungen verursachen können.
+consent.ppeHelmetUse;French;Aux endroits où des chutes d'objets peuvent causer des blessures.
+consent.ppeHelmetUse;Belarusian;Там, дзе прадметы, якія падаюць, могуць выклікаць траўмы.
+consent.ppeBumpCap;Dutch;Stootcap
+consent.ppeBumpCap;English;Bump cap
+consent.ppeBumpCap;Polish;Czapka ochronna
+consent.ppeBumpCap;Czech;Ochranná čepice
+consent.ppeBumpCap;Romanian;Șapcă de protecție
+consent.ppeBumpCap;Ukrainian;Захисна кепка
+consent.ppeBumpCap;German;Anstoßkappe
+consent.ppeBumpCap;French;Casquette anti-heurt
+consent.ppeBumpCap;Belarusian;Ахоўная кепка
+consent.ppeBumpCapUse;Dutch;Op plaatsen waar je je hoofd kunt stoten.
+consent.ppeBumpCapUse;English;Where you can bump your head.
+consent.ppeBumpCapUse;Polish;W miejscach, gdzie istnieje ryzyko uderzenia głową.
+consent.ppeBumpCapUse;Czech;Na místech, kde se můžete uhodit do hlavy.
+consent.ppeBumpCapUse;Romanian;În locurile unde vă puteți lovi la cap.
+consent.ppeBumpCapUse;Ukrainian;Там, де можна вдаритися головою.
+consent.ppeBumpCapUse;German;An Orten, an denen man sich den Kopf stoßen kann.
+consent.ppeBumpCapUse;French;Aux endroits où l'on peut se cogner la tête.
+consent.ppeBumpCapUse;Belarusian;Там, дзе можна ўдарыцца галавой.
+consent.ppeShoes;Dutch;Veiligheidsschoenen S3
+consent.ppeShoes;English;Safety shoes S3
+consent.ppeShoes;Polish;Obuwie ochronne S3
+consent.ppeShoes;Czech;Bezpečnostní obuv S3
+consent.ppeShoes;Romanian;Încălțăminte de protecție S3
+consent.ppeShoes;Ukrainian;Захисне взуття S3
+consent.ppeShoes;German;Sicherheitsschuhe S3
+consent.ppeShoes;French;Chaussures de sécurité S3
+consent.ppeShoes;Belarusian;Ахоўны абутак S3
+consent.ppeShoesUse;Dutch;Op bouwplaatsen en in werkplaatsen.
+consent.ppeShoesUse;English;On construction sites and in workshops.
+consent.ppeShoesUse;Polish;Na budowach i w warsztatach.
+consent.ppeShoesUse;Czech;Na staveništích a v dílnách.
+consent.ppeShoesUse;Romanian;Pe șantiere și în ateliere.
+consent.ppeShoesUse;Ukrainian;На будівельних майданчиках і в майстернях.
+consent.ppeShoesUse;German;Auf Baustellen und in Werkstätten.
+consent.ppeShoesUse;French;Sur les chantiers et dans les ateliers.
+consent.ppeShoesUse;Belarusian;На будаўнічых пляцоўках і ў майстэрнях.
+consent.ppeGoggles;Dutch;Veiligheidsbril/stofbril
+consent.ppeGoggles;English;Safety glasses / dust goggles
+consent.ppeGoggles;Polish;Okulary ochronne / pyłowe
+consent.ppeGoggles;Czech;Ochranné brýle / brýle proti prachu
+consent.ppeGoggles;Romanian;Ochelari de protecție / ochelari contra prafului
+consent.ppeGoggles;Ukrainian;Захисні / пилозахисні окуляри
+consent.ppeGoggles;German;Schutzbrille/Staubbrille
+consent.ppeGoggles;French;Lunettes de sécurité / lunettes anti-poussière
+consent.ppeGoggles;Belarusian;Ахоўныя / пылаахоўныя акуляры
+consent.ppeGogglesUse;Dutch;Bij slijpen, hakken, boren, beitsen, werken in stoffige omgeving.
+consent.ppeGogglesUse;English;When grinding, chiselling, drilling, pickling or working in a dusty environment.
+consent.ppeGogglesUse;Polish;Podczas szlifowania, kucia, wiercenia, trawienia i pracy w zapyleniu.
+consent.ppeGogglesUse;Czech;Při broušení, sekání, vrtání, moření a práci v prašném prostředí.
+consent.ppeGogglesUse;Romanian;La polizare, dăltuire, găurire, decapare și lucru în mediu cu praf.
+consent.ppeGogglesUse;Ukrainian;Під час шліфування, рубання, свердління, травлення та роботи в запиленому середовищі.
+consent.ppeGogglesUse;German;Beim Schleifen, Meißeln, Bohren, Beizen und Arbeiten in staubiger Umgebung.
+consent.ppeGogglesUse;French;Lors du meulage, du burinage, du perçage, du décapage et du travail en milieu poussiéreux.
+consent.ppeGogglesUse;Belarusian;Пры шліфаванні, сячэнні, свідраванні, траўленні і працы ў запыленым асяроддзі.
+consent.ppeGloves;Dutch;Veiligheidshandschoenen
+consent.ppeGloves;English;Safety gloves
+consent.ppeGloves;Polish;Rękawice ochronne
+consent.ppeGloves;Czech;Ochranné rukavice
+consent.ppeGloves;Romanian;Mănuși de protecție
+consent.ppeGloves;Ukrainian;Захисні рукавички
+consent.ppeGloves;German;Schutzhandschuhe
+consent.ppeGloves;French;Gants de sécurité
+consent.ppeGloves;Belarusian;Ахоўныя пальчаткі
+consent.ppeGlovesUse;Dutch;Bij werken waarbij kans bestaat op handletsel.
+consent.ppeGlovesUse;English;For work with a risk of hand injury.
+consent.ppeGlovesUse;Polish;Podczas pracy stwarzającej ryzyko urazu dłoni.
+consent.ppeGlovesUse;Czech;Při pracích s rizikem poranění rukou.
+consent.ppeGlovesUse;Romanian;La lucrări cu risc de vătămare a mâinilor.
+consent.ppeGlovesUse;Ukrainian;Під час робіт із ризиком травмування рук.
+consent.ppeGlovesUse;German;Bei Arbeiten mit Gefahr von Handverletzungen.
+consent.ppeGlovesUse;French;Pour les travaux présentant un risque de blessure aux mains.
+consent.ppeGlovesUse;Belarusian;Пры работах з рызыкай траўмавання рук.
+consent.ppeWeldingHelmet;Dutch;Laskap
+consent.ppeWeldingHelmet;English;Welding helmet
+consent.ppeWeldingHelmet;Polish;Przyłbica spawalnicza
+consent.ppeWeldingHelmet;Czech;Svářečská kukla
+consent.ppeWeldingHelmet;Romanian;Mască de sudură
+consent.ppeWeldingHelmet;Ukrainian;Зварювальна маска
+consent.ppeWeldingHelmet;German;Schweißhelm
+consent.ppeWeldingHelmet;French;Masque de soudage
+consent.ppeWeldingHelmet;Belarusian;Зварачная маска
+consent.ppeWeldingHelmetUse;Dutch;Bij TIG / elektrisch lassen.
+consent.ppeWeldingHelmetUse;English;For TIG / electric welding.
+consent.ppeWeldingHelmetUse;Polish;Podczas spawania TIG / elektrycznego.
+consent.ppeWeldingHelmetUse;Czech;Při svařování TIG / elektrickém svařování.
+consent.ppeWeldingHelmetUse;Romanian;La sudura TIG / electrică.
+consent.ppeWeldingHelmetUse;Ukrainian;Під час TIG / електричного зварювання.
+consent.ppeWeldingHelmetUse;German;Beim WIG- / Elektroschweißen.
+consent.ppeWeldingHelmetUse;French;Pour le soudage TIG / électrique.
+consent.ppeWeldingHelmetUse;Belarusian;Пры TIG / электрычнай зварцы.
+consent.ppeEarplugs;Dutch;Oorpluggen
+consent.ppeEarplugs;English;Earplugs
+consent.ppeEarplugs;Polish;Zatyczki do uszu
+consent.ppeEarplugs;Czech;Ušní zátky
+consent.ppeEarplugs;Romanian;Dopuri de urechi
+consent.ppeEarplugs;Ukrainian;Вушні вкладки
+consent.ppeEarplugs;German;Ohrstöpsel
+consent.ppeEarplugs;French;Bouchons d'oreilles
+consent.ppeEarplugs;Belarusian;Вушныя ўкладышы
+consent.ppeEarplugsUse;Dutch;Bij geluid tot maximaal 85 dB(A).
+consent.ppeEarplugsUse;English;For noise up to a maximum of 85 dB(A).
+consent.ppeEarplugsUse;Polish;Przy hałasie do maksymalnie 85 dB(A).
+consent.ppeEarplugsUse;Czech;Při hluku do maximálně 85 dB(A).
+consent.ppeEarplugsUse;Romanian;La zgomot de maximum 85 dB(A).
+consent.ppeEarplugsUse;Ukrainian;За рівня шуму до 85 dB(A).
+consent.ppeEarplugsUse;German;Bei Lärm bis maximal 85 dB(A).
+consent.ppeEarplugsUse;French;Pour un bruit jusqu'à 85 dB(A) maximum.
+consent.ppeEarplugsUse;Belarusian;Пры ўзроўні шуму да 85 dB(A).
+consent.ppeEarmuffs;Dutch;Oordoppen / Otoplastieken
+consent.ppeEarmuffs;English;Ear protectors / custom-moulded earplugs
+consent.ppeEarmuffs;Polish;Nauszniki / wkładki
+consent.ppeEarmuffs;Czech;Chrániče sluchu / otoplastiky
+consent.ppeEarmuffs;Romanian;Antifoane / dopuri personalizate
+consent.ppeEarmuffs;Ukrainian;Беруші / індивідуальні вкладки
+consent.ppeEarmuffs;German;Gehörschutz / Otoplastiken
+consent.ppeEarmuffs;French;Protections auditives / bouchons moulés
+consent.ppeEarmuffs;Belarusian;Берушы / індывідуальныя ўкладышы
+consent.ppeEarmuffsUse;Dutch;Bij geluid tot maximaal 90 dB(A).
+consent.ppeEarmuffsUse;English;For noise up to a maximum of 90 dB(A).
+consent.ppeEarmuffsUse;Polish;Przy hałasie do maksymalnie 90 dB(A).
+consent.ppeEarmuffsUse;Czech;Při hluku do maximálně 90 dB(A).
+consent.ppeEarmuffsUse;Romanian;La zgomot de maximum 90 dB(A).
+consent.ppeEarmuffsUse;Ukrainian;За рівня шуму до 90 dB(A).
+consent.ppeEarmuffsUse;German;Bei Lärm bis maximal 90 dB(A).
+consent.ppeEarmuffsUse;French;Pour un bruit jusqu'à 90 dB(A) maximum.
+consent.ppeEarmuffsUse;Belarusian;Пры ўзроўні шуму да 90 dB(A).
+consent.ppeWorkwear;Dutch;Werkkleding
+consent.ppeWorkwear;English;Workwear
+consent.ppeWorkwear;Polish;Odzież robocza
+consent.ppeWorkwear;Czech;Pracovní oděv
+consent.ppeWorkwear;Romanian;Îmbrăcăminte de lucru
+consent.ppeWorkwear;Ukrainian;Робочий одяг
+consent.ppeWorkwear;German;Arbeitskleidung
+consent.ppeWorkwear;French;Vêtements de travail
+consent.ppeWorkwear;Belarusian;Рабочае адзенне
+consent.ppeWorkwearUse;Dutch;Bij uitvoerende werkzaamheden.
+consent.ppeWorkwearUse;English;For operational work.
+consent.ppeWorkwearUse;Polish;Podczas wykonywania prac.
+consent.ppeWorkwearUse;Czech;Při výkonných pracích.
+consent.ppeWorkwearUse;Romanian;La lucrări de execuție.
+consent.ppeWorkwearUse;Ukrainian;Під час виконання робіт.
+consent.ppeWorkwearUse;German;Bei ausführenden Arbeiten.
+consent.ppeWorkwearUse;French;Pour les travaux d'exécution.
+consent.ppeWorkwearUse;Belarusian;Падчас выканання работ.
+consent.ppeFrClothing;Dutch;Werkkleding (brandvertragend)
+consent.ppeFrClothing;English;Workwear (flame-retardant)
+consent.ppeFrClothing;Polish;Odzież trudnopalna
+consent.ppeFrClothing;Czech;Pracovní oděv (nehořlavý)
+consent.ppeFrClothing;Romanian;Îmbrăcăminte de lucru (ignifugă)
+consent.ppeFrClothing;Ukrainian;Вогнестійкий робочий одяг
+consent.ppeFrClothing;German;Arbeitskleidung (flammhemmend)
+consent.ppeFrClothing;French;Vêtements de travail (ignifugés)
+consent.ppeFrClothing;Belarusian;Вогнеўстойлівае рабочае адзенне
+consent.ppeFrClothingUse;Dutch;Bij las- en slijpwerkzaamheden.
+consent.ppeFrClothingUse;English;For welding and grinding work.
+consent.ppeFrClothingUse;Polish;Podczas spawania i szlifowania.
+consent.ppeFrClothingUse;Czech;Při svařování a broušení.
+consent.ppeFrClothingUse;Romanian;La lucrări de sudură și polizare.
+consent.ppeFrClothingUse;Ukrainian;Під час зварювання та шліфування.
+consent.ppeFrClothingUse;German;Bei Schweiß- und Schleifarbeiten.
+consent.ppeFrClothingUse;French;Pour les travaux de soudage et de meulage.
+consent.ppeFrClothingUse;Belarusian;Пры зварцы і шліфаванні.
+consent.ppeHiVis;Dutch;Fluorescerend veiligheidsvest
+consent.ppeHiVis;English;High-visibility safety vest
+consent.ppeHiVis;Polish;Kamizelka odblaskowa
+consent.ppeHiVis;Czech;Reflexní bezpečnostní vesta
+consent.ppeHiVis;Romanian;Vestă reflectorizantă
+consent.ppeHiVis;Ukrainian;Флуоресцентний сигнальний жилет
+consent.ppeHiVis;German;Warnweste
+consent.ppeHiVis;French;Gilet de sécurité fluorescent
+consent.ppeHiVis;Belarusian;Флуарэсцэнтная сігнальная камізэлька
+consent.ppeHiVisUse;Dutch;Op bouwplaatsen.
+consent.ppeHiVisUse;English;On construction sites.
+consent.ppeHiVisUse;Polish;Na budowach.
+consent.ppeHiVisUse;Czech;Na staveništích.
+consent.ppeHiVisUse;Romanian;Pe șantiere.
+consent.ppeHiVisUse;Ukrainian;На будівельних майданчиках.
+consent.ppeHiVisUse;German;Auf Baustellen.
+consent.ppeHiVisUse;French;Sur les chantiers.
+consent.ppeHiVisUse;Belarusian;На будаўнічых пляцоўках.
+consent.ppeJacket;Dutch;Jassen
+consent.ppeJacket;English;Jackets
+consent.ppeJacket;Polish;Kurtka
+consent.ppeJacket;Czech;Bundy
+consent.ppeJacket;Romanian;Geci
+consent.ppeJacket;Ukrainian;Куртки
+consent.ppeJacket;German;Jacken
+consent.ppeJacket;French;Vestes
+consent.ppeJacket;Belarusian;Курткі
+consent.ppeJacketUse;Dutch;Bij koude en neerslag.
+consent.ppeJacketUse;English;In cold and wet weather.
+consent.ppeJacketUse;Polish;Przy zimnie i opadach.
+consent.ppeJacketUse;Czech;Při chladu a srážkách.
+consent.ppeJacketUse;Romanian;Pe frig și precipitații.
+consent.ppeJacketUse;Ukrainian;За холодної погоди та опадів.
+consent.ppeJacketUse;German;Bei Kälte und Niederschlag.
+consent.ppeJacketUse;French;Par temps froid et en cas de précipitations.
+consent.ppeJacketUse;Belarusian;У халоднае надвор’е і пры ападках.
+consent.ppeTraining;Dutch;Opleiding
+consent.ppeTraining;English;Training
+consent.ppeTraining;Polish;Szkolenie
+consent.ppeTraining;Czech;Školení
+consent.ppeTraining;Romanian;Instruire
+consent.ppeTraining;Ukrainian;Навчання
+consent.ppeTraining;German;Ausbildung
+consent.ppeTraining;French;Formation
+consent.ppeTraining;Belarusian;Навучанне
+consent.ppeTrainingUse;Dutch;In bezit certificaat Basisveiligheid.
+consent.ppeTrainingUse;English;In possession of a basic safety certificate.
+consent.ppeTrainingUse;Polish;Posiadanie certyfikatu podstawowego bezpieczeństwa.
+consent.ppeTrainingUse;Czech;Držitel osvědčení o základní bezpečnosti.
+consent.ppeTrainingUse;Romanian;Posesor al certificatului de securitate de bază.
+consent.ppeTrainingUse;Ukrainian;Наявний сертифікат з основ безпеки.
+consent.ppeTrainingUse;German;Im Besitz eines Grundsicherheitszertifikats.
+consent.ppeTrainingUse;French;En possession d'un certificat de sécurité de base.
+consent.ppeTrainingUse;Belarusian;Наяўнасць сертыфіката па асновах бяспекі.
+consent.ppeFirstAid;Dutch;Verbandtrommel
+consent.ppeFirstAid;English;First aid kit
+consent.ppeFirstAid;Polish;Apteczka
+consent.ppeFirstAid;Czech;Lékárnička
+consent.ppeFirstAid;Romanian;Trusă de prim ajutor
+consent.ppeFirstAid;Ukrainian;Аптечка
+consent.ppeFirstAid;German;Verbandkasten
+consent.ppeFirstAid;French;Trousse de secours
+consent.ppeFirstAid;Belarusian;Аптэчка
+consent.ppeFirstAidUse;Dutch;Hulpverlening bij (kleine) verwondingen.
+consent.ppeFirstAidUse;English;First aid for (minor) injuries.
+consent.ppeFirstAidUse;Polish;Pierwsza pomoc przy drobnych urazach.
+consent.ppeFirstAidUse;Czech;První pomoc při (drobných) poraněních.
+consent.ppeFirstAidUse;Romanian;Prim ajutor în caz de răni (minore).
+consent.ppeFirstAidUse;Ukrainian;Допомога при (незначних) травмах.
+consent.ppeFirstAidUse;German;Erste Hilfe bei (kleinen) Verletzungen.
+consent.ppeFirstAidUse;French;Premiers soins en cas de (petites) blessures.
+consent.ppeFirstAidUse;Belarusian;Дапамога пры (нязначных) траўмах.
+consent.ppeExtinguisher;Dutch;Brandblusser
+consent.ppeExtinguisher;English;Fire extinguisher
+consent.ppeExtinguisher;Polish;Gaśnica
+consent.ppeExtinguisher;Czech;Hasicí přístroj
+consent.ppeExtinguisher;Romanian;Stingător
+consent.ppeExtinguisher;Ukrainian;Вогнегасник
+consent.ppeExtinguisher;German;Feuerlöscher
+consent.ppeExtinguisher;French;Extincteur
+consent.ppeExtinguisher;Belarusian;Вогнетушыцель
+consent.ppeExtinguisherUse;Dutch;Brandbestrijding.
+consent.ppeExtinguisherUse;English;Fire fighting.
+consent.ppeExtinguisherUse;Polish;Gaszenie pożarów.
+consent.ppeExtinguisherUse;Czech;Hašení požárů.
+consent.ppeExtinguisherUse;Romanian;Stingerea incendiilor.
+consent.ppeExtinguisherUse;Ukrainian;Гасіння пожеж.
+consent.ppeExtinguisherUse;German;Brandbekämpfung.
+consent.ppeExtinguisherUse;French;Lutte contre l'incendie.
+consent.ppeExtinguisherUse;Belarusian;Тушэнне пажараў.
+consent.protHead;Dutch;Hoofd
+consent.protHead;English;Head
+consent.protHead;Polish;Głowa
+consent.protHead;Czech;Hlava
+consent.protHead;Romanian;Cap
+consent.protHead;Ukrainian;Голова
+consent.protHead;German;Kopf
+consent.protHead;French;Tête
+consent.protHead;Belarusian;Галава
+consent.protFeet;Dutch;Voeten
+consent.protFeet;English;Feet
+consent.protFeet;Polish;Stopy
+consent.protFeet;Czech;Nohy
+consent.protFeet;Romanian;Picioare
+consent.protFeet;Ukrainian;Стопи
+consent.protFeet;German;Füße
+consent.protFeet;French;Pieds
+consent.protFeet;Belarusian;Ступні
+consent.protEyes;Dutch;Ogen
+consent.protEyes;English;Eyes
+consent.protEyes;Polish;Oczy
+consent.protEyes;Czech;Oči
+consent.protEyes;Romanian;Ochi
+consent.protEyes;Ukrainian;Очі
+consent.protEyes;German;Augen
+consent.protEyes;French;Yeux
+consent.protEyes;Belarusian;Вочы
+consent.protHands;Dutch;Handen
+consent.protHands;English;Hands
+consent.protHands;Polish;Dłonie
+consent.protHands;Czech;Ruce
+consent.protHands;Romanian;Mâini
+consent.protHands;Ukrainian;Руки
+consent.protHands;German;Hände
+consent.protHands;French;Mains
+consent.protHands;Belarusian;Рукі
+consent.protEars;Dutch;Oren
+consent.protEars;English;Ears
+consent.protEars;Polish;Uszy
+consent.protEars;Czech;Uši
+consent.protEars;Romanian;Urechi
+consent.protEars;Ukrainian;Вуха
+consent.protEars;German;Ohren
+consent.protEars;French;Oreilles
+consent.protEars;Belarusian;Вушы
+consent.protBody;Dutch;Lichaam
+consent.protBody;English;Body
+consent.protBody;Polish;Ciało
+consent.protBody;Czech;Tělo
+consent.protBody;Romanian;Corp
+consent.protBody;Ukrainian;Тіло
+consent.protBody;German;Körper
+consent.protBody;French;Corps
+consent.protBody;Belarusian;Цела
+consent.protEnvironment;Dutch;Omgeving
+consent.protEnvironment;English;Surroundings
+consent.protEnvironment;Polish;Otoczenie
+consent.protEnvironment;Czech;Okolí
+consent.protEnvironment;Romanian;Mediu
+consent.protEnvironment;Ukrainian;Оточення
+consent.protEnvironment;German;Umgebung
+consent.protEnvironment;French;Environnement
+consent.protEnvironment;Belarusian;Наваколле
+consent.ppeSecGea;Dutch;PBM’S VERSTREKT DOOR GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;English;PPE PROVIDED BY GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;Polish;DOSTARCZONE PRZEZ GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;Czech;OOP POSKYTNUTÉ SPOLEČNOSTÍ GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;Romanian;EIP FURNIZATE DE GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;Ukrainian;ЗІЗ, НАДАНІ GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;German;PSA, BEREITGESTELLT VON GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;French;EPI FOURNIS PAR GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeSecGea;Belarusian;СІА, ВЫДАДЗЕНЫЯ GEA PROCESS ENGINEERING NV (GPBE)
+consent.ppeOverall;Dutch;Overall
+consent.ppeOverall;English;Overall
+consent.ppeOverall;Polish;Kombinezon
+consent.ppeOverall;Czech;Kombinéza
+consent.ppeOverall;Romanian;Salopetă
+consent.ppeOverall;Ukrainian;Комбінезон
+consent.ppeOverall;German;Overall
+consent.ppeOverall;French;Combinaison
+consent.ppeOverall;Belarusian;Камбінезон
+consent.lblQuantity;Dutch;Aantal:
+consent.lblQuantity;English;Quantity:
+consent.lblQuantity;Polish;Ilość:
+consent.lblQuantity;Czech;Počet:
+consent.lblQuantity;Romanian;Cantitate:
+consent.lblQuantity;Ukrainian;К-сть:
+consent.lblQuantity;German;Anzahl:
+consent.lblQuantity;French;Quantité :
+consent.lblQuantity;Belarusian;Кольк.:
+consent.lblSize;Dutch;Maat:
+consent.lblSize;English;Size:
+consent.lblSize;Polish;Rozmiar:
+consent.lblSize;Czech;Velikost:
+consent.lblSize;Romanian;Mărime:
+consent.lblSize;Ukrainian;Розмір:
+consent.lblSize;German;Größe:
+consent.lblSize;French;Taille :
+consent.lblSize;Belarusian;Памер:
+consent.secRemarks;Dutch;OP- EN AANMERKINGEN
+consent.secRemarks;English;REMARKS
+consent.secRemarks;Polish;UWAGI
+consent.secRemarks;Czech;POZNÁMKY A PŘIPOMÍNKY
+consent.secRemarks;Romanian;OBSERVAȚII
+consent.secRemarks;Ukrainian;ПРИМІТКИ ТА ЗАУВАЖЕННЯ
+consent.secRemarks;German;ANMERKUNGEN
+consent.secRemarks;French;REMARQUES
+consent.secRemarks;Belarusian;ЗАЎВАГІ І КАМЕНТАРЫІ
+consent.remark1;Dutch;De werknemer is zelf verantwoordelijk voor het gebruik, onderhoud en vervanging van de PBM’s.
+consent.remark1;English;The employee is responsible for the use, maintenance and replacement of the PPE.
+consent.remark1;Polish;Pracownik odpowiada za użytkowanie, konserwację i wymianę środków ochrony indywidualnej.
+consent.remark1;Czech;Zaměstnanec sám odpovídá za používání, údržbu a výměnu OOP.
+consent.remark1;Romanian;Angajatul este responsabil pentru utilizarea, întreținerea și înlocuirea EIP.
+consent.remark1;Ukrainian;Працівник особисто відповідає за використання, догляд і заміну ЗІЗ.
+consent.remark1;German;Der Mitarbeiter ist selbst verantwortlich für Gebrauch, Wartung und Ersatz der PSA.
+consent.remark1;French;Le travailleur est lui-même responsable de l'utilisation, de l'entretien et du remplacement des EPI.
+consent.remark1;Belarusian;Работнік асабіста адказвае за выкарыстанне, догляд і замену СІА.
+consent.remark2;Dutch;Indien de verplichte PBM’s niet bij de werknemer aanwezig zijn, worden deze door GPBE verstrekt. De kosten hiervan worden bij de werkgever in rekening gebracht.
+consent.remark2;English;If the employee does not have the mandatory PPE, it is provided by GPBE. The costs are charged to the employer.
+consent.remark2;Polish;Jeżeli pracownik nie posiada obowiązkowych środków ochrony indywidualnej, dostarcza je GPBE. Koszty zostaną obciążone pracodawcy.
+consent.remark2;Czech;Pokud zaměstnanec nemá povinné OOP, poskytne je GPBE. Náklady budou účtovány zaměstnavateli.
+consent.remark2;Romanian;Dacă angajatul nu are EIP obligatorii, acestea sunt furnizate de GPBE. Costurile sunt facturate angajatorului.
+consent.remark2;Ukrainian;Якщо працівник не має обов’язкових ЗІЗ, їх надає GPBE. Витрати на них виставляються роботодавцю.
+consent.remark2;German;Wenn der Mitarbeiter die vorgeschriebene PSA nicht dabei hat, wird sie von GPBE bereitgestellt. Die Kosten werden dem Arbeitgeber in Rechnung gestellt.
+consent.remark2;French;Si le travailleur ne dispose pas des EPI obligatoires, ceux-ci sont fournis par GPBE. Les frais sont facturés à l'employeur.
+consent.remark2;Belarusian;Калі работнік не мае абавязковых СІА, іх выдае GPBE. Выдаткі на іх выстаўляюцца наймальніку.
+consent.remark3;Dutch;De door GPBE verstrekte kleding en PBM’s worden in bruikleen gegeven aan de werknemer. Aan het eind van het project moeten deze weer worden ingeleverd. Verlies of diefstal wordt in rekening gebracht bij de werknemer.
+consent.remark3;English;Clothing and PPE provided by GPBE are lent to the employee. They must be returned at the end of the project. Loss or theft is charged to the employee.
+consent.remark3;Polish;Odzież i środki ochrony dostarczone przez GPBE są wypożyczane pracownikowi i muszą zostać zwrócone po zakończeniu projektu. Koszty utraty lub kradzieży ponosi pracownik.
+consent.remark3;Czech;Oděvy a OOP poskytnuté GPBE se zaměstnanci zapůjčují. Na konci projektu je musí vrátit. Ztráta nebo krádež se účtuje zaměstnanci.
+consent.remark3;Romanian;Îmbrăcămintea și EIP furnizate de GPBE sunt date angajatului în folosință temporară. La sfârșitul proiectului acestea trebuie returnate. Pierderea sau furtul sunt facturate angajatului.
+consent.remark3;Ukrainian;Одяг і ЗІЗ, надані GPBE, передаються працівнику в тимчасове користування. Після завершення проєкту їх необхідно повернути. У разі втрати або крадіжки вартість стягується з працівника.
+consent.remark3;German;Die von GPBE bereitgestellte Kleidung und PSA werden dem Mitarbeiter leihweise überlassen. Am Ende des Projekts müssen sie zurückgegeben werden. Verlust oder Diebstahl wird dem Mitarbeiter in Rechnung gestellt.
+consent.remark3;French;Les vêtements et EPI fournis par GPBE sont prêtés au travailleur. Ils doivent être restitués à la fin du projet. La perte ou le vol est facturé au travailleur.
+consent.remark3;Belarusian;Адзенне і СІА, выдадзеныя GPBE, перадаюцца работніку ў часовае карыстанне. Пасля завяршэння праекта іх неабходна вярнуць. У выпадку страты або крадзяжу кошт спаганяецца з работніка.
+consent.remark4;Dutch;Indien Checkinatwork van toepassing is worden door GPBE batchen verstrekt voor inloggen Suivo-paal. Bij verlies van deze batch wordt een bedrag van 25 euro in rekening gebracht.
+consent.remark4;English;If Checkinatwork applies, GPBE provides badges for logging in at the Suivo terminal. If a badge is lost, an amount of 25 euros is charged.
+consent.remark4;Polish;Jeżeli stosowany jest system Checkinatwork, GPBE wydaje identyfikatory do rejestracji przy terminalu Suivo. Za utratę identyfikatora pobierana jest opłata 25 euro.
+consent.remark4;Czech;Pokud se uplatňuje Checkinatwork, GPBE poskytne odznaky pro přihlášení u terminálu Suivo. Při ztrátě odznaku se účtuje částka 25 eur.
+consent.remark4;Romanian;Dacă se aplică Checkinatwork, GPBE furnizează ecusoane pentru înregistrarea la terminalul Suivo. În cazul pierderii ecusonului se facturează suma de 25 de euro.
+consent.remark4;Ukrainian;Якщо застосовується Checkinatwork, GPBE надає бейджі для реєстрації на терміналі Suivo. У разі втрати бейджа стягується 25 євро.
+consent.remark4;German;Wenn Checkinatwork gilt, stellt GPBE Badges für die Anmeldung am Suivo-Terminal bereit. Bei Verlust eines Badges wird ein Betrag von 25 Euro in Rechnung gestellt.
+consent.remark4;French;Si Checkinatwork s'applique, GPBE fournit des badges pour l'enregistrement à la borne Suivo. En cas de perte d'un badge, un montant de 25 euros est facturé.
+consent.remark4;Belarusian;Калі прымяняецца Checkinatwork, GPBE выдае бэйджы для рэгістрацыі на тэрмінале Suivo. У выпадку страты бэйджа спаганяецца 25 еўра.
+consent.remark5;Dutch;Tenzij anders overeengekomen in het contract, worden overige speciale veiligheidsvoorzieningen zoals valgordels, klimmateriaal, steigers, gasmaskers etc. verstrekt door GPBE. De werknemer is verantwoordelijk voor de aanvraag en de juiste toepassing van de geboden veiligheidsvoorzieningen.
+consent.remark5;English;Unless otherwise agreed in the contract, other special safety equipment such as safety harnesses, climbing equipment, scaffolding, gas masks etc. is provided by GPBE. The employee is responsible for requesting and correctly using the safety equipment provided.
+consent.remark5;Polish;O ile umowa nie stanowi inaczej, pozostałe specjalne środki bezpieczeństwa, takie jak zabezpieczenia przed upadkiem, sprzęt do podnoszenia, rusztowania i maski przeciwgazowe, dostarcza GPBE. Pracownik odpowiada za ich zamówienie i prawidłowe użytkowanie.
+consent.remark5;Czech;Pokud smlouva nestanoví jinak, ostatní zvláštní bezpečnostní prostředky, jako jsou postroje proti pádu, lezecké vybavení, lešení, plynové masky atd., poskytuje GPBE. Zaměstnanec odpovídá za vyžádání a správné použití poskytnutých bezpečnostních prostředků.
+consent.remark5;Romanian;Cu excepția cazului în care contractul prevede altfel, celelalte echipamente speciale de securitate, cum ar fi hamuri de siguranță, echipament de cățărare, schele, măști de gaze etc., sunt furnizate de GPBE. Angajatul este responsabil pentru solicitarea și utilizarea corectă a echipamentelor de securitate puse la dispoziție.
+consent.remark5;Ukrainian;Якщо договором не передбачено інше, інші спеціальні засоби безпеки, як-от страхувальні прив’язі, спорядження для підйому, риштування, протигази тощо, надає GPBE. Працівник відповідає за замовлення та правильне застосування наданих засобів безпеки.
+consent.remark5;German;Sofern im Vertrag nicht anders vereinbart, werden sonstige besondere Sicherheitseinrichtungen wie Auffanggurte, Kletterausrüstung, Gerüste, Gasmasken usw. von GPBE bereitgestellt. Der Mitarbeiter ist für die Anforderung und die richtige Anwendung der bereitgestellten Sicherheitseinrichtungen verantwortlich.
+consent.remark5;French;Sauf accord contraire dans le contrat, les autres équipements de sécurité spéciaux tels que harnais antichute, matériel d'escalade, échafaudages, masques à gaz etc. sont fournis par GPBE. Le travailleur est responsable de la demande et de l'utilisation correcte des équipements de sécurité fournis.
+consent.remark5;Belarusian;Калі дагаворам не прадугледжана іншае, іншыя спецыяльныя сродкі бяспекі, такія як страховачныя прывязі, рыштунак для ўздыму, будаўнічыя рыштаванні, процівагазы і г.д., выдае GPBE. Работнік адказвае за заказ і правільнае прымяненне выдадзеных сродкаў бяспекі.
+consent.remark6;Dutch;Het niet nakomen van de veiligheidsvoorschriften kan aanleiding zijn tot verwijdering van het werkterrein. Wanneer na mondelinge waarschuwing hernieuwd een overtreding wordt geconstateerd, volgt een schriftelijke waarschuwing middels het document “Waarschuwing Onveilig werken” (FOR-130.001).
+consent.remark6;English;Failure to comply with the safety regulations may lead to removal from the site. If a violation is found again after a verbal warning, a written warning follows with the document “Waarschuwing Onveilig werken” (FOR-130.001).
+consent.remark6;Polish;Nieprzestrzeganie przepisów bezpieczeństwa może skutkować usunięciem z terenu pracy. Po ustnym ostrzeżeniu, w razie ponownego naruszenia, zostanie wydane pisemne ostrzeżenie na formularzu „Waarschuwing Onveilig werken” (FOR-130.001).
+consent.remark6;Czech;Nedodržení bezpečnostních předpisů může vést k vykázání z pracoviště. Pokud je po ústním upozornění znovu zjištěno porušení, následuje písemné upozornění formou dokumentu „Waarschuwing Onveilig werken“ (FOR-130.001).
+consent.remark6;Romanian;Nerespectarea prescripțiilor de securitate poate duce la îndepărtarea de pe șantier. Dacă după un avertisment verbal se constată din nou o încălcare, urmează un avertisment scris prin documentul „Waarschuwing Onveilig werken” (FOR-130.001).
+consent.remark6;Ukrainian;Недотримання вимог безпеки може призвести до видалення з робочого майданчика. Якщо після усного попередження виявлено повторне порушення, видається письмове попередження за формою «Попередження про небезпечне виконання робіт» (FOR-130.001).
+consent.remark6;German;Die Nichteinhaltung der Sicherheitsvorschriften kann zur Entfernung vom Arbeitsgelände führen. Wird nach einer mündlichen Verwarnung erneut ein Verstoß festgestellt, folgt eine schriftliche Verwarnung mit dem Dokument „Waarschuwing Onveilig werken“ (FOR-130.001).
+consent.remark6;French;Le non-respect des consignes de sécurité peut entraîner l'exclusion du chantier. Si une nouvelle infraction est constatée après un avertissement oral, un avertissement écrit suit au moyen du document « Waarschuwing Onveilig werken » (FOR-130.001).
+consent.remark6;Belarusian;Невыкананне патрабаванняў бяспекі можа прывесці да выдалення з рабочай пляцоўкі. Калі пасля вуснага папярэджання выяўлена паўторнае парушэнне, выдаецца пісьмовае папярэджанне паводле формы «Папярэджанне аб небяспечным выкананні работ» (FOR-130.001).
+consent.secSignature;Dutch;HANDTEKENING MEDEWERKER
+consent.secSignature;English;EMPLOYEE SIGNATURE
+consent.secSignature;Polish;PODPIS PRACOWNIKA
+consent.secSignature;Czech;PODPIS ZAMĚSTNANCE
+consent.secSignature;Romanian;SEMNĂTURA ANGAJATULUI
+consent.secSignature;Ukrainian;ПІДПИС ПРАЦІВНИКА
+consent.secSignature;German;UNTERSCHRIFT MITARBEITER
+consent.secSignature;French;SIGNATURE DU TRAVAILLEUR
+consent.secSignature;Belarusian;ПОДПІС РАБОТНІКА
+consent.signatureStatement;Dutch;Middels invulling van dit document verklaart de medewerker volledig op de hoogte te zijn van de bij de introductie aangekruiste onderwerpen en zich te houden aan de afgesproken veiligheidsregels:
+consent.signatureStatement;English;By completing this document, the employee declares to be fully informed of the topics ticked during the introduction and to comply with the agreed safety rules:
+consent.signatureStatement;Polish;Wypełniając ten dokument, pracownik oświadcza, że został w pełni zapoznany z omówionymi tematami wprowadzenia i zobowiązuje się przestrzegać uzgodnionych zasad bezpieczeństwa.
+consent.signatureStatement;Czech;Vyplněním tohoto dokumentu zaměstnanec prohlašuje, že je plně seznámen s tématy zaškrtnutými při úvodní instruktáži a že bude dodržovat dohodnutá bezpečnostní pravidla:
+consent.signatureStatement;Romanian;Prin completarea acestui document, angajatul declară că este pe deplin informat cu privire la subiectele bifate în cadrul instruirii introductive și că va respecta regulile de securitate convenite:
+consent.signatureStatement;Ukrainian;Заповнюючи цей документ, працівник підтверджує, що повністю ознайомлений із темами, позначеними під час вступного інструктажу, та зобов’язується дотримуватися погоджених правил безпеки:
+consent.signatureStatement;German;Mit dem Ausfüllen dieses Dokuments erklärt der Mitarbeiter, über die bei der Einweisung angekreuzten Themen vollständig informiert zu sein und sich an die vereinbarten Sicherheitsregeln zu halten:
+consent.signatureStatement;French;En remplissant ce document, le travailleur déclare être pleinement informé des sujets cochés lors de l'introduction et s'engage à respecter les règles de sécurité convenues :
+consent.signatureStatement;Belarusian;Запаўняючы гэты дакумент, работнік пацвярджае, што цалкам азнаёмлены з тэмамі, пазначанымі падчас уводнага інструктажу, і абавязваецца выконваць узгодненыя правілы бяспекі:
+consent.lblDate;Dutch;Datum
+consent.lblDate;English;Date
+consent.lblDate;Polish;Data
+consent.lblDate;Czech;Datum
+consent.lblDate;Romanian;Data
+consent.lblDate;Ukrainian;Дата
+consent.lblDate;German;Datum
+consent.lblDate;French;Date
+consent.lblDate;Belarusian;Дата
+consent.lblSignature;Dutch;Handtekening (Fill & Sign):
+consent.lblSignature;English;Signature (Fill & Sign):
+consent.lblSignature;Polish;Podpis (Fill & Sign):
+consent.lblSignature;Czech;Podpis (Fill & Sign):
+consent.lblSignature;Romanian;Semnătura (Fill & Sign):
+consent.lblSignature;Ukrainian;Підпис (Fill & Sign):
+consent.lblSignature;German;Unterschrift (Fill & Sign):
+consent.lblSignature;French;Signature (Fill & Sign) :
+consent.lblSignature;Belarusian;Подпіс (Fill & Sign):

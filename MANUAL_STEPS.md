@@ -48,7 +48,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-039 | 16-11-2026 | Done 16-11-2026 (Eddy): 384 landregels in Translations (568) |
 | MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
 | MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
-| MS-042 | 17-11-2026 | Open (Eddy): consentteksten plakken in Translations (translations-consent.csv); niet dringend |
+| MS-042 | 17-11-2026 | Open (Eddy): consentteksten plakken in Translations (translations-consent-8.csv 720 + -be.csv 90); niet dringend |
 | MS-043 | 17-11-2026 | Open (Eddy): Belarusian als 9e taal (keuzes + plakbestanden *-be.csv) |
 
 ---
@@ -434,17 +434,16 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 - **Waarom handmatig:** een verbinding aanmaken vraagt om je eigen aanmelding; er is geen importroute.
 - **Daarna (bij de bouw van werkpakketten):** Claude levert de vertaalflow als importpakket (Create as new). Bij het importeren kies je deze verbinding.
 
-## MS-042 — Consentteksten in Translations (H36)
+## MS-042 — Consentteksten in Translations (H36, H37)
 
 - **Added:** 17-11-2026. **Status:** Open (Eddy). Niet dringend: de consent is nog niet gebouwd.
-- **Bestand:** `templates/translations-consent.csv` (UTF-8 met BOM, scheiding ";", kop Key;Language;Text). Het bevat 18 regels: `consent.idShown` en `consent.footer` × 9 talen.
+- **Bestanden** (UTF-8 met BOM, scheiding ";", kop Key;Language;Text): `templates/translations-consent-8.csv` (720 regels = 90 sleutels × 8 bestaande talen) en `templates/translations-consent-be.csv` (90 regels Belarusian). Bron en controle: `templates/translations-consent.csv` (810 regels, Test-Templates).
 - **Stappen:**
   1. Open Translations > Edit in grid view.
-  2. Plak de 16 regels van de 8 bestaande talen, zonder de kopregel en zonder de 2 Belarusian-regels.
-  3. Plak de 2 Belarusian-regels pas na de procedure "Nieuwe taal" (Belarusian als keuze in Workers, Employers en Translations; V6).
-  4. Controleer: zoek op `consent.`; er staan 16 regels, en na Belarusian 18.
-- **Let op:** de overige `consent.*`-teksten (titel, checklist, PBM, handtekening) volgen zodra Eddy de officiële FOR-010.040-teksten levert (CONSENT_PLAN.md 3). Laat alle talen behalve Dutch en English nog door een moedertaalspreker controleren.
-
+  2. Plak translations-consent-8.csv zonder de kopregel. Plak in delen als het traag gaat en controleer dat niets dubbel geplakt is.
+  3. Plak translations-consent-be.csv pas na MS-043 stap 1 (Belarusian als keuze).
+  4. Controle: zoek op `consent.`; je vindt 720 regels, en 810 na Belarusian. Per taal staan er dan 161 regels in Translations (23 doc + 48 land + 90 consent), ruim onder de 500.
+- **Let op:** NL, PL, UK en BE zijn letterlijk overgenomen uit de voorbeeldformulieren, met de wijzigingen van H36. EN, CS, RO, DE en FR zijn vertaald vanuit NL; hun voettekst zegt "unofficial translation" (in de eigen taal). Al het niet-Nederlandse moet nog door een moedertaalspreker gecontroleerd worden (backlog).
 ## MS-043 — Belarusian als 9e taal (H37, V6)
 
 - **Added:** 17-11-2026. **Status:** Open (Eddy).
@@ -452,8 +451,8 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 - **Stappen:**
   1. Voeg in **Workers.Language**, **Employers.Language** en **Translations.Language** de keuze `Belarusian` toe: exact deze spelling, met hoofdletter en zonder spaties (procedure "Nieuwe taal", stap 1).
   2. Translations > Edit in grid view: plak `templates/translations-weekreport-be.csv` (23 regels) en `templates/translations-countries-be.csv` (48 regels), zonder kopregel.
-  3. Plak de Belarusian-regels van de consentteksten (MS-042).
-  4. Controle: filter Language = Belarusian geeft 71 regels plus de consentregels.
+  3. Plak `templates/translations-consent-be.csv` (90 regels, MS-042).
+  4. Controle: filter Language = Belarusian geeft 161 regels (23 + 48 + 90).
 - **Let op:** de taalcode `be` in de app volgt bij de volgende build. Tot dan geeft het Week Report voor een contractor met Language = Belarusian rood "no file language code" (geen export). Kies Belarusian dus nog niet bij een contractor met uren die geëxporteerd moeten worden. Alle Belarusian-teksten moeten nog door een moedertaalspreker gecontroleerd worden.
 
 ## Procedure — Nieuwe taal (H30)
