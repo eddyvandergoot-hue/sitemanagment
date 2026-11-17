@@ -208,7 +208,7 @@ De kolomnamen worden definitief bij het maken van de lijst (.xlsx-import) en daa
 3. **V3 Certificaten, Limosa, A1, paspoort:** welke moeten in de app staan? Alleen geldigheidsdatum en status, of ook nummers? Wie mag ze zien?
 4. **V4 Klant:** aparte lijst Customers (hergebruik over projecten) of klantvelden op Projects?
 5. **V5 Ondertekening en ontvangers:** consent op papier tekenen en de scan uploaden, of digitaal tekenen? Wie ontvangt het getekende pakket (klant, GEA-veiligheid, contractor) en hoe lang wordt het bewaard?
-6. **V6 Wit-Russisch:** het werkboek kent BY (Belarusian); de app niet. Toevoegen als 9e taal (procedure "Nieuwe taal", ISO-code `be`)?
+6. **V6 Wit-Russisch** — BEANTWOORD 17-11-2026 (H37): ja, 9e taal (MS-043). Oorspronkelijke vraag: het werkboek kent BY (Belarusian); de app niet. Toevoegen als 9e taal (procedure "Nieuwe taal", ISO-code `be`)?
 7. **V7 Job Card-bijlagen:** PDF-bijlagen achter de job card samenvoegen kan alleen met een premium connector. Is een job card met een lijst links naar de bijlagen voldoende, met foto's in de PDF?
 8. **V8 P&ID-onderdelen:** het werkboek bevat geen P&ID-gegevens, alleen "Drawing Reference" per WP. Wat bedoel je met P&ID parts: koppeling met de P&ID-tracker (ander project) of een onderdelenlijst per WP?
 9. **V9 Werkpakketten per project of per team:** de WP-ID is in Excel per werkboek (= project) uniek. In de app WP-<ID> globaal, of `<projectnummer>-WP-###`?

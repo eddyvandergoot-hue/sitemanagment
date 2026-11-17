@@ -30,13 +30,13 @@ Stand 17-11-2026. Ontwerp, niet gebouwd. Besluit: DECISIONS.md H36. Achtergrond:
 9. **Handtekening:** medewerker (naam en datum) en GEA (toezichthouder en datum). De lijnen zijn leeg en worden met de hand getekend (V5 open).
 10. **Voettekst** per pagina: `consent.footer`.
 
-De exacte teksten en de volgorde van checklist en PBM komen uit het officiële formulier FOR-010.040. Eddy levert de tekst in alle talen (PDF of Word); Claude zet ze om naar CSV voor Translations. Daar worden geen teksten verzonnen.
+De exacte teksten en de volgorde van checklist en PBM komen uit Eddy's voorbeeld-PDF's per taal (`Incoming\Examples\Forms\`, gitignored; H37). Die zijn alleen een voorbeeld van de huidige werkwijze; de app wordt app-eigen gebouwd met HTML-template, Translations en de export-flow. De vaste teksten worden letterlijk overgenomen, met de wijzigingen van H36. Een ontbrekende taal wordt vertaald vanuit NL; de voettekst krijgt dan "unofficial translation" en de taal komt in de backlog voor moedertaalcontrole. Er komen geen namen of persoonswaarden uit de voorbeelden in de repo.
 
 ## 4. Techniek (volgens het Week Report-patroon)
 
 - **Template:** HTML `templates/consent.html` in de bibliotheek Templates (Arial, GEA-palet, logo als base64). De app stuurt alleen pagina's met gegevens en vertaalde teksten.
 - **Flow:** de bestaande "SiteManagement - Export file" (Format pdf, TemplateName consent.html). Er komt geen nieuwe flow.
-- **Taal:** Workers.Language van de medewerker. Of er ook een PDF in de primaire taal bij moet, is nog open (V11). Een ontbrekende tekst betekent geen PDF en een rode melding (zoals H28).
+- **Taal (H37, V11 beantwoord):** alleen één PDF in de taal van de medewerker (Workers.Language): het ondertekende document. Geen kopie in de primaire rapporttaal. Een ontbrekende tekst betekent geen PDF en een rode melding (zoals H28).
 - **Bestand:** `[TEST_]Consent_<ProjectNumber>_<WorkerCode>_<taalcode>_UNSIGNED.pdf` in Exports/<ProjectNumber>/Consent/. Er komt geen naam in de bestandsnaam: de Worker Code volstaat (dataminimalisatie).
 - **Registratie:** lijst ConsentAgreements (onderdeel C van EXCEL_MIGRATION; kolommen bij de bouw als .xlsx).
 - **Veiligheidsplan deel 1:** zat in Excel in hetzelfde pakket. Volgt als apart ontwerp, met de gegevens van onderdeel A.
@@ -49,8 +49,8 @@ De exacte teksten en de volgorde van checklist en PBM komen uit het officiële f
 - **Nog te leveren:** de overige `consent.*`-sleutels (titel, sectiekoppen, checklist, PBM, handtekeningregels). Die komen uit het officiële formulier (zie 3).
 
 ## 6. Open vragen
-- **V11:** alleen een PDF in de taal van de medewerker, of ook in de primaire rapporttaal (zoals het Week Report)?
+- **V11** — beantwoord 17-11-2026 (H37): alleen de taal van de medewerker.
 - **V5** (EXCEL_MIGRATION): ondertekenen op papier met een scan uploaden, of digitaal? En wie ontvangt het getekende pakket?
 - **V4** (EXCEL_MIGRATION): de bron van de klantgegevens.
-- **V6** (EXCEL_MIGRATION): Belarusian als 9e taal. Dit besluit gaat daarvan uit.
+- **V6** — beantwoord 17-11-2026 (H37): Belarusian wordt 9e taal (MS-043).
 - **Bron:** de originele FOR-010.040-teksten in alle talen (Eddy).

@@ -183,3 +183,26 @@ doc.footerPage;German;Seite {page} von {pages}
 doc.footerPage;Ukrainian;Сторінка {page} з {pages}
 doc.footerPage;Czech;Strana {page} z {pages}
 doc.footerPage;French;Page {page} sur {pages}
+doc.title;Belarusian;Тыднёвая справаздача
+doc.projectName;Belarusian;Назва праекта
+doc.country;Belarusian;Краіна
+doc.projectNumber;Belarusian;Нумар праекта
+doc.projectReference;Belarusian;Рэферэнс праекта
+doc.contractor;Belarusian;Падрадчык
+doc.contractorAll;Belarusian;Усе падрадчыкі
+doc.week;Belarusian;Тыдзень
+doc.weekRangeSep;Belarusian;па
+doc.colName;Belarusian;Імя і прозвішча
+doc.colTrade;Belarusian;Прафесія
+doc.day1;Belarusian;Пн
+doc.day2;Belarusian;Аў
+doc.day3;Belarusian;Ср
+doc.day4;Belarusian;Чц
+doc.day5;Belarusian;Пт
+doc.day6;Belarusian;Сб
+doc.day7;Belarusian;Нд
+doc.colTotal;Belarusian;Усяго (гадз)
+doc.subtotal;Belarusian;Прамежкавы вынік
+doc.total;Belarusian;Усяго
+doc.footerGenerated;Belarusian;Створана {date}, аўтар {user}
+doc.footerPage;Belarusian;Старонка {page} з {pages}

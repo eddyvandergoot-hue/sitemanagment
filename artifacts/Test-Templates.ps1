@@ -116,7 +116,7 @@ if (Test-Path $cPath) {
   $lines = @((ReadText $cPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
   Check ($lines[0] -ceq 'Key;Language;Text') 'translations CSV: header Key;Language;Text'
   $keys = @('doc.title', 'doc.projectName', 'doc.country', 'doc.projectNumber', 'doc.projectReference', 'doc.contractor', 'doc.contractorAll', 'doc.week', 'doc.weekRangeSep', 'doc.colName', 'doc.colTrade') + (1..7 | ForEach-Object { "doc.day$_" }) + @('doc.colTotal', 'doc.subtotal', 'doc.total', 'doc.footerGenerated', 'doc.footerPage')
-  $langs = 'Dutch', 'English', 'Polish', 'Czech', 'Romanian', 'Ukrainian', 'German', 'French'  # Eddy 14-11-2026: 8 languages (H30)
+  $langs = 'Dutch', 'English', 'Polish', 'Czech', 'Romanian', 'Ukrainian', 'German', 'French', 'Belarusian'  # Eddy 14-11-2026: 8 languages (H30); Belarusian = 9th since 17-11-2026 (V6, H37)
   $map = @{}; $badRows = 0
   foreach ($ln in $lines[1..($lines.Count - 1)]) {
     $f = $ln -split ';'
@@ -125,6 +125,19 @@ if (Test-Path $cPath) {
   }
   Check ($badRows -eq 0) 'translations CSV: every row 3 fields, text not empty, no ; in text'
   Check (($lines.Count - 1) -eq $map.Count) 'translations CSV: no duplicate Key+Language'
+  # Delta files for MS-043 (Belarusian, V6): rows identical to the full files
+  foreach ($bd in @(@{ F = 'translations-weekreport-be.csv'; N = 23 }, @{ F = 'translations-countries-be.csv'; N = 48 })) {
+    $bp = Join-Path $tpl $bd.F
+    Check (Test-Path $bp) "$($bd.F) exists"
+    if (Test-Path $bp) {
+      $bb = Read-SharedBytes $bp
+      $bl = @((ReadText $bp).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
+      $brows = @($bl[1..($bl.Count - 1)])
+      Check ($bb[0] -eq 0xEF -and $bl[0] -ceq 'Key;Language;Text' -and $brows.Count -eq $bd.N -and @($brows | Where-Object { ($_ -split ';')[1] -cne 'Belarusian' -or ($_ -split ';')[2] -notmatch ('[' + [char]0x0400 + '-' + [char]0x04FF + ']') }).Count -eq 0) "$($bd.F): BOM, header, $($bd.N) Belarusian rows in Cyrillic (found $($brows.Count))"
+      $full = (ReadText (Join-Path $tpl ($bd.F -replace '-be\.csv$', '.csv'))) -split "`r?`n"
+      Check (@($brows | Where-Object { $full -cnotcontains $_ }).Count -eq 0) "$($bd.F): every row equal to the full file"
+    }
+  }
   $missing = @(foreach ($k in $keys) { foreach ($l in $langs) { if (-not $map.ContainsKey("$k|$l")) { "$k|$l" } } })
   Check ($missing.Count -eq 0) "translations CSV: $($keys.Count) keys x $($langs.Count) languages present$(if ($missing) { ' - missing ' + ($missing -join ', ') })"
   $extra = @($map.Keys | Where-Object { $keys -notcontains ($_ -split '\|')[0] -or $langs -notcontains ($_ -split '\|')[1] })
@@ -185,7 +198,7 @@ if (Test-Path $cPath) {
     $nmap = @{}; $nbad = 0
     foreach ($ln in $nl[1..($nl.Count - 1)]) { $f = $ln -split ';'; if ($f.Count -ne 3 -or $f[0] -notmatch '^consent\.\w+$' -or $f[2].Trim() -eq '' -or $f[2] -ne $f[2].Trim()) { $nbad++; continue }; $nmap["$($f[0])|$($f[1])"] = $f[2] }
     Check ($nbad -eq 0 -and ($nl.Count - 1) -eq $nmap.Count) 'consent CSV: every row 3 fields, key consent.<name>, text not empty, no duplicates'
-    $nlangs = @($langs) + 'Belarusian'
+    $nlangs = @($langs)
     $nmiss = @(foreach ($k in 'consent.idShown', 'consent.footer') { foreach ($l in $nlangs) { if (-not $nmap.ContainsKey("$k|$l")) { "$k|$l" } } })
     Check ($nmiss.Count -eq 0 -and ($nl.Count - 1) -eq 18) "consent CSV: consent.idShown + consent.footer x 9 languages = 18 rows$(if ($nmiss) { ' - missing ' + ($nmiss -join ', ') })"
     Check ($nmap['consent.idShown|Dutch'] -ceq 'Paspoort/ID getoond') 'consent CSV: Dutch consent.idShown = "Paspoort/ID getoond" (H36)'

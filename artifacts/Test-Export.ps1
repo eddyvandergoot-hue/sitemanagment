@@ -542,7 +542,8 @@ Assert-True ($onExp.Contains('Trace("DIAG|Export|Status",') -and $onExp.Contains
 Set-FxVar 'AppSettings' 'Table({Title:"report.primaryLanguage",Value:"Dutch"})'
 Set-FxVar 'colWrSettings' (Get-CallArg $onExp 'ClearCollect(colWrSettings,' 1); Set-FxVar 'varWrSetN' $setNFx; Set-FxVar 'varWrDocLang1' $setLangFx
 Assert-Eval 'varWrDocLang1 & "|" & varWrSetN' 'Dutch|1' 'repro: AppSettings Title/Value -> page-1 language Dutch'
-Set-FxVar 'Translations' ('Table(' + ((@($tr) | ForEach-Object { '{Title:' + (ConvertTo-FxString $_.Key) + ',Language:{Value:' + (ConvertTo-FxString $_.Lang) + '},Text:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')')
+# SharePoint state of 15-11 (8 languages): the Belarusian rows (V6, 17-11-2026) were not in the list then
+Set-FxVar 'Translations' ('Table(' + ((@($tr | Where-Object { $_.Lang -ne 'Belarusian' }) | ForEach-Object { '{Title:' + (ConvertTo-FxString $_.Key) + ',Language:{Value:' + (ConvertTo-FxString $_.Lang) + '},Text:' + (ConvertTo-FxString $_.Text) + '}' }) -join ',') + ')')
 Assert-Eval 'CountRows(Translations)' 184 'repro: Translations 184 rows, Language as a Choice record'
 $empProj = [regex]::Match($loader, 'ClearCollect\(colWrPendEmployers,ForAll\(Employers As emp,(\{[^;]*?\})\)\)').Groups[1].Value
 Assert-True ($empProj.Replace(' ', '').Contains('Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))')) 'repro: Employers projection of the loader found (Language Choice .Value)'

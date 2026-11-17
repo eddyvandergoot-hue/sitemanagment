@@ -9,6 +9,8 @@ $projectRoot = Split-Path $PSScriptRoot
 $fails = 0
 function Check($cond, $label) { if ($cond) { Write-Output "PASS $label" } else { Write-Output "FAIL $label"; $script:fails++ } }
 $languages = @('Dutch', 'English', 'Polish', 'Czech', 'Romanian', 'Ukrainian', 'German', 'French')
+# Belarusian = 9th language since 17-11-2026 (V6, H37): texts in the CSVs now; the app code (language code 'be' in scrWeekReport) follows in the next build.
+$csvLanguages = @($languages) + 'Belarusian'
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Managment_VS.msapr'))
@@ -33,12 +35,12 @@ foreach ($list in 'Workers', 'Employers', 'Translations') {
 function Read-SharedBytes([string]$p) { $fs = [IO.File]::Open($p, 'Open', 'Read', 'ReadWrite'); try { $ms = New-Object IO.MemoryStream; $fs.CopyTo($ms); , $ms.ToArray() } finally { $fs.Dispose() } } # reads also while Excel has the CSV open
 $csv = ([Text.Encoding]::UTF8.GetString((Read-SharedBytes (Join-Path $projectRoot 'templates\translations-weekreport.csv'))).TrimStart([char]0xFEFF) -split "`r?`n") | Select-Object -Skip 1 | Where-Object { $_.Trim() }
 $csvLangs = @($csv | ForEach-Object { $_.Split(';')[1] } | Sort-Object -Unique)
-Check ((($csvLangs | Sort-Object) -join ',') -ceq (($languages | Sort-Object) -join ',')) "translations CSV: exactly the eight spellings, case-sensitive, no spaces ($($csvLangs -join ', '))"
+Check ((($csvLangs | Sort-Object) -join ',') -ceq (($csvLanguages | Sort-Object) -join ',')) "translations CSV: exactly the nine spellings (8 + Belarusian), case-sensitive, no spaces ($($csvLangs -join ', '))"
 $bad = @($csv | Where-Object { $p = $_.Split(';'); $p[1] -cne $p[1].Trim() })
 Check ($bad.Count -eq 0) 'translations CSV: no leading/trailing spaces in Language'
 $ccsv = ([Text.Encoding]::UTF8.GetString((Read-SharedBytes (Join-Path $projectRoot 'templates\translations-countries.csv'))).TrimStart([char]0xFEFF) -split "`r?`n") | Select-Object -Skip 1 | Where-Object { $_.Trim() }
 $ccLangs = @($ccsv | ForEach-Object { $_.Split(';')[1] } | Sort-Object -Unique)
-Check ((($ccLangs | Sort-Object) -join ',') -ceq (($languages | Sort-Object) -join ',') -and @($ccsv | Where-Object { $p = $_.Split(';'); $p[1] -cne $p[1].Trim() }).Count -eq 0) "countries CSV (H33): exactly the eight spellings, case-sensitive, no spaces ($($ccLangs -join ', '))"
+Check ((($ccLangs | Sort-Object) -join ',') -ceq (($csvLanguages | Sort-Object) -join ',') -and @($ccsv | Where-Object { $p = $_.Split(';'); $p[1] -cne $p[1].Trim() }).Count -eq 0) "countries CSV (H33): exactly the nine spellings (8 + Belarusian), case-sensitive, no spaces ($($ccLangs -join ', '))"
 
 $wr = [IO.File]::ReadAllText((Join-Path $projectRoot 'Src\scrWeekReport.pa.yaml'))
 $sw = [regex]::Match($wr, 'Switch\(pg\.L,((?:"[A-Za-z]+","[a-z]{2}",?)+),"und"\)')

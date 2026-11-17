@@ -49,6 +49,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
 | MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
 | MS-042 | 17-11-2026 | Open (Eddy): consentteksten plakken in Translations (translations-consent.csv); niet dringend |
+| MS-043 | 17-11-2026 | Open (Eddy): Belarusian als 9e taal (keuzes + plakbestanden *-be.csv) |
 
 ---
 
@@ -443,6 +444,17 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   3. Plak de 2 Belarusian-regels pas na de procedure "Nieuwe taal" (Belarusian als keuze in Workers, Employers en Translations; V6).
   4. Controleer: zoek op `consent.`; er staan 16 regels, en na Belarusian 18.
 - **Let op:** de overige `consent.*`-teksten (titel, checklist, PBM, handtekening) volgen zodra Eddy de officiële FOR-010.040-teksten levert (CONSENT_PLAN.md 3). Laat alle talen behalve Dutch en English nog door een moedertaalspreker controleren.
+
+## MS-043 — Belarusian als 9e taal (H37, V6)
+
+- **Added:** 17-11-2026. **Status:** Open (Eddy).
+- **Waarom handmatig (stap 1):** keuzes van een keuzekolom bewerken kan alleen in de kolominstellingen; er is geen importroute. De teksten zijn bestanden.
+- **Stappen:**
+  1. Voeg in **Workers.Language**, **Employers.Language** en **Translations.Language** de keuze `Belarusian` toe: exact deze spelling, met hoofdletter en zonder spaties (procedure "Nieuwe taal", stap 1).
+  2. Translations > Edit in grid view: plak `templates/translations-weekreport-be.csv` (23 regels) en `templates/translations-countries-be.csv` (48 regels), zonder kopregel.
+  3. Plak de Belarusian-regels van de consentteksten (MS-042).
+  4. Controle: filter Language = Belarusian geeft 71 regels plus de consentregels.
+- **Let op:** de taalcode `be` in de app volgt bij de volgende build. Tot dan geeft het Week Report voor een contractor met Language = Belarusian rood "no file language code" (geen export). Kies Belarusian dus nog niet bij een contractor met uren die geëxporteerd moeten worden. Alle Belarusian-teksten moeten nog door een moedertaalspreker gecontroleerd worden.
 
 ## Procedure — Nieuwe taal (H30)
 
