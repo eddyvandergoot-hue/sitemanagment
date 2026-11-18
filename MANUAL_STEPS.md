@@ -49,7 +49,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
 | MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
 | MS-042 | 17-11-2026 | Done 18-11-2026 via importflow: Added 176, Updated 1112, Errors 0; Translations 1288 (Eddy) |
-| MS-043 | 17-11-2026 | Stap 1 done 18-11-2026 (Eddy: keuze Belarusian in Workers, Employers, Translations); be-regels (161) via importflow, verwacht totaal 1449 |
+| MS-043 | 17-11-2026 | Done 18-11-2026: keuze Belarusian (Eddy) + 161 be-regels via importflow (Added 161, Errors 0); verwacht totaal 1449 |
 | MS-044 | 17-11-2026 | Vervallen 18-11-2026 (H40): geen lijsten Customers/ProjectSafety |
 | MS-045 | 17-11-2026 | Vervallen 18-11-2026 (H40) |
 | MS-046 | 17-11-2026 | Done 17-11-2026 (Eddy): v2 geïmporteerd (Update), aan, Imports gesynchroniseerd; eerste run MS-042 OK: bibliotheek Imports + importpakket "SiteManagement - Import rows" (Create as new) + Sync; daarna importeert Claude lijstgegevens |
@@ -452,7 +452,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 - **Let op:** NL, PL, UK en BE zijn letterlijk overgenomen uit de voorbeeldformulieren, met de wijzigingen van H36. EN, CS, RO, DE en FR zijn vertaald vanuit NL; hun voettekst zegt "unofficial translation" (in de eigen taal). Al het niet-Nederlandse moet nog door een moedertaalspreker gecontroleerd worden (backlog).
 ## MS-043 — Belarusian als 9e taal (H37, V6)
 
-- **Added:** 17-11-2026. **Status:** Stap 1 done 18-11-2026 (Eddy). Stap 2-3 via de importflow (translations-ms043-be.csv, 161 regels, alleen toevoegen); verwacht totaal 1449. Plakken is niet meer nodig.
+- **Added:** 17-11-2026. **Status:** Done 18-11-2026. Stap 1 Eddy; stap 2-3 via de importflow (translations-ms043-be.csv, 161 regels, alleen toevoegen): Added 161, Updated 0, Exists 0, Duplicates 0, Errors 0. Verwacht totaal Translations 1449 (Eddy kan dit online bevestigen). De app-taalcode be volgt in de consent-build.
 - **Waarom handmatig (stap 1):** keuzes van een keuzekolom bewerken kan alleen in de kolominstellingen; er is geen importroute. De teksten zijn bestanden.
 - **Stappen:**
   1. Voeg in **Workers.Language**, **Employers.Language** en **Translations.Language** de keuze `Belarusian` toe: exact deze spelling, met hoofdletter en zonder spaties (procedure "Nieuwe taal", stap 1).
