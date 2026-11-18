@@ -55,6 +55,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-046 | 17-11-2026 | Done 17-11-2026 (Eddy): v2 geïmporteerd (Update), aan, Imports gesynchroniseerd; eerste run MS-042 OK: bibliotheek Imports + importpakket "SiteManagement - Import rows" (Create as new) + Sync; daarna importeert Claude lijstgegevens |
 | MS-047 | 18-11-2026 | Open (Eddy): kolommen Projects (CustomerCity, CustomerPhone, SupervisorPhone) en Project Workers (ConsentStatus, ConsentDate) + metadata-save in Incoming; daarna bouw consent |
 | MS-048 | 18-11-2026 | Open (Eddy): schone start v1 (H41): testrijen van echte projecten verwijderen (Hours 24, Assignment Periods 20, Project Workers 19) + Exports-map van FC; TEST-000 blijft |
+| MS-049 | 18-11-2026 | Open (Eddy): importflow v3 importeren (Import Package > Update "SiteManagement - Import rows") |
 
 ---
 
@@ -537,6 +538,20 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   5. Sluit de app en open hem opnieuw (caches leeg).
 - **Daarna (Eddy):** echte teams via Project / team met de echte startweek (bv. 2026 KW46), uren in Weekly Hours, Week report exporteren. Controlelijst in PROJECT_STATUS.md (H41).
 - **Terugdraaien:** binnen 93 dagen via de prullenbak van de site.
+
+## MS-049 — Importflow v3 (sneller), v1.0.1
+
+- **Added:** 18-11-2026. **Status:** Open (Eddy).
+- **Bestand:** `artifacts\flows\SiteManagement-Import-rows-v3.zip` (niet in git). Maak het opnieuw met `py -E -P flows\make_import_rows_package.py`.
+- **Stappen:** ga naar Power Automate > My flows > Import > Import Package (Legacy). Upload de zip en kies bij de flow **Update** > "SiteManagement - Import rows". Kies je bestaande SharePoint-verbinding, klik Import en laat de flow aan staan.
+- **Werking v3:**
+  - De bestaande rijen worden één keer gelezen in plaats van per regel.
+  - Er worden 10 regels tegelijk verwerkt.
+  - Dubbele sleutels in het bestand: het hele bestand wordt geweigerd ("duplicate keys in file").
+  - Een lijst van 5000 rijen of meer wordt geweigerd.
+  - Een mislukte leesactie geeft een ERROR-regel.
+  - Verder ongewijzigd: standaard alleen toevoegen, `upsert_` om bij te werken, nooit verwijderen.
+- **Controle:** de eerstvolgende import (Claude) is de acceptatietest. Claude meldt de tellingen en de doorlooptijd.
 
 ## Procedure — Nieuwe taal (H30)
 

@@ -39,41 +39,24 @@
         }
       },
       "actions": {
-        "Init_Log": {
+        "Init_Results": {
           "type": "InitializeVariable",
           "inputs": {
             "variables": [
               {
-                "name": "Log",
-                "type": "string",
-                "value": ""
+                "name": "Results",
+                "type": "array",
+                "value": []
               }
             ]
           },
           "runAfter": {}
         },
-        "Init_RowResult": {
-          "type": "InitializeVariable",
-          "inputs": {
-            "variables": [
-              {
-                "name": "RowResult",
-                "type": "string",
-                "value": ""
-              }
-            ]
-          },
-          "runAfter": {
-            "Init_Log": [
-              "Succeeded"
-            ]
-          }
-        },
         "FullPath": {
           "type": "Compose",
           "inputs": "@triggerOutputs()?['body/{FullPath}']",
           "runAfter": {
-            "Init_RowResult": [
+            "Init_Results": [
               "Succeeded"
             ]
           }
@@ -268,11 +251,14 @@
                 ]
               }
             },
-            "Log_header": {
-              "type": "AppendToStringVariable",
+            "Field_index": {
+              "type": "Select",
               "inputs": {
-                "name": "Log",
-                "value": "@{if(outputs('HeaderOK'), '', concat('-;-;ERROR;list not allowed or header without Title (Translations: Key/Title + Language): ', first(outputs('Lines')), decodeUriComponent('%0A')))}"
+                "from": "@range(0, length(body('Fields')))",
+                "select": {
+                  "I": "@item()",
+                  "N": "@body('Fields')[item()]"
+                }
               },
               "runAfter": {
                 "HeaderOK": [
@@ -280,9 +266,147 @@
                 ]
               }
             },
+            "Title_pos": {
+              "type": "Query",
+              "inputs": {
+                "from": "@body('Field_index')",
+                "where": "@equals(item()?['N'], 'Title')"
+              },
+              "runAfter": {
+                "Field_index": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Language_pos": {
+              "type": "Query",
+              "inputs": {
+                "from": "@body('Field_index')",
+                "where": "@equals(item()?['N'], 'Language')"
+              },
+              "runAfter": {
+                "Title_pos": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Index_title": {
+              "type": "Compose",
+              "inputs": "@coalesce(first(body('Title_pos'))?['I'], 0)",
+              "runAfter": {
+                "Language_pos": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Index_language": {
+              "type": "Compose",
+              "inputs": "@coalesce(first(body('Language_pos'))?['I'], 0)",
+              "runAfter": {
+                "Index_title": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Get_all_existing": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "parameters/method": "GET",
+                  "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items?$select=@{if(equals(outputs('ListName'), 'Translations'), 'Id,Title,Language', 'Id,Title')}&$top=5000",
+                  "parameters/headers": {
+                    "Accept": "application/json;odata=nometadata",
+                    "Content-Type": "application/json;odata=nometadata"
+                  },
+                  "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                  "connectionName": "shared_sharepointonline",
+                  "operationId": "HttpRequest"
+                },
+                "retryPolicy": {
+                  "type": "fixed",
+                  "count": 2,
+                  "interval": "PT5S"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runAfter": {
+                "Index_language": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Existing": {
+              "type": "Select",
+              "inputs": {
+                "from": "@coalesce(body('Get_all_existing')?['value'], createArray())",
+                "select": {
+                  "Id": "@item()?['Id']",
+                  "K": "@toLower(concat(trim(coalesce(item()?['Title'], '')), '|', if(equals(outputs('ListName'), 'Translations'), trim(coalesce(item()?['Language'], '')), '')))"
+                }
+              },
+              "runAfter": {
+                "Get_all_existing": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "File_keys": {
+              "type": "Select",
+              "inputs": {
+                "from": "@if(outputs('HeaderOK'), body('Rows'), createArray())",
+                "select": "@toLower(concat(trim(coalesce(first(skip(split(item(), ';'), outputs('Index_title'))), '')), '|', if(equals(outputs('ListName'), 'Translations'), trim(coalesce(first(skip(split(item(), ';'), outputs('Index_language'))), '')), '')))"
+              },
+              "runAfter": {
+                "Existing": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "More_than_5000": {
+              "type": "Compose",
+              "inputs": "@or(not(empty(coalesce(body('Get_all_existing')?['odata.nextLink'], body('Get_all_existing')?['@odata.nextLink'], ''))), greaterOrEquals(length(coalesce(body('Get_all_existing')?['value'], createArray())), 5000))",
+              "runAfter": {
+                "File_keys": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Duplicate_keys_in_file": {
+              "type": "Compose",
+              "inputs": "@not(equals(length(union(body('File_keys'), body('File_keys'))), length(body('File_keys'))))",
+              "runAfter": {
+                "More_than_5000": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Can_process": {
+              "type": "Compose",
+              "inputs": "@and(outputs('HeaderOK'), not(outputs('More_than_5000')), not(outputs('Duplicate_keys_in_file')))",
+              "runAfter": {
+                "Duplicate_keys_in_file": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Result_header": {
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "Results",
+                "value": "@if(outputs('Can_process'), '', concat('-;-;ERROR;not processed: ', if(not(outputs('HeaderOK')), 'list not allowed or header without Title (Translations: Key/Title + Language)', if(outputs('More_than_5000'), 'list has more than 5000 rows', 'duplicate keys in file')), ': ', first(outputs('Lines'))))"
+              },
+              "runAfter": {
+                "Can_process": [
+                  "Succeeded"
+                ]
+              }
+            },
             "Apply_to_each_row": {
               "type": "Foreach",
-              "foreach": "@if(outputs('HeaderOK'), body('Rows'), createArray())",
+              "foreach": "@if(outputs('Can_process'), body('Rows'), createArray())",
               "actions": {
                 "Row": {
                   "type": "Scope",
@@ -298,7 +422,7 @@
                         "from": "@range(0, length(body('Fields')))",
                         "select": {
                           "FieldName": "@body('Fields')[item()]",
-                          "FieldValue": "@if(greaterOrEquals(item(), length(outputs('Parts'))), '', if(equals(item(), sub(length(body('Fields')), 1)), join(skip(outputs('Parts'), item()), ';'), outputs('Parts')[item()]))"
+                          "FieldValue": "@if(equals(item(), sub(length(body('Fields')), 1)), join(skip(outputs('Parts'), item()), ';'), if(or(equals(body('Fields')[item()], 'Title'), equals(body('Fields')[item()], 'Language')), trim(coalesce(first(skip(outputs('Parts'), item())), '')), coalesce(first(skip(outputs('Parts'), item())), '')))"
                         }
                       },
                       "runAfter": {
@@ -307,11 +431,13 @@
                         ]
                       }
                     },
-                    "FV_title": {
-                      "type": "Query",
+                    "Row_info": {
+                      "type": "Compose",
                       "inputs": {
-                        "from": "@body('Form_values')",
-                        "where": "@equals(item()?['FieldName'], 'Title')"
+                        "Title": "@trim(coalesce(first(skip(outputs('Parts'), outputs('Index_title'))), ''))",
+                        "Lang": "@if(equals(outputs('ListName'), 'Translations'), trim(coalesce(first(skip(outputs('Parts'), outputs('Index_language'))), '')), '')",
+                        "Key": "@toLower(concat(trim(coalesce(first(skip(outputs('Parts'), outputs('Index_title'))), '')), '|', if(equals(outputs('ListName'), 'Translations'), trim(coalesce(first(skip(outputs('Parts'), outputs('Index_language'))), '')), '')))",
+                        "Error": "@if(less(length(outputs('Parts')), length(body('Fields'))), concat('column count ', string(length(outputs('Parts'))), ' < header'), if(or(equals(trim(coalesce(first(skip(outputs('Parts'), outputs('Index_title'))), '')), ''), and(equals(outputs('ListName'), 'Translations'), equals(trim(coalesce(first(skip(outputs('Parts'), outputs('Index_language'))), '')), ''))), 'empty key', ''))"
                       },
                       "runAfter": {
                         "Form_values": [
@@ -319,105 +445,21 @@
                         ]
                       }
                     },
-                    "FV_language": {
+                    "Matches": {
                       "type": "Query",
                       "inputs": {
-                        "from": "@body('Form_values')",
-                        "where": "@equals(item()?['FieldName'], 'Language')"
+                        "from": "@body('Existing')",
+                        "where": "@equals(item()?['K'], outputs('Row_info')?['Key'])"
                       },
                       "runAfter": {
-                        "FV_title": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "TitleVal": {
-                      "type": "Compose",
-                      "inputs": "@trim(coalesce(first(body('FV_title'))?['FieldValue'], ''))",
-                      "runAfter": {
-                        "FV_language": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "LangVal": {
-                      "type": "Compose",
-                      "inputs": "@if(equals(outputs('ListName'), 'Translations'), trim(coalesce(first(body('FV_language'))?['FieldValue'], '')), '')",
-                      "runAfter": {
-                        "TitleVal": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "RowError": {
-                      "type": "Compose",
-                      "inputs": "@if(less(length(outputs('Parts')), length(body('Fields'))), concat('column count ', string(length(outputs('Parts'))), ' < header'), if(or(equals(outputs('TitleVal'), ''), and(equals(outputs('ListName'), 'Translations'), equals(outputs('LangVal'), ''))), 'empty key', ''))",
-                      "runAfter": {
-                        "LangVal": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "KeyFilter": {
-                      "type": "Compose",
-                      "inputs": "@if(equals(outputs('ListName'), 'Translations'), concat('Title eq ''', replace(outputs('TitleVal'), '''', ''''''), ''' and Language eq ''', replace(outputs('LangVal'), '''', ''''''), ''''), concat('Title eq ''', replace(outputs('TitleVal'), '''', ''''''), ''''))",
-                      "runAfter": {
-                        "RowError": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "Get_existing": {
-                      "type": "OpenApiConnection",
-                      "inputs": {
-                        "parameters": {
-                          "parameters/method": "GET",
-                          "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items?$select=Id&$top=10&$filter=@{encodeUriComponent(outputs('KeyFilter'))}",
-                          "parameters/headers": {
-                            "Accept": "application/json;odata=nometadata",
-                            "Content-Type": "application/json;odata=nometadata"
-                          },
-                          "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
-                        },
-                        "host": {
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
-                          "connectionName": "shared_sharepointonline",
-                          "operationId": "HttpRequest"
-                        },
-                        "retryPolicy": {
-                          "type": "fixed",
-                          "count": 2,
-                          "interval": "PT5S"
-                        },
-                        "authentication": "@parameters('$authentication')"
-                      },
-                      "runAfter": {
-                        "KeyFilter": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "Existing_count": {
-                      "type": "Compose",
-                      "inputs": "@length(coalesce(body('Get_existing')?['value'], createArray()))",
-                      "runAfter": {
-                        "Get_existing": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "RowAction": {
-                      "type": "Compose",
-                      "inputs": "@if(not(equals(outputs('RowError'), '')), 'ERROR', if(equals(outputs('Existing_count'), 0), 'ADD', if(equals(outputs('Existing_count'), 1), if(outputs('Upsert'), 'UPDATE', 'EXISTS'), 'DUPLICATE')))",
-                      "runAfter": {
-                        "Existing_count": [
+                        "Row_info": [
                           "Succeeded"
                         ]
                       }
                     },
                     "Switch_action": {
                       "type": "Switch",
-                      "expression": "@outputs('RowAction')",
+                      "expression": "@if(not(equals(outputs('Row_info')?['Error'], '')), 'ERROR', if(equals(length(body('Matches')), 0), 'ADD', if(equals(length(body('Matches')), 1), if(outputs('Upsert'), 'UPDATE', 'EXISTS'), 'DUPLICATE')))",
                       "cases": {
                         "Case_add": {
                           "case": "ADD",
@@ -452,7 +494,7 @@
                             "Create_errors": {
                               "type": "Query",
                               "inputs": {
-                                "from": "@body('Create_item')?['value']",
+                                "from": "@coalesce(body('Create_item')?['value'], createArray())",
                                 "where": "@equals(item()?['HasException'], true)"
                               },
                               "runAfter": {
@@ -461,11 +503,11 @@
                                 ]
                               }
                             },
-                            "Set_result_add": {
-                              "type": "SetVariable",
+                            "Result_add": {
+                              "type": "AppendToArrayVariable",
                               "inputs": {
-                                "name": "RowResult",
-                                "value": "@if(greater(length(body('Create_errors')), 0), concat('ERROR;', first(body('Create_errors'))?['FieldName'], ': ', first(body('Create_errors'))?['ErrorMessage']), concat('ADDED;id ', string(first(body('Create_item')?['value'])?['ItemId'])))"
+                                "name": "Results",
+                                "value": "@concat(outputs('Row_info')?['Title'], ';', outputs('Row_info')?['Lang'], ';', if(greater(length(body('Create_errors')), 0), concat('ERROR;', first(body('Create_errors'))?['FieldName'], ': ', first(body('Create_errors'))?['ErrorMessage']), concat('ADDED;id ', string(first(body('Create_item')?['value'])?['ItemId']))))"
                               },
                               "runAfter": {
                                 "Create_errors": [
@@ -483,7 +525,7 @@
                               "inputs": {
                                 "parameters": {
                                   "parameters/method": "POST",
-                                  "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items(@{first(body('Get_existing')?['value'])?['Id']})/ValidateUpdateListItem",
+                                  "parameters/uri": "_api/web/lists/GetByTitle('@{outputs('ListName')}')/items(@{string(first(body('Matches'))?['Id'])})/ValidateUpdateListItem",
                                   "parameters/headers": {
                                     "Accept": "application/json;odata=nometadata",
                                     "Content-Type": "application/json;odata=nometadata"
@@ -508,7 +550,7 @@
                             "Update_errors": {
                               "type": "Query",
                               "inputs": {
-                                "from": "@body('Update_item')?['value']",
+                                "from": "@coalesce(body('Update_item')?['value'], createArray())",
                                 "where": "@equals(item()?['HasException'], true)"
                               },
                               "runAfter": {
@@ -517,11 +559,11 @@
                                 ]
                               }
                             },
-                            "Set_result_update": {
-                              "type": "SetVariable",
+                            "Result_update": {
+                              "type": "AppendToArrayVariable",
                               "inputs": {
-                                "name": "RowResult",
-                                "value": "@if(greater(length(body('Update_errors')), 0), concat('ERROR;', first(body('Update_errors'))?['FieldName'], ': ', first(body('Update_errors'))?['ErrorMessage']), concat('UPDATED;id ', string(first(body('Get_existing')?['value'])?['Id'])))"
+                                "name": "Results",
+                                "value": "@concat(outputs('Row_info')?['Title'], ';', outputs('Row_info')?['Lang'], ';', if(greater(length(body('Update_errors')), 0), concat('ERROR;', first(body('Update_errors'))?['FieldName'], ': ', first(body('Update_errors'))?['ErrorMessage']), concat('UPDATED;id ', string(first(body('Matches'))?['Id']))))"
                               },
                               "runAfter": {
                                 "Update_errors": [
@@ -534,11 +576,11 @@
                         "Case_exists": {
                           "case": "EXISTS",
                           "actions": {
-                            "Set_result_exists": {
-                              "type": "SetVariable",
+                            "Result_exists": {
+                              "type": "AppendToArrayVariable",
                               "inputs": {
-                                "name": "RowResult",
-                                "value": "@concat('EXISTS;id ', string(first(body('Get_existing')?['value'])?['Id']))"
+                                "name": "Results",
+                                "value": "@concat(outputs('Row_info')?['Title'], ';', outputs('Row_info')?['Lang'], ';', 'EXISTS;id ', string(first(body('Matches'))?['Id']))"
                               },
                               "runAfter": {}
                             }
@@ -547,55 +589,31 @@
                         "Case_duplicate": {
                           "case": "DUPLICATE",
                           "actions": {
-                            "Dup_ids": {
-                              "type": "Select",
+                            "Result_duplicate": {
+                              "type": "AppendToArrayVariable",
                               "inputs": {
-                                "from": "@body('Get_existing')?['value']",
-                                "select": "@string(item()?['Id'])"
+                                "name": "Results",
+                                "value": "@concat(outputs('Row_info')?['Title'], ';', outputs('Row_info')?['Lang'], ';', 'DUPLICATE;ids ', string(body('Matches')), ' (not changed)')"
                               },
                               "runAfter": {}
-                            },
-                            "Set_result_duplicate": {
-                              "type": "SetVariable",
-                              "inputs": {
-                                "name": "RowResult",
-                                "value": "@concat('DUPLICATE;ids ', join(body('Dup_ids'), ' '), ' (not changed)')"
-                              },
-                              "runAfter": {
-                                "Dup_ids": [
-                                  "Succeeded"
-                                ]
-                              }
                             }
                           }
                         }
                       },
                       "default": {
                         "actions": {
-                          "Set_result_error": {
-                            "type": "SetVariable",
+                          "Result_error": {
+                            "type": "AppendToArrayVariable",
                             "inputs": {
-                              "name": "RowResult",
-                              "value": "@concat('ERROR;', outputs('RowError'), ': ', items('Apply_to_each_row'))"
+                              "name": "Results",
+                              "value": "@concat(outputs('Row_info')?['Title'], ';', outputs('Row_info')?['Lang'], ';', 'ERROR;', outputs('Row_info')?['Error'], ': ', items('Apply_to_each_row'))"
                             },
                             "runAfter": {}
                           }
                         }
                       },
                       "runAfter": {
-                        "RowAction": [
-                          "Succeeded"
-                        ]
-                      }
-                    },
-                    "Log_row": {
-                      "type": "AppendToStringVariable",
-                      "inputs": {
-                        "name": "Log",
-                        "value": "@{outputs('TitleVal')};@{outputs('LangVal')};@{variables('RowResult')}@{decodeUriComponent('%0A')}"
-                      },
-                      "runAfter": {
-                        "Switch_action": [
+                        "Matches": [
                           "Succeeded"
                         ]
                       }
@@ -603,11 +621,11 @@
                   },
                   "runAfter": {}
                 },
-                "Log_row_failed": {
-                  "type": "AppendToStringVariable",
+                "Result_row_failed": {
+                  "type": "AppendToArrayVariable",
                   "inputs": {
-                    "name": "Log",
-                    "value": "-;-;ERROR;request failed (see run history): @{items('Apply_to_each_row')}@{decodeUriComponent('%0A')}"
+                    "name": "Results",
+                    "value": "@concat('-;-;ERROR;request failed (see run history): ', items('Apply_to_each_row'))"
                   },
                   "runAfter": {
                     "Row": [
@@ -619,11 +637,11 @@
               },
               "runtimeConfiguration": {
                 "concurrency": {
-                  "repetitions": 1
+                  "repetitions": 10
                 }
               },
               "runAfter": {
-                "Log_header": [
+                "Result_header": [
                   "Succeeded"
                 ]
               }
@@ -635,24 +653,48 @@
             ]
           }
         },
-        "Count_added": {
-          "type": "Query",
+        "Result_process_failed": {
+          "type": "AppendToArrayVariable",
           "inputs": {
-            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
-            "where": "@contains(item(), ';ADDED;')"
+            "name": "Results",
+            "value": "@concat('-;-;ERROR;process failed (see run history): ', coalesce(outputs('FileName'), ''))"
           },
           "runAfter": {
             "Process": [
-              "Succeeded",
               "Failed",
               "TimedOut"
+            ]
+          }
+        },
+        "Result_lines": {
+          "type": "Query",
+          "inputs": {
+            "from": "@variables('Results')",
+            "where": "@not(equals(item(), ''))"
+          },
+          "runAfter": {
+            "Result_process_failed": [
+              "Succeeded",
+              "Skipped"
+            ]
+          }
+        },
+        "Count_added": {
+          "type": "Query",
+          "inputs": {
+            "from": "@variables('Results')",
+            "where": "@contains(item(), ';ADDED;')"
+          },
+          "runAfter": {
+            "Result_lines": [
+              "Succeeded"
             ]
           }
         },
         "Count_updated": {
           "type": "Query",
           "inputs": {
-            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "from": "@variables('Results')",
             "where": "@contains(item(), ';UPDATED;')"
           },
           "runAfter": {
@@ -664,7 +706,7 @@
         "Count_exists": {
           "type": "Query",
           "inputs": {
-            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "from": "@variables('Results')",
             "where": "@contains(item(), ';EXISTS;')"
           },
           "runAfter": {
@@ -676,7 +718,7 @@
         "Count_duplicate": {
           "type": "Query",
           "inputs": {
-            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "from": "@variables('Results')",
             "where": "@contains(item(), ';DUPLICATE;')"
           },
           "runAfter": {
@@ -688,7 +730,7 @@
         "Count_error": {
           "type": "Query",
           "inputs": {
-            "from": "@split(variables('Log'), decodeUriComponent('%0A'))",
+            "from": "@variables('Results')",
             "where": "@contains(item(), ';ERROR;')"
           },
           "runAfter": {
@@ -703,7 +745,7 @@
             "parameters": {
               "folderPath": "/Imports/Done",
               "name": "@{outputs('Stamp')}_@{outputs('FileName')}.result.csv",
-              "body": "@{concat(decodeUriComponent('%EF%BB%BF'), 'Summary;List=', outputs('ListName'), ';File=', outputs('FileName'), ';Mode=', if(outputs('Upsert'), 'upsert', 'add-only'), ';Rows=', string(length(body('Rows'))), ';Added=', string(length(body('Count_added'))), ';Updated=', string(length(body('Count_updated'))), ';Exists=', string(length(body('Count_exists'))), ';Duplicates=', string(length(body('Count_duplicate'))), ';Errors=', string(length(body('Count_error'))), decodeUriComponent('%0A'), 'Key;Language;Result;Detail', decodeUriComponent('%0A'), variables('Log'))}",
+              "body": "@{concat(decodeUriComponent('%EF%BB%BF'), 'Summary;List=', outputs('ListName'), ';File=', outputs('FileName'), ';Mode=', if(outputs('Upsert'), 'upsert', 'add-only'), ';Rows=', string(length(body('Rows'))), ';Added=', string(length(body('Count_added'))), ';Updated=', string(length(body('Count_updated'))), ';Exists=', string(length(body('Count_exists'))), ';Duplicates=', string(length(body('Count_duplicate'))), ';Errors=', string(length(body('Count_error'))), decodeUriComponent('%0A'), 'Key;Language;Result;Detail', decodeUriComponent('%0A'), join(body('Result_lines'), decodeUriComponent('%0A')))}",
               "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment"
             },
             "host": {

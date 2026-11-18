@@ -1,15 +1,17 @@
 # Builds the import package "SiteManagement - Import rows" (route 2 of the import working method, Eddy 17-11-2026).
 # Base = Eddy's latest export of "SiteManagement - Export file" (Incoming/Flows, gitignored): same SharePoint connection.
 # Changed vs base: definition.json (new flow), display name in the manifests, OneDrive connection removed (unused).
+# v3 (18-11-2026, v1.0.1): existing rows read once per file (no read per row), ~4 actions per row, 10 rows in parallel,
+# duplicate keys in the file block the whole file (fail-closed), lists above 5000 rows are refused.
 # v2 (17-11-2026): flat structure; Power Automate allows nesting level <= 8, this flow stays <= 6
 # (artifacts/Test-FlowNesting.ps1). Per row: composes + one Switch; counters derived from the log after the loop.
-# Output: artifacts/flows/SiteManagement-Import-rows-v2.zip (gitignored) + sanitized flows/SiteManagement-Import-rows.definition.json.
+# Output: artifacts/flows/SiteManagement-Import-rows-v3.zip (gitignored) + sanitized flows/SiteManagement-Import-rows.definition.json.
 # Run from the repo root: py -E -P flows/make_import_rows_package.py
 import copy, glob, json, os, zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = sorted(glob.glob(os.path.join(ROOT, 'Incoming', 'Flows', 'SiteManagement-Exportfile_*.zip')))[-1]
-OUT_ZIP = os.path.join(ROOT, 'artifacts', 'flows', 'SiteManagement-Import-rows-v2.zip')
+OUT_ZIP = os.path.join(ROOT, 'artifacts', 'flows', 'SiteManagement-Import-rows-v3.zip')
 OUT_DEF = os.path.join(ROOT, 'flows', 'SiteManagement-Import-rows.definition.json')
 NAME = 'SiteManagement - Import rows'
 SITE = 'https://geacloud.sharepoint.com/sites/GEASiteManagment'
@@ -74,72 +76,81 @@ FIELDS = "body('Fields')"
 ITEM = "items('Apply_to_each_row')"
 LIST_URI = "_api/web/lists/GetByTitle('@{outputs('ListName')}')"
 FORM_BODY = "@{json(concat('{\"formValues\":', string(body('Form_values')), ',\"bNewDocumentUpdate\":false}'))}"
-FIRST_ID = "first(body('Get_existing')?['value'])?['Id']"
+CONCURRENCY = 10
+TI = "outputs('Index_title')"
+LI = "outputs('Index_language')"
+PART = lambda arr, idx: f"trim(coalesce(first(skip({arr}, {idx})), ''))"  # safe index (null when out of range)
+IS_TR = "equals(outputs('ListName'), 'Translations')"
+P_T = PART("outputs('Parts')", TI)
+P_L = PART("outputs('Parts')", LI)
+INFO = "outputs('Row_info')"
+MATCH = "body('Matches')"
+FIRST_ID = f"string(first({MATCH})?['Id'])"
 
-# ---- per row (inside Process > Apply_to_each_row > Row): composes, then one Switch -----------------------
+
+def res(expr):
+    """Append one result line 'key;language;RESULT;detail' (array variable: safe with parallel iterations)."""
+    return {'type': 'AppendToArrayVariable', 'inputs': {'name': 'Results', 'value': expr}}
+
+
+KEYPFX = f"concat({INFO}?['Title'], ';', {INFO}?['Lang'], ';'"
+
+# ---- per row (Process > Apply_to_each_row > Row): 4 composes/queries + one Switch with 1-2 actions --------
 row = chain([
     ('Parts', compose(f"@split({ITEM}, ';')")),
     ('Form_values', {'type': 'Select', 'inputs': {
         'from': f"@range(0, length({FIELDS}))",
         'select': {'FieldName': f"@{FIELDS}[item()]",
-                   'FieldValue': f"@if(greaterOrEquals(item(), length(outputs('Parts'))), '', if(equals(item(), sub(length({FIELDS}), 1)), "
-                                 f"join(skip(outputs('Parts'), item()), ';'), outputs('Parts')[item()]))"}}}),
-    ('FV_title', query("@body('Form_values')", "@equals(item()?['FieldName'], 'Title')")),
-    ('FV_language', query("@body('Form_values')", "@equals(item()?['FieldName'], 'Language')")),
-    ('TitleVal', compose("@trim(coalesce(first(body('FV_title'))?['FieldValue'], ''))")),
-    ('LangVal', compose("@if(equals(outputs('ListName'), 'Translations'), trim(coalesce(first(body('FV_language'))?['FieldValue'], '')), '')")),
-    ('RowError', compose(
-        f"@if(less(length(outputs('Parts')), length({FIELDS})), concat('column count ', string(length(outputs('Parts'))), ' < header'), "
-        "if(or(equals(outputs('TitleVal'), ''), and(equals(outputs('ListName'), 'Translations'), equals(outputs('LangVal'), ''))), 'empty key', ''))")),
-    ('KeyFilter', compose(
-        "@if(equals(outputs('ListName'), 'Translations'), concat('Title eq ''', " + ESC("outputs('TitleVal')") +
-        ", ''' and Language eq ''', " + ESC("outputs('LangVal')") + ", ''''), concat('Title eq ''', " + ESC("outputs('TitleVal')") + ", ''''))")),
-    ('Get_existing', http('GET', LIST_URI + "/items?$select=Id&$top=10&$filter=@{encodeUriComponent(outputs('KeyFilter'))}")),
-    ('Existing_count', compose("@length(coalesce(body('Get_existing')?['value'], createArray()))")),
-    ('RowAction', compose(
-        "@if(not(equals(outputs('RowError'), '')), 'ERROR', if(equals(outputs('Existing_count'), 0), 'ADD', "
-        "if(equals(outputs('Existing_count'), 1), if(outputs('Upsert'), 'UPDATE', 'EXISTS'), 'DUPLICATE')))")),
+                   'FieldValue': f"@if(equals(item(), sub(length({FIELDS}), 1)), join(skip(outputs('Parts'), item()), ';'), "
+                                 f"if(or(equals({FIELDS}[item()], 'Title'), equals({FIELDS}[item()], 'Language')), trim(coalesce(first(skip(outputs('Parts'), item())), '')), coalesce(first(skip(outputs('Parts'), item())), '')))"}}}),
+    ('Row_info', compose({
+        'Title': f"@{P_T}",
+        'Lang': f"@if({IS_TR}, {P_L}, '')",
+        'Key': f"@toLower(concat({P_T}, '|', if({IS_TR}, {P_L}, '')))",
+        'Error': f"@if(less(length(outputs('Parts')), length({FIELDS})), concat('column count ', string(length(outputs('Parts'))), ' < header'), "
+                 f"if(or(equals({P_T}, ''), and({IS_TR}, equals({P_L}, ''))), 'empty key', ''))",
+    })),
+    ('Matches', query("@body('Existing')", f"@equals(item()?['K'], {INFO}?['Key'])")),
     ('Switch_action', {
-        'type': 'Switch', 'expression': "@outputs('RowAction')",
+        'type': 'Switch',
+        'expression': f"@if(not(equals({INFO}?['Error'], '')), 'ERROR', if(equals(length({MATCH}), 0), 'ADD', "
+                      f"if(equals(length({MATCH}), 1), if(outputs('Upsert'), 'UPDATE', 'EXISTS'), 'DUPLICATE')))",
         'cases': {
             'Case_add': {'case': 'ADD', 'actions': chain([
                 ('Create_item', http('POST', LIST_URI + "/AddValidateUpdateItemUsingPath", FORM_BODY)),
-                ('Create_errors', query("@body('Create_item')?['value']", "@equals(item()?['HasException'], true)")),
-                ('Set_result_add', setvar('RowResult',
-                    "@if(greater(length(body('Create_errors')), 0), concat('ERROR;', first(body('Create_errors'))?['FieldName'], ': ', "
-                    "first(body('Create_errors'))?['ErrorMessage']), concat('ADDED;id ', string(first(body('Create_item')?['value'])?['ItemId'])))")),
+                ('Create_errors', query("@coalesce(body('Create_item')?['value'], createArray())", "@equals(item()?['HasException'], true)")),
+                ('Result_add', res(f"@{KEYPFX}, if(greater(length(body('Create_errors')), 0), "
+                                   f"concat('ERROR;', first(body('Create_errors'))?['FieldName'], ': ', first(body('Create_errors'))?['ErrorMessage']), concat('ADDED;id ', string(first(body('Create_item')?['value'])?['ItemId']))))")),
             ])},
             'Case_update': {'case': 'UPDATE', 'actions': chain([
                 ('Update_item', http('POST', LIST_URI + "/items(@{" + FIRST_ID + "})/ValidateUpdateListItem", FORM_BODY)),
-                ('Update_errors', query("@body('Update_item')?['value']", "@equals(item()?['HasException'], true)")),
-                ('Set_result_update', setvar('RowResult',
-                    "@if(greater(length(body('Update_errors')), 0), concat('ERROR;', first(body('Update_errors'))?['FieldName'], ': ', "
-                    "first(body('Update_errors'))?['ErrorMessage']), concat('UPDATED;id ', string(" + FIRST_ID + ")))")),
+                ('Update_errors', query("@coalesce(body('Update_item')?['value'], createArray())", "@equals(item()?['HasException'], true)")),
+                ('Result_update', res(f"@{KEYPFX}, if(greater(length(body('Update_errors')), 0), "
+                                      f"concat('ERROR;', first(body('Update_errors'))?['FieldName'], ': ', first(body('Update_errors'))?['ErrorMessage']), concat('UPDATED;id ', {FIRST_ID})))")),
             ])},
             'Case_exists': {'case': 'EXISTS', 'actions': chain([
-                ('Set_result_exists', setvar('RowResult', "@concat('EXISTS;id ', string(" + FIRST_ID + "))")),
+                ('Result_exists', res(f"@{KEYPFX}, 'EXISTS;id ', {FIRST_ID})")),
             ])},
             'Case_duplicate': {'case': 'DUPLICATE', 'actions': chain([
-                ('Dup_ids', {'type': 'Select', 'inputs': {'from': "@body('Get_existing')?['value']", 'select': "@string(item()?['Id'])"}}),
-                ('Set_result_duplicate', setvar('RowResult', "@concat('DUPLICATE;ids ', join(body('Dup_ids'), ' '), ' (not changed)')")),
+                ('Result_duplicate', res(f"@{KEYPFX}, 'DUPLICATE;ids ', string({MATCH}), ' (not changed)')")),
             ])},
         },
         'default': {'actions': chain([
-            ('Set_result_error', setvar('RowResult', "@concat('ERROR;', outputs('RowError'), ': ', " + ITEM + ")")),
+            ('Result_error', res(f"@{KEYPFX}, 'ERROR;', {INFO}?['Error'], ': ', {ITEM})")),
         ])},
     }),
-    ('Log_row', append('Log', "@{outputs('TitleVal')};@{outputs('LangVal')};@{variables('RowResult')}" + NL)),
 ])
 
 loop = {
-    'type': 'Foreach', 'foreach': "@if(outputs('HeaderOK'), body('Rows'), createArray())",
+    'type': 'Foreach', 'foreach': "@if(outputs('Can_process'), body('Rows'), createArray())",
     'actions': {
         'Row': {'type': 'Scope', 'actions': row, 'runAfter': {}},
-        'Log_row_failed': append('Log', f"-;-;ERROR;request failed (see run history): @{{{ITEM}}}" + NL, after('Row', 'Failed', 'TimedOut')),
+        'Result_row_failed': dict(res(f"@concat('-;-;ERROR;request failed (see run history): ', {ITEM})"), runAfter=after('Row', 'Failed', 'TimedOut')),
     },
-    'runtimeConfiguration': {'concurrency': {'repetitions': 1}},
+    'runtimeConfiguration': {'concurrency': {'repetitions': CONCURRENCY}},
 }
 
+SELECT_COLS = "@{if(equals(outputs('ListName'), 'Translations'), 'Id,Title,Language', 'Id,Title')}"
 process = chain([
     ('Wait_for_upload', {'type': 'Wait', 'inputs': {'interval': {'count': 15, 'unit': 'Second'}}}),
     ('Get_file_content', sp('GetFileContentByPath', {'path': "/@{outputs('FullPath')}", 'inferContentType': False})),
@@ -151,23 +162,43 @@ process = chain([
     ('HeaderOK', compose(
         "@and(contains(createArray(" + ", ".join(f"'{x}'" for x in ALLOWED) + "), outputs('ListName')), contains(body('Fields'), 'Title'), "
         "or(not(equals(outputs('ListName'), 'Translations')), contains(body('Fields'), 'Language')))")),
-    ('Log_header', append('Log', "@{if(outputs('HeaderOK'), '', concat('-;-;ERROR;list not allowed or header without Title (Translations: Key/Title + Language): ', "
-                                 "first(outputs('Lines')), " + NLX + "))}")),
+    # real column indexes (only meaningful when HeaderOK)
+    ('Field_index', {'type': 'Select', 'inputs': {'from': f"@range(0, length({FIELDS}))", 'select': {'I': "@item()", 'N': f"@{FIELDS}[item()]"}}}),
+    ('Title_pos', query("@body('Field_index')", "@equals(item()?['N'], 'Title')")),
+    ('Language_pos', query("@body('Field_index')", "@equals(item()?['N'], 'Language')")),
+    ('Index_title', compose("@coalesce(first(body('Title_pos'))?['I'], 0)")),
+    ('Index_language', compose("@coalesce(first(body('Language_pos'))?['I'], 0)")),
+    # existing rows: one read of the whole list (fail-closed above 5000 = nextLink present)
+    ('Get_all_existing', http('GET', LIST_URI + f"/items?$select={SELECT_COLS}&$top=5000")),
+    ('Existing', {'type': 'Select', 'inputs': {'from': "@coalesce(body('Get_all_existing')?['value'], createArray())",
+                                               'select': {'Id': "@item()?['Id']",
+                                                          'K': f"@toLower(concat(trim(coalesce(item()?['Title'], '')), '|', if({IS_TR}, trim(coalesce(item()?['Language'], '')), '')))"}}}),
+    ('File_keys', {'type': 'Select', 'inputs': {
+        'from': "@if(outputs('HeaderOK'), body('Rows'), createArray())",
+        'select': "@toLower(concat(" + PART("split(item(), ';')", "outputs('Index_title')") + ", '|', if(" + IS_TR + ", "
+                  + PART("split(item(), ';')", "outputs('Index_language')") + ", '')))"}}),
+    ('More_than_5000', compose("@or(not(empty(coalesce(body('Get_all_existing')?['odata.nextLink'], body('Get_all_existing')?['@odata.nextLink'], ''))), "
+                               "greaterOrEquals(length(coalesce(body('Get_all_existing')?['value'], createArray())), 5000))")),
+    ('Duplicate_keys_in_file', compose("@not(equals(length(union(body('File_keys'), body('File_keys'))), length(body('File_keys'))))")),
+    ('Can_process', compose("@and(outputs('HeaderOK'), not(outputs('More_than_5000')), not(outputs('Duplicate_keys_in_file')))")),
+    ('Result_header', res("@if(outputs('Can_process'), '', concat('-;-;ERROR;not processed: ', "
+                          "if(not(outputs('HeaderOK')), 'list not allowed or header without Title (Translations: Key/Title + Language)', "
+                          "if(outputs('More_than_5000'), 'list has more than 5000 rows', 'duplicate keys in file')), ': ', first(outputs('Lines'))))")),
     ('Apply_to_each_row', loop),
 ])
 
-# counters derived from the log (no counters inside branches)
-LOGLINES = f"split(variables('Log'), {NLX})"
-count = lambda tag: query(f"@{LOGLINES}", f"@contains(item(), ';{tag};')")
+RESULTS = "variables('Results')"
+count = lambda tag: query(f"@{RESULTS}", f"@contains(item(), ';{tag};')")
 result_body = ("@{concat(decodeUriComponent('%EF%BB%BF'), 'Summary;List=', outputs('ListName'), ';File=', outputs('FileName'), ';Mode=', "
                "if(outputs('Upsert'), 'upsert', 'add-only'), ';Rows=', string(length(body('Rows'))), "
                "';Added=', string(length(body('Count_added'))), ';Updated=', string(length(body('Count_updated'))), "
                "';Exists=', string(length(body('Count_exists'))), ';Duplicates=', string(length(body('Count_duplicate'))), "
-               f"';Errors=', string(length(body('Count_error'))), {NLX}, 'Key;Language;Result;Detail', {NLX}, variables('Log'))}}")
+               f"';Errors=', string(length(body('Count_error'))), {NLX}, 'Key;Language;Result;Detail', {NLX}, "
+               f"join(body('Result_lines'), {NLX}))}}")
 ESC_PATH = lambda e: "@{" + ESC(e) + "}"
 
 actions = chain(
-    [(f'Init_{v}', {'type': 'InitializeVariable', 'inputs': {'variables': [{'name': v, 'type': 'string', 'value': ''}]}}) for v in ('Log', 'RowResult')] + [
+    [('Init_Results', {'type': 'InitializeVariable', 'inputs': {'variables': [{'name': 'Results', 'type': 'array', 'value': []}]}})] + [
         ('FullPath', compose("@triggerOutputs()?['body/{FullPath}']")),
         ('FileName', compose("@triggerOutputs()?['body/{FilenameWithExtension}']")),
         ('PathParts', query("@split(coalesce(triggerOutputs()?['body/{Path}'], ''), '/')", "@not(equals(item(), ''))")),
@@ -188,6 +219,8 @@ actions = chain(
         ('Process', {'type': 'Scope', 'actions': process}),
     ])
 tail = chain([
+    ('Result_process_failed', res("@concat('-;-;ERROR;process failed (see run history): ', coalesce(outputs('FileName'), ''))")),
+    ('Result_lines', dict(query(f"@{RESULTS}", "@not(equals(item(), ''))"))),
     ('Count_added', count('ADDED')),
     ('Count_updated', count('UPDATED')),
     ('Count_exists', count('EXISTS')),
@@ -197,6 +230,8 @@ tail = chain([
     ('Move_to_Done', http('POST', f"_api/web/GetFileByServerRelativeUrl('{SITE_REL}/" + ESC_PATH("outputs('FullPath')") +
                           f"')/moveto(newurl='{SITE_REL}/{LIB}/Done/" + ESC_PATH("concat(outputs('Stamp'), '_', outputs('FileName'))") + "',flags=1)")),
 ], after('Process', 'Succeeded', 'Failed', 'TimedOut'))
+tail['Result_process_failed']['runAfter'] = after('Process', 'Failed', 'TimedOut')
+tail['Result_lines']['runAfter'] = after('Result_process_failed', 'Succeeded', 'Skipped')
 actions.update(tail)
 
 trigger = {'When_a_file_is_created_in_Imports': {

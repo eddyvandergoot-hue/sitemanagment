@@ -727,7 +727,7 @@ Screens:
             OnSave: |-
               =If(varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && (varWrkMode="New" || (varWrkMode="Edit" && !IsBlank(varWrkSelectedID))) && lblWrkDirty.Text="true",
                Set(varWrkSaving,true); Set(varWrkDiagT0,Now());
-               Clear(colWrkSaveErrors); Clear(colWrkPreRaw); Clear(colWrkPre); Clear(colWrkDup); Clear(colWrkDupLocal); Clear(colWrkEmpMatch); Clear(colWrkActivePW); Clear(colWrkEmpCheck); Clear(colWrkPatched); Clear(colWrkVerifyRaw); Clear(colWrkVerify); Clear(colWrkCtlRaw);
+               Clear(colWrkSaveErrors); Clear(colWrkPreRaw); Clear(colWrkPre); Clear(colWrkDup); Clear(colWrkDupLocal); Clear(colWrkEmpMatch); Clear(colWrkActivePW); Clear(colWrkDeactPeriods); Clear(colWrkEmpCheck); Clear(colWrkPatched); Clear(colWrkVerifyRaw); Clear(colWrkVerify); Clear(colWrkCtlRaw);
                Set(varWrkSaveReads,0); Set(varWrkSaveWrites,0); Set(varWrkSaveCtl,""); Set(varWrkSaveVerified,false); Set(varWrkSaveDupFound,false); Set(varWrkSaveDupCodes,""); Set(varWrkSaveConflict,false); Set(varWrkSaveDeactBlocked,false); Set(varWrkSaveDeactUnchecked,false); Set(varWrkSaveRefreshFailed,false); Set(varWrkVerifyDiff,"");
                Set(varWrkSaveMode,varWrkMode); Set(varWrkSaveID,If(varWrkMode="Edit",varWrkSelectedID,Blank())); Set(varWrkPatchedID,Blank());
                Set(varWrkSaveRec,{FirstName:Trim(cmpWrkFirstName.Value & ""),Surname:Trim(cmpWrkSurname.Value & ""),Trade:Trim(cmpWrkTrade.Value & ""),Contractor:Trim(cmpWrkContractor.Value & ""),Language:Trim(cmpWrkLanguage.Value & ""),Active:Coalesce(varWrkActiveDraft,true)});
@@ -789,14 +789,28 @@ Screens:
                  IfError(Refresh('Project Workers'),Set(varWrkSaveDeactUnchecked,true);false);
                  If(!varWrkSaveDeactUnchecked,
                   Set(varWrkSaveReads,varWrkSaveReads+1);
-                  IfError(CountRows(ClearCollect(colWrkActivePW,ForAll(Filter('Project Workers',Active=true) As pw,{ID:pw.ID,WorkerID:pw.Worker.Id,ProjectID:pw.Project.Id,ProjectTitle:Trim(pw.Project.Value & "")})))>=0,Set(varWrkSaveDeactUnchecked,true);false)
+                  IfError(CountRows(ClearCollect(colWrkActivePW,ForAll(Filter('Project Workers',Active=true) As pw,{ID:pw.ID,WorkerID:pw.Worker.Id,ProjectID:pw.Project.Id,ProjectTitle:Trim(pw.Project.Value & ""),TeamValue:Trim(pw.Team.Value & ""),ProjectKey:Trim(pw.ProjectKey & "")})))>=0,Set(varWrkSaveDeactUnchecked,true);false)
                  );
                  If(!varWrkSaveDeactUnchecked && CountRows(colWrkActivePW)>=500,Set(varWrkSaveDeactUnchecked,true));
                  If(varWrkSaveDeactUnchecked,
                   Set(varWrkSaveDeactBlocked,true); Collect(colWrkSaveErrors,{Field:"Active",Message:If(LangNl && !IsBlank(T.wrkErrDeactCheck.nl),T.wrkErrDeactCheck.nl,T.wrkErrDeactCheck.en)}),
                   CountIf(colWrkActivePW,WorkerID=varWrkSaveID)>0,
                   Set(varWrkSaveDeactBlocked,true);
-                  Collect(colWrkSaveErrors,{Field:"Active",Message:Substitute(If(LangNl && !IsBlank(T.wrkErrDeactActive.nl),T.wrkErrDeactActive.nl,T.wrkErrDeactActive.en),"{0}",With({lnk:Sort(Filter(colWrkActivePW,WorkerID=varWrkSaveID),Lower(ProjectTitle),SortOrder.Ascending)},Concat(FirstN(lnk,3),If(IsBlank(ProjectTitle),Substitute(If(LangNl && !IsBlank(T.wrkProjectId.nl),T.wrkProjectId.nl,T.wrkProjectId.en),"{0}",Text(ProjectID)),ProjectTitle),", ") & If(CountRows(lnk)>3,Substitute(If(LangNl && !IsBlank(T.wrkMsgMore.nl),T.wrkMsgMore.nl,T.wrkMsgMore.en),"{0}",Text(CountRows(lnk)-3)),"")))})
+                  With({f1:First(Sort(Filter(colWrkActivePW,WorkerID=varWrkSaveID),Lower(ProjectTitle),SortOrder.Ascending))},Set(varWrkSaveDeactFirstID,f1.ID); Set(varWrkSaveDeactPrjKey,Trim(f1.ProjectKey & "")));
+                  Set(varWrkSaveDeactAsgKey,varWrkSaveDeactPrjKey & "|" & Text(varWrkSaveID)); Set(varWrkSaveDeactSince,""); Set(varWrkSaveDeactPerOk,false); Clear(colWrkDeactPeriods);
+                  If(!IsBlank(varWrkSaveDeactPrjKey),
+                   Set(varWrkSaveDeactPerOk,true);
+                   IfError(Refresh('Assignment Periods'),Set(varWrkSaveDeactPerOk,false);false);
+                   If(varWrkSaveDeactPerOk,
+                    Set(varWrkSaveReads,varWrkSaveReads+1);
+                    IfError(CountRows(ClearCollect(colWrkDeactPeriods,ForAll(Filter('Assignment Periods',ProjectKey=varWrkSaveDeactPrjKey) As ap,{ID:ap.ID,AssignmentKey:Trim(ap.AssignmentKey & ""),From:If(IsBlank(ap.From),Blank(),Date(Year(ap.From),Month(ap.From),Day(ap.From))),Until:If(IsBlank(ap.Until),Blank(),Date(Year(ap.Until),Month(ap.Until),Day(ap.Until)))})))>=0,Set(varWrkSaveDeactPerOk,false);false)
+                   );
+                   If(varWrkSaveDeactPerOk && CountRows(colWrkDeactPeriods)>=500,Set(varWrkSaveDeactPerOk,false));
+                   If(varWrkSaveDeactPerOk && CountIf(colWrkDeactPeriods,AssignmentKey=varWrkSaveDeactAsgKey && IsBlank(Until) && !IsBlank(From))=1,
+                    With({m:With({f:LookUp(colWrkDeactPeriods,AssignmentKey=varWrkSaveDeactAsgKey && IsBlank(Until) && !IsBlank(From)).From},DateAdd(f,1-Weekday(f,StartOfWeek.Monday),TimeUnit.Days))},Set(varWrkSaveDeactSince,Text(Year(DateAdd(m,3,TimeUnit.Days)),"0000") & " KW" & Text(ISOWeekNum(m),"00")))
+                   )
+                  );
+                  Collect(colWrkSaveErrors,{Field:"Active",Message:Substitute(If(LangNl && !IsBlank(T.wrkErrDeactActive.nl),T.wrkErrDeactActive.nl,T.wrkErrDeactActive.en),"{0}",With({lnk:Sort(Filter(colWrkActivePW,WorkerID=varWrkSaveID),Lower(ProjectTitle),SortOrder.Ascending)},Concat(FirstN(lnk,3),If(IsBlank(ProjectTitle),Substitute(If(LangNl && !IsBlank(T.wrkProjectId.nl),T.wrkProjectId.nl,T.wrkProjectId.en),"{0}",Text(ProjectID)),ProjectTitle) & With({tm:If(IsBlank(TeamValue),"",Substitute(If(LangNl && !IsBlank(T.wrkLinkTeam.nl),T.wrkLinkTeam.nl,T.wrkLinkTeam.en),"{0}",TeamValue)),os:If(ID=varWrkSaveDeactFirstID && !IsBlank(varWrkSaveDeactSince),Substitute(If(LangNl && !IsBlank(T.wrkLinkOpenSince.nl),T.wrkLinkOpenSince.nl,T.wrkLinkOpenSince.en),"{0}",varWrkSaveDeactSince),"")},If(IsBlank(tm) && IsBlank(os),""," (" & tm & If(!IsBlank(tm) && !IsBlank(os),", ","") & os & ")")),", ") & If(CountRows(lnk)>3,Substitute(If(LangNl && !IsBlank(T.wrkMsgMore.nl),T.wrkMsgMore.nl,T.wrkMsgMore.en),"{0}",Text(CountRows(lnk)-3)),"")))})
                  )
                 );
                 If(IsEmpty(colWrkSaveErrors) && varWrkSaveContractorChanged,

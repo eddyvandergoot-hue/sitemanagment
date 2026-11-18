@@ -20,12 +20,12 @@ Screens:
             BorderColor: =ColorValue("#DCDCDC")
             Fill: =Color.Transparent
             Height: =Max(0,Label2.Y-12-Self.Y)
-            Items: =colWorkersCache
+            Items: =With({isTestProject:Upper(Left(Trim(LookUp(colProjectsCache,ID=varTeamLoadedProjectID,'Project Number') & ""),5))="TEST-",employerFilter:Coalesce(ddWorkerEmployer.Selected.Value,"All contractors"),searchText:Lower(Trim(txtWorkerSearch.Text & "")),weekMonday:varHoursWeekMonday,weekSunday:DateAdd(varHoursWeekMonday,6,TimeUnit.Days),keyPrefix:Text(varTeamLoadedProjectID) & "|"},Filter(colWorkersCache As w,w.ID in ShowColumns(colSelectedWorkers,ID) || w.ID in ShowColumns(colTeamOriginalSelection,ID) || ((Coalesce(w.Active,true) || CountIf(colTeamPeriods,AssignmentKey=keyPrefix & Text(w.ID) && From<=weekSunday && (IsBlank(Until) || Until>=weekMonday))>0) && (isTestProject || Lower(Trim(w.'Employer Name' & ""))<>"test employer") && (employerFilter="All contractors" || w.'Employer Name'=employerFilter) && (IsBlank(searchText) || searchText in Lower(w.'First Name' & " " & w.Surname) || searchText in Lower(w.'Employer Name' & "")))))
             TemplateFill: =Color.Transparent
             TemplatePadding: =6
             TemplateSize: =60
             X: =40
-            Y: =lblSelectionLoadStatus.Y+lblSelectionLoadStatus.Height+8
+            Y: =txtWorkerSearch.Y+txtWorkerSearch.Height+12
             Width: =Parent.Width-80
             Visible: =Coalesce(varMastersReady,false)
           Children:
@@ -299,9 +299,9 @@ Screens:
             Size: =12
             Text: ="Week"
             VerticalAlign: =VerticalAlign.Bottom
-            Width: =Min(256,Parent.Width-80)
-            X: =If(ddProject.X+ddProject.Width+24+256+40<=Parent.Width,ddProject.X+ddProject.Width+24,conSelection.X)
-            Y: =If(ddProject.X+ddProject.Width+24+256+40<=Parent.Width,ddTeam.Y-32,ddTeam.Y+ddTeam.Height+12)
+            Width: =Min(256,Parent.Width-80-92)
+            X: =If(ddProject.X+ddProject.Width+24+46+256+46+40<=Parent.Width,ddProject.X+ddProject.Width+24+46,conSelection.X+46)
+            Y: =If(ddProject.X+ddProject.Width+24+46+256+46+40<=Parent.Width,ddTeam.Y-32,ddTeam.Y+ddTeam.Height+12)
             Height: =28
       - dpTeamWeek:
           Control: ModernDatePicker@1.0.2
@@ -339,6 +339,94 @@ Screens:
             Fill: =ColorValue("#F0F0F0")
             BorderColor: =ColorValue("#DCDCDC")
             BorderThickness: =1
+      - btnTeamPrevWeek:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Center
+            BorderColor: =ColorValue("#0303B8")
+            BorderStyle: =BorderStyle.Solid
+            BorderThickness: =1
+            Color: =ColorValue("#000F41")
+            DisabledBorderColor: =ColorValue("#E6E6E6")
+            DisabledColor: =ColorValue("#787878")
+            DisabledFill: =ColorValue("#E6E6E6")
+            DisplayMode: =If(!Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))=JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)) && !IsBlank(varHoursWeekMonday),DisplayMode.Edit,DisplayMode.Disabled)
+            Fill: =Color.White
+            FocusedBorderColor: =ColorValue("#000F41")
+            FocusedBorderThickness: =3
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =dpTeamWeek.Height
+            HoverBorderColor: =ColorValue("#0303B8")
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
+            OnSelect: |-
+              =If(!Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))=JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)) && !IsBlank(varHoursWeekMonday),
+               Set(varHoursPickedDay,DateAdd(Coalesce(varHoursPickedDay,varHoursWeekMonday),-7,TimeUnit.Days)); Set(varHoursWeekMonday,DateAdd(varHoursWeekMonday,-7,TimeUnit.Days)); Reset(dpTeamWeek); Select(btnApplyTeamWeek),
+               Notify("Week not changed: unsaved selection or hours. Save first.",NotificationType.Warning,15000)
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =ColorValue("#0303B8")
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =16
+            Text: ="‹"
+            Tooltip: ="Previous week"
+            VerticalAlign: =VerticalAlign.Middle
+            Width: =dpTeamWeek.Height
+            X: =dpTeamWeek.X-6-Self.Width
+            Y: =dpTeamWeek.Y
+      - btnTeamNextWeek:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Center
+            BorderColor: =ColorValue("#0303B8")
+            BorderStyle: =BorderStyle.Solid
+            BorderThickness: =1
+            Color: =ColorValue("#000F41")
+            DisabledBorderColor: =ColorValue("#E6E6E6")
+            DisabledColor: =ColorValue("#787878")
+            DisabledFill: =ColorValue("#E6E6E6")
+            DisplayMode: =If(!Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))=JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)) && !IsBlank(varHoursWeekMonday),DisplayMode.Edit,DisplayMode.Disabled)
+            Fill: =Color.White
+            FocusedBorderColor: =ColorValue("#000F41")
+            FocusedBorderThickness: =3
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =dpTeamWeek.Height
+            HoverBorderColor: =ColorValue("#0303B8")
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
+            OnSelect: |-
+              =If(!Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && !Coalesce(varTeamDirty,false) && JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))=JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)) && !IsBlank(varHoursWeekMonday),
+               Set(varHoursPickedDay,DateAdd(Coalesce(varHoursPickedDay,varHoursWeekMonday),7,TimeUnit.Days)); Set(varHoursWeekMonday,DateAdd(varHoursWeekMonday,7,TimeUnit.Days)); Reset(dpTeamWeek); Select(btnApplyTeamWeek),
+               Notify("Week not changed: unsaved selection or hours. Save first.",NotificationType.Warning,15000)
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =ColorValue("#0303B8")
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =16
+            Text: ="›"
+            Tooltip: ="Next week"
+            VerticalAlign: =VerticalAlign.Middle
+            Width: =dpTeamWeek.Height
+            X: =dpTeamWeek.X+dpTeamWeek.Width+6
+            Y: =dpTeamWeek.Y
       - lblTeamWeekKW:
           Control: Label@2.5.1
           Properties:
@@ -469,7 +557,7 @@ Screens:
                    Collect(colProjectsLoadErrors,{Message:"Projects: " & FirstError.Message});false),
                   IfError(CountRows(ClearCollect(colPendingTeamChoices,Choices('Project Workers'.Team)))>=0,
                    Collect(colTeamChoicesLoadErrors,{Message:"Teamkeuzes: " & FirstError.Message});false),
-                  IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})))>=0,
+                  IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade,Active:worker.Active})))>=0,
                    Collect(colWorkersLoadErrors,{Message:"Workers: " & FirstError.Message});false)
                  );
                  Collect(colSelectionLoadErrors,colProjectsLoadErrors,colTeamChoicesLoadErrors,colWorkersLoadErrors);
@@ -517,7 +605,13 @@ Screens:
                    Set(varSelectionKeysValid,varTeamPeriodsValid && varTeamActiveMismatchCount=0 && CountIf(colTeamProjectAssignments,AssignmentKey<>Text(varSelectionProjectID) & "|" & Text(Worker.Id) || ProjectKey<>Text(varSelectionProjectID))=0);
                    Set(varTeamDataVersion,Coalesce(varTeamDataVersion,0)+1);
                    Set(varTeamWeekMonday,varHoursWeekMonday); Set(varTeamWeekSunday,DateAdd(varHoursWeekMonday,6,TimeUnit.Days)); ClearCollect(colCurrentTeamAssignments,Filter(colTeamProjectAssignments As member,member.Team.Value=varTeamLoadedTeam && CountIf(colTeamPeriods,AssignmentKey=Text(varTeamLoadedProjectID) & "|" & Text(member.Worker.Id) && From<=varTeamWeekSunday && (IsBlank(Until) || Until>=varTeamWeekMonday))>0)); ClearCollect(colTeamOriginalSelection,Filter(colWorkersCache As person,CountIf(colCurrentTeamAssignments,Worker.Id=person.ID)>0)); ClearCollect(colSelectedWorkers,colTeamOriginalSelection); Clear(colTeamRemovedIDs); Set(varTeamLoadedAssignmentCount,CountRows(colCurrentTeamAssignments)); Set(varTeamDirty,false); Set(varSelectionMessage,"Week " & Text(Year(DateAdd(varTeamWeekMonday,3,TimeUnit.Days)),"0000") & " KW" & Text(ISOWeekNum(varTeamWeekMonday),"00") & ": " & Text(varTeamLoadedAssignmentCount) & " medewerkers met een periode in team " & varTeamLoadedTeam & "." & If(CountRows(colTeamOriginalSelection)<>varTeamLoadedAssignmentCount," Medewerker ontbreekt in Workers; opslaan geblokkeerd.","") & If(Coalesce(varTeamActiveMismatchCount,0)>0," Active komt bij " & Text(varTeamActiveMismatchCount) & " koppeling(en) niet overeen met een open periode (bijvoorbeeld na gedeeltelijke opslag of migratie); gegevens laten controleren.","") & If(!Coalesce(varSelectionKeysValid,false)," Alleen lezen: afwijkende sleutels of periodes (From maandag, Until zondag, geen overlap, Active = open periode); opslaan geblokkeerd.","") & If(Coalesce(varTeamNeedsMigration,false)," Er zijn actieve koppelingen zonder periode: eerst Preview migration en daarna Confirm migration (eerst op TEST-000). Opslaan geblokkeerd tot de migratie is uitgevoerd.","")); Set(varTeamLoadedWeekMonday,varTeamWeekMonday);
-                   Set(varSelectionLoaded,true); Set(varTeamLoadState,"Loaded")
+                   Set(varSelectionLoaded,true); Set(varTeamLoadState,"Loaded"); Reset(ddWorkerEmployer); Reset(txtWorkerSearch);
+                   With({orphanKeys:Distinct(Filter(colTeamPeriods,!(AssignmentKey in ShowColumns(colTeamProjectAssignments,AssignmentKey))),AssignmentKey),inactiveLinks:ForAll(Filter(colTeamProjectAssignments As pw,pw.Active=true && !Coalesce(LookUp(colWorkersCache As wk,wk.ID=pw.Worker.Id,wk.Active),true)) As link,{WorkerName:Coalesce(LookUp(colWorkersCache As wk,wk.ID=link.Worker.Id,Trim(wk.'First Name' & " " & wk.Surname)),link.Worker.Value,"ID " & Text(link.Worker.Id)),TeamValue:link.Team.Value & ""})},
+                    If(!IsEmpty(orphanKeys) || !IsEmpty(inactiveLinks),
+                     Trace("DIAG|Team|DataWarning",TraceSeverity.Warning,{Scenario:"Team",Step:"DataWarning",ProjectID:varTeamLoadedProjectID,OrphanPeriodKeys:CountRows(orphanKeys),InactiveWorkersActive:CountRows(inactiveLinks)});
+                     Notify(Trim(If(IsEmpty(orphanKeys),"","Warning: assignment period without Project Workers row: " & Concat(FirstN(Sort(orphanKeys,Value,SortOrder.Ascending),3),Value,", ") & If(CountRows(orphanKeys)>3," (+" & Text(CountRows(orphanKeys)-3) & " more)","") & ". Restore the row from the SharePoint Recycle Bin.") & If(IsEmpty(inactiveLinks),""," Warning: inactive worker still active in a team: " & Concat(FirstN(Sort(inactiveLinks,WorkerName,SortOrder.Ascending),3),WorkerName & " (team " & TeamValue & ")",", ") & If(CountRows(inactiveLinks)>3," (+" & Text(CountRows(inactiveLinks)-3) & " more)","") & ". Uncheck the worker or reactivate in Workers.")),NotificationType.Warning,15000)
+                    )
+                   )
                   ),
                   Set(varTeamLoadState,"NotLoaded"); Set(varSelectionMessage,"Projecten en teamkeuzes geladen. Kies project en team. Opslaan blijft geblokkeerd tot de selectie volledig is gelezen.")
                  )
@@ -559,6 +653,103 @@ Screens:
             FontWeight: =FontWeight.Normal
             Size: =11
             Color: =If(!IsEmpty(colSelectionLoadErrors),ColorValue("#DB1E28"),ColorValue("#000000"))
+      - lblWorkerEmployerFilter:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000000")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =12
+            Text: ="Contractor"
+            VerticalAlign: =VerticalAlign.Bottom
+            Visible: =Coalesce(varMastersReady,false)
+            Width: =Min(256,(Parent.Width-80-24)/2)
+            X: =40
+            Y: =lblSelectionLoadStatus.Y+lblSelectionLoadStatus.Height+8
+            Height: =24
+      - ddWorkerEmployer:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            FocusedBorderColor: =ColorValue("#0303B8")
+            AllowEmptySelection: =false
+            BorderColor: =ColorValue("#DCDCDC")
+            BorderThickness: =1
+            ChevronBackground: =ColorValue("#F0F0F0")
+            ChevronDisabledBackground: =Color.Transparent
+            ChevronDisabledFill: =ColorValue("#787878")
+            ChevronFill: =ColorValue("#0303B8")
+            ChevronHoverBackground: =ColorValue("#D5EDFF")
+            ChevronHoverFill: =ColorValue("#0303B8")
+            Color: =ColorValue("#000000")
+            Default: ="All contractors"
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ColorValue("#787878")
+            DisabledFill: =Color.Transparent
+            Fill: =ColorValue("#F0F0F0")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            HoverBorderColor: =ColorValue("#0303B8")
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
+            Items: =With({isTestProject:Upper(Left(Trim(LookUp(colProjectsCache,ID=varTeamLoadedProjectID,'Project Number') & ""),5))="TEST-"},Ungroup(Table({t:Table({Value:"All contractors"})},{t:Sort(Distinct(Filter(colWorkersCache,!IsBlank('Employer Name') && (isTestProject || Lower(Trim('Employer Name'))<>"test employer")),'Employer Name'),Value,SortOrder.Ascending)}),t))
+            Items.Value: =Value
+            PaddingBottom: =5
+            PaddingLeft: =12
+            PaddingRight: =5
+            PaddingTop: =5
+            PressedBorderColor: =ColorValue("#0303B8")
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
+            SelectionColor: =Color.White
+            SelectionFill: =ColorValue("#0303B8")
+            Size: =12
+            Visible: =Coalesce(varMastersReady,false)
+            Width: =lblWorkerEmployerFilter.Width
+            X: =lblWorkerEmployerFilter.X
+            Y: =lblWorkerEmployerFilter.Y+lblWorkerEmployerFilter.Height+4
+            Height: =40
+            DisplayMode: =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false),DisplayMode.Disabled,DisplayMode.Edit)
+      - lblWorkerSearch:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000000")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Size: =12
+            Text: ="Search"
+            VerticalAlign: =VerticalAlign.Bottom
+            Visible: =Coalesce(varMastersReady,false)
+            Width: =lblWorkerEmployerFilter.Width
+            X: =ddWorkerEmployer.X+ddWorkerEmployer.Width+24
+            Y: =lblWorkerEmployerFilter.Y
+            Height: =24
+      - txtWorkerSearch:
+          Control: Classic/TextInput@2.3.2
+          Properties:
+            AccessibleLabel: ="Search name or contractor"
+            BorderColor: =ColorValue("#DCDCDC")
+            BorderThickness: =1
+            Color: =ColorValue("#000000")
+            Default: =""
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ColorValue("#787878")
+            DisabledFill: =Color.Transparent
+            DisplayMode: =If(Coalesce(varSelectionBusy,false) || Coalesce(varSaving,false),DisplayMode.Disabled,DisplayMode.Edit)
+            Fill: =ColorValue("#F0F0F0")
+            FocusedBorderColor: =ColorValue("#0303B8")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            HintText: ="Search name or contractor"
+            HoverBorderColor: =ColorValue("#0303B8")
+            HoverFill: =ColorValue("#F0F0F0")
+            PaddingLeft: =12
+            PaddingRight: =5
+            Size: =12
+            Visible: =Coalesce(varMastersReady,false)
+            Width: =lblWorkerSearch.Width
+            X: =lblWorkerSearch.X
+            Y: =lblWorkerSearch.Y+lblWorkerSearch.Height+4
+            Height: =40
       - navProjectTeam:
           Control: GroupContainer@1.5.0
           Variant: AutoLayout

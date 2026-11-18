@@ -671,7 +671,7 @@ Screens:
               If(IsEmpty(colReportLoadErrors),ClearCollect(colProjectsCache,colPendingProjects); Set(varProjectsCacheReady,true))
              );
              If(IsEmpty(colReportLoadErrors) && (Coalesce(varReportForceRefresh,false) || !Coalesce(varWorkersCacheReady,false)),
-              IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})))>=0,
+              IfError(CountRows(ClearCollect(colPendingWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade,Active:worker.Active})))>=0,
                Collect(colReportLoadErrors,{Message:"Workers: " & FirstError.Message});false);
               If(CountRows(colPendingWorkers)>=500,
                Collect(colReportLoadErrors,{Message:"500 medewerkers geladen; medewerkerslijst mogelijk onvolledig. Rapportage gestopt."})

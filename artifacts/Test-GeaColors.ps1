@@ -37,6 +37,7 @@ $roles=@{
 }
 $assign=@(
  @('scrWeekReport','btnWrPrev','weekArrow'),@('scrWeekReport','btnWrNext','weekArrow'),
+ @('Screen1','btnTeamPrevWeek','weekArrow'),@('Screen1','btnTeamNextWeek','weekArrow'),  # v1.0.1: Project / team week arrows, Week Report arrow style
  @('Screen1','btnHomeScreen1','nav'),@('scrHours','btnHomeHours','nav'),@('scrWeeklyHours','btnHomeSummary','nav'),
  @('Screen1','btnGotoHours','nav'),@('Screen1','btnGotoHoursSummary','nav'),@('scrHours','btnWeeklyProjectTeam','nav'),@('scrWeeklyHours','btnSummaryProjectTeam','nav'),
  @('scrHours','btnSaveWeek','primary'),@('Screen1','btnAddtoTeam','primary'),
@@ -85,10 +86,10 @@ foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){
  }
  if($c['Control'] -like 'ModernDatePicker@*' -and ($p['Fill'] -ne (CV '#F0F0F0') -or $p['BorderColor'] -ne (CV '#DCDCDC') -or $p['BorderThickness'] -ne '=1')){throw "Date picker $screen.$name"}
 }}
-$expectedDropdowns=@('Screen1.ddProject','Screen1.ddTeam','scrWeeklyHours.ddReportProject','scrWeeklyHours.ddReportContractor')
+$expectedDropdowns=@('Screen1.ddProject','Screen1.ddTeam','scrWeeklyHours.ddReportProject','scrWeeklyHours.ddReportContractor','Screen1.ddWorkerEmployer','scrHours.ddWeekTeam')  # v1.0.1: contractor filter (Project / team), team switch (Weekly Hours)
 $foundDropdowns=@(foreach($screen in $indexes.Keys){foreach($name in $indexes[$screen].Keys){ if($indexes[$screen][$name]['Control'] -like 'Classic/DropDown@*'){"$screen.$name"} }})
 if((($foundDropdowns|Sort-Object) -join ',') -ne (($expectedDropdowns|Sort-Object) -join ',')){throw "Dropdown set changed: found [$($foundDropdowns -join ', ')], expected [$($expectedDropdowns -join ', ')]"}
-Write-Output 'PASS dropdown set: exactly ddProject, ddTeam, ddReportProject, ddReportContractor (the Projects dropdowns are cmpField instances now).'
+Write-Output 'PASS dropdown set: exactly ddProject, ddTeam, ddWorkerEmployer, ddWeekTeam, ddReportProject, ddReportContractor (the Projects dropdowns are cmpField instances now).'
 $p=$indexes.scrHours['lblWeekTotal']['Properties'];if($p['Fill'] -ne (CV '#D5EDFF') -or $p['Color'] -ne (CV '#000F41')){throw 'Week total cell'}
 if($indexes['Screen1']['lblSelectionLoadStatus']['Properties']['Color'] -ne '=If(!IsEmpty(colSelectionLoadErrors),ColorValue("#DB1E28"),ColorValue("#000000"))'){throw 'Error colour lblSelectionLoadStatus'}
 if($indexes['scrHours']['lblWeekLoadStatus']['Properties']['Color'] -ne '=If(!IsEmpty(colWeekLoadErrors) || (Coalesce(varWeekLoadState,"NotLoaded")<>"Loading" && !Coalesce(varWeekSaving,false) && !IsEmpty(colHoursErrors)),ColorValue("#DB1E28"),ColorValue("#000000"))'){throw 'Error colour lblWeekLoadStatus'}

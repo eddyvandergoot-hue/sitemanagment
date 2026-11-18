@@ -130,7 +130,10 @@ foreach($pair in @(@('Screen1','btnAddtoTeam'),@('scrHours','btnSaveWeek'))){
  # Rows may now be inactive Project Workers (period overlap or stored hours), so "Active<>true" is dropped from both guards;
  # Save team additionally requires the selection to be computed for the picked week and no pending migration.
  $periodRewrites=@()
- if($pair[1] -eq 'btnSaveWeek'){ $periodRewrites+=,@(' || Team.Value<>varWeekLoadedTeam || Active<>true)=0,',' || Team.Value<>varWeekLoadedTeam)=0,') }else{
+ if($pair[1] -eq 'btnSaveWeek'){ $periodRewrites+=,@(' || Team.Value<>varWeekLoadedTeam || Active<>true)=0,',' || Team.Value<>varWeekLoadedTeam)=0,')
+  # v1.0.1 (18-11-2026): the team can be switched on Weekly Hours (ddWeekTeam sets varTeam), so the Screen1 dropdown term
+  # varWeekLoadedTeam=ddTeam.Selected.Value is dropped; varWeekLoadedTeam=varTeam.Value stays the team guard.
+  $periodRewrites+=,@("varWeekLoadedTeam=varTeam.Value,`nvarWeekLoadedTeam=ddTeam.Selected.Value,`n","varWeekLoadedTeam=varTeam.Value,`n") }else{
   $periodRewrites+=,@(' || Team.Value<>varTeamLoadedTeam || Active<>true)=0,',' || Team.Value<>varTeamLoadedTeam)=0,')
   $periodRewrites+=,@("varTeamLoadedTeam=ddTeam.Selected.Value,`nCountRows(colCurrentTeamAssignments)","varTeamLoadedTeam=ddTeam.Selected.Value,`n!IsBlank(varTeamLoadedWeekMonday),`nvarTeamLoadedWeekMonday=varHoursWeekMonday,`n!Coalesce(varTeamMigrationBlocksSave,true),`nCountRows(colCurrentTeamAssignments)")
   # Eddy 26-10-2026: an empty selection is allowed only when every originally loaded worker was explicitly unchecked.
@@ -197,13 +200,15 @@ $iH18=$week.IndexOf($h18Head)
 Assert-True ($iH18 -gt 0 -and (Count-Of $week $h18Head) -eq 1) 'H18: one stale-cache check, gated on new rows in the write plan (existing-row corrections are not re-checked)'
 Assert-True ($iH18 -gt $week.IndexOf('ClearCollect(colSaveCheckRaw') -and $iH18 -gt $week.IndexOf('Assignment, Employer, Team of Trade ontbreekt.') -and $iH18 -gt $week.IndexOf('geen periode in deze week; nieuwe dag niet toegestaan') -and $iH18 -lt $week.IndexOf('Set(varDiagSaveWrites,varDiagSaveWrites+1)') -and $iH18 -lt $week.IndexOf('Patch(Hours,')) 'H18: after the local validation, the pre-read and the write plan, before the write counter and the first Patch'
 $h18=$week.Substring($iH18, $week.IndexOf('If(IsEmpty(colHoursErrors) && CountRows(colHoursWritePlan) = CountRows(colHoursChanges),',$iH18+10)-$iH18)
-$cacheProj="ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})"
-$freshProj=$cacheProj.Replace('Trade:worker.Trade})','Trade:worker.Trade,Active:worker.Active})')
+# v1.0.1 (18-11-2026): colWorkersCache also carries Active (inactive-worker guard on Weekly Hours / Project / team), so the cache
+# projection now equals the fresh H18 projection; H18 still re-reads Workers and compares Active against the fresh read.
+$cacheProj="ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade,Active:worker.Active})"
+$freshProj=$cacheProj
 foreach($needle in @('Set(varSaveFreshProjectKey,Text(varWeekLoadedProjectID));','IfError(Refresh(Workers),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"ReadError");false);',"IfError(Refresh('Project Workers'),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,`"ReadError`");false);","ClearCollect(colSaveFreshPW,ForAll(Filter('Project Workers',ProjectKey=varSaveFreshProjectKey) As pw,","ClearCollect(colSaveFreshWorkers,$freshProj)",'If(!varSaveStaleConflict && (CountRows(colSaveFreshPW)>=500 || CountRows(colSaveFreshWorkers)>=500),Set(varSaveStaleConflict,true); Set(varSaveStaleReason,"Limit"));','If(varSaveStaleConflict,Set(varSaveStaleReason,If(CountIf(colHoursWritePlan As n,n.IsNew && !Coalesce(LookUp(colSaveFreshWorkers,ID=LookUp(colWeekAssignments,ID=n.AssignmentID).Worker.Id).Active,true))>0,"Inactive","Diff")))','Trace("DIAG|SaveWeek|Stale",TraceSeverity.Warning,{Scenario:"SaveWeek",Step:"Stale",Reason:varSaveStaleReason,','Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"'+$h18Msg+'"});','Set(varWorkersCacheReady,false); Set(varMastersReady,false);')){
  Assert-True ($h18.Contains($needle)) "H18 contains: $needle"
 }
 Assert-True ((Count-Of $h18 'Set(varSaveStaleReason,"ReadError")') -eq 4 -and (Count-Of $h18 'Set(varSaveStaleReason,"Limit")') -eq 1 -and (Count-Of $h18 ',"Inactive","Diff")') -eq 1 -and $week.Contains('Set(varSaveStaleConflict,false); Set(varSaveStaleReason,"");')) 'H18: Trace DIAG|SaveWeek|Stale Reason = ReadError (4 read steps) | Limit | Inactive | Diff, reset at the start of every Save; message text unchanged'
-Assert-True ($h18.Contains('!Coalesce(freshWorker.Active,true) ||') -and $week -notmatch 'ClearCollect\(colWorkersCache' -and ([string]$indexes.Screen1['btnReadTeam']['Properties']['OnSelect']).Contains($cacheProj) -and !([string]$indexes.Screen1['btnReadTeam']['Properties']['OnSelect']).Contains('Active:worker.Active')) 'H18: Active only in the fresh H18 projection (colSaveFreshWorkers); colWorkersCache projection unchanged; a worker deactivated in SharePoint blocks new rows'
+Assert-True ($h18.Contains('!Coalesce(freshWorker.Active,true) ||') -and $week -notmatch 'ClearCollect\(colWorkersCache' -and ([string]$indexes.Screen1['btnReadTeam']['Properties']['OnSelect']).Contains($cacheProj)) 'H18: fresh H18 projection (colSaveFreshWorkers) checked against SharePoint; colWorkersCache projection = v1.0.1 projection incl. Active; a worker deactivated in SharePoint blocks new rows'
 Assert-True ($h18.IndexOf('Set(varSaveFreshProjectKey') -lt $h18.IndexOf("Filter('Project Workers'") -and $h18 -notmatch "Filter\('Project Workers',[^)]*(StartsWith|\|\|)" -and $h18 -notmatch 'Patch\(|Remove|UpdateIf|\bCollect\(colWorkersCache|ClearCollect\(colWorkersCache|ClearCollect\(colWeek') 'H18: global ProjectKey set before the read; no StartsWith/OR; no write and no change of the loaded caches (only flags invalidated)'
 Assert-True ((Count-Of $h18 'Set(varDiagSaveReads,varDiagSaveReads+1);') -eq 2 -and $week.Contains('Reads:Coalesce(varDiagSaveReads,0)')) 'H18: each of the two re-reads counts in varDiagSaveReads (DIAG|SaveWeek|End Reads +2)'
 Assert-True ($week.Contains('Clear(colSaveFreshPW); Clear(colSaveFreshWorkers); Set(varSaveStaleConflict,false);') -and $week.IndexOf('Set(varSaveStaleConflict,false);') -lt $week.IndexOf('IfError(')) 'H18: flag and staging reset at the start of every Save'
@@ -555,7 +560,7 @@ foreach($k in $all.Keys){foreach($m in [regex]::Matches($all[$k],"Filter\('Assig
  $rest=$all[$k].Substring($m.Index+$m.Length)
  if($rest -notmatch '^ProjectKey=var\w+\)'){throw "FAIL non-delegable or non-global 'Assignment Periods' predicate at ${k}: $($rest.Substring(0,[Math]::Min(60,$rest.Length)))"}
 }}
-Assert-True ($apSites -eq 9) "All $apSites 'Assignment Periods' reads use Filter(...,ProjectKey=<global var>) (delegable text equality, indexed column)"
+Assert-True ($apSites -eq 10) "All $apSites 'Assignment Periods' reads use Filter(...,ProjectKey=<global var>) (delegable text equality, indexed column)"
 $readWeekFx=$indexes.scrHours['btnReadWeek']['Properties']['OnSelect'];$loadReport=$indexes.scrWeeklyHours['btnLoadReport']['Properties']['OnSelect'];$buildReport=$indexes.scrWeeklyHours['btnBuildReport']['Properties']['OnSelect']
 $applyWeek=$indexes.Screen1['btnApplyTeamWeek']['Properties']['OnSelect'];$migPrev=$indexes.Screen1['btnMigratePreview']['Properties']['OnSelect'];$migConf=$indexes.Screen1['btnMigrateConfirm']['Properties']['OnSelect']
 foreach($case in @(
@@ -787,7 +792,7 @@ foreach($c in @(@(1,$true,'open period'),@(2,$false,'period ended before the wee
 }
 # Workers columns removed in SharePoint by Eddy (26-10-2026): Employer Code (field_4), Employer Name (field_5), Phone (field_7), Email (field_8).
 # The cache keeps the record field 'Employer Name', filled from the Employer lookup; Src must not reference the removed columns.
-$workerProj="ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})"
+$workerProj="ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade,Active:worker.Active})"
 Assert-True ($readTeam.Contains($workerProj) -and $loadReport.Contains($workerProj)) 'Workers cache projection identical in Screen1 and Hours Summary; Employer Name taken from the Employer lookup'
 $srcAll=(Get-ChildItem (Join-Path $projectRoot 'Src') -Filter *.pa.yaml | ForEach-Object {[IO.File]::ReadAllText($_.FullName)}) -join "`n"
 foreach($bad in @("worker.'Employer Name'",'worker.Phone','worker.Email',"worker.'Employer Code'")){ Assert-True (!$srcAll.Contains($bad)) "Src does not reference removed Workers column: $bad" }

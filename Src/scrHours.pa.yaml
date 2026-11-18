@@ -232,6 +232,69 @@ Screens:
             FontWeight: =FontWeight.Normal
             Size: =12
             Color: =ColorValue("#000000")
+      - lblWeekTeam:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000000")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Text: ="Team"
+            Width: =ddWeekTeam.Width
+            X: =ddWeekTeam.X
+            Y: =lblHoursWeek.Y
+            Height: =lblHoursWeek.Height
+      - ddWeekTeam:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            FocusedBorderColor: =ColorValue("#0303B8")
+            AllowEmptySelection: =true
+            BorderColor: =ColorValue("#DCDCDC")
+            BorderThickness: =1
+            ChevronBackground: =ColorValue("#F0F0F0")
+            ChevronDisabledBackground: =Color.Transparent
+            ChevronDisabledFill: =ColorValue("#787878")
+            ChevronFill: =ColorValue("#0303B8")
+            ChevronHoverBackground: =ColorValue("#D5EDFF")
+            ChevronHoverFill: =ColorValue("#0303B8")
+            Color: =ColorValue("#000000")
+            Default: =varTeam.Value
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ColorValue("#787878")
+            DisabledFill: =Color.Transparent
+            Fill: =ColorValue("#F0F0F0")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            HoverBorderColor: =ColorValue("#0303B8")
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
+            Items: =colTeamChoices
+            Items.Value: =Value
+            OnChange: |-
+              =If(!Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !IsBlank(varProject.Id) && !IsEmpty(colTeamChoices),
+               If(IsBlank(Self.Selected.Value) || Self.Selected.Value=varTeam.Value,
+                If(Self.Selected.Value<>varTeam.Value,Reset(ddWeekTeam)),
+                JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),
+                Reset(ddWeekTeam); Notify("Team not changed: unsaved hours. Save or discard first.",NotificationType.Warning,15000),
+                Trace("DIAG|Week|TeamSwitch",TraceSeverity.Information,{Scenario:"Week",Step:"TeamSwitch",ProjectID:Coalesce(varProject.Id,0),FromTeam:Coalesce(varTeam.Value,""),ToTeam:Self.Selected.Value});
+                Set(varTeam,Self.Selected); Select(btnReadWeek)
+               ),
+               Reset(ddWeekTeam)
+              )
+            DisplayMode: =If(Coalesce(varWeekLoading,false) || Coalesce(varWeekSaving,false) || IsBlank(varProject.Id) || IsEmpty(colTeamChoices) || JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),DisplayMode.Disabled,DisplayMode.Edit)
+            PaddingBottom: =5
+            PaddingLeft: =12
+            PaddingRight: =5
+            PaddingTop: =5
+            PressedBorderColor: =ColorValue("#0303B8")
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
+            SelectionColor: =Color.White
+            SelectionFill: =ColorValue("#0303B8")
+            Size: =12
+            Width: =160
+            X: =lblHoursWeekKW.X+lblHoursWeekKW.Width+24
+            Y: =dpHoursWeek.Y
+            Height: =dpHoursWeek.Height
       - galHours:
           Control: Gallery@2.15.0
           Variant: BrowseLayout_Vertical_TwoTextVariant_ver5.0
@@ -289,7 +352,7 @@ Screens:
                   PaddingRight: =6
                   PaddingTop: =0
                   Size: =10
-                  Text: =With({w:LookUp(colWorkersCache,ID=ThisItem.Worker.Id)},With({noT:IsBlank(w.Trade.Value),noE:IsBlank(w.Employer.Id) || IsBlank(w.Employer.Value)},If(IsBlank(w.ID),"Niet in Workers (Refresh Project / team)",noE && noT,"Employer + Trade ontbreken",noE,"Employer ontbreekt",noT,"Trade ontbreekt","")))
+                  Text: =With({w:LookUp(colWorkersCache,ID=ThisItem.Worker.Id)},With({noT:IsBlank(w.Trade.Value),noE:IsBlank(w.Employer.Id) || IsBlank(w.Employer.Value)},If(IsBlank(w.ID),"Niet in Workers (Refresh Project / team)",noE && noT,"Employer + Trade ontbreken",noE,"Employer ontbreekt",noT,"Trade ontbreekt",!Coalesce(w.Active,true),"Inactive worker (no new days)","")))
                   VerticalAlign: =VerticalAlign.Middle
                   Visible: =!IsBlank(Self.Text)
                   Width: =If(StartsWith(Self.Text,"Niet in"),272,262)
@@ -306,7 +369,7 @@ Screens:
                   BorderThickness: =1
                   Color: =ColorValue("#000000")
                   Default: =ThisItem.MonHours
-                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).MonHours)),DisplayMode.Edit,DisplayMode.Disabled)
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
@@ -314,7 +377,7 @@ Screens:
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
-                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).MonHours)),Patch(
                         colWeekRows,
                         LookUp(colWeekRows, ID = ThisItem.ID),
                         {MonHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
@@ -340,7 +403,7 @@ Screens:
                   BorderThickness: =1
                   Color: =ColorValue("#000000")
                   Default: =ThisItem.TueHours
-                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).TueHours)),DisplayMode.Edit,DisplayMode.Disabled)
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
@@ -348,7 +411,7 @@ Screens:
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
-                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).TueHours)),Patch(
                         colWeekRows,
                         LookUp(colWeekRows, ID = ThisItem.ID),
                         {TueHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
@@ -374,7 +437,7 @@ Screens:
                   BorderThickness: =1
                   Color: =ColorValue("#000000")
                   Default: =ThisItem.WedHours
-                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).WedHours)),DisplayMode.Edit,DisplayMode.Disabled)
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
@@ -382,7 +445,7 @@ Screens:
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
-                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).WedHours)),Patch(
                         colWeekRows,
                         LookUp(colWeekRows, ID = ThisItem.ID),
                         {WedHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
@@ -408,7 +471,7 @@ Screens:
                   BorderThickness: =1
                   Color: =ColorValue("#000000")
                   Default: =ThisItem.ThuHours
-                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).ThuHours)),DisplayMode.Edit,DisplayMode.Disabled)
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
@@ -416,7 +479,7 @@ Screens:
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
-                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).ThuHours)),Patch(
                         colWeekRows,
                         LookUp(colWeekRows, ID = ThisItem.ID),
                         {ThuHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
@@ -442,7 +505,7 @@ Screens:
                   BorderThickness: =1
                   Color: =ColorValue("#000000")
                   Default: =ThisItem.FriHours
-                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).FriHours)),DisplayMode.Edit,DisplayMode.Disabled)
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
                   Format: =TextFormat.Number
@@ -450,7 +513,7 @@ Screens:
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
-                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).FriHours)),Patch(
                         colWeekRows,
                         LookUp(colWeekRows, ID = ThisItem.ID),
                         {FriHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
@@ -475,7 +538,7 @@ Screens:
                   BorderThickness: =1
                   Color: =ColorValue("#000000")
                   Default: =ThisItem.SatHours
-                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).SatHours)),DisplayMode.Edit,DisplayMode.Disabled)
                   Fill: =ColorValue("#F0F0F0")
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
@@ -484,7 +547,7 @@ Screens:
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
-                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).SatHours)),Patch(
                         colWeekRows,
                         LookUp(colWeekRows, ID = ThisItem.ID),
                         {SatHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
@@ -509,7 +572,7 @@ Screens:
                   BorderThickness: =1
                   Color: =ColorValue("#000000")
                   Default: =ThisItem.SunHours
-                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true),DisplayMode.Edit,DisplayMode.Disabled)
+                  DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).SunHours)),DisplayMode.Edit,DisplayMode.Disabled)
                   Fill: =ColorValue("#F0F0F0")
                   Font: ="Inter, Arial, sans-serif"
                   FontWeight: =FontWeight.Normal
@@ -518,7 +581,7 @@ Screens:
                   HoverBorderColor: =ColorValue("#0303B8")
                   HoverFill: =ColorValue("#F0F0F0")
                   OnChange: |-
-                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varWeekLoadedTeam=ddTeam.Selected.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false),Patch(
+                    =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && (Coalesce(LookUp(colWorkersCache,ID=ThisItem.Worker.Id).Active,true) || !IsBlank(LookUp(colWeekOriginal,ID=ThisItem.ID).SunHours)),Patch(
                         colWeekRows,
                         LookUp(colWeekRows, ID = ThisItem.ID),
                         {SunHours: If(IsBlank(Self.Text), Blank(), Value(Self.Text))}
@@ -582,7 +645,7 @@ Screens:
                  If(varPendingWeekReloadWorkers && IsEmpty(colWeekLoadErrors),
                   IfError(Refresh(Workers),Collect(colWeekLoadErrors,{Message:"Workers: " & FirstError.Message});false);
                   If(IsEmpty(colWeekLoadErrors),
-                   IfError(CountRows(ClearCollect(colPendingWeekWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade})))>=0,
+                   IfError(CountRows(ClearCollect(colPendingWeekWorkers,ForAll(Workers As worker,{ID:worker.ID,'First Name':worker.'First Name',Surname:worker.Surname,'Employer Name':worker.Employer.Value,Employer:worker.Employer,Trade:worker.Trade,Active:worker.Active})))>=0,
                     Collect(colWeekLoadErrors,{Message:"Workers: " & FirstError.Message});false)
                   );
                   If(CountRows(colPendingWeekWorkers)>=500,Collect(colWeekLoadErrors,{Message:"500 medewerkers geladen; medewerkerslijst mogelijk onvolledig. Laden gestopt."}))
@@ -730,10 +793,11 @@ Screens:
           Properties:
             Text: |-
               =If(Coalesce(varWeekLoadState,"NotLoaded")<>"Loading" && !Coalesce(varWeekSaving,false) && IsEmpty(colWeekLoadErrors) && !IsEmpty(colHoursErrors),
+              If(!IsBlank(varSaveInactiveMsg),varSaveInactiveMsg,
               If(Coalesce(varDiagSaveWrites,0)>0,"Opslag niet volledig bevestigd; opslaan geblokkeerd. ","Niet opgeslagen; niets geschreven. ") &
               If(IsBlank(First(colHoursErrors).WorkerName),"",First(colHoursErrors).WorkerName & ": ") & First(colHoursErrors).Message &
               If(IsBlank(First(colHoursErrors).KeyValue),""," [" & First(colHoursErrors).KeyValue & "]") &
-              If(CountRows(colHoursErrors)>1," (+" & Text(CountRows(colHoursErrors)-1) & " meer)",""),
+              If(CountRows(colHoursErrors)>1," (+" & Text(CountRows(colHoursErrors)-1) & " meer)","")),
               Switch(Coalesce(varWeekLoadState,"NotLoaded"),"Loading","Opgeslagen week ophalen; vorige invoer blijft behouden tot laden slaagt...","NotLoaded",Coalesce(varWeekMessage,"Nog niet geladen. Kies project, team en week; opslaan geblokkeerd."),varWeekMessage))
             X: =40
             Y: =dpHoursWeek.Y+dpHoursWeek.Height+8
@@ -953,7 +1017,6 @@ Screens:
                           varWeekLoadedProjectID=varProject.Id,
                           varWeekLoadedProjectID=ddProject.Selected.Id,
                           varWeekLoadedTeam=varTeam.Value,
-                          varWeekLoadedTeam=ddTeam.Selected.Value,
                           varLoadedWeekMonday=varHoursWeekMonday,
                           !IsEmpty(colWeekRows),
                           CountRows(colWeekRows)=varWeekLoadedAssignmentCount,
@@ -980,7 +1043,6 @@ Screens:
                           varWeekLoadedProjectID=varProject.Id,
                           varWeekLoadedProjectID=ddProject.Selected.Id,
                           varWeekLoadedTeam=varTeam.Value,
-                          varWeekLoadedTeam=ddTeam.Selected.Value,
                           varLoadedWeekMonday=varHoursWeekMonday,
                           !IsEmpty(colWeekRows),
                           CountRows(colWeekRows)=varWeekLoadedAssignmentCount,
@@ -997,7 +1059,7 @@ Screens:
                           Set(varDiagSaveT0,Now()); Set(varDiagSaveReads,0); Set(varDiagSaveWrites,0);
                           Clear(colSaveCheckRaw); Clear(colSaveCheck); Clear(colHoursWritePlan);
                           Clear(colHoursPatchedExisting); Clear(colHoursPatchedNew); Clear(colSaveVerifyRaw); Clear(colSaveVerify);
-                          Clear(colSaveFreshPW); Clear(colSaveFreshWorkers); Set(varSaveStaleConflict,false); Set(varSaveStaleReason,"");
+                          Clear(colSaveFreshPW); Clear(colSaveFreshWorkers); Set(varSaveStaleConflict,false); Set(varSaveStaleReason,""); Set(varSaveInactiveMsg,"");
                           
                           IfError(
                               ForAll(
@@ -1127,6 +1189,10 @@ Screens:
                                                   If(
                                                       IsBlank(workerRecord.Trade.Value),
                                                       Collect(colHoursErrors,{WorkerName:c.WorkerName,KeyValue:c.KeyValue,Message:"Trade ontbreekt in Workers (aanvullen in SharePoint, daarna Refresh op Project / team)"})
+                                                  );
+                                                  If(
+                                                      IsBlank(c.OldHours) && !Coalesce(workerRecord.Active,true),
+                                                      Collect(colHoursErrors,{WorkerName:Coalesce(Trim(workerRecord.'First Name' & " " & workerRecord.Surname),c.WorkerName),KeyValue:c.KeyValue,Message:"inactive in Workers but still active in Project / team"})
                                                   )
                                               );
                                               If(
@@ -1273,7 +1339,14 @@ Screens:
                                               If(varSaveStaleConflict,Set(varSaveStaleReason,If(CountIf(colHoursWritePlan As n,n.IsNew && !Coalesce(LookUp(colSaveFreshWorkers,ID=LookUp(colWeekAssignments,ID=n.AssignmentID).Worker.Id).Active,true))>0,"Inactive","Diff")))
                                           );
                                           If(varSaveStaleConflict,
-                                              Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh."});
+                                              If(varSaveStaleReason="Inactive" && CountIf(colHoursWritePlan As n,n.IsNew && !Coalesce(LookUp(colSaveFreshWorkers,ID=LookUp(colWeekAssignments,ID=n.AssignmentID).Worker.Id).Active,true))>0,
+                                                  ForAll(Filter(colHoursWritePlan,IsNew) As n,With({fw:LookUp(colSaveFreshWorkers,ID=LookUp(colWeekAssignments,ID=n.AssignmentID).Worker.Id)},
+                                                      If(!Coalesce(fw.Active,true),
+                                                          Collect(colHoursErrors,{WorkerName:Coalesce(Trim(fw.'First Name' & " " & fw.Surname),n.WorkerName),KeyValue:n.KeyValue,Message:"inactive in Workers but still active in Project / team"})
+                                                      )
+                                                  )); true,
+                                                  Collect(colHoursErrors,{WorkerName:"",KeyValue:"",Message:"Changed in SharePoint by someone else. Nothing saved. Click Discard, then Refresh."}); false
+                                              );
                                               Set(varWorkersCacheReady,false); Set(varMastersReady,false);
                                               Trace("DIAG|SaveWeek|Stale",TraceSeverity.Warning,{Scenario:"SaveWeek",Step:"Stale",Reason:varSaveStaleReason,NewRows:CountIf(colHoursWritePlan,IsNew),FreshAssignments:CountRows(colSaveFreshPW),FreshWorkers:CountRows(colSaveFreshWorkers)})
                                           )
@@ -1367,6 +1440,10 @@ Screens:
                                           )
                                       );
                           
+                                  With({inactiveNames:Sort(Distinct(Filter(colHoursErrors,Message="inactive in Workers but still active in Project / team"),WorkerName),ThisRecord.Value,SortOrder.Ascending)},
+                                      Set(varSaveInactiveMsg,If(IsEmpty(inactiveNames) || Coalesce(varDiagSaveWrites,0)>0 || CountIf(colHoursErrors,Message<>"inactive in Workers but still active in Project / team")>0,"","Not saved: " & First(inactiveNames).Value & " is inactive in Workers but still active in Project / team. Uncheck the worker in Project / team or reactivate the worker, then Refresh." & If(CountRows(inactiveNames)>1," (+" & Text(CountRows(inactiveNames)-1) & " more)","")))
+                                  );
+
                                   If(
                                       IsEmpty(colHoursErrors) &&
                                       CountRows(colHoursWritten) = CountRows(colHoursChanges),
@@ -1375,6 +1452,13 @@ Screens:
                                           Text(CountRows(colHoursWritten)) &
                                           " dagregistratie(s).",
                                           NotificationType.Success
+                                      ),
+
+                                      !IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0 && !IsBlank(varSaveInactiveMsg),
+                                      Notify(
+                                          varSaveInactiveMsg,
+                                          NotificationType.Error,
+                                          15000
                                       ),
 
                                       !IsEmpty(colHoursErrors) && Coalesce(varDiagSaveWrites, 0) = 0 && Coalesce(varSaveStaleConflict, false),

@@ -1,5 +1,30 @@
 # Release notes
 
+## v1.0.1 — concept 18-11-2026 (nog niet goedgekeurd)
+
+Fixrelease op v1.0.0, goedgekeurd als opdracht door Eddy op 18-11-2026 na het incident Friesland Campina. Pas na Eddy's Studio-test volgen tag en GitHub-release. Testbuild: `v1.0.1-20261118_212114`.
+
+### Wijzigingen
+- **Weekly Hours:**
+  - Een nieuwe dag voor een inactieve medewerker geeft een eigen melding met de naam: "Not saved: <name> is inactive in Workers but still active in Project / team. …". Er wordt dan niets opgeslagen. Vroeger kwam hier de verwarrende conflictmelding.
+  - Bij het laden krijgt de rij van zo'n medewerker het label "Inactive worker (no new days)". Nieuwe dagen staan dan uit; bestaande dagen kun je nog corrigeren.
+  - Nieuwe teamkeuze (Team) naast de week. Met onopgeslagen uren is die uitgeschakeld (amber melding als het toch gebeurt). De echte conflictmelding blijft voor echte conflicten.
+- **Project / team:**
+  - Na het laden een amber waarschuwing bij een inzetperiode zonder Project Workers-rij en bij een inactieve medewerker met een actieve koppeling.
+  - De lijst toont geen inactieve medewerkers, behalve met een periode in de gekozen week. Medewerkers van TEST Employer zie je alleen op TEST-projecten. Geselecteerde medewerkers blijven altijd zichtbaar.
+  - Nieuw: een filter op contractor, een zoekveld en weekpijlen naast de week.
+- **Week Report:** de melding bij een periode zonder koppeling noemt nu de oorzaak en de oplossing: "Project Workers row missing (deleted?) – restore it from the SharePoint Recycle Bin."
+- **Workers:** de melding bij een geblokkeerde deactivering noemt project, team en de week waarin de koppeling opende.
+- **Importflow "SiteManagement - Import rows" v3** (los pakket, MS-049):
+  - leest de lijst één keer in plaats van per regel en verwerkt 10 regels tegelijk;
+  - dubbele sleutels in het bestand blokkeren het bestand;
+  - lijsten met meer dan 5000 rijen worden geweigerd;
+  - een mislukte leesactie staat als fout in het resultaat.
+
+### Bekend / niet getest
+- Studio-import, binding en de functionele test volgen nog; zie de teststappen in PROJECT_STATUS.md.
+- Flow v3 is nog niet online gedraaid.
+
 ## v1.0.0 — 16-11-2026 (eerste stabiele versie)
 
 Goedgekeurd door Eddy op 16-11-2026 na de Studio-test TP-EXPORT-02 (c7-hertest en c8 stap 4 PASS). Tags: `v1.0.0` en `approved-20261116-weekreport-c8`. De Src van deze release is gelijk aan testbuild c8 (`weekreport-export-c8-20261116_201344`, SHA-256 `D76BD5A8557948213B0637EB763BC9586C00D2ED217BCC051DA803DC6B528BE8`).
