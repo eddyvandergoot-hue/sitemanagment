@@ -54,7 +54,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-045 | 17-11-2026 | Vervallen 18-11-2026 (H40) |
 | MS-046 | 17-11-2026 | Done 17-11-2026 (Eddy): v2 geïmporteerd (Update), aan, Imports gesynchroniseerd; eerste run MS-042 OK: bibliotheek Imports + importpakket "SiteManagement - Import rows" (Create as new) + Sync; daarna importeert Claude lijstgegevens |
 | MS-047 | 18-11-2026 | Open (Eddy): kolommen Projects (CustomerCity, CustomerPhone, SupervisorPhone) en Project Workers (ConsentStatus, ConsentDate) + metadata-save in Incoming; daarna bouw consent |
-| MS-048 | 18-11-2026 | Open (Eddy): schone start v1 (H41): testrijen van echte projecten verwijderen (Hours 24, Assignment Periods 20, Project Workers 19) + Exports-map van FC; TEST-000 blijft |
+| MS-048 | 18-11-2026 | Done 18-11-2026 (Eddy): schone start v1 (H41): testrijen van echte projecten verwijderen (Hours 24, Assignment Periods 20, Project Workers 19) + Exports-map van FC; TEST-000 blijft |
 | MS-049 | 18-11-2026 | Open (Eddy): importflow v3 importeren (Import Package > Update "SiteManagement - Import rows") |
 
 ---
@@ -525,7 +525,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-048 — Schone start v1: testgegevens van echte projecten verwijderen (H41)
 
-- **Added:** 18-11-2026. **Status:** Open (Eddy).
+- **Added:** 18-11-2026. **Status:** Done 18-11-2026 (Eddy): project 1 verwijderd uit Hours (24), Assignment Periods (20) en Project Workers (19); Exports-map 100611613201 verwijderd; TEST-000 behouden.
 - **Waarom handmatig:** verwijderen gebeurt bewust niet door de app of de importflow (die verwijderen nooit). Een aparte verwijderflow is voor ca. 63 rijen niet sneller dan filteren + selecteren + Delete, en riskanter.
 - **Sleutels:** TEST-000 = project-ID 2 (ProjectKey `2`, EntryKey begint met `2|`). Friesland Campina = ID 1 (`1`, `1|`). Test-001 (ID 3) heeft geen rijen.
 - **Verwachte aantallen** (export 18-11 17:52 + 2 teruggezette PW-rijen): Hours 37 → verwijder 24 → 13 over; Assignment Periods 31 → verwijder 20 → 11 over; Project Workers 28 → verwijder 19 → 9 over. Wijkt een aantal af: stop en meld het.
