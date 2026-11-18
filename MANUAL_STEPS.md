@@ -54,6 +54,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-045 | 17-11-2026 | Vervallen 18-11-2026 (H40) |
 | MS-046 | 17-11-2026 | Done 17-11-2026 (Eddy): v2 geïmporteerd (Update), aan, Imports gesynchroniseerd; eerste run MS-042 OK: bibliotheek Imports + importpakket "SiteManagement - Import rows" (Create as new) + Sync; daarna importeert Claude lijstgegevens |
 | MS-047 | 18-11-2026 | Open (Eddy): kolommen Projects (CustomerCity, CustomerPhone, SupervisorPhone) en Project Workers (ConsentStatus, ConsentDate) + metadata-save in Incoming; daarna bouw consent |
+| MS-048 | 18-11-2026 | Open (Eddy): schone start v1 (H41): testrijen van echte projecten verwijderen (Hours 24, Assignment Periods 20, Project Workers 19) + Exports-map van FC; TEST-000 blijft |
 
 ---
 
@@ -520,6 +521,22 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   3. Project Workers > Add column > Date and time: `ConsentDate` (Consent Date), alleen datum, niet verplicht.
   4. Studio (app uit v1.0.0): Data > Projects > Refresh en Data > Project Workers > Refresh. Daarna Save as > This computer > Incoming. Meld de bestandsnaam; Claude voegt alleen de metadata samen.
 - **Controle:** de kolommen staan in Projects en Project Workers; bestaande gegevens veranderen niet.
+
+## MS-048 — Schone start v1: testgegevens van echte projecten verwijderen (H41)
+
+- **Added:** 18-11-2026. **Status:** Open (Eddy).
+- **Waarom handmatig:** verwijderen gebeurt bewust niet door de app of de importflow (die verwijderen nooit). Een aparte verwijderflow is voor ca. 63 rijen niet sneller dan filteren + selecteren + Delete, en riskanter.
+- **Sleutels:** TEST-000 = project-ID 2 (ProjectKey `2`, EntryKey begint met `2|`). Friesland Campina = ID 1 (`1`, `1|`). Test-001 (ID 3) heeft geen rijen.
+- **Verwachte aantallen** (export 18-11 17:52 + 2 teruggezette PW-rijen): Hours 37 → verwijder 24 → 13 over; Assignment Periods 31 → verwijder 20 → 11 over; Project Workers 28 → verwijder 19 → 9 over. Wijkt een aantal af: stop en meld het.
+- **Volgorde:** eerst Hours, dan Assignment Periods, dan Project Workers (Hours verwijzen naar Project Workers).
+- **Stappen per lijst (moderne lijstweergave):**
+  1. **Hours:** open de lijst > klik de kolomkop **EntryKey** > **A to Z**. Alle `1|…`-rijen staan nu bovenaan, vóór de `2|…`-rijen. Klik het vinkje van de eerste rij, scroll naar de laatste `1|…`-rij en Shift+klik zijn vinkje (24 geselecteerd, teller rechtsboven). Controleer dat geen `2|`-rij geselecteerd is > **Delete** > Delete. Controle: 13 rijen over, allemaal `2|…`.
+  2. **Assignment Periods:** kolomkop **ProjectKey** > **Filter by** > vink alleen `1` aan > Apply. Selecteer alles met het vinkje in de kop (20) > **Delete**. Filter wissen. Controle: 11 rijen over, allemaal ProjectKey `2`.
+  3. **Project Workers:** zelfde als stap 2 met ProjectKey `1` (19 rijen). Controle: 9 rijen over, allemaal ProjectKey `2`.
+  4. **Exports:** open de bibliotheek Exports > selecteer de map `100611613201` (FC, alleen testexports uit de bouwfase) > Delete. Laat de TEST-000-map staan. Andere mappen van echte projecten: idem.
+  5. Sluit de app en open hem opnieuw (caches leeg).
+- **Daarna (Eddy):** echte teams via Project / team met de echte startweek (bv. 2026 KW46), uren in Weekly Hours, Week report exporteren. Controlelijst in PROJECT_STATUS.md (H41).
+- **Terugdraaien:** binnen 93 dagen via de prullenbak van de site.
 
 ## Procedure — Nieuwe taal (H30)
 
