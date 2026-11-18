@@ -1,8 +1,8 @@
 # Release notes
 
-## v1.0.1 — concept 18-11-2026 (nog niet goedgekeurd)
+## v1.0.1 — 18-11-2026 (fixrelease)
 
-Fixrelease op v1.0.0, goedgekeurd als opdracht door Eddy op 18-11-2026 na het incident Friesland Campina. Pas na Eddy's Studio-test volgen tag en GitHub-release. Testbuild: `v1.0.1-20261118_212114`.
+Goedgekeurd door Eddy op 18-11-2026 na de Studio-test op TEST-000 (PASS: Project / team filter, zoeken en weekpijlen; Weekly Hours teamkeuze, uitgeschakeld bij onopgeslagen uren; Week report TEST-000). Gepubliceerd door Eddy op 18-11-2026 (Replace "SiteManagement" + Publish). Tags: `v1.0.1` en `approved-20261118-v1.0.1`. Testbuild: `v1.0.1-20261118_212114` (SHA-256 `05cf668efc48f68c0a856752549c5d75b317ce0bb56fcdc2eb74846998dfd8ce`).
 
 ### Wijzigingen
 - **Weekly Hours:**
@@ -22,8 +22,9 @@ Fixrelease op v1.0.0, goedgekeurd als opdracht door Eddy op 18-11-2026 na het in
   - een mislukte leesactie staat als fout in het resultaat.
 
 ### Bekend / niet getest
-- Studio-import, binding en de functionele test volgen nog; zie de teststappen in PROJECT_STATUS.md.
-- Flow v3 is nog niet online gedraaid.
+- Niet getest: de deactiveringsmelding van Workers met project, team en "open since". Er was geen actieve gekoppelde testmedewerker; hertest zodra het geval zich voordoet (backlog).
+- De inactieve-medewerkerpaden in Weekly Hours en de amber waarschuwing in Project / team zijn alleen technisch getest.
+- Importflow v3 is nog niet geïmporteerd (MS-049, bij de volgende import).
 
 ## v1.0.0 — 16-11-2026 (eerste stabiele versie)
 
