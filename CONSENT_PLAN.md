@@ -1,6 +1,10 @@
 # Consent agreement: plan (app-versie van FOR-010.040)
 
-Stand 17-11-2026. Ontwerp, niet gebouwd. Besluit: DECISIONS.md H36. Achtergrond: EXCEL_MIGRATION.md 3.1 (de huidige Excel/Acrobat-route) en onderdeel C.
+Stand 18-11-2026. Ontwerp, niet gebouwd. Besluiten: DECISIONS.md H36, H37 en **H40**. H40 vervangt de lijst Customers, onderdeel A (ProjectSafety) en de lijst ConsentAgreements. Bouw na MS-047 + metadata-save.
+
+**H40 in het kort:** klant = Projects.CustomerName + CustomerCity + CustomerPhone; VGM-toezichthouder = Projects.SiteManagers (naam) + SupervisorPhone; status per project + medewerker op Project Workers (ConsentStatus Not generated / Generated / Signed, ConsentDate). Scherm: medewerkers van het projectteam, status, Generate per medewerker of alle, Signed handmatig. Veiligheidsplan deel 1 hoort niet bij de app. Waar hieronder Customers, ProjectSafety of ConsentAgreements staat, geldt H40.
+
+Oorspronkelijk besluit: DECISIONS.md H36. Achtergrond: EXCEL_MIGRATION.md 3.1 (de huidige Excel/Acrobat-route) en onderdeel C.
 
 ## 1. Uitgangspunt (H36, Eddy 17-11-2026)
 

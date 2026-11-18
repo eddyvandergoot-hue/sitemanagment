@@ -1,5 +1,7 @@
 # Ontwerp roadmap 1: klanten en projectveiligheid
 
+**VERVALLEN 18-11-2026 (DECISIONS.md H40):** geen lijsten Customers en ProjectSafety, veiligheidsplan deel 1 buiten de app; klant en VGM-toezichthouder als kolommen op Projects (MS-047). Dit document blijft alleen als historie.
+
 Stand 17-11-2026. **Ontwerp ter goedkeuring door Eddy; niet gebouwd.** Besluiten: H38 (V4), H36/H37 (consent). Dit is de basis voor de consent (CONSENT_PLAN.md) en het veiligheidsplan deel 1 (EXCEL_MIGRATION onderdelen A en B).
 
 Feature freeze v1.0.0: dit zijn nieuwe functies, gebouwd na Eddy's akkoord op dit ontwerp.

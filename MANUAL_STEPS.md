@@ -48,11 +48,12 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-039 | 16-11-2026 | Done 16-11-2026 (Eddy): 384 landregels in Translations (568) |
 | MS-040 | 16-11-2026 | Open, later (Eddy): oude cloudkopieën van de app opruimen; niet nu |
 | MS-041 | 16-11-2026 | Done 16-11-2026 (Eddy): verbinding "Translator SiteManagement" (Microsoft Translator V2) |
-| MS-042 | 17-11-2026 | Deels (1111 van 1288): ontbrekende consent-8-regels via de importflow (na MS-046); -be.csv na MS-043 |
-| MS-043 | 17-11-2026 | Open (Eddy): Belarusian als 9e taal (keuzes + plakbestanden *-be.csv) |
-| MS-044 | 17-11-2026 | Ontwerp, pas na Eddy's akkoord: lijsten Customers en ProjectSafety via From Excel |
-| MS-045 | 17-11-2026 | Ontwerp, pas na MS-044: uniek, lookups (ProjectSafety.Project, Projects.Customer), Active standaard Ja |
-| MS-046 | 17-11-2026 | Open (Eddy, eenmalig): bibliotheek Imports + importpakket "SiteManagement - Import rows" (Create as new) + Sync; daarna importeert Claude lijstgegevens |
+| MS-042 | 17-11-2026 | Done 18-11-2026 via importflow: Added 176, Updated 1112, Errors 0; Translations 1288 (Eddy) |
+| MS-043 | 17-11-2026 | Stap 1 done 18-11-2026 (Eddy: keuze Belarusian in Workers, Employers, Translations); be-regels (161) via importflow, verwacht totaal 1449 |
+| MS-044 | 17-11-2026 | Vervallen 18-11-2026 (H40): geen lijsten Customers/ProjectSafety |
+| MS-045 | 17-11-2026 | Vervallen 18-11-2026 (H40) |
+| MS-046 | 17-11-2026 | Done 17-11-2026 (Eddy): v2 geïmporteerd (Update), aan, Imports gesynchroniseerd; eerste run MS-042 OK: bibliotheek Imports + importpakket "SiteManagement - Import rows" (Create as new) + Sync; daarna importeert Claude lijstgegevens |
+| MS-047 | 18-11-2026 | Open (Eddy): kolommen Projects (CustomerCity, CustomerPhone, SupervisorPhone) en Project Workers (ConsentStatus, ConsentDate) + metadata-save in Incoming; daarna bouw consent |
 
 ---
 
@@ -439,7 +440,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-042 — Consentteksten in Translations (H36, H37)
 
-- **Added:** 17-11-2026. **Status:** Deels geplakt. Op 17-11-2026 telde Translations 1111 regels; verwacht na translations-consent-8.csv is 1288, dus er ontbreken er circa 177. **Nieuwe route (17-11-2026):** niet meer plakken. Na MS-046 zet Claude translations-consent-8.csv in Imports/Translations/ (alleen toevoegen). De flow voegt de ontbrekende regels toe en meldt EXISTS en DUPLICATE; dubbele regels worden alleen opgesomd, niet verwijderd. De stappen hieronder zijn alleen nog een terugvaloptie.
+- **Added:** 17-11-2026. **Status:** Done 18-11-2026 via de importflow (bestand upsert_translations-ms042-8lang.csv = weekreport 184 + countries 384 + consent-8 720 = 1288 regels; resultaat Added 176, Updated 1112, Exists 0, Duplicates 0, Errors 0; Eddy telde 1288). Historie: deels geplakt. Op 17-11-2026 telde Translations 1111 regels; verwacht na translations-consent-8.csv is 1288, dus er ontbreken er circa 177. **Nieuwe route (17-11-2026):** niet meer plakken. Na MS-046 zet Claude translations-consent-8.csv in Imports/Translations/ (alleen toevoegen). De flow voegt de ontbrekende regels toe en meldt EXISTS en DUPLICATE; dubbele regels worden alleen opgesomd, niet verwijderd. De stappen hieronder zijn alleen nog een terugvaloptie.
 - Niet dringend: de consent is nog niet gebouwd.
 - **Bestanden** (UTF-8 met BOM, scheiding ";", kop Key;Language;Text): `templates/translations-consent-8.csv` (720 regels = 90 sleutels × 8 bestaande talen) en `templates/translations-consent-be.csv` (90 regels Belarusian). Bron en controle: `templates/translations-consent.csv` (810 regels, Test-Templates).
 - **Stappen:**
@@ -451,7 +452,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 - **Let op:** NL, PL, UK en BE zijn letterlijk overgenomen uit de voorbeeldformulieren, met de wijzigingen van H36. EN, CS, RO, DE en FR zijn vertaald vanuit NL; hun voettekst zegt "unofficial translation" (in de eigen taal). Al het niet-Nederlandse moet nog door een moedertaalspreker gecontroleerd worden (backlog).
 ## MS-043 — Belarusian als 9e taal (H37, V6)
 
-- **Added:** 17-11-2026. **Status:** Open (Eddy).
+- **Added:** 17-11-2026. **Status:** Stap 1 done 18-11-2026 (Eddy). Stap 2-3 via de importflow (translations-ms043-be.csv, 161 regels, alleen toevoegen); verwacht totaal 1449. Plakken is niet meer nodig.
 - **Waarom handmatig (stap 1):** keuzes van een keuzekolom bewerken kan alleen in de kolominstellingen; er is geen importroute. De teksten zijn bestanden.
 - **Stappen:**
   1. Voeg in **Workers.Language**, **Employers.Language** en **Translations.Language** de keuze `Belarusian` toe: exact deze spelling, met hoofdletter en zonder spaties (procedure "Nieuwe taal", stap 1).
@@ -462,7 +463,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-044 — Lijsten Customers en ProjectSafety (From Excel; DESIGN_CUSTOMERS_SAFETY.md)
 
-- **Added:** 17-11-2026. **Status:** Ontwerp. Pas uitvoeren na Eddy's akkoord op het ontwerp.
+- **Added:** 17-11-2026. **Status:** Vervallen 18-11-2026 (H40: geen lijsten Customers/ProjectSafety). Niet uitvoeren.
 - **Bestanden:** `artifacts\lists\Customers.xlsx` (4 kolommen) en `artifacts\lists\ProjectSafety.xlsx` (18 kolommen). Ze staan niet in git; maak ze opnieuw met `py -E -P artifacts\lists\make_list_templates.py`.
 - **Stappen:**
   1. Ga naar SharePoint GEASiteManagment > New > List > From Excel en upload Customers.xlsx (tabel tblCustomers).
@@ -474,7 +475,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-045 — Uniek, lookups en standaardwaarden (na MS-044)
 
-- **Added:** 17-11-2026. **Status:** Ontwerp.
+- **Added:** 17-11-2026. **Status:** Vervallen 18-11-2026 (H40). Niet uitvoeren.
 - **Waarom handmatig:** unieke waarden, lookupkolommen en standaardwaarden kun je niet via een Excel-import instellen.
 - **Stappen:**
   1. Customers > kolom Title (Customer Name): Require = Yes, Enforce unique values = Yes. Weergavenaam "Customer Name".
@@ -487,7 +488,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-046 — Importroute voor lijstgegevens: flow "SiteManagement - Import rows" (eenmalig)
 
-- **Added:** 17-11-2026. **Status:** Open (Eddy, eenmalig). Daarna levert en importeert Claude lijstgegevens zelf (werkwijze Eddy 17-11-2026); het plakken in de rasterweergave vervalt.
+- **Added:** 17-11-2026. **Status:** Done 17-11-2026 (Eddy): v1 gaf een nestingfout, v2 geïmporteerd met Update, flow aan, Imports gesynchroniseerd. Eerste run (MS-042) geslaagd; traag (1288 regels in ca. 6 uur), aanvaard door Eddy. Daarna levert en importeert Claude lijstgegevens zelf (werkwijze Eddy 17-11-2026); het plakken in de rasterweergave vervalt.
 - **Waarom deze route:** Graph PowerShell (route 1) is geblokkeerd door GEA Conditional Access. Met een apparaatcode is de aanmelding geldig, maar het apparaat moet "managed by GEA" zijn. Bij de interactieve Windows-aanmelding kwam er geen token.
 - **Bestand:** `artifacts\flows\SiteManagement-Import-rows-v2.zip` (niet in git; v2 17-11-2026: v1 gaf bij importeren of aanzetten "nested at level 9 ... maximum nesting limit of 8"; v2 heeft maximaal diepte 4 en geen OneDrive-verbinding meer, controle artifacts/Test-FlowNesting.ps1). Maak het opnieuw met `py -E -P flows\make_import_rows_package.py`; dat gebruikt je laatste export van de Export-flow in Incoming\Flows.
 - **Stappen:**
@@ -507,6 +508,18 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   - Lookups als ID.
   - Gegevens met regeleinden kunnen niet.
   - Nog niet online getest: de eerste run (MS-042) is de acceptatietest.
+
+## MS-047 — Kolommen voor de consent (H40)
+
+- **Added:** 18-11-2026. **Status:** Open (Eddy). Daarna bouwt Claude de consent.
+- **Waarom handmatig:** kolommen toevoegen aan een bestaande lijst kan niet via de importflow of een Excel-import.
+- **Belangrijk:** typ bij het aanmaken eerst exact de naam hieronder (zonder spaties; dat wordt de interne naam). De weergavenaam mag je daarna aanpassen (tussen haakjes de voorgestelde weergavenaam).
+- **Stappen:**
+  1. Projects > Add column > Single line of text: `CustomerCity` (Customer City), `CustomerPhone` (Customer Phone), `SupervisorPhone` (Supervisor Phone). Niet verplicht, geen standaard. De bestaande kolom Customer Name (intern CustomerName) blijft de klantnaam; Site Managers blijft de VGM-toezichthouder.
+  2. Project Workers > Add column > Choice: `ConsentStatus` (Consent Status), keuzes exact `Not generated`, `Generated`, `Signed`; geen standaardwaarde (leeg = Not generated), niet verplicht, geen eigen waarden toestaan.
+  3. Project Workers > Add column > Date and time: `ConsentDate` (Consent Date), alleen datum, niet verplicht.
+  4. Studio (app uit v1.0.0): Data > Projects > Refresh en Data > Project Workers > Refresh. Daarna Save as > This computer > Incoming. Meld de bestandsnaam; Claude voegt alleen de metadata samen.
+- **Controle:** de kolommen staan in Projects en Project Workers; bestaande gegevens veranderen niet.
 
 ## Procedure — Nieuwe taal (H30)
 
