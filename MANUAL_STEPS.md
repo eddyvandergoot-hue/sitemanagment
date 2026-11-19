@@ -59,8 +59,8 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-050 | 19-11-2026 | Done 19-11-2026 (Eddy): flow v2 geïmporteerd (Update), SharePoint + Office 365 Outlook, aan; in Studio toegevoegd; metadata uit Incoming\20261119-SiteManagement-mail.msapp samengevoegd (alleen data source + verbindingen). Open: geschoonde export van de flow later in de repo |
 | MS-051 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): Translations mail.body, 9 talen (Added 9, Errors 0) |
 | MS-052 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): AppSettings hours.fillPattern = 10,10,10,10,10,0,0 (Added 1, Errors 0) |
-| MS-053 | 19-11-2026 | Open (Eddy): Classic Combo box één keer in Studio invoegen + Save as This computer naar Incoming (template voor de zoekbare keuzelijsten) |
-| MS-054 | 19-11-2026 | Open (Eddy): keuzes Country in Employers en Projects vervangen door artifacts\lists\country-choices.txt (49 landen) |
+| MS-053 | 19-11-2026 | Done 19-11-2026 (Eddy): Classic Combo box op Home, Incoming\20261119-SiteManagement-combobox.msapp; Claude nam alleen de template combobox 2.4.0 over |
+| MS-054 | 19-11-2026 | Done 19-11-2026 (Eddy): country-choices.txt geplakt in Employers.Country (geen standaard) en Projects.Country (standaard Netherlands) |
 | MS-055 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): Translations country.Belarus, 9 talen (templates/translations-countries-belarus.csv; Added 9, Errors 0; verwacht totaal 1467) |
 
 ---
@@ -571,7 +571,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-053 — ComboBox-template via Studio (zoekbare keuzelijsten, v1.0.2)
 
-- **Added:** 19-11-2026. **Status:** Open (Eddy).
+- **Added:** 19-11-2026. **Status:** Done 19-11-2026 (Eddy; template merged door Claude, alleen Templates.json).
 - **Waarom handmatig:** de app bevat nog geen ComboBox-template (alleen Dropdown). Een nieuw controltype mag pas als Studio de template in de app zet (AGENTS, technische randvoorwaarden).
 - **Stappen:**
   1. Open in Studio de testbuild v1.0.2 (zoals bij de vorige test).
@@ -581,7 +581,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-054 — Keuzes Country gelijk maken (Employers + Projects)
 
-- **Added:** 19-11-2026. **Status:** Open (Eddy).
+- **Added:** 19-11-2026. **Status:** Done 19-11-2026 (Eddy).
 - **Waarom handmatig:** de keuzes van een keuzekolom kun je alleen in de kolominstellingen bewerken; er is geen importroute.
 - **Bestand:** `artifacts\lists\country-choices.txt` (49 landen, A-Z, één per regel; exact de spelling van de country.*-sleutels in Translations, gecontroleerd door Test-Templates). Bevat beide bestaande spellingen Czech Republic/Czechia en Turkey/Türkiye, omdat ze al in gegevens kunnen staan; nieuw: Belarus.
 - **Stappen (per lijst, eerst Employers, dan Projects):**

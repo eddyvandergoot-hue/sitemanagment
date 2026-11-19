@@ -26,13 +26,13 @@ ComponentDefinitions:
       HintText:
         PropertyKind: Input
         DisplayName: HintText
-        Description: Placeholder of the text field.
+        Description: Placeholder of the text field and of the combobox search box.
         DataType: Text
         Default: =""
       InputType:
         PropertyKind: Input
         DisplayName: InputType
-        Description: 'text, dropdown or readonly. Any other value renders a disabled white text field (fail-closed).'
+        Description: 'text, dropdown, combobox (searchable single choice, v1.0.2) or readonly. Any other value renders a disabled white text field (fail-closed).'
         DataType: Text
         Default: ="text"
       Invalid:
@@ -79,8 +79,8 @@ ComponentDefinitions:
     Properties:
       Fill: =Color.Transparent
       Height: =58
-      OnReset: =Reset(txtFieldValue); Reset(ddFieldValue)
-      Value: =Switch(cmpField.InputType,"dropdown",Coalesce(ddFieldValue.Selected.Value,""),"readonly",cmpField.DefaultValue,txtFieldValue.Text)
+      OnReset: =Reset(txtFieldValue); Reset(ddFieldValue); Reset(cbFieldValue)
+      Value: =Switch(cmpField.InputType,"dropdown",Coalesce(ddFieldValue.Selected.Value,""),"combobox",Coalesce(First(cbFieldValue.SelectedItems).Value,""),"readonly",cmpField.DefaultValue,txtFieldValue.Text)
       Width: =360
     Children:
       - htmlFieldLabel:
@@ -135,7 +135,7 @@ ComponentDefinitions:
             RadiusTopLeft: =4
             RadiusTopRight: =4
             Size: =14
-            Visible: =cmpField.InputType<>"dropdown"
+            Visible: =!(cmpField.InputType in ["dropdown","combobox"])
             Width: =Parent.Width-2
             X: =1
             Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1
@@ -175,6 +175,52 @@ ComponentDefinitions:
             SelectionFill: =ColorValue("#0303B8")
             Size: =14
             Visible: =cmpField.InputType="dropdown"
+            Width: =Parent.Width-2
+            X: =1
+            Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1
+      - cbFieldValue:
+          Control: Classic/ComboBox@2.4.0
+          Properties:
+            AccessibleLabel: =cmpField.Label
+            BorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+            BorderThickness: =If(cmpField.Invalid,2,1)
+            ChevronBackground: =Color.White
+            ChevronDisabledBackground: =Color.White
+            ChevronDisabledFill: =ColorValue("#9B9B9B")
+            ChevronFill: =ColorValue("#0303B8")
+            ChevronHoverBackground: =ColorValue("#D5EDFF")
+            ChevronHoverFill: =ColorValue("#0303B8")
+            Color: =ColorValue("#000000")
+            DefaultSelectedItems: '=Filter(If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t)),Value=cmpField.DefaultValue)'
+            DisabledBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+            DisabledColor: =ColorValue("#000000")
+            DisabledFill: =Color.White
+            DisplayFields: =["Value"]
+            DisplayMode: =If(cmpField.Enabled && cmpField.InputType="combobox",DisplayMode.Edit,DisplayMode.Disabled)
+            Fill: =Color.White
+            FocusedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            FocusedBorderThickness: =2
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =36
+            HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#D5EDFF")
+            InputTextPlaceholder: =cmpField.HintText
+            IsSearchable: =true
+            Items: '=If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t))'
+            OnChange: =If(cmpField.Enabled,cmpField.OnChange())
+            PressedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#D5EDFF")
+            SearchFields: =["Value"]
+            SelectMultiple: =false
+            SelectionColor: =Color.White
+            SelectionFill: =ColorValue("#0303B8")
+            SelectionTagColor: =ColorValue("#000F41")
+            SelectionTagFill: =ColorValue("#D5EDFF")
+            Size: =14
+            Visible: =cmpField.InputType="combobox"
             Width: =Parent.Width-2
             X: =1
             Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1

@@ -442,9 +442,9 @@ Screens:
                               Enabled: |-
                                 =varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"]
                               Height: =58
-                              HintText: =""
+                              HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colEmpSaveErrors,Field="Country")>0
-                              InputType: ="dropdown"
+                              InputType: ="combobox"
                               Items: |-
                                 =ShowColumns(Choices([@Employers].Country),Value)
                               Label: =If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en)
@@ -465,9 +465,9 @@ Screens:
                               Enabled: |-
                                 =varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"]
                               Height: =58
-                              HintText: =""
+                              HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colEmpSaveErrors,Field="Language")>0
-                              InputType: ="dropdown"
+                              InputType: ="combobox"
                               Items: |-
                                 =ShowColumns(Choices([@Employers].Language),Value)
                               Label: =If(LangNl && !IsBlank(T.empFieldLanguage.nl),T.empFieldLanguage.nl,T.empFieldLanguage.en)

@@ -488,9 +488,9 @@ Screens:
                               Enabled: |-
                                 =varPrjLoadState="Loaded" && IsEmpty(colPrjLoadErrors) && !Coalesce(varPrjBusy,false) && !Coalesce(varPrjSaving,false) && !Coalesce(varPrjSaveFailed,false) && Coalesce(varPrjMode,"") in ["New","Edit"]
                               Height: =58
-                              HintText: =""
+                              HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colPrjSaveErrors,Field="Country")>0
-                              InputType: ="dropdown"
+                              InputType: ="combobox"
                               Items: |-
                                 =ShowColumns(Choices([@Projects].Country),Value)
                               Label: =If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en)

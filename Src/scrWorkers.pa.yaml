@@ -415,9 +415,9 @@ Screens:
                               Enabled: |-
                                 =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]
                               Height: =58
-                              HintText: =""
+                              HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colWrkSaveErrors,Field="Trade")>0
-                              InputType: ="dropdown"
+                              InputType: ="combobox"
                               Items: |-
                                 =ShowColumns(Choices([@Workers].Trade),Value)
                               Label: =If(LangNl && !IsBlank(T.wrkFieldTrade.nl),T.wrkFieldTrade.nl,T.wrkFieldTrade.en)
@@ -455,9 +455,9 @@ Screens:
                               Enabled: |-
                                 =varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]
                               Height: =58
-                              HintText: =""
+                              HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colWrkSaveErrors,Field="Language")>0
-                              InputType: ="dropdown"
+                              InputType: ="combobox"
                               Items: |-
                                 =ShowColumns(Choices([@Workers].Language),Value)
                               Label: =If(LangNl && !IsBlank(T.wrkFieldLanguage.nl),T.wrkFieldLanguage.nl,T.wrkFieldLanguage.en)

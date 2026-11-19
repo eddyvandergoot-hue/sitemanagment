@@ -1,6 +1,6 @@
 # Team tussen projecten (Eddy 19-11-2026)
 
-Deel 1 beschrijft hoe het nu werkt (v1.0.2, gecontroleerd in de code, geen build). Deel 2 is het ontwerp voor v1.1 "Temporary assignment / Move team". Status: **ontwerp, wacht op akkoord van Eddy**; niets gebouwd.
+Deel 1 beschrijft hoe het nu werkt (v1.0.2, gecontroleerd in de code, geen build). Deel 2 is het ontwerp voor v1.1 "Temporary assignment / Move team". Status: **goedgekeurd door Eddy 19-11-2026 (DECISIONS.md H44): B1 ja, B2 ja (WorkerKey), B3-B5 volgens voorstel. Bouwen in v1.1**; nog niets gebouwd.
 
 ## Deel 1 — Huidig gedrag (v1.0.2)
 
