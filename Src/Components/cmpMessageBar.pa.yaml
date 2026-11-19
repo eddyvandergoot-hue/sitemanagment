@@ -119,7 +119,7 @@ ComponentDefinitions:
             Underline: =true
             VerticalAlign: =VerticalAlign.Middle
             Visible: =(cmpMessageBar.Kind in ["Error","Warning","Success"]) && !IsBlank(Trim(cmpMessageBar.LinkText))
-            Width: =150
+            Width: =200
             X: =Parent.Width-Self.Width-56
             Y: =0
       - icoCmpMsgClose:

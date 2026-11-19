@@ -59,6 +59,9 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-050 | 19-11-2026 | Done 19-11-2026 (Eddy): flow v2 geïmporteerd (Update), SharePoint + Office 365 Outlook, aan; in Studio toegevoegd; metadata uit Incoming\20261119-SiteManagement-mail.msapp samengevoegd (alleen data source + verbindingen). Open: geschoonde export van de flow later in de repo |
 | MS-051 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): Translations mail.body, 9 talen (Added 9, Errors 0) |
 | MS-052 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): AppSettings hours.fillPattern = 10,10,10,10,10,0,0 (Added 1, Errors 0) |
+| MS-053 | 19-11-2026 | Open (Eddy): Classic Combo box één keer in Studio invoegen + Save as This computer naar Incoming (template voor de zoekbare keuzelijsten) |
+| MS-054 | 19-11-2026 | Open (Eddy): keuzes Country in Employers en Projects vervangen door artifacts\lists\country-choices.txt (49 landen) |
+| MS-055 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): Translations country.Belarus, 9 talen (templates/translations-countries-belarus.csv; Added 9, Errors 0; verwacht totaal 1467) |
 
 ---
 
@@ -565,6 +568,28 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 - **Added/Done:** 19-11-2026 (Claude, importflow, opdracht Eddy). Bron `templates/appsettings-fillpattern.csv` (Key;Value). Resultaat: Rows 1, Added 1, Errors 0.
 - **Waarde:** `10,10,10,10,10,0,0` (ma..zo). Aanpassen: in AppSettings de Value van hours.fillPattern wijzigen. Met decimalen: scheid met `;`, bv. `7,5;7,5;7,5;7,5;7,5;0;0`. Ongeldig = rode melding bij Fill week, er wordt niets gevuld.
+
+## MS-053 — ComboBox-template via Studio (zoekbare keuzelijsten, v1.0.2)
+
+- **Added:** 19-11-2026. **Status:** Open (Eddy).
+- **Waarom handmatig:** de app bevat nog geen ComboBox-template (alleen Dropdown). Een nieuw controltype mag pas als Studio de template in de app zet (AGENTS, technische randvoorwaarden).
+- **Stappen:**
+  1. Open in Studio de testbuild v1.0.2 (zoals bij de vorige test).
+  2. Open een willekeurig scherm (bv. Contractors). Insert > zoek **Combo box** en kies de **Classic**-versie (niet de moderne). Er verschijnt een combobox op het scherm; laat hem staan, niets instellen.
+  3. File > **Save as** > **This computer** > zet het bestand in `Incoming\` (bv. `20261120-combobox.msapp`). Niet publiceren.
+- **Daarna (Claude):** template en controlversie uit het bestand overnemen, de losse combobox niet overnemen, ComboBox bouwen in cmpField (Country/Language Contractors, Country Projects, Language/Trade Workers), tests, reviewer, pack v1.0.2.
+
+## MS-054 — Keuzes Country gelijk maken (Employers + Projects)
+
+- **Added:** 19-11-2026. **Status:** Open (Eddy).
+- **Waarom handmatig:** de keuzes van een keuzekolom kun je alleen in de kolominstellingen bewerken; er is geen importroute.
+- **Bestand:** `artifacts\lists\country-choices.txt` (49 landen, A-Z, één per regel; exact de spelling van de country.*-sleutels in Translations, gecontroleerd door Test-Templates). Bevat beide bestaande spellingen Czech Republic/Czechia en Turkey/Türkiye, omdat ze al in gegevens kunnen staan; nieuw: Belarus.
+- **Stappen (per lijst, eerst Employers, dan Projects):**
+  1. Lijst > instellingen (tandwiel) > **List settings** > klik de kolom **Country**.
+  2. Open `country-choices.txt` in Kladblok, Ctrl+A, Ctrl+C. Klik in het vak **Type each choice on a separate line**, Ctrl+A, Ctrl+V.
+  3. Laat staan: Display choices using = Drop-Down Menu, Allow fill-in choices = No. Standaardwaarde: Employers leeg, Projects **Netherlands**. Klik **OK**.
+- **Controle:** maak in beide lijsten een weergave of filter op Country en kijk of er items zijn met een waarde die niet in de lijst staat (SharePoint laat die staan). Meld ze, dan pas ik de lijst aan.
+- **Na MS-054:** in Studio Data > Employers en Projects > Refresh is niet nodig (de keuzes worden live gelezen).
 
 ## MS-049 — Importflow v3 (sneller), v1.0.1
 

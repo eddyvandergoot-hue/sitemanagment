@@ -1015,6 +1015,7 @@ Screens:
                 IfError(CountRows(ForAll(colWrMailTodo As m,Collect(colWrMailRes,{Code:m.Code,Name:m.Name,R:IfError('SiteManagement-Maildraft'.Run(m.Folder,m.FileNames,m.Subject,m.Body),{status:"Error",weblink:"",message:Coalesce(FirstError.Message,"?")})})))>=0,false);
                 Set(varWrMailN,CountIf(colWrMailRes,Lower(Trim(R.status & ""))="ok"));
                 Set(varWrMailLink,If(varWrMailN=1,Coalesce(Trim(LookUp(colWrMailRes,Lower(Trim(R.status & ""))="ok").R.weblink & ""),"https://outlook.office.com/mail/drafts"),varWrMailN>1,"https://outlook.office.com/mail/drafts",""));
+                If(varWrMailN>0 && !IsBlank(varWrMailLink),Launch(varWrMailLink));
                 With({bad:Filter(colWrMailRes,!(Lower(Trim(R.status & ""))="ok"))},
                  If(varWrMailN>0 && varWrMailN=CountRows(colWrMailTodo) && CountRows(colWrMailRes)=CountRows(colWrMailTodo) && (Coalesce(varWrContractorID,0)<>0 || varWrMailN>=varWrMailExpN),
                   Set(varAdmMsgKind,"Success"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadDraftCreated.nl),T.admHeadDraftCreated.nl,T.admHeadDraftCreated.en)); Set(varAdmMsgBody,If(varWrMailN=1,Substitute(If(LangNl && !IsBlank(T.wrMsgMailed.nl),T.wrMsgMailed.nl,T.wrMsgMailed.en),"{0}",First(colWrMailRes).Name & " (" & First(colWrMailRes).Code & ")"),Substitute(If(LangNl && !IsBlank(T.wrMsgMailedN.nl),T.wrMsgMailedN.nl,T.wrMsgMailedN.en),"{0}",Text(varWrMailN)))),

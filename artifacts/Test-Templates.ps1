@@ -186,6 +186,22 @@ if (Test-Path $cPath) {
     Check (@($ckeys | Where-Object { $kmap["$_|Ukrainian"] -notmatch ('[' + [char]0x0400 + '-' + [char]0x04FF + ']') }).Count -eq 0) 'countries CSV: Ukrainian in Cyrillic'
     Check (@($ckeys | Where-Object { $map.ContainsKey("$_|Dutch") }).Count -eq 0) 'countries CSV: no overlap with the doc.* keys'
     Check ((23 + $ckeys.Count) -lt 500) "Translations per language below the 500-row read limit (23 doc + $($ckeys.Count) country)"
+    # Country choices (Eddy 19-11-2026, MS-054): artifacts/lists/country-choices.txt = the choices of Employers.Country and Projects.Country,
+    # one per line, A-Z, exactly the country.* keys (every choice has its translation, no orphan translation); prefill map only uses these spellings.
+    $chPath = Join-Path (Split-Path $tpl) 'artifacts\lists\country-choices.txt'
+    Check (Test-Path $chPath) 'country-choices.txt exists (artifacts/lists)'
+    if (Test-Path $chPath) {
+      $ch = @((ReadText $chPath).TrimStart([char]0xFEFF) -split "`r?`n" | Where-Object { $_ -ne '' })
+      $cnames = @($ckeys | ForEach-Object { $_.Substring(8) })
+      $sorted = @($ch | Sort-Object { $_.ToLowerInvariant() })
+      Check ((@($ch | Where-Object { $_ -ne $_.Trim() }).Count -eq 0) -and (($ch -join '|') -ceq ($sorted -join '|')) -and (@($ch | Sort-Object -Unique).Count -eq $ch.Count)) "country choices: A-Z, unique, no outer spaces ($($ch.Count))"
+      $chMiss = @($cnames | Where-Object { $ch -cnotcontains $_ }); $chExtra = @($ch | Where-Object { $cnames -cnotcontains $_ })
+      Check ($chMiss.Count -eq 0 -and $chExtra.Count -eq 0) "country choices = country.* translation keys (same spelling)$(if ($chMiss) { ' - no choice: ' + ($chMiss -join ', ') })$(if ($chExtra) { ' - no translation: ' + ($chExtra -join ', ') })"
+      $appY = ReadText (Join-Path (Split-Path $tpl) 'Src\App.pa.yaml')
+      $mapC = @([regex]::Matches(([regex]::Match($appY, 'CountryLanguageMap = Table\(([^;]*)\);')).Groups[1].Value, 'Country:"([^"]+)"') | ForEach-Object { $_.Groups[1].Value })
+      $mapBad = @($mapC | Where-Object { $ch -cnotcontains $_ })
+      Check ($mapC.Count -gt 0 -and $mapBad.Count -eq 0) "CountryLanguageMap (Language prefill) uses only country choices ($($mapC.Count))$(if ($mapBad) { ' - not a choice: ' + ($mapBad -join ', ') })"
+    }
   }
   # Consent texts (H36, Eddy 17-11-2026): consent.idShown + consent.footer in the 8 app languages + Belarusian (V6)
   $nPath = Join-Path $tpl 'translations-consent.csv'
