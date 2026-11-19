@@ -56,8 +56,9 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-047 | 18-11-2026 | Open (Eddy): kolommen Projects (CustomerCity, CustomerPhone, SupervisorPhone) en Project Workers (ConsentStatus, ConsentDate) + metadata-save in Incoming; daarna bouw consent |
 | MS-048 | 18-11-2026 | Done 18-11-2026 (Eddy): schone start v1 (H41): testrijen van echte projecten verwijderen (Hours 24, Assignment Periods 20, Project Workers 19) + Exports-map van FC; TEST-000 blijft |
 | MS-049 | 18-11-2026 | Open (Eddy): importflow v3 importeren (Import Package > Update "SiteManagement - Import rows") |
-| MS-050 | 19-11-2026 | Open (Eddy): flow "SiteManagement - Mail draft" importeren (Create as new; SharePoint + Office 365 Outlook) + in Studio toevoegen aan de app + Save as This computer naar Incoming |
+| MS-050 | 19-11-2026 | Done 19-11-2026 (Eddy): flow v2 geïmporteerd (Update), SharePoint + Office 365 Outlook, aan; in Studio toegevoegd; metadata uit Incoming\20261119-SiteManagement-mail.msapp samengevoegd (alleen data source + verbindingen). Open: geschoonde export van de flow later in de repo |
 | MS-051 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): Translations mail.body, 9 talen (Added 9, Errors 0) |
+| MS-052 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): AppSettings hours.fillPattern = 10,10,10,10,10,0,0 (Added 1, Errors 0) |
 
 ---
 
@@ -543,7 +544,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-050 — Flow "SiteManagement - Mail draft" (Week Report Mail, v1.0.2, H42)
 
-- **Added:** 19-11-2026. **Status:** Open (Eddy). Daarna maakt Claude build v1.0.2 (metadata samenvoegen, tests, pack).
+- **Added:** 19-11-2026. **Status:** Done 19-11-2026 (Eddy): pakket v2 geïmporteerd met Update, verbindingen SharePoint + Office 365 Outlook, flow aan, toegevoegd in Studio; Incoming\20261119-SiteManagement-mail.msapp. Claude heeft alleen de data source `SiteManagement-Maildraft` en de verbindingen samengevoegd (App Id 88e53928 ongewijzigd). Nog open (Eddy, later): de vaste flow exporteren naar Incoming\Flows, zodat Claude de geschoonde definitie in de repo zet.
 - **Bestand:** `artifacts\flows\SiteManagement-Mail-draft-v2.zip` (niet in git), SHA-256 `c5cc2d9ddae6714b9d943edf95710586199b8a6e6ecd9be343d66cd845d9d56a`. v2 (19-11-2026, na Eddys eerste import): de sleutel `@odata.type` in Add_attachment gaf "invalid expression" en is nu `@@odata.type` (letterlijke @); de Outlook-verbinding is niet meer gekoppeld aan de oude OneDrive-verbindingsnaam. Flow al geïmporteerd: Import Package (Legacy) > bij de flow **Update** > "SiteManagement - Mail draft", bij Office 365 Outlook je Outlook-verbinding kiezen. Maak het opnieuw met `py -E -P flows\make_mail_draft_package.py`.
 - **Waarom deels handmatig:** een flow aan de app koppelen kan alleen in Studio; de metadata moet daarna uit een Studio-save komen.
 - **Stappen:**
@@ -559,6 +560,11 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 - **Added/Done:** 19-11-2026 (Claude, importflow, opdracht Eddy in de Mail-opdracht). Bron `templates/translations-mail.csv` (Key;Language;Text, 9 regels, plaatshouders {0} project, {1} week, {2} contractor, {n} nieuwe regel). Resultaat: Rows 9, Added 9, Updated 0, Exists 0, Duplicates 0, Errors 0. Verwacht totaal Translations 1458 (1449 + 9).
 - **Let op:** de teksten zijn door Claude gemaakt; native-speaker-controle hoort bij het backlogpunt vertalingen.
+
+## MS-052 — AppSettings: hours.fillPattern (Fill week, H43)
+
+- **Added/Done:** 19-11-2026 (Claude, importflow, opdracht Eddy). Bron `templates/appsettings-fillpattern.csv` (Key;Value). Resultaat: Rows 1, Added 1, Errors 0.
+- **Waarde:** `10,10,10,10,10,0,0` (ma..zo). Aanpassen: in AppSettings de Value van hours.fillPattern wijzigen. Met decimalen: scheid met `;`, bv. `7,5;7,5;7,5;7,5;7,5;0;0`. Ongeldig = rode melding bij Fill week, er wordt niets gevuld.
 
 ## MS-049 — Importflow v3 (sneller), v1.0.1
 

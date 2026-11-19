@@ -763,7 +763,7 @@ Screens:
                  If(IsEmpty(colWeekLoadErrors),
                   ClearCollect(colWeekAssignments,colPendingWeekAssignments); ClearCollect(colWeekKeys,colPendingWeekKeys);
                   If(varPendingWeekReloadWorkers,ClearCollect(colWorkersCache,colPendingWeekWorkers); Set(varWorkersCacheReady,true));
-              ClearCollect(colWeekStored,colPendingWeekStored); ClearCollect(colWeekRows,colPendingWeekRows); ClearCollect(colWeekOriginal,colPendingWeekOriginal);
+              ClearCollect(colWeekStored,colPendingWeekStored); ClearCollect(colWeekRows,colPendingWeekRows); ClearCollect(colWeekOriginal,colPendingWeekOriginal); ClearCollect(colWeekPeriods,colPendingWeekPeriods);
               Set(varHoursProjectID,varPendingHoursProjectID); Set(varHoursProjectKey,varPendingHoursProjectKey); Set(varHoursTeam,varPendingHoursTeam);
               Set(varWeekMonday,varPendingWeekMonday); Set(varLoadedWeekMonday,varPendingWeekMonday); Set(varWeekKeyIssue,varPendingWeekKeyIssue);
               Set(varWeekLoadedProjectID,varPendingHoursProjectID); Set(varWeekLoadedTeam,varPendingHoursTeam);
@@ -832,7 +832,7 @@ Screens:
                 Control: GroupContainer@1.5.0
                 Variant: ManualLayout
                 Properties:
-                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnHomeHours.Width+btnWeeklyProjectTeam.Width+btnRefreshWeek.Width+btnDiscardWeek.Width+btnSaveWeek.Width+4*lblFooterButtonMetrics.Width)
+                  Width: =Max(Parent.Width,2*lblFooterButtonMetrics.X+btnHomeHours.Width+btnWeeklyProjectTeam.Width+btnFillWeek.Width+btnRefreshWeek.Width+btnDiscardWeek.Width+btnSaveWeek.Width+5*lblFooterButtonMetrics.Width)
                   Height: =2*lblFooterButtonMetrics.Y+lblFooterButtonMetrics.Height
                   FillPortions: =0
                   Fill: =Color.Transparent
@@ -894,6 +894,68 @@ Screens:
                         X: =btnHomeHours.X+btnHomeHours.Width+lblFooterButtonMetrics.Width
                         Y: =lblFooterButtonMetrics.Y
                         Width: =180
+                        Height: =lblFooterButtonMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                  - btnFillWeek:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        BorderThickness: =1
+                        BorderStyle: =BorderStyle.Solid
+                        PressedBorderColor: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#0303B8")
+                        BorderColor: =ColorValue("#0303B8")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        PressedColor: =ColorValue("#0303B8")
+                        HoverColor: =ColorValue("#0303B8")
+                        Color: =ColorValue("#0303B8")
+                        PressedFill: =ColorValue("#D5EDFF")
+                        HoverFill: =ColorValue("#D5EDFF")
+                        Fill: =Color.White
+                        Text: ="Fill week"
+                        Tooltip: ="Fills only empty days inside a period of active workers with the pattern from AppSettings (hours.fillPattern). Nothing is saved."
+                        OnSelect: |-
+                          =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && !IsEmpty(colWeekRows),
+                           Set(varFillErr,""); Set(varFillN,0); Clear(colFillSettings); Clear(colFillParts); Clear(colFillPattern); Clear(colFillRows);
+                           IfError(Refresh(AppSettings),Set(varFillErr,"Fill week: AppSettings could not be read (" & FirstError.Message & "). Nothing filled.");false);
+                           If(IsBlank(varFillErr),IfError(CountRows(ClearCollect(colFillSettings,ForAll(Filter(AppSettings,Title="hours.fillPattern") As st,{Key:Trim(st.Title & ""),Val:Trim(st.Value & "")})))>=0,Set(varFillErr,"Fill week: AppSettings could not be read (" & FirstError.Message & "). Nothing filled.");false));
+                           If(IsBlank(varFillErr) && CountRows(colFillSettings)<>1,Set(varFillErr,If(IsEmpty(colFillSettings),"Fill week: AppSettings key hours.fillPattern is missing. Nothing filled.","Fill week: AppSettings key hours.fillPattern exists more than once. Nothing filled.")));
+                           If(IsBlank(varFillErr),ClearCollect(colFillParts,ForAll(Split(First(colFillSettings).Val,If(";" in First(colFillSettings).Val,";",",")) As pt,{Txt:Trim(pt.Value)})));
+                           If(IsBlank(varFillErr) && (CountRows(colFillParts)<>7 || CountIf(colFillParts,!IsMatch(Txt,"^\d{1,2}([.,]\d{1,2})?$"))>0),Set(varFillErr,"Fill week: AppSettings hours.fillPattern '" & First(colFillSettings).Val & "' is invalid: 7 values Mon..Sun, 0-24, e.g. 10,10,10,10,10,0,0 (with decimals use ; e.g. 7,5;7,5;7,5;7,5;7,5;0;0). Nothing filled."));
+                           If(IsBlank(varFillErr),ClearCollect(colFillPattern,ForAll(Sequence(7,0) As dd,{Day:dd.Value,H:Value(Substitute(Index(colFillParts,dd.Value+1).Txt,",","."),"en-US"),Dt:DateAdd(varLoadedWeekMonday,dd.Value,TimeUnit.Days)}));
+                            If(CountIf(colFillPattern,IsBlank(H) || H<0 || H>24)>0,Set(varFillErr,"Fill week: AppSettings hours.fillPattern '" & First(colFillSettings).Val & "' is invalid: every value must be 0-24. Nothing filled.")));
+                           If(IsBlank(varFillErr),
+                            ClearCollect(colFillRows,ForAll(Filter(colWeekRows As wr,!IsBlank(LookUp(colWorkersCache,ID=wr.Worker.Id).ID) && Coalesce(LookUp(colWorkersCache,ID=wr.Worker.Id).Active,true) && !IsBlank(LookUp(colWorkersCache,ID=wr.Worker.Id).Employer.Id) && !IsBlank(LookUp(colWorkersCache,ID=wr.Worker.Id).Employer.Value) && !IsBlank(LookUp(colWorkersCache,ID=wr.Worker.Id).Trade.Value)) As r,
+                             With({ak:Text(varWeekLoadedProjectID) & "|" & Text(r.Worker.Id)},
+                              With({ok:ForAll(colFillPattern As fp,{Day:fp.Day,Ok:fp.H>0 && CountIf(colWeekPeriods,AssignmentKey=ak && From<=fp.Dt && (IsBlank(Until) || Until>=fp.Dt))>0})},
+                               {ID:r.ID,F0:IsBlank(r.MonHours) && LookUp(ok,Day=0).Ok,F1:IsBlank(r.TueHours) && LookUp(ok,Day=1).Ok,F2:IsBlank(r.WedHours) && LookUp(ok,Day=2).Ok,F3:IsBlank(r.ThuHours) && LookUp(ok,Day=3).Ok,F4:IsBlank(r.FriHours) && LookUp(ok,Day=4).Ok,F5:IsBlank(r.SatHours) && LookUp(ok,Day=5).Ok,F6:IsBlank(r.SunHours) && LookUp(ok,Day=6).Ok}))));
+                            ForAll(Filter(colFillRows,F0 || F1 || F2 || F3 || F4 || F5 || F6) As f,
+                             With({cur:LookUp(colWeekRows,ID=f.ID)},
+                              Patch(colWeekRows,cur,{MonHours:If(f.F0,LookUp(colFillPattern,Day=0).H,cur.MonHours),TueHours:If(f.F1,LookUp(colFillPattern,Day=1).H,cur.TueHours),WedHours:If(f.F2,LookUp(colFillPattern,Day=2).H,cur.WedHours),ThuHours:If(f.F3,LookUp(colFillPattern,Day=3).H,cur.ThuHours),FriHours:If(f.F4,LookUp(colFillPattern,Day=4).H,cur.FriHours),SatHours:If(f.F5,LookUp(colFillPattern,Day=5).H,cur.SatHours),SunHours:If(f.F6,LookUp(colFillPattern,Day=6).H,cur.SunHours)})));
+                            Set(varFillN,Sum(colFillRows,If(F0,1,0)+If(F1,1,0)+If(F2,1,0)+If(F3,1,0)+If(F4,1,0)+If(F5,1,0)+If(F6,1,0)))
+                           );
+                           If(!IsBlank(varFillErr),Notify(varFillErr,NotificationType.Error,15000),
+                            varFillN>0,Notify("Filled " & Text(varFillN) & " cells. Check the hours, then Save.",NotificationType.Success,8000),
+                            Notify("Filled 0 cells: no empty day inside a period for active workers.",NotificationType.Warning,8000));
+                           Trace("DIAG|Week|Fill",TraceSeverity.Information,{Scenario:"Week",Step:"Fill",Filled:varFillN,Error:varFillErr}),
+                           Notify("Fill week blocked: load the week without errors first; not while loading or saving.",NotificationType.Warning,8000))
+                        DisplayMode: =If(varWeekLoadState="Loaded" && Coalesce(varWeekReady,false) && varWeekLoadedProjectID=varProject.Id && varWeekLoadedProjectID=ddProject.Selected.Id && varWeekLoadedTeam=varTeam.Value && varLoadedWeekMonday=varHoursWeekMonday && !Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && !Coalesce(varWeekKeyIssue,true) && !IsEmpty(colWeekRows),DisplayMode.Edit,DisplayMode.Disabled)
+                        X: =btnRefreshWeek.X-lblFooterButtonMetrics.Width-Self.Width
+                        Y: =lblFooterButtonMetrics.Y
+                        Width: =120
                         Height: =lblFooterButtonMetrics.Height
                         Font: ="Inter, Arial, sans-serif"
                         Size: =14

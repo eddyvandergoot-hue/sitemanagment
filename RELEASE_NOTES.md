@@ -2,7 +2,7 @@
 
 ## v1.0.2 — concept 19-11-2026 (nog niet goedgekeurd)
 
-Fixrelease op v1.0.1, opdracht Eddy 19-11-2026 (echt gebruik, vóór de consent-build). Tag en GitHub-release volgen pas na Eddy's Studio-test. Testbuild: `v1.0.2-20261119_094820` (SHA-256 `28da57eafb116c6870af255cc0e6d8fa72092754fa221d9b01004ffcbddac502`).
+Release op v1.0.1, opdracht Eddy 19-11-2026 (echt gebruik, vóór de consent-build): Contractors Language, Week Report Mail, Weekly Hours Fill week. Tag en GitHub-release volgen pas na Eddy's Studio-test. Testbuild: `v1.0.2-20261119_204929` (SHA-256 `22a92bba20f693d5ac07cf4e50c28044b76e2ee818aa721d9af7c6c71020de65`).
 
 ### Wijzigingen
 - **Contractors:** nieuw veld **Language** (de rapporttaal van de contractor, SharePoint-kolom Employers.Language) rechts van Country, in de rij City | Country | Language.
@@ -16,6 +16,7 @@ Fixrelease op v1.0.1, opdracht Eddy 19-11-2026 (echt gebruik, vóór de consent-
   - Groene melding "Draft created." met de link **Open draft** (bij meer concepten: Open drafts, de map Concepten in Outlook). Jij vult de ontvanger in, controleert en verstuurt.
   - Nog geen export van deze selectie, of daarna Refresh: amber "Export first". De app verstuurt nooit zelf.
   - Nieuwe flow "SiteManagement - Mail draft" (MS-050).
+- **Weekly Hours Fill week (nieuw, H43):** knop **Fill week** vult alleen lege cellen met het patroon uit AppSettings (`hours.fillPattern`, standaard 10 uur ma t/m vr). Alleen actieve medewerkers met Employer en Trade, alleen dagen binnen hun inzetperiode; 0 laat de cel leeg. Er wordt niets opgeslagen: controleer en druk Save. Ongeldig of ontbrekend patroon = rode melding, niets gevuld.
 
 ### Bekend / niet getest
 - Studio-import, binding en de functionele test volgen nog (teststappen in PROJECT_STATUS.md).

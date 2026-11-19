@@ -35,7 +35,7 @@ $metric=Measure-Rect 'lblFooterButtonMetrics' $indexes.Screen1['lblFooterButtonM
 if($metric.Y -ne 16 -or $metric.Height -ne 40 -or $metric.Width -ne 12){throw 'Shared metrics invalid'}
 $configs=@(
  @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnHomeScreen1','btnGotoHours','btnGotoHoursSummary');Actions=@('btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam')},
- @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam');Actions=@('btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
+ @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam');Actions=@('btnFillWeek','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
  @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnHomeSummary','btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')}
 )
 # 30-10-2026 (Projects build): admin-pattern screens share the white 68 px footer, Home icon and message-bar checks.
