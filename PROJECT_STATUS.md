@@ -92,6 +92,7 @@ Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-
 - Home-tegel Tab-focus (TP-HOME-03 punt 6; geen prioriteit).
 
 ## Backlog functies
+- Configurable app (Eddy 19-11-2026, na de consent-build): bedrijfsspecifieke waarden naar AppSettings/Translations/Templates, fail-closed, zonder gedragswijziging; eerst ontwerp (ROADMAP.md), akkoord Eddy, dan pas bouwen. Backupnotitie: GitHub-repo + lokale clone + tags/releases; optioneel later een tweede remote bij GEA.
 - Hertest v1.0.1 (zodra het geval zich voordoet): Workers deactiveren van een medewerker met actieve koppeling; melding moet project, team en "open since YYYY KWxx" tonen (niet getest 18-11-2026, geen actieve gekoppelde testmedewerker).
 - HSE-feedback op de consent-app-versie (H36, Eddy 17-11-2026): GEA HSE geeft feedback als Eddy de app presenteert; wijzigingen in de tekst via Translations, zonder build. Geen HSE-goedkeuring vooraf.
 - v1.1/v1.2 telefoonlayout (Eddy 16-11-2026): de app is op telefoon nog niet goed. Aanpak: alleen de veldschermen telefoon-geoptimaliseerd, geen volledige telefoonversie. Eddy stuurt later screenshots en een lijst met veldtaken; daarna ontwerp per scherm.
