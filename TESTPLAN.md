@@ -673,3 +673,18 @@ Voorbereiding
 | 14 | Studio Monitor tijdens stap 3 (optioneel) | Eén AppSettings-read met $filter op Title (Key) eq 'report.primaryLanguage' of 'csv.separator' of 'csv.decimalSeparator'; per gebruikte taal één Translations-read met $filter Language eq '<taal>' (hier Dutch en Polish); per contractor één flowaanroep per PDF (1 of 2) plus één voor de CSV; geen Patch |
 
 Meld per stap PASS/FAIL; bij een importfout de exacte tekst. Ruim na de test niets op: de testmedewerkers en uren blijven op TEST-000.
+
+## TP-V102-01 v1.0.2 Contractors Language, Mail, Fill week (PASS 19-11-2026, Eddy; build v1.0.2-20261119_204929, SHA-256 22A92BBA20F693D5AC07CF4E50C28044B76E2EE818AA721D9AF7C6C71020DE65)
+
+| # | Stap | Resultaat |
+|---|---|---|
+| 1 | Contractors: veld Language rechts van Country, opgeslagen taal zichtbaar | PASS |
+| 2 | TEST Employer: Language leeg > Save geblokkeerd (rode rand + melding) | PASS |
+| 3 | New: voorinvulling uit Country, een gekozen taal wordt niet overschreven | PASS |
+| 4 | Week report TEST-000: Mail vóór Export = amber "Export first" | PASS |
+| 5 | Export + Mail: 3 concepten voor de 3 contractors met uren | PASS |
+| 6 | Belarusian: export `..._be.pdf` | PASS |
+| 7 | Fill week: ma-vr 10, za/zo leeg, geen bestaande waarde overschreven | PASS |
+
+Niet apart gemeld: Refresh > Mail (stap 7 van de testlijst) en Fill week uit tijdens laden/opslaan. Vervolg: rebuild v1.0.2 met ComboBox (na MS-053), Mail opent Outlook automatisch, landenlijst (MS-054); daarna korte hertest van alleen de gewijzigde stappen.
+
