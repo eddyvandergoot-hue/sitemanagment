@@ -29,11 +29,56 @@ function Get-Depth($acts, [int]$level, [System.Collections.ArrayList]$names, [Sy
     }
     return $m
 }
+# Expression syntax (Eddy 19-11-2026: Mail draft import failed on the key "@odata.type"). Workflow Definition Language
+# evaluates every string that starts with @ - property names included - as an expression: a literal leading @ must be
+# written @@. Checked here: keys and values starting with @ (not @@) must be @{...} or @<function>(...), and every
+# expression (whole value or @{...} part) has balanced parentheses/brackets and single quotes ('' = escaped quote).
+function Test-ExprBalance([string]$e) {
+    $d = 0; $inQ = $false
+    for ($i = 0; $i -lt $e.Length; $i++) {
+        $c = $e[$i]
+        if ($inQ) { if ($c -eq "'") { if ($i + 1 -lt $e.Length -and $e[$i + 1] -eq "'") { $i++ } else { $inQ = $false } }; continue }
+        if ($c -eq "'") { $inQ = $true } elseif ($c -eq '(' -or $c -eq '[') { $d++ } elseif ($c -eq ')' -or $c -eq ']') { $d--; if ($d -lt 0) { return $false } }
+    }
+    return (-not $inQ) -and ($d -eq 0)
+}
+function Test-ExprString([string]$s, [string]$where, [System.Collections.ArrayList]$errs) {
+    if ($s.StartsWith('@') -and -not $s.StartsWith('@@') -and -not $s.StartsWith('@{')) {
+        if ($s -notmatch '^@[A-Za-z_][A-Za-z0-9_]*\(') { [void]$errs.Add("invalid expression at " + $where + ": '" + $s.Substring(0, [Math]::Min(60, $s.Length)) + "' (literal leading @ must be @@)") }
+        elseif (-not (Test-ExprBalance $s.Substring(1))) { [void]$errs.Add("unbalanced expression at " + $where) }
+    }
+    $i = 0
+    while (($i = $s.IndexOf('@{', $i)) -ge 0) {
+        if ($i -gt 0 -and $s[$i - 1] -eq '@') { $i += 2; continue }
+        $d = 0; $inQ = $false; $end = -1
+        for ($k = $i + 1; $k -lt $s.Length; $k++) {
+            $c = $s[$k]
+            if ($inQ) { if ($c -eq "'") { if ($k + 1 -lt $s.Length -and $s[$k + 1] -eq "'") { $k++ } else { $inQ = $false } }; continue }
+            if ($c -eq "'") { $inQ = $true } elseif ($c -eq '{') { $d++ } elseif ($c -eq '}') { $d--; if ($d -eq 0) { $end = $k; break } }
+        }
+        if ($end -lt 0) { [void]$errs.Add("unclosed @{ at " + $where); break }
+        if (-not (Test-ExprBalance $s.Substring($i + 2, $end - $i - 2))) { [void]$errs.Add("unbalanced @{...} at " + $where) }
+        $i = $end + 1
+    }
+}
+function Test-Exprs($node, [string]$path, [System.Collections.ArrayList]$errs) {
+    if ($null -eq $node) { return }
+    if ($node -is [string]) { Test-ExprString $node $path $errs; return }
+    if ($node -is [System.Array]) { $n = 0; foreach ($x in $node) { Test-Exprs $x ($path + '[' + $n + ']') $errs; $n++ }; return }
+    if ($node -is [System.Management.Automation.PSCustomObject]) {
+        foreach ($p in $node.PSObject.Properties) {
+            if ($p.Name.StartsWith('@') -and -not $p.Name.StartsWith('@@')) { [void]$errs.Add("key '" + $p.Name + "' at " + $path + " starts with @: write @@ for a literal @") }
+            Test-Exprs $p.Value ($path + '/' + $p.Name) $errs
+        }
+    }
+}
 function Test-Definition([string]$label, [string]$json) {
     $d = $json | ConvertFrom-Json
     $def = $d.properties.definition
     $names = New-Object System.Collections.ArrayList
     $errs = New-Object System.Collections.ArrayList
+    Test-Exprs $def.actions 'actions' $errs
+    Test-Exprs $def.triggers 'triggers' $errs
     $depth = Get-Depth $def.actions 0 $names $errs
     foreach ($tr in $def.triggers.PSObject.Properties) { [void]$names.Add($tr.Name) }
     $refs = [regex]::Matches($json, "(?:outputs|body|items|actions|result)\('([^']+)'\)") | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique

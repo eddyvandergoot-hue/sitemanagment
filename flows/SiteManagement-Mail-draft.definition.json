@@ -217,7 +217,7 @@
                   "inputs": {
                     "name": "Attachments",
                     "value": {
-                      "@odata.type": "#microsoft.graph.fileAttachment",
+                      "@@odata.type": "#microsoft.graph.fileAttachment",
                       "name": "@{items('For_each_file')}",
                       "contentBytes": "@{body('Get_file_content')?['$content']}"
                     }

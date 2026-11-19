@@ -544,7 +544,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 ## MS-050 — Flow "SiteManagement - Mail draft" (Week Report Mail, v1.0.2, H42)
 
 - **Added:** 19-11-2026. **Status:** Open (Eddy). Daarna maakt Claude build v1.0.2 (metadata samenvoegen, tests, pack).
-- **Bestand:** `artifacts\flows\SiteManagement-Mail-draft-v1.zip` (niet in git), SHA-256 `ec1fa4baaf501451ae4ad6944dce06d86bddd626041a24a84e7105869423aece`. Maak het opnieuw met `py -E -P flows\make_mail_draft_package.py`.
+- **Bestand:** `artifacts\flows\SiteManagement-Mail-draft-v2.zip` (niet in git), SHA-256 `c5cc2d9ddae6714b9d943edf95710586199b8a6e6ecd9be343d66cd845d9d56a`. v2 (19-11-2026, na Eddys eerste import): de sleutel `@odata.type` in Add_attachment gaf "invalid expression" en is nu `@@odata.type` (letterlijke @); de Outlook-verbinding is niet meer gekoppeld aan de oude OneDrive-verbindingsnaam. Flow al geïmporteerd: Import Package (Legacy) > bij de flow **Update** > "SiteManagement - Mail draft", bij Office 365 Outlook je Outlook-verbinding kiezen. Maak het opnieuw met `py -E -P flows\make_mail_draft_package.py`.
 - **Waarom deels handmatig:** een flow aan de app koppelen kan alleen in Studio; de metadata moet daarna uit een Studio-save komen.
 - **Stappen:**
   1. Power Automate > My flows > Import > **Import Package (Legacy)** > upload de zip.

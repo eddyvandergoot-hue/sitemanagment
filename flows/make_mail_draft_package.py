@@ -8,13 +8,13 @@
 # Base = Eddy's latest export of "SiteManagement - Export file" (Incoming/Flows, gitignored): same SharePoint connection;
 # its unused OneDrive connection slot becomes the Office 365 Outlook connection (Eddy picks the connection at import).
 # Nesting <= 6 (artifacts/Test-FlowNesting.ps1). Graph limit: one request <= 4 MB (week report PDFs + CSV are far smaller).
-# Output: artifacts/flows/SiteManagement-Mail-draft-v1.zip (gitignored) + sanitized flows/SiteManagement-Mail-draft.definition.json.
+# Output: artifacts/flows/SiteManagement-Mail-draft-v2.zip (gitignored) + sanitized flows/SiteManagement-Mail-draft.definition.json.
 # Run from the repo root: py -E -P flows/make_mail_draft_package.py
 import copy, glob, json, os, zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = sorted(glob.glob(os.path.join(ROOT, 'Incoming', 'Flows', 'SiteManagement-Exportfile_*.zip')))[-1]
-OUT_ZIP = os.path.join(ROOT, 'artifacts', 'flows', 'SiteManagement-Mail-draft-v1.zip')
+OUT_ZIP = os.path.join(ROOT, 'artifacts', 'flows', 'SiteManagement-Mail-draft-v2.zip')
 OUT_DEF = os.path.join(ROOT, 'flows', 'SiteManagement-Mail-draft.definition.json')
 NAME = 'SiteManagement - Mail draft'
 SITE = 'https://geacloud.sharepoint.com/sites/GEASiteManagment'
@@ -57,7 +57,7 @@ per_file = {
         'host': {'apiId': SP, 'connectionName': 'shared_sharepointonline', 'operationId': 'GetFileContentByPath'},
         'authentication': AUTH, 'retryPolicy': RETRY}, 'runAfter': {}},
     'Add_attachment': {'type': 'AppendToArrayVariable', 'inputs': {'name': 'Attachments', 'value': {
-        '@odata.type': '#microsoft.graph.fileAttachment',
+        '@@odata.type': '#microsoft.graph.fileAttachment',  # literal @ in a key must be escaped as @@ (Workflow Definition Language), else 'invalid expression' (Eddy 19-11-2026)
         'name': "@{items('For_each_file')}",
         'contentBytes': "@{body('Get_file_content')?['$content']}"}},
         'runAfter': {'Get_file_content': ['Succeeded']}},
@@ -130,7 +130,7 @@ def main_build():
     p['definition']['actions'] = actions
     refs = p['connectionReferences']
     od = refs.pop('shared_onedriveforbusiness')
-    refs['shared_office365'] = dict(od, id=OL, apiName='office365')
+    refs['shared_office365'] = dict(od, id=OL, apiName='office365', connectionName='shared-office365')  # not bound to the old OneDrive connection; import maps it to the chosen Outlook connection
     p['connectionReferences'] = {k: refs[k] for k in ('shared_sharepointonline', 'shared_office365')}
     dmax = depth(actions)
     assert dmax <= MAX_DEPTH, f'nesting {dmax} > {MAX_DEPTH}'
