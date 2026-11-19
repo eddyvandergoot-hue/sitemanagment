@@ -214,6 +214,7 @@ ComponentDefinitions:
             PressedColor: =ColorValue("#000F41")
             PressedFill: =ColorValue("#D5EDFF")
             SearchFields: =["Value"]
+            SearchItems: '=Filter(If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t)),IsBlank(Trim(Self.SearchText)) || Trim(Self.SearchText) in Value)'
             SelectMultiple: =false
             SelectionColor: =Color.White
             SelectionFill: =ColorValue("#0303B8")

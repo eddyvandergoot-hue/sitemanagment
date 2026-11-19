@@ -185,6 +185,33 @@ function Get-Geo($ctrls, $name, $prop, $env) {
 function Rect($ctrls, $name, $env) { [pscustomobject]@{ n = $name; x = (Get-Geo $ctrls $name 'X' $env); y = (Get-Geo $ctrls $name 'Y' $env); w = (Get-Geo $ctrls $name 'Width' $env); h = (Get-Geo $ctrls $name 'Height' $env) } }
 function Overlap($a, $b) { $a.x -lt ($b.x + $b.w) -and $b.x -lt ($a.x + $a.w) -and $a.y -lt ($b.y + $b.h) -and $b.y -lt ($a.y + $a.h) }
 
+# (6b) Template sample defaults (Eddy 19-11-2026: SearchItems kept Search(ComboBoxSample, Self.SearchText, Value1) -> Studio import errors).
+# (a) no template sample names in Src (SampleImage only as the Default of a component Image input, proven TP-COMP-01);
+# (b) every property whose template default refers to sample data is set on each control of that template.
+$srcAll = @(Get-ChildItem (Join-Path $projectRoot 'Src') -Recurse -Filter *.pa.yaml | ForEach-Object { [pscustomobject]@{ N = $_.Name; T = [IO.File]::ReadAllText($_.FullName) } })
+$sampleHits = @(foreach ($f in $srcAll) { $i = 0; foreach ($ln in ($f.T -split "`n")) { $i++; if ($ln -match '\b(ComboBoxSample|DropDownSample|CustomGallerySample|ComboBoxSearchText|Value1|ListBoxSample|GallerySample)\b' -or ($ln -match '\bSampleImage\b' -and $ln -notmatch '^\s+Default: =SampleImage\s*$')) { "$($f.N):$i" } } })
+Assert-True ($sampleHits.Count -eq 0) "no template sample names in Src (ComboBoxSample, Value1, *Sample; SampleImage only as component input Default)$(if ($sampleHits) { ' - ' + ($sampleHits -join ', ') })"
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zt = [IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Managment_VS.msapr'))
+try { $te = $zt.Entries | Where-Object { $_.FullName.Replace('\', '/') -eq 'msapp/References/Templates.json' }; $sr = New-Object IO.StreamReader($te.Open()); $tjson = $sr.ReadToEnd() | ConvertFrom-Json; $sr.Close() } finally { $zt.Dispose() }
+$tmap = @{ 'Classic/ComboBox' = 'combobox'; 'Classic/DropDown' = 'dropdown'; 'Gallery' = 'gallery'; 'Image' = 'image'; 'ModernDropdown' = 'modernDropdown' }
+function Find-Ctrls($node, $acc) { if ($node -is [System.Collections.IDictionary]) { foreach ($k in @($node.Keys)) { $v = $node[$k]; if ($v -is [System.Collections.IDictionary] -and $v.ContainsKey('Control')) { [void]$acc.Add([pscustomobject]@{ Name = $k; Control = [string]$v['Control']; Props = $v['Properties'] }) }; Find-Ctrls $v $acc } } elseif ($node -is [System.Collections.IList]) { foreach ($x in $node) { Find-Ctrls $x $acc } } }
+$sampleTpls = @($tjson.UsedTemplates | Where-Object { [regex]::Matches($_.Template, '<property name="\w+"[^>]*defaultValue="([^"]*)"') | Where-Object { [Net.WebUtility]::HtmlDecode($_.Groups[1].Value) -match 'Sample|Value1' } } | ForEach-Object { $_.Name })
+$unmapped = @($sampleTpls | Where-Object { $tmap.Values -notcontains $_ })
+Assert-True ($unmapped.Count -eq 0) "every template with a sample default is covered by the check ($($sampleTpls -join ', '))$(if ($unmapped) { ' - add to $tmap: ' + ($unmapped -join ', ') })"
+$ctrlList = New-Object System.Collections.ArrayList
+foreach ($f in Get-ChildItem (Join-Path $projectRoot 'Src') -Recurse -Filter *.pa.yaml) { Find-Ctrls ($builder.Build().Deserialize([string][IO.File]::ReadAllText([string]$f.FullName))) $ctrlList }
+$missing = @()
+foreach ($c in $ctrlList) {
+    $base = ($c.Control -split '@')[0]; if (-not $tmap.ContainsKey($base)) { continue }
+    $tpl = $tjson.UsedTemplates | Where-Object Name -eq $tmap[$base] | Select-Object -First 1
+    if ($null -eq $tpl) { $missing += "$($c.Name): template $($tmap[$base]) not in Templates.json"; continue }
+    $req = @([regex]::Matches($tpl.Template, '<property name="(\w+)"[^>]*defaultValue="([^"]*)"') | Where-Object { [Net.WebUtility]::HtmlDecode($_.Groups[2].Value) -match 'Sample|Value1' } | ForEach-Object { $_.Groups[1].Value })
+    if ($tmap[$base] -in 'combobox', 'dropdown', 'gallery') { $req += 'Items' }
+    foreach ($p in ($req | Sort-Object -Unique)) { if ($null -eq $c.Props -or -not $c.Props.ContainsKey($p)) { $missing += "$($c.Name).$p" } }
+}
+Assert-True ($missing.Count -eq 0) "every template property with a sample default (and Items) is set on each control: combobox SearchItems/DisplayFields/SearchFields/DefaultSelectedItems/Items, dropdown/gallery Items, image Image ($($ctrlList.Count) controls checked)$(if ($missing) { ' - missing: ' + ($missing -join ', ') })"
+
 # (7) cmpField ---------------------------------------------------------------------------------------------
 $fd = $defs['cmpField']; $fi = $idx['cmpField']; $fdp = $fd['Properties']
 Assert-True ($fdp['Height'] -eq '=58' -and $fdp['Fill'] -eq '=Color.Transparent') 'cmpField: component height 58, transparent'
@@ -198,7 +225,7 @@ Assert-True ($fi['txtFieldValue']['Properties']['Default'] -eq '=cmpField.Defaul
 $itemsF = [string]$fi['ddFieldValue']['Properties']['Items']
 # v1.0.2 (Eddy 19-11-2026, MS-053): searchable single-choice ComboBox (Classic/ComboBox@2.4.0, template from Studio) as InputType "combobox"
 $cbp = $fi['cbFieldValue']['Properties']
-Assert-True ($fi['cbFieldValue']['Control'] -eq 'Classic/ComboBox@2.4.0' -and $cbp['Items'] -eq $itemsF -and $cbp['DefaultSelectedItems'] -eq ('=Filter(' + $itemsF.Substring(1) + ',Value=cmpField.DefaultValue)') -and $cbp['SelectMultiple'] -eq '=false' -and $cbp['IsSearchable'] -eq '=true' -and $cbp['DisplayFields'] -eq '=["Value"]' -and $cbp['SearchFields'] -eq '=["Value"]') 'cmpField combobox: same Items as the dropdown (as-is row included), default = the row equal to DefaultValue, single select, searchable on Value'
+Assert-True ($fi['cbFieldValue']['Control'] -eq 'Classic/ComboBox@2.4.0' -and $cbp['Items'] -eq $itemsF -and $cbp['DefaultSelectedItems'] -eq ('=Filter(' + $itemsF.Substring(1) + ',Value=cmpField.DefaultValue)') -and $cbp['SelectMultiple'] -eq '=false' -and $cbp['IsSearchable'] -eq '=true' -and $cbp['DisplayFields'] -eq '=["Value"]' -and $cbp['SearchFields'] -eq '=["Value"]' -and $cbp['SearchItems'] -eq ('=Filter(' + $itemsF.Substring(1) + ',IsBlank(Trim(Self.SearchText)) || Trim(Self.SearchText) in Value)')) 'cmpField combobox: SearchItems = the same Items filtered on Value by the typed text (Studio import 19-11-2026: the template default Search(ComboBoxSample, Self.SearchText, Value1) gave 3 errors); same Items as the dropdown (as-is row included), default = the row equal to DefaultValue, single select, searchable on Value'
 Assert-True ($cbp['DisplayMode'] -eq '=If(cmpField.Enabled && cmpField.InputType="combobox",DisplayMode.Edit,DisplayMode.Disabled)' -and $cbp['Visible'] -eq '=cmpField.InputType="combobox"' -and $cbp['OnChange'] -eq '=If(cmpField.Enabled,cmpField.OnChange())' -and $fi['txtFieldValue']['Properties']['Visible'] -eq '=!(cmpField.InputType in ["dropdown","combobox"])' -and $fi['ddFieldValue']['Properties']['Visible'] -eq '=cmpField.InputType="dropdown"') 'cmpField combobox: fail-closed edit guard, only visible for InputType combobox (text field hidden), OnChange only while Enabled'
 foreach ($k in 'BorderColor', 'DisabledBorderColor', 'BorderThickness', 'FocusedBorderColor', 'FocusedBorderThickness', 'PressedFill', 'PressedColor', 'PressedBorderColor', 'Fill', 'DisabledFill', 'Color', 'DisabledColor', 'Font', 'FontWeight', 'Size', 'Height', 'Width', 'X', 'Y', 'HoverFill', 'HoverColor', 'SelectionFill', 'SelectionColor', 'ChevronFill', 'ChevronBackground', 'ChevronHoverBackground') { Assert-True ($cbp[$k] -eq $fi['ddFieldValue']['Properties'][$k]) "cmpField combobox $k = dropdown $k (same admin field style, red border when Invalid)" }
 # Column names as identifiers (app flag supportcolumnnamesasidentifiers): "Value"/"t" as text made Items an error, which made CurrentValue blank for every instance.
