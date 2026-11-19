@@ -35,6 +35,16 @@ ComponentDefinitions:
         PropertyKind: Output
         DataType: Number
         Description: 40 when a message is shown, otherwise 0 (informational; never bind an input or the Height of the same instance to it).
+      LinkText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Optional link button left of the close icon (for example Open draft). Empty = no link button.
+        Default: =""
+      OnLink:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Raised by the link button. The host handler starts with its own check (for example a non-empty link).
+        Default: =false
       OnClose:
         PropertyKind: Event
         ReturnType: None
@@ -72,8 +82,45 @@ ComponentDefinitions:
             Size: =14
             Tooltip: =cmpMessageBar.Head & " " & cmpMessageBar.Body
             Visible: =(cmpMessageBar.Kind in ["Error","Warning","Success"])
-            Width: =Max(0,Parent.Width-Self.X-56)
+            Width: =Max(0,Parent.Width-Self.X-56-If(btnCmpMsgLink.Visible,btnCmpMsgLink.Width+8,0))
             X: =24
+            Y: =0
+      - btnCmpMsgLink:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Center
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Color: =If(cmpMessageBar.Kind="Error",Color.White,ColorValue("#000F41"))
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =If(cmpMessageBar.Kind="Error",Color.White,ColorValue("#000F41"))
+            DisabledFill: =Color.Transparent
+            Fill: =Color.Transparent
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =Parent.Height
+            HoverBorderColor: =Color.Transparent
+            HoverColor: =If(cmpMessageBar.Kind="Error",Color.White,ColorValue("#000F41"))
+            HoverFill: =Color.Transparent
+            OnSelect: =cmpMessageBar.OnLink()
+            PaddingBottom: =0
+            PaddingLeft: =16
+            PaddingRight: =16
+            PaddingTop: =0
+            PressedBorderColor: =Color.Transparent
+            PressedColor: =If(cmpMessageBar.Kind="Error",Color.White,ColorValue("#000F41"))
+            PressedFill: =Color.Transparent
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =14
+            Text: =cmpMessageBar.LinkText
+            Underline: =true
+            VerticalAlign: =VerticalAlign.Middle
+            Visible: =(cmpMessageBar.Kind in ["Error","Warning","Success"]) && !IsBlank(Trim(cmpMessageBar.LinkText))
+            Width: =150
+            X: =Parent.Width-Self.Width-56
             Y: =0
       - icoCmpMsgClose:
           Control: Classic/Icon@2.5.0

@@ -11,6 +11,11 @@ Fixrelease op v1.0.1, opdracht Eddy 19-11-2026 (echt gebruik, vóór de consent-
   - **Voorinvulling:** kies je een Country terwijl Language leeg is, dan vult de app de taal in (Netherlands → Dutch, Poland → Polish, Czechia/Czech Republic → Czech, Germany → German, Romania → Romanian, Ukraine → Ukrainian, France → French, Belarus → Belarusian, United Kingdom/UK/Ireland → English). Corrigeer je Country daarna, dan wordt de voorgevulde taal mee aangepast. Een taal die al ingevuld of zelf gekozen is, wordt nooit overschreven. De tabel staat in App.Formulas (CountryLanguageMap).
   - **Let op:** een bestaande contractor met een lege Language kun je pas opslaan als je een taal kiest. Volgens MS-034 stap 1 zijn alle contractors al ingevuld.
 - **Week Report-export:** Belarusian heeft nu taalcode `be` (bestand `…_be.pdf`). Vroeger gaf deze taal rood "no file language code".
+- **Week Report Mail (nieuw, H42):** knop **Mail** naast Export. Per contractor maakt de app een Outlook-concept **zonder ontvanger** met alleen de bestanden van die contractor (PDF per taal + CSV) uit de laatste geslaagde export van dezelfde selectie.
+  - Onderwerp: `<Projectnummer> <Projectnaam> <JJJJ> KW<ww> – <Contractor> (<Code>)`, met TEST_ bij testprojecten. De tekst komt uit Translations (`mail.body`, primaire taal).
+  - Groene melding "Draft created." met de link **Open draft** (bij meer concepten: Open drafts, de map Concepten in Outlook). Jij vult de ontvanger in, controleert en verstuurt.
+  - Nog geen export van deze selectie, of daarna Refresh: amber "Export first". De app verstuurt nooit zelf.
+  - Nieuwe flow "SiteManagement - Mail draft" (MS-050).
 
 ### Bekend / niet getest
 - Studio-import, binding en de functionele test volgen nog (teststappen in PROJECT_STATUS.md).

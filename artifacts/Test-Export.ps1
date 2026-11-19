@@ -85,14 +85,14 @@ $loaderN = Get-Norm $loader
 Assert-True ($idx['cmpWrFooter']['ComponentName'] -eq 'cmpReportFooter' -and (P 'cmpWrFooter.ExportVisible') -eq '=true') 'Export button visible (cmpReportFooter.ExportVisible = true; component unchanged)'
 Assert-True ($onExp.StartsWith("=If($guard,")) 'guard parity: OnExport starts with If(<ExportEnabled>, (same text)'
 $gN = Get-Norm $guard
-foreach ($part in '!Coalesce(varWrBusy,false)', '!Coalesce(varWrExporting,false)', 'varWrLoadState="Loaded"', 'IsEmpty(colWrLoadErrors)', '!IsBlank(varWrLoadedProject.ID)', '!IsBlank(varWrLoadedMonday)', 'varWrLoadedProjectID=varWrProjectID', 'varWrLoadedMonday=varWrMonday', 'If(Coalesce(varWrContractorID,0)=0,IsBlank(varWrContractorDisplay),CountIf(colWrGroups,ContractorID=varWrContractorID&&Display=varWrContractorDisplay)=1)', 'CountIf(colWrRows,Coalesce(varWrContractorID,0)=0||ContractorID=varWrContractorID)>0') {
+foreach ($part in '!Coalesce(varWrBusy,false)', '!Coalesce(varWrExporting,false)', '!Coalesce(varWrMailing,false)', 'varWrLoadState="Loaded"', 'IsEmpty(colWrLoadErrors)', '!IsBlank(varWrLoadedProject.ID)', '!IsBlank(varWrLoadedMonday)', 'varWrLoadedProjectID=varWrProjectID', 'varWrLoadedMonday=varWrMonday', 'If(Coalesce(varWrContractorID,0)=0,IsBlank(varWrContractorDisplay),CountIf(colWrGroups,ContractorID=varWrContractorID&&Display=varWrContractorDisplay)=1)', 'CountIf(colWrRows,Coalesce(varWrContractorID,0)=0||ContractorID=varWrContractorID)>0') {
     Assert-True ($gN.Contains($part)) "export guard contains: $part"
 }
 $formulas = [string]$appDoc['App']['Properties']['Formulas']
 $tStart = $formulas.IndexOf('T = {'); $tEnd = $formulas.IndexOf('};', $tStart)
 Set-FxVar 'T' $formulas.Substring($tStart + 4, $tEnd - $tStart - 3)
 Set-FxVar 'LangNl' 'false'
-$okCtx = [ordered]@{ varWrBusy = 'false'; varWrExporting = 'false'; varWrLoadState = '"Loaded"'; colWrLoadErrors = 'Filter(Table({Message:"x"}),false)'; varWrLoadedProject = '{ID:7}'; varWrLoadedMonday = 'Date(2026,11,9)'; varWrLoadedProjectID = '7'; varWrProjectID = '7'; varWrMonday = 'Date(2026,11,9)'; varWrContractorID = '0'; varWrContractorDisplay = '""'; colWrGroups = 'Table({ContractorID:10,Display:"Alpha (EMP-010)"},{ContractorID:20,Display:"Beta (B-1)"})'; colWrRows = 'Table({ContractorID:10,WorkerID:1},{ContractorID:20,WorkerID:2})' }
+$okCtx = [ordered]@{ varWrBusy = 'false'; varWrExporting = 'false'; varWrMailing = 'false'; varWrLoadState = '"Loaded"'; colWrLoadErrors = 'Filter(Table({Message:"x"}),false)'; varWrLoadedProject = '{ID:7}'; varWrLoadedMonday = 'Date(2026,11,9)'; varWrLoadedProjectID = '7'; varWrProjectID = '7'; varWrMonday = 'Date(2026,11,9)'; varWrContractorID = '0'; varWrContractorDisplay = '""'; colWrGroups = 'Table({ContractorID:10,Display:"Alpha (EMP-010)"},{ContractorID:20,Display:"Beta (B-1)"})'; colWrRows = 'Table({ContractorID:10,WorkerID:1},{ContractorID:20,WorkerID:2})' }
 function Test-Guard([string]$override, $expected, [string]$label) {
     $ctx = [ordered]@{}; foreach ($k in $okCtx.Keys) { $ctx[$k] = $okCtx[$k] }
     foreach ($kv in ($override -split '\|\|\|')) { if ($kv) { $i = $kv.IndexOf(':'); $ctx[$kv.Substring(0, $i)] = $kv.Substring($i + 1) } }
@@ -102,6 +102,7 @@ function Test-Guard([string]$override, $expected, [string]$label) {
 Test-Guard '' $true 'Loaded, no errors, same project/week, All contractors, rows present'
 Test-Guard 'varWrBusy:true' $false 'busy (loading or exporting)'
 Test-Guard 'varWrExporting:true' $false 'export running'
+Test-Guard 'varWrMailing:true' $false 'v1.0.2: mail drafts being created'
 Test-Guard 'varWrLoadState:"Failed"' $false 'load failed'
 Test-Guard 'varWrLoadState:"Loading"' $false 'loading'
 Test-Guard 'colWrLoadErrors:Table({Message:"x"})' $false 'load errors present (incl. 500 / truncated batch)'
@@ -123,7 +124,7 @@ Assert-True ($onExpN.Contains(');Set(varWrBusy,false);Set(varWrExporting,false);
 Assert-True ((P 'cmpWrTitle.Busy') -eq '=Coalesce(varWrBusy,false) || varWrLoadState="Loading"') 'title spinner follows varWrBusy (also during export)'
 foreach ($k in 'cmpWrFooter.HomeEnabled', 'cmpWrFooter.RefreshEnabled', 'dpWrWeek.DisplayMode', 'btnWrPrev.DisplayMode', 'btnWrNext.DisplayMode', 'cmpWrProject.Enabled', 'cmpWrContractor.Enabled') { Assert-True ((P $k).Contains('!Coalesce(varWrBusy,false)')) "$k blocked while busy (export sets varWrBusy)" }
 Assert-True ((P 'btnWrLoad.OnSelect').StartsWith('=If(Coalesce(varWrBusy,false),')) 'loader refuses while busy (no reload during export)'
-$bare = Remove-FxStrings $screenText
+$bare = Remove-FxStrings ($screenText.Replace('=If(!IsBlank(varWrMailLink) && varAdmMsgKind in ["Success","Warning"] && varAdmMsgBody=varWrMailMsgBody,Launch(varWrMailLink))', ''))
 Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Notify|Choices)\(') 'no Patch/Remove/Update/SubmitForm/Launch/Download/Notify/Choices on scrWeekReport (the app does not open the file, H26)'
 $colTargets = @([regex]::Matches((Remove-FxStrings $onExp), '\b(Collect|ClearCollect|Clear)\(\s*([^,\)]+)') | ForEach-Object { $_.Groups[2].Value.Trim() } | Sort-Object -Unique)
 Assert-True (@($colTargets | Where-Object { $_ -notmatch '^col[A-Z]\w*$' }).Count -eq 0 -and $colTargets -notcontains 'Translations') "OnExport collection functions only target local collections ($($colTargets -join ', '))"
@@ -140,7 +141,7 @@ Assert-True ($trace.Success -and $trace.Groups[1].Value.Contains('Files:varWrExp
 # (3) Flow calls (6.5; H31 Eddy 16-11-2026: one PDF per language): inside one ForAll over the built contractor files: PDF page-1 language,
 # PDF second language (only when it differs, only after PDF 1 OK), CSV (only after every PDF OK); 3 Run calls on the screen
 $runs = @([regex]::Matches($onExp, "'SiteManagment-Exportfile'\.Run\("))
-Assert-True ($runs.Count -eq 3 -and ([regex]::Matches($bare, '\.Run\(')).Count -eq 3) "exactly 3 calls of 'SiteManagment-Exportfile'.Run (PDF language 1, PDF language 2, CSV) on the screen"
+Assert-True ($runs.Count -eq 3 -and ([regex]::Matches($bare, '\.Run\(')).Count -eq 4 -and ([regex]::Matches($screenText, "'SiteManagement-Maildraft'\.Run\(")).Count -eq 1) "exactly 3 calls of 'SiteManagment-Exportfile'.Run (PDF language 1, PDF language 2, CSV) on the screen + 1 call of the mail flow (v1.0.2)"
 $pdfArgs = Split-FxArgs (Get-Balanced $onExp ($runs[0].Index + $runs[0].Length - 1))
 $pdf2Args = Split-FxArgs (Get-Balanced $onExp ($runs[1].Index + $runs[1].Length - 1))
 $csvArgs = Split-FxArgs (Get-Balanced $onExp ($runs[2].Index + $runs[2].Length - 1))

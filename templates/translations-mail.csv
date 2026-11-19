@@ -1,0 +1,10 @@
+﻿Key;Language;Text
+mail.body;English;Hello,{n}{n}Attached is the week report {1} for project {0}, contractor {2} (PDF and CSV).{n}Please check the hours and let us know if anything is incorrect.{n}{n}Kind regards
+mail.body;Dutch;Goedendag,{n}{n}In de bijlage het weekrapport {1} voor project {0}, contractor {2} (PDF en CSV).{n}Controleer de uren en laat het ons weten als er iets niet klopt.{n}{n}Met vriendelijke groet
+mail.body;German;Guten Tag,{n}{n}anbei der Wochenbericht {1} für das Projekt {0}, Auftragnehmer {2} (PDF und CSV).{n}Bitte prüfen Sie die Stunden und teilen Sie uns mit, falls etwas nicht stimmt.{n}{n}Mit freundlichen Grüßen
+mail.body;Polish;Dzień dobry,{n}{n}w załączniku raport tygodniowy {1} dla projektu {0}, wykonawca {2} (PDF i CSV).{n}Prosimy o sprawdzenie godzin i informację, jeśli coś się nie zgadza.{n}{n}Z poważaniem
+mail.body;Czech;Dobrý den,{n}{n}v příloze zasíláme týdenní výkaz {1} pro projekt {0}, dodavatel {2} (PDF a CSV).{n}Zkontrolujte prosím hodiny a dejte nám vědět, pokud něco nesouhlasí.{n}{n}S pozdravem
+mail.body;Romanian;Bună ziua,{n}{n}atașat găsiți raportul săptămânal {1} pentru proiectul {0}, contractor {2} (PDF și CSV).{n}Vă rugăm să verificați orele și să ne anunțați dacă ceva nu este corect.{n}{n}Cu stimă
+mail.body;Ukrainian;Добрий день,{n}{n}у додатку тижневий звіт {1} для проєкту {0}, підрядник {2} (PDF і CSV).{n}Будь ласка, перевірте години та повідомте нам, якщо щось не так.{n}{n}З повагою
+mail.body;French;Bonjour,{n}{n}veuillez trouver ci-joint le rapport hebdomadaire {1} pour le projet {0}, sous-traitant {2} (PDF et CSV).{n}Merci de vérifier les heures et de nous signaler toute erreur.{n}{n}Cordialement
+mail.body;Belarusian;Добры дзень,{n}{n}у дадатку тыднёвая справаздача {1} для праекта {0}, падрадчык {2} (PDF і CSV).{n}Калі ласка, праверце гадзіны і паведаміце нам, калі нешта не так.{n}{n}З павагай

@@ -56,6 +56,8 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-047 | 18-11-2026 | Open (Eddy): kolommen Projects (CustomerCity, CustomerPhone, SupervisorPhone) en Project Workers (ConsentStatus, ConsentDate) + metadata-save in Incoming; daarna bouw consent |
 | MS-048 | 18-11-2026 | Done 18-11-2026 (Eddy): schone start v1 (H41): testrijen van echte projecten verwijderen (Hours 24, Assignment Periods 20, Project Workers 19) + Exports-map van FC; TEST-000 blijft |
 | MS-049 | 18-11-2026 | Open (Eddy): importflow v3 importeren (Import Package > Update "SiteManagement - Import rows") |
+| MS-050 | 19-11-2026 | Open (Eddy): flow "SiteManagement - Mail draft" importeren (Create as new; SharePoint + Office 365 Outlook) + in Studio toevoegen aan de app + Save as This computer naar Incoming |
+| MS-051 | 19-11-2026 | Done 19-11-2026 (Claude via importflow): Translations mail.body, 9 talen (Added 9, Errors 0) |
 
 ---
 
@@ -538,6 +540,25 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   5. Sluit de app en open hem opnieuw (caches leeg).
 - **Daarna (Eddy):** echte teams via Project / team met de echte startweek (bv. 2026 KW46), uren in Weekly Hours, Week report exporteren. Controlelijst in PROJECT_STATUS.md (H41).
 - **Terugdraaien:** binnen 93 dagen via de prullenbak van de site.
+
+## MS-050 — Flow "SiteManagement - Mail draft" (Week Report Mail, v1.0.2, H42)
+
+- **Added:** 19-11-2026. **Status:** Open (Eddy). Daarna maakt Claude build v1.0.2 (metadata samenvoegen, tests, pack).
+- **Bestand:** `artifacts\flows\SiteManagement-Mail-draft-v1.zip` (niet in git), SHA-256 `ec1fa4baaf501451ae4ad6944dce06d86bddd626041a24a84e7105869423aece`. Maak het opnieuw met `py -E -P flows\make_mail_draft_package.py`.
+- **Waarom deels handmatig:** een flow aan de app koppelen kan alleen in Studio; de metadata moet daarna uit een Studio-save komen.
+- **Stappen:**
+  1. Power Automate > My flows > Import > **Import Package (Legacy)** > upload de zip.
+  2. Bij de flow: **Setup** > **Create as new**, naam **SiteManagement - Mail draft** (exact zo).
+  3. Bij SharePoint: kies je bestaande SharePoint-verbinding. Bij **Office 365 Outlook**: kies je Outlook-verbinding of maak er een (Create new, aanmelden met je GEA-account). Klik **Import**.
+  4. Open de flow > **Edit**. Controleer de stap **Create_draft** (Send an HTTP request): URI `https://graph.microsoft.com/v1.0/me/messages`, Method `POST`, Body gevuld, Content-Type `application/json`. Is een veld leeg of krijg je een foutmelding over parameters: stop en stuur mij een screenshot plus de Code view van die stap. Klik **Save**. De flow staat aan (Turn on als hij uit staat).
+  5. Power Apps Studio: open de app (de huidige v1.0.2-testbuild of de gepubliceerde app) > linkermenu **Power Automate** (of Data) > **Add flow** > kies **SiteManagement - Mail draft**. Er verschijnt een data source (verwacht: `SiteManagement-Maildraft`); noteer de exacte naam als hij anders is.
+  6. **File > Save as > This computer** en zet het .msapp-bestand in `Incoming\` (map Incoming in de projectmap). Niet publiceren.
+- **Controle:** de flow staat aan en heeft 2 verbindingen (SharePoint, Office 365 Outlook). Meld de naam van de data source en het bestand in Incoming.
+
+## MS-051 — Translations: mail.body (9 talen)
+
+- **Added/Done:** 19-11-2026 (Claude, importflow, opdracht Eddy in de Mail-opdracht). Bron `templates/translations-mail.csv` (Key;Language;Text, 9 regels, plaatshouders {0} project, {1} week, {2} contractor, {n} nieuwe regel). Resultaat: Rows 9, Added 9, Updated 0, Exists 0, Duplicates 0, Errors 0. Verwacht totaal Translations 1458 (1449 + 9).
+- **Let op:** de teksten zijn door Claude gemaakt; native-speaker-controle hoort bij het backlogpunt vertalingen.
 
 ## MS-049 — Importflow v3 (sneller), v1.0.1
 

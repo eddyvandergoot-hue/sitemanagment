@@ -1,0 +1,411 @@
+{
+  "type": "Microsoft.Flow/flows",
+  "properties": {
+    "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+    "displayName": "SiteManagement - Mail draft",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "undefined",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "description": "Please enter your input",
+                  "title": "Folder",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_1": {
+                  "description": "Please enter your input",
+                  "title": "FileNames",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_2": {
+                  "description": "Please enter your input",
+                  "title": "Subject",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "text_3": {
+                  "description": "Please enter your input",
+                  "title": "Body",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "text",
+                "text_1",
+                "text_2",
+                "text_3"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Init_attachments": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "Attachments",
+                "type": "array",
+                "value": []
+              }
+            ]
+          },
+          "runAfter": {}
+        },
+        "Try": {
+          "type": "Scope",
+          "actions": {
+            "File_names": {
+              "type": "Query",
+              "inputs": {
+                "from": "@split(triggerBody()?['text_1'], '|')",
+                "where": "@not(equals(trim(item()), ''))"
+              },
+              "runAfter": {}
+            },
+            "Check_input": {
+              "type": "If",
+              "runAfter": {
+                "File_names": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "or": [
+                  {
+                    "equals": [
+                      "@length(body('File_names'))",
+                      0
+                    ]
+                  },
+                  {
+                    "greater": [
+                      "@length(body('File_names'))",
+                      10
+                    ]
+                  },
+                  {
+                    "equals": [
+                      "@trim(coalesce(triggerBody()?['text'], ''))",
+                      ""
+                    ]
+                  },
+                  {
+                    "contains": [
+                      "@triggerBody()?['text']",
+                      "/"
+                    ]
+                  },
+                  {
+                    "contains": [
+                      "@triggerBody()?['text_1']",
+                      "/"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Respond_bad_input": {
+                  "runAfter": {},
+                  "type": "Response",
+                  "kind": "PowerApp",
+                  "inputs": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "title": "Status",
+                          "type": "string",
+                          "x-ms-content-hint": "TEXT",
+                          "x-ms-dynamically-added": true
+                        },
+                        "weblink": {
+                          "title": "WebLink",
+                          "type": "string",
+                          "x-ms-content-hint": "TEXT",
+                          "x-ms-dynamically-added": true
+                        },
+                        "message": {
+                          "title": "Message",
+                          "type": "string",
+                          "x-ms-content-hint": "TEXT",
+                          "x-ms-dynamically-added": true
+                        }
+                      },
+                      "additionalProperties": {}
+                    },
+                    "statusCode": 200,
+                    "body": {
+                      "status": "Error",
+                      "weblink": "",
+                      "message": "Bad input: 1-10 file names and one folder name (no /) needed. Nothing created."
+                    }
+                  }
+                },
+                "Stop_bad_input": {
+                  "type": "Terminate",
+                  "inputs": {
+                    "runStatus": "Succeeded"
+                  },
+                  "runAfter": {
+                    "Respond_bad_input": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
+              }
+            },
+            "For_each_file": {
+              "type": "Foreach",
+              "foreach": "@body('File_names')",
+              "actions": {
+                "Get_file_content": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "dataset": "https://geacloud.sharepoint.com/sites/GEASiteManagment",
+                      "path": "/Exports/@{triggerBody()?['text']}/@{items('For_each_file')}",
+                      "inferContentType": false
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                      "connectionName": "shared_sharepointonline",
+                      "operationId": "GetFileContentByPath"
+                    },
+                    "authentication": {
+                      "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                      "type": "Raw"
+                    },
+                    "retryPolicy": {
+                      "type": "fixed",
+                      "count": 2,
+                      "interval": "PT5S"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Add_attachment": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "Attachments",
+                    "value": {
+                      "@odata.type": "#microsoft.graph.fileAttachment",
+                      "name": "@{items('For_each_file')}",
+                      "contentBytes": "@{body('Get_file_content')?['$content']}"
+                    }
+                  },
+                  "runAfter": {
+                    "Get_file_content": [
+                      "Succeeded"
+                    ]
+                  }
+                }
+              },
+              "runAfter": {
+                "Check_input": [
+                  "Succeeded"
+                ]
+              },
+              "runtimeConfiguration": {
+                "concurrency": {
+                  "repetitions": 1
+                }
+              }
+            },
+            "Draft_body": {
+              "type": "Compose",
+              "runAfter": {
+                "For_each_file": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": {
+                "subject": "@{triggerBody()?['text_2']}",
+                "body": {
+                  "contentType": "Text",
+                  "content": "@{triggerBody()?['text_3']}"
+                },
+                "attachments": "@variables('Attachments')"
+              }
+            },
+            "Create_draft": {
+              "type": "OpenApiConnection",
+              "runAfter": {
+                "Draft_body": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": {
+                "parameters": {
+                  "Uri": "https://graph.microsoft.com/v1.0/me/messages",
+                  "Method": "POST",
+                  "Body": "@{string(outputs('Draft_body'))}",
+                  "ContentType": "application/json"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "HttpRequest"
+                },
+                "authentication": {
+                  "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+                  "type": "Raw"
+                },
+                "retryPolicy": {
+                  "type": "none"
+                }
+              }
+            },
+            "Respond_OK": {
+              "runAfter": {
+                "Create_draft": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "title": "Status",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "weblink": {
+                      "title": "WebLink",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    },
+                    "message": {
+                      "title": "Message",
+                      "type": "string",
+                      "x-ms-content-hint": "TEXT",
+                      "x-ms-dynamically-added": true
+                    }
+                  },
+                  "additionalProperties": {}
+                },
+                "statusCode": 200,
+                "body": {
+                  "status": "OK",
+                  "weblink": "@{coalesce(body('Create_draft')?['webLink'], '')}",
+                  "message": "@{concat('Draft created with ', string(length(variables('Attachments'))), ' attachment(s)')}"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Init_attachments": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Failed_steps": {
+          "type": "Query",
+          "runAfter": {
+            "Try": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "inputs": {
+            "from": "@result('Try')",
+            "where": "@equals(item()?['status'], 'Failed')"
+          }
+        },
+        "Respond_error": {
+          "runAfter": {
+            "Failed_steps": [
+              "Succeeded",
+              "Failed"
+            ]
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "title": "Status",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "weblink": {
+                  "title": "WebLink",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                },
+                "message": {
+                  "title": "Message",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "additionalProperties": {}
+            },
+            "statusCode": 200,
+            "body": {
+              "status": "Error",
+              "weblink": "",
+              "message": "@{concat('No draft created. Failed step: ', coalesce(first(body('Failed_steps'))?['name'], 'unknown'), if(equals(coalesce(first(body('Failed_steps'))?['name'], ''), 'For_each_file'), ' (a file is missing in Exports: export again)', ''), '. See the flow run history.')}"
+            }
+          }
+        }
+      }
+    },
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+        "tier": "NotSpecified",
+        "apiName": "sharepointonline",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      },
+      "shared_office365": {
+        "source": "Invoker",
+        "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+        "tier": "NotSpecified",
+        "apiName": "office365",
+        "isProcessSimpleApiReferenceConversionAlreadyDone": false
+      }
+    },
+    "flowFailureAlertSubscribed": false,
+    "isManaged": false
+  }
+}
