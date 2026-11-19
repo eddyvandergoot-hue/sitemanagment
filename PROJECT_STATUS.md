@@ -1,4 +1,6 @@
-# Projectstatus (huidige stand, 18-11-2026: v1.0.1 uitgebracht)
+# Projectstatus (huidige stand, 19-11-2026: v1.0.1 in productiegebruik)
+
+**Mijlpaal echt gebruik (Eddy 19-11-2026):** de eerste echte weekrapporten Friesland Campina KW46 zijn met v1.0.1 gemaakt en geëxporteerd; resultaat volgens Eddy perfect. v1 is daarmee in productiegebruik (controlelijst H41 na MS-048 in de praktijk doorlopen). Volgende stap: MS-047 (Eddy), daarna de consent-build.
 
 Geschiedenis en eerdere builds: PROJECT_STATUS_ARCHIVE.md (niet lezen tenzij gevraagd; daar staat ook het op 9-11-2026 verplaatste detail: oudere beperkingen, Studio-bewijs, incident lege Employers-records, MS-detail). Volgorde van open punten: NEXT_COMMANDS.md. Open beslissingen: ROADMAP.md. Handmatige stappen: MANUAL_STEPS.md. "Gebouwd" = aantoonbaar in Src; dat zegt niets over Studio-import of functionele test.
 
@@ -75,6 +77,7 @@ Geschiedenis en eerdere builds: PROJECT_STATUS_ARCHIVE.md (niet lezen tenzij gev
 Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-2026, tag approved-20261107-contractoraddr; (2) layout-freeze ACTIEF (cosmetica alleen via de backlog hieronder); (3) GEDAAN: Workers-scherm goedgekeurd 9-11-2026, tag approved-20261109-workers; (4) Week Report + PDF/CSV-export: plan goedgekeurd door Eddy 9-11-2026 (WEEKREPORT_PLAN.md), fase A goedgekeurd 11-11-2026 (tag approved-20261111-weekreport-a), fase B gedaan 12-11-2026, fase C gebouwd 13-11-2026, goedgekeurd 16-11-2026 als v1.0.0; (5) toegankelijkheidsronde + N2/N5. Details: NEXT_COMMANDS.md.
 
 ## Backlog cosmetica
+- **v1.1 cosmetisch (Eddy 19-11-2026):** de layout van de v1.0.1-toevoegingen is nog niet helemaal netjes: Project / team (contractorfilter ddWorkerEmployer, zoekveld txtWorkerSearch, weekpijlen btnTeamPrevWeek/btnTeamNextWeek) en Weekly Hours (teamkeuze ddWeekTeam). Eddy stuurt later screenshots; dan uitlijnen op de app-stijl en het layoutraster (marges, 12 px tussenruimte, label 4 px boven veld, gelijke Y en hoogte). Geen logica wijzigen.
 - PDF Week Report: handtekeningvakken "Akkoord contractor / site manager" (Eddy 12-11-2026; niet nu, tot nu toe nooit gebruikt). Later alleen een wijziging in de template.
 - Go-live-opruiming talen (H30): één gedeelde sitekolom Choice voor Workers/Employers/Translations (optie B); lookup-lijst afgewezen (delegatie). Geen migratie nu.
 - WACHT (feature freeze v1.0.0; Eddy 15-11-2026 gestart): veld Language op Contractors staat technisch klaar op branch contractors-lang (commit b04c520, volledige set 0 FAIL; reviewer en pack nog open, apart van de export-hertest). PRIORITEIT OMHOOG (Eddy 14-11-2026, H29): veld rapporttaal (Employers, kolom Language) op het Contractors-scherm (MS-027 gedaan; metadata samengevoegd 10-11-2026). Pas daarna mag Eddy in MS-034 "Require" aanzetten; zonder het veld weigert SharePoint dan een New contractor.
