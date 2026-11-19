@@ -230,8 +230,8 @@ Set-FxVar 'colWrDocLangs' 'Table({L:"Dutch"},{L:"Polish"},{L:"Polish"},{L:"Germa
 Set-FxValue 'wrRead' (Invoke-Fx $readFx)
 Assert-Eval 'Concat(wrRead,RL & ":" & CountRows(Part) & ":" & CountIf(Part,Lang<>RL),"|")' 'Dutch:2:0|Polish:2:0|German:2:0|Czech:2:0|French:2:0|Romanian:2:0|Ukrainian:2:0' 'H29: 7 needed languages (more than 6) = 7 reads, each only its own language, English (not needed) not read'
 Assert-Eval 'First(Filter(First(wrRead).Part,Key="doc.title")).Txt' 'T-Dutch' 'read trims leading/trailing spaces of the text (TrimEnds)'
-$langList = '["Dutch","English","Polish","Czech","Romanian","Ukrainian","German","French"]'
-Assert-True (([regex]::Matches($onExp, [regex]::Escape($langList))).Count -eq 3 -and $onExp -notmatch ' in \["Dutch"' -and ([regex]::Matches($onExp.Replace($langList, ''), '"English"')).Count -eq 1 -and $onExp.Contains('Switch(pg.L,"Dutch","nl","English","en",')) 'H27: no English fallback anywhere (the only "English" is the lang-code mapping)'
+$langList = '["Dutch","English","Polish","Czech","Romanian","Ukrainian","German","French","Belarusian"]'
+Assert-True (([regex]::Matches($onExp, [regex]::Escape($langList))).Count -eq 3 -and $onExp -notmatch ' in \["Dutch"' -and ([regex]::Matches($onExp.Replace($langList, ''), '"English"')).Count -eq 1 -and $onExp.Contains('Switch(pg.L,"Dutch","nl","English","en",') -and $onExp.Contains('"French","fr","Belarusian","be","und")')) 'H27: no English fallback anywhere (the only "English" is the lang-code mapping); v1.0.2: Belarusian = 9th language with code be'
 Assert-True ($loader -notmatch 'ReportLanguage' -and $loader -notmatch 'w\.Language' -and $loaderN.Contains('Language:If(Trim(emp.Language.Value&"")="Nederlands","Dutch",Trim(emp.Language.Value&""))') -and $loaderN.Contains('Country:Trim(p.Country.Value&"")')) 'H27: worker-majority language removed from the loader; Employers.Language and Projects.Country in the existing master projections (no extra read)'
 
 # (5) Keys (23) from templates/translations-weekreport.csv -------------------------------------------------------------------
@@ -242,8 +242,8 @@ $keys = @($tr | ForEach-Object Key | Select-Object -Unique)
 Assert-True ($keys.Count -eq 23) "translations-weekreport.csv: 23 doc.* keys"
 $unused = @('doc.contractorAll', 'doc.total')  # review 13-11: no _ALL file and no grand total any more (H26); not required, so an empty value never blocks
 foreach ($k in $keys) { if ($unused -contains $k) { Assert-True (-not $onExp.Contains('"' + $k + '"')) "key $k no longer required in OnExport" } else { Assert-True ($onExp.Contains('"' + $k + '"')) "key $k used in OnExport" } }
-foreach ($k in $keys) { foreach ($lg in 'Dutch', 'English', 'Polish', 'Czech', 'Romanian', 'Ukrainian', 'German', 'French') { if (-not ($tr | Where-Object { $_.Key -eq $k -and $_.Lang -eq $lg -and $_.Text.Trim() })) { throw "FAIL $k missing for $lg in the CSV" } } }
-Assert-True $true 'every key has a text in all eight languages in the CSV (a delivered language never blocks)'
+foreach ($k in $keys) { foreach ($lg in 'Dutch', 'English', 'Polish', 'Czech', 'Romanian', 'Ukrainian', 'German', 'French', 'Belarusian') { if (-not ($tr | Where-Object { $_.Key -eq $k -and $_.Lang -eq $lg -and $_.Text.Trim() })) { throw "FAIL $k missing for $lg in the CSV" } } }
+Assert-True $true 'every key has a text in all nine languages in the CSV (a delivered language never blocks)'
 
 # (6) Interpreter: jobs per contractor, document texts, status ---------------------------------------------------------------
 # Country names (H33): rows of templates/translations-countries.csv are in the same Translations read; Get-DocAll returns both like SharePoint would

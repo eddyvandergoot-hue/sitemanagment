@@ -40,7 +40,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 | MS-031 | 12-11-2026 | Done 12-11-2026 (Eddy) |
 | MS-032 | 13-11-2026 | Done 13-11-2026 (Eddy); 138 items |
 | MS-033 | 13-11-2026 | Done 14-11-2026 (Eddy); metadata samengevoegd 14-11-2026 |
-| MS-034 | 13-11-2026 | Stap 1 done 14-11-2026 (Eddy); Require nog uit (wacht op Contractors-veld) |
+| MS-034 | 13-11-2026 | Stap 1 done 14-11-2026 (Eddy); stap 2-3 (Require) pas na goedkeuring v1.0.2 (Contractors-veld Language) |
 | MS-035 | 14-11-2026 | Done 14-11-2026 (Eddy); Language keuze + index; metadata ververst en samengevoegd 14-11-2026 |
 | MS-036 | 14-11-2026 | Gedaan (Eddy 14-11-2026) |
 | MS-037 | 16-11-2026 | Done 16-11-2026 (Eddy): fix1 geïmporteerd als Update van flow 22e34f1b; TP-EXPORT-02 stap 2-4 PASS |
@@ -461,7 +461,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
   2. Translations > Edit in grid view: plak `templates/translations-weekreport-be.csv` (23 regels) en `templates/translations-countries-be.csv` (48 regels), zonder kopregel.
   3. Plak `templates/translations-consent-be.csv` (90 regels, MS-042).
   4. Controle: filter Language = Belarusian geeft 161 regels (23 + 48 + 90). Totaal Translations daarna 1449 (als MS-042 gedaan is: 1288 + 161).
-- **Let op:** de taalcode `be` in de app volgt bij de volgende build. Tot dan geeft het Week Report voor een contractor met Language = Belarusian rood "no file language code" (geen export). Kies Belarusian dus nog niet bij een contractor met uren die geëxporteerd moeten worden. Alle Belarusian-teksten moeten nog door een moedertaalspreker gecontroleerd worden.
+- **Opgelost in v1.0.2 (19-11-2026):** taalcode `be` zit in de app (Week Report). Oorspronkelijke opmerking: de taalcode `be` in de app volgt bij de volgende build. Tot dan geeft het Week Report voor een contractor met Language = Belarusian rood "no file language code" (geen export). Kies Belarusian dus nog niet bij een contractor met uren die geëxporteerd moeten worden. Alle Belarusian-teksten moeten nog door een moedertaalspreker gecontroleerd worden.
 
 ## MS-044 — Lijsten Customers en ProjectSafety (From Excel; DESIGN_CUSTOMERS_SAFETY.md)
 

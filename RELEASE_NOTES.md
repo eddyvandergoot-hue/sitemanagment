@@ -1,5 +1,21 @@
 # Release notes
 
+## v1.0.2 — concept 19-11-2026 (nog niet goedgekeurd)
+
+Fixrelease op v1.0.1, opdracht Eddy 19-11-2026 (echt gebruik, vóór de consent-build). Tag en GitHub-release volgen pas na Eddy's Studio-test. Testbuild: `v1.0.2-20261119_094820` (SHA-256 `28da57eafb116c6870af255cc0e6d8fa72092754fa221d9b01004ffcbddac502`).
+
+### Wijzigingen
+- **Contractors:** nieuw veld **Language** (de rapporttaal van de contractor, SharePoint-kolom Employers.Language) rechts van Country, in de rij City | Country | Language.
+  - De keuzelijst komt uit SharePoint: 9 talen, inclusief Belarusian.
+  - Het veld is verplicht. Is het leeg, dan krijgt het een rode rand en verschijnt een rode balk "Fix: Language empty"; er wordt niets opgeslagen. Een gewijzigde waarde die niet in de lijst staat, wordt ook geweigerd.
+  - **Voorinvulling:** kies je een Country terwijl Language leeg is, dan vult de app de taal in (Netherlands → Dutch, Poland → Polish, Czechia/Czech Republic → Czech, Germany → German, Romania → Romanian, Ukraine → Ukrainian, France → French, Belarus → Belarusian, United Kingdom/UK/Ireland → English). Corrigeer je Country daarna, dan wordt de voorgevulde taal mee aangepast. Een taal die al ingevuld of zelf gekozen is, wordt nooit overschreven. De tabel staat in App.Formulas (CountryLanguageMap).
+  - **Let op:** een bestaande contractor met een lege Language kun je pas opslaan als je een taal kiest. Volgens MS-034 stap 1 zijn alle contractors al ingevuld.
+- **Week Report-export:** Belarusian heeft nu taalcode `be` (bestand `…_be.pdf`). Vroeger gaf deze taal rood "no file language code".
+
+### Bekend / niet getest
+- Studio-import, binding en de functionele test volgen nog (teststappen in PROJECT_STATUS.md).
+- Daarna MS-034 stap 2-3: Require aanzetten in SharePoint.
+
 ## v1.0.1 — 18-11-2026 (fixrelease)
 
 Goedgekeurd door Eddy op 18-11-2026 na de Studio-test op TEST-000 (PASS: Project / team filter, zoeken en weekpijlen; Weekly Hours teamkeuze, uitgeschakeld bij onopgeslagen uren; Week report TEST-000). Gepubliceerd door Eddy op 18-11-2026 (Replace "SiteManagement" + Publish). Tags: `v1.0.1` en `approved-20261118-v1.0.1`. Testbuild: `v1.0.1-20261118_212114` (SHA-256 `05cf668efc48f68c0a856752549c5d75b317ce0bb56fcdc2eb74846998dfd8ce`).

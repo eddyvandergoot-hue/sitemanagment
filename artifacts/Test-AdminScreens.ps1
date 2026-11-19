@@ -91,8 +91,9 @@ function Apply-DirtyLabel($map, [string]$p, [string]$scr) {
         }
         foreach ($g in @(@('Refresh', $true), @('Discard', $true), @('LoadBlocked', $false), @('Save', $false), @('New', $false))) { Assert-Eval "With({$gfxFailed,lbl${p}Dirty:{Text:$($c[0])}},$($gExpr[$g[0]]))" $g[1] "${scr} N1: after a failed save, label $($c[0]) -> $($g[0]) $(if ($g[1]) { 'allowed (Refresh = Discard, H15)' } else { 'not allowed / not blocking' })" }
     }
-    $cv = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -cmatch "\bcmp${p}\w+\.Value\b" -and $_ -notin @("lbl${p}Dirty.Text", "cmp${p}Footer.OnSave", $(if ($p -eq 'Wrk') { 'lblWrkDupKey.Text' } else { 'lbl-none' })) })
+    $cv = @(@($map.Keys) | Where-Object { ([string]$map[$_]) -cmatch "\bcmp${p}\w+\.Value\b" -and $_ -notin @("lbl${p}Dirty.Text", "cmp${p}Footer.OnSave", $(if ($p -eq 'Wrk') { 'lblWrkDupKey.Text' } else { 'lbl-none' }), $(if ($p -eq 'Emp') { 'cmpEmpCountry.OnChange' } else { 'lbl-none' })) })
     Assert-True ($cv.Count -eq 0) "${scr}: cmpField Value is read only by lbl${p}Dirty and the Save record (cmp${p}Footer.OnSave) ($($cv -join ', '))"
+    # (cmpEmpCountry.OnChange: Language prefill from Country, Eddy 15-11-2026; reads Country and Language Value)
     # Expand the label reference for the behavioural checks below: clean = !<dirty>, dirty / Save = <dirty> (same results as the label for its two real values)
     foreach ($k in $readers) { $map[$k] = ([string]$map[$k]).Replace($dirtyRef, $d).Replace($saveRef, $d).Replace($cleanRef, '!' + $d) }
     $evs = [ordered]@{ "cmp${p}Footer.OnHome" = 'OnHome'; "cmp${p}Footer.OnNew" = 'OnNew'; "cmp${p}Footer.OnRefresh" = 'OnRefresh'; "cmp${p}Footer.OnDiscard" = 'OnDiscard'; "cmp${p}Footer.OnSave" = 'OnSave'; "cmp${p}List.OnSelectRow" = 'OnSelectRow'; "cmp${p}List.OnToggleShowInactive" = 'OnToggleShowInactive'; "cmp${p}MsgBar.OnClose" = 'OnClose' }
@@ -168,7 +169,7 @@ $dirtyStart = $guards.btnEmpSave.IndexOf('(Coalesce(varEmpMode,"") in ["New","Ed
 Assert-True ($dirtyStart -ge 0) 'Save guard contains the dirty expression'
 $dirty = Get-Balanced $guards.btnEmpSave $dirtyStart
 Assert-True ($dirty -ceq $dirtyFromLbl) 'Dirty text in the Save guard = the lblEmpDirty text (one source)'
-foreach ($f in @('Name', 'Street', 'HouseNumber', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
+foreach ($f in @('Name', 'Street', 'HouseNumber', 'Postalcode', 'City', 'Country', 'Language', 'ContactName', 'ContactEmail', 'ContactPhone')) {
     Assert-True ($dirty.Contains("Trim(cmpEmp$f.Value & """")<>Trim(varEmpEdit.$f & """")")) "Dirty compares cmpEmp$f.Value directly with varEmpEdit, both sides Trim(x & """") (no OnChange dependency, blank = empty)"
 }
 Assert-True ($dirty.Contains('Coalesce(varEmpActiveDraft,true)<>Coalesce(varEmpEdit.Active,true)')) 'Dirty compares the Active switch draft varEmpActiveDraft with varEmpEdit.Active, both sides Coalesce(x,true) (blank Active = active)'
@@ -185,8 +186,8 @@ foreach ($ctl in @('btnEmpHome', 'btnEmpRefresh', 'btnEmpDiscard')) { Assert-Tru
 Assert-True ((Get-Prop 'btnEmpHome' 'OnSelect') -match 'Navigate\(scrHome\)' -and ([regex]::Matches((Get-Prop 'btnEmpHome' 'OnSelect'), 'Navigate\(')).Count -eq 1) 'Home navigates only to scrHome, inside the guard'
 # Evaluate the guards with fixtures (interpreter; controls supplied as records)
 $fix = 'varEmpLoadState:"Loaded",colEmpLoadErrors:Filter(Table({Message:""}),false),varEmpBusy:false,varEmpSaving:false,varEmpSaveFailed:false,varEmpMode:"Edit",varEmpSelectedID:5,' +
-'varEmpEdit:{ID:5,Name:"A",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true},' +
-'cmpEmpName:{Value:"B"},cmpEmpStreet:{Value:""},cmpEmpHouseNumber:{Value:""},cmpEmpPostalcode:{Value:""},cmpEmpCity:{Value:""},cmpEmpCountry:{Value:""},cmpEmpContactName:{Value:""},cmpEmpContactEmail:{Value:""},cmpEmpContactPhone:{Value:""},varEmpActiveDraft:true'
+'varEmpEdit:{ID:5,Name:"A",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",Language:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true},' +
+'cmpEmpName:{Value:"B"},cmpEmpStreet:{Value:""},cmpEmpHouseNumber:{Value:""},cmpEmpPostalcode:{Value:""},cmpEmpCity:{Value:""},cmpEmpCountry:{Value:""},cmpEmpLanguage:{Value:""},cmpEmpContactName:{Value:""},cmpEmpContactEmail:{Value:""},cmpEmpContactPhone:{Value:""},varEmpActiveDraft:true'
 $clean = $fix.Replace('cmpEmpName:{Value:"B"}', 'cmpEmpName:{Value:"A"}')
 function Get-GuardFx($name, $fixture) { return 'With({' + $fixture + '},' + $guards[$name] + ')' }
 Assert-Eval (Get-GuardFx 'btnEmpSave' $fix) $true 'Save allowed: Loaded, Edit with ID, dirty'
@@ -229,20 +230,21 @@ Assert-Eval (Get-GuardFx 'btnEmpDiscard' $fix.Replace('varEmpSaving:false', 'var
 
 function TT0([string]$k) { return "If(LangNl && !IsBlank(T.$k.nl),T.$k.nl,T.$k.en)" }
 # Form is bound to varEmpEdit (cmpField.DefaultValue), never to the list selection. Step 3a: cmpField instances replace txtEmp* + labels + star.
-$inputMap = [ordered]@{ cmpEmpName = 'Name'; cmpEmpStreet = 'Street'; cmpEmpHouseNumber = 'HouseNumber'; cmpEmpPostalcode = 'Postalcode'; cmpEmpCity = 'City'; cmpEmpCountry = 'Country'; cmpEmpContactName = 'ContactName'; cmpEmpContactEmail = 'ContactEmail'; cmpEmpContactPhone = 'ContactPhone' }
+$inputMap = [ordered]@{ cmpEmpName = 'Name'; cmpEmpStreet = 'Street'; cmpEmpHouseNumber = 'HouseNumber'; cmpEmpPostalcode = 'Postalcode'; cmpEmpCity = 'City'; cmpEmpCountry = 'Country'; cmpEmpLanguage = 'Language'; cmpEmpContactName = 'ContactName'; cmpEmpContactEmail = 'ContactEmail'; cmpEmpContactPhone = 'ContactPhone' }
 $fieldEnabled = '=varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false) && Coalesce(varEmpMode,"") in ["New","Edit"]'
-$fieldLabels = @{ cmpEmpName = 'empFieldName'; cmpEmpCode = 'empFieldCode'; cmpEmpStreet = 'empFieldStreet'; cmpEmpHouseNumber = 'empFieldHouseNumber'; cmpEmpPostalcode = 'empFieldPostalcode'; cmpEmpCity = 'empFieldCity'; cmpEmpCountry = 'empFieldCountry'; cmpEmpContactName = 'empFieldContactName'; cmpEmpContactEmail = 'empFieldContactEmail'; cmpEmpContactPhone = 'empFieldContactPhone' }
+$fieldLabels = @{ cmpEmpName = 'empFieldName'; cmpEmpCode = 'empFieldCode'; cmpEmpStreet = 'empFieldStreet'; cmpEmpHouseNumber = 'empFieldHouseNumber'; cmpEmpPostalcode = 'empFieldPostalcode'; cmpEmpCity = 'empFieldCity'; cmpEmpCountry = 'empFieldCountry'; cmpEmpLanguage = 'empFieldLanguage'; cmpEmpContactName = 'empFieldContactName'; cmpEmpContactEmail = 'empFieldContactEmail'; cmpEmpContactPhone = 'empFieldContactPhone' }
 foreach ($k in $inputMap.Keys) {
     Assert-True ($idx[$k]['Control'] -eq 'CanvasComponent' -and $idx[$k]['ComponentName'] -eq 'cmpField') "${k} is a cmpField instance"
     $ip = $idx[$k]['Properties']
-    Assert-True (([string]$ip['DefaultValue']).Trim() -ceq "=varEmpEdit.$($inputMap[$k])") "${k}.DefaultValue = varEmpEdit.$($inputMap[$k])"
+    $dvExp = if ($k -eq 'cmpEmpLanguage') { '=If(IsBlank(Trim(varEmpEdit.Language & "")),Coalesce(varEmpLangPrefill,""),varEmpEdit.Language)' } else { "=varEmpEdit.$($inputMap[$k])" }  # Language: saved value, prefill only when the saved value is empty (Eddy 15-11-2026)
+    Assert-True (([string]$ip['DefaultValue']).Trim() -ceq $dvExp) "${k}.DefaultValue = $dvExp"
     Assert-True (([string]$ip['Enabled']).Trim() -ceq $fieldEnabled) "${k}.Enabled = the edit guard (Loaded, no load error, not busy/saving/failed, Mode New or Edit), as Boolean"
     Assert-True ($ip['Invalid'] -ceq ('=CountIf(colEmpSaveErrors,Field="' + $inputMap[$k] + '")>0')) "${k}.Invalid = CountIf(colEmpSaveErrors,Field=""$($inputMap[$k])"")>0 (red border rule)"
-    $itExp = if ($k -eq 'cmpEmpCountry') { '="dropdown"' } else { '="text"' }
-    Assert-True ($ip['InputType'] -ceq $itExp -and $ip['MaxLength'] -ceq '=255' -and $ip['HintText'] -ceq '=""' -and -not $ip.ContainsKey('OnChange')) "${k}: InputType $itExp, MaxLength 255, HintText, no OnChange logic"
-    Assert-True (($ip.ContainsKey('Items')) -eq ($k -eq 'cmpEmpCountry')) "${k}: Items only on the Country dropdown"
+    $itExp = if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { '="dropdown"' } else { '="text"' }
+    Assert-True ($ip['InputType'] -ceq $itExp -and $ip['MaxLength'] -ceq '=255' -and $ip['HintText'] -ceq '=""' -and ($ip.ContainsKey('OnChange') -eq ($k -eq 'cmpEmpCountry'))) "${k}: InputType $itExp, MaxLength 255, HintText, OnChange only on Country (Language prefill)"
+    Assert-True (($ip.ContainsKey('Items')) -eq ($k -in 'cmpEmpCountry', 'cmpEmpLanguage')) "${k}: Items only on the Country and Language dropdowns"
     Assert-True ($ip['Label'] -ceq ('=' + (TT0 $fieldLabels[$k]))) "${k}.Label from T.$($fieldLabels[$k])"
-    Assert-True (($ip.ContainsKey('Required') -and $ip['Required'] -eq '=true') -eq ($k -eq 'cmpEmpName')) "${k}.Required only on Contractor Name"
+    Assert-True (($ip.ContainsKey('Required') -and $ip['Required'] -eq '=true') -eq ($k -in 'cmpEmpName', 'cmpEmpLanguage')) "${k}.Required only on Contractor Name and Language"
     Assert-True ($ip['Height'] -ceq '=58' -and $ip['Width'] -ceq '=lblEmpGrid.Width') "${k}: height 58 (label 18 + 4 + field 36), grid cell width"
 }
 $cp = $idx['cmpEmpCode']['Properties']
@@ -313,7 +315,7 @@ foreach ($k in $all.Keys) {
         $call = Get-Balanced $fx ($m.Index + $m.Value.IndexOf('('))
         $arg = $call.Substring($m.Value.Length - $m.Value.IndexOf('('))
         if ($arg -notmatch "(?<![\w.'])(?:Employers|Workers|Projects|Hours)\b(?!\.)|'(?:Project Workers|Assignment Periods)'") { continue }
-        if ($arg.TrimStart().StartsWith('Patch(') -or $arg.TrimStart().StartsWith('If(varEmpSaveWriteCountry,Patch(Employers,')) { continue }  # item 9: the one write (record shape chosen by If)
+        if ($arg.TrimStart().StartsWith('Patch(') -or $arg.TrimStart().StartsWith('If(varEmpSaveWriteCountry && varEmpSaveWriteLanguage,Patch(Employers,')) { continue }  # item 9: the one write (record shape chosen by If)
         $reads++
         $col = $m.Groups[1].Value
         $after = $fx.Substring($m.Index)
@@ -338,37 +340,41 @@ Assert-True ($filters -ge 3) "Server predicates checked: $filters"
 Assert-True ($screenText -notmatch '\bSearch\(') 'No Search() on scrContractors'
 # 04-11-2026 (item 9, MS-024): Employers.Country is a choice column. Choices() only on the cmpEmpCountry dropdown Items and once in Save (in-list flag), never inside ForAll.
 $eChoices = @($all.Keys | Where-Object { $all[$_] -match '\bChoices\(' } | Sort-Object)
-Assert-True (($eChoices -join ',') -ceq 'btnEmpSave.OnSelect,cmpEmpCountry.Items') "Contractors: Choices() only on the Country dropdown Items and in Save ($($eChoices -join ', '))"
+Assert-True (($eChoices -join ',') -ceq 'btnEmpSave.OnSelect,cmpEmpCountry.Items,cmpEmpLanguage.Items') "Contractors: Choices() only on the Country and Language dropdown Items and in Save ($($eChoices -join ', '))"
 Assert-True ((Get-Prop 'cmpEmpCountry' 'Items') -ceq '=ShowColumns(Choices([@Employers].Country),Value)') 'Contractors: Country dropdown Items = ShowColumns(Choices([@Employers].Country),Value) (column Value as identifier), same as Projects'
-Assert-True (([regex]::Matches((Get-Prop 'btnEmpSave' 'OnSelect'), '\bChoices\(')).Count -eq 1 -and @($all.Values | Where-Object { $_ -match 'ForAll\([^;]*\bChoices\(' }).Count -eq 0) 'Contractors: Choices() once in Save, never inside ForAll'
+Assert-True (([regex]::Matches((Get-Prop 'btnEmpSave' 'OnSelect'), '\bChoices\(')).Count -eq 2 -and @($all.Values | Where-Object { $_ -match 'ForAll\([^;]*\bChoices\(' }).Count -eq 0) 'Contractors: Choices() twice in Save (Country and Language in-list flags), never inside ForAll'
 Assert-True ($screenText -notmatch "ForAll\([^)]*\b(?:Employers|Workers)\b[^)]*\)[^;]*\b(?:LookUp|Filter)\(\s*(?:Employers|Workers)") 'No remote LookUp/Filter inside ForAll'
 
 # (6)-(8) Save: validation, duplicate block, conflict check, one Patch, verify read, local update after verify ----
 $save = Get-Prop 'btnEmpSave' 'OnSelect'; $saveN = Norm $save
-# Item 9 (04-11-2026, Country choice safety like Projects N3): one write per save; the record shape (with / without Country) is chosen by one If inside the single write gate.
+# Item 9 (04-11-2026) + Language (Eddy 15-11-2026): one write per save; the record shape (with / without Country, with / without Language) is chosen by one If inside the single write gate (like Projects N3).
 $eSelAt = $save.IndexOf('ClearCollect(colEmpPatched,If(')
-Assert-True ($eSelAt -gt 0 -and ([regex]::Matches($save, 'ClearCollect\(colEmpPatched,')).Count -eq 1) 'Contractors: exactly one ClearCollect(colEmpPatched, If(<shape>, Patch, Patch)) write step in Save'
+Assert-True ($eSelAt -gt 0 -and ([regex]::Matches($save, 'ClearCollect\(colEmpPatched,')).Count -eq 1) 'Contractors: exactly one ClearCollect(colEmpPatched, If(<shape>, Patch, ...)) write step in Save'
 $eSel = Get-Balanced $save ($eSelAt + 'ClearCollect(colEmpPatched,If'.Length)
 $eSelArgs = Split-Args $eSel.Substring(1, $eSel.Length - 2)
-Assert-True ($eSelArgs.Count -eq 3 -and $eSelArgs[0].Trim() -ceq 'varEmpSaveWriteCountry' -and $eSelArgs[1].Trim().StartsWith('Patch(Employers,') -and $eSelArgs[2].Trim().StartsWith('Patch(Employers,')) 'Contractors: If(varEmpSaveWriteCountry, Patch(with Country), Patch(without Country)): exactly one Patch runs'
-Assert-True (([regex]::Matches($srcAll, '\bPatch\(\s*Employers\b')).Count -eq 2 -and ([regex]::Matches($eSel, '\bPatch\(\s*Employers\b')).Count -eq 2) 'The two Patch(Employers) shapes are both inside that one If in btnEmpSave.OnSelect (no other Patch(Employers) in Src)'
+Assert-True ($eSelArgs.Count -eq 7 -and $eSelArgs[0].Trim() -ceq 'varEmpSaveWriteCountry && varEmpSaveWriteLanguage' -and $eSelArgs[2].Trim() -ceq 'varEmpSaveWriteCountry' -and $eSelArgs[4].Trim() -ceq 'varEmpSaveWriteLanguage' -and @(1, 3, 5, 6 | Where-Object { -not $eSelArgs[$_].Trim().StartsWith('Patch(Employers,') }).Count -eq 0) 'Contractors: If(Country && Language, Patch, Country, Patch, Language, Patch, Patch): exactly one Patch runs'
+Assert-True (([regex]::Matches($srcAll, '\bPatch\(\s*Employers\b')).Count -eq 4 -and ([regex]::Matches($eSel, '\bPatch\(\s*Employers\b')).Count -eq 4) 'The four Patch(Employers) shapes are all inside that one If in btnEmpSave.OnSelect (no other Patch(Employers) in Src)'
 $eShape = @{}
-foreach ($si in 1, 2) {
+foreach ($si in 1, 3, 5, 6) {
     $sp = $eSelArgs[$si].Trim(); $sa = Split-Args $sp.Substring('Patch('.Length, $sp.Length - 'Patch('.Length - 1)
     Assert-True ($sa.Count -eq 3 -and $sa[1].Trim() -ceq 'If(varEmpSaveMode="New",Defaults(Employers),First(colEmpPreRaw))') "Contractors: shape $si : base Defaults(Employers) for New, the pre-read record for Edit"
     $sr = $sa[2].Trim(); $eShape[$si] = [ordered]@{}; foreach ($a in (Split-Args $sr.Substring(1, $sr.Length - 2))) { $kv = $a -split ':', 2; $eShape[$si][$kv[0].Trim()] = $kv[1].Trim() }
 }
-$eShapeExp = @{ 1 = "Title,Street,'House Number',Postalcode,City,Country,'Contact Name','Contact Email','Contact Phone',Active"; 2 = "Title,Street,'House Number',Postalcode,City,'Contact Name','Contact Email','Contact Phone',Active" }
-foreach ($si in 1, 2) { Assert-True ((@($eShape[$si].Keys) -join ',') -ceq $eShapeExp[$si]) "Contractors: shape $si writes exactly $($eShapeExp[$si]) (no Address, no Employer Code)" }
-Assert-True ((@($eShape[2].Keys | ForEach-Object { "$_=$($eShape[2][$_])" }) -join ';') -ceq (@($eShape[1].Keys | Where-Object { $_ -ne 'Country' } | ForEach-Object { "$_=$($eShape[1][$_])" }) -join ';')) 'Contractors: both shapes write the other 9 fields identically'
-Assert-True ($eShape[1]['Country'] -ceq 'If(IsBlank(varEmpSaveRec.Country),Blank(),{Value:varEmpSaveRec.Country})') 'Contractors: Country patched as {Value: ...} (blank selection = Blank())'
+$eShapeKeys = @{ 1 = @('Country', 'Language'); 3 = @('Country'); 5 = @('Language'); 6 = @() }
+$eShapeExp = @{}
+foreach ($si in 1, 3, 5, 6) { $eShapeExp[$si] = (@("Title", "Street", "'House Number'", "Postalcode", "City") + @($eShapeKeys[$si]) + @("'Contact Name'", "'Contact Email'", "'Contact Phone'", "Active")) -join ',' }
+foreach ($si in 1, 3, 5, 6) { Assert-True ((@($eShape[$si].Keys) -join ',') -ceq $eShapeExp[$si]) "Contractors: shape $si writes exactly $($eShapeExp[$si]) (no Address, no Employer Code)" }
+foreach ($si in 3, 5, 6) { Assert-True ((@($eShape[$si].Keys | Where-Object { $_ -notin 'Country', 'Language' } | ForEach-Object { "$_=$($eShape[$si][$_])" }) -join ';') -ceq (@($eShape[1].Keys | Where-Object { $_ -notin 'Country', 'Language' } | ForEach-Object { "$_=$($eShape[1][$_])" }) -join ';')) "Contractors: shape $si writes the other 9 fields identically to shape 1" }
+foreach ($si in 1, 3) { Assert-True ($eShape[$si]['Country'] -ceq 'If(IsBlank(varEmpSaveRec.Country),Blank(),{Value:varEmpSaveRec.Country})') "Contractors: shape $si Country patched as {Value: ...} (blank selection = Blank())" }
+foreach ($si in 1, 5) { Assert-True ($eShape[$si]['Language'] -ceq '{Value:varEmpSaveRec.Language}') "Contractors: shape $si Language patched as {Value: ...} (required, never blank)" }
+$eShape[2] = $eShape[6]
 Assert-True ($eShape[1]['Title'] -ceq 'varEmpSaveRec.Name' -and $eShape[1]['Street'] -ceq 'varEmpSaveRec.Street' -and $eShape[1]["'House Number'"] -ceq 'varEmpSaveRec.HouseNumber') 'Contractors: Title = Name, Street, House Number from the save record'
 Assert-True ($eSel -notmatch '\bChoices\(' -and $srcAll -notmatch '\bemp\.Address\b' -and $screenText -notmatch '\bAddress\s*:' -and $screenText -notmatch '\.Address\b|\bcmpEmpAddress\b|empFieldAddress') 'Contractors: no Choices() in a Patch record; Address is never read, compared, shown or written on scrContractors (column kept in SharePoint)'
 foreach ($k in $all.Keys) { if ($k -ne 'btnEmpSave.OnSelect') { Assert-True ($all[$k] -notmatch '\bPatch\(') "$k has no Patch" } }
 Assert-True ($eSel -notmatch "Employer Code|EmployerCode1|'Employer Code'") 'Patch never writes Contractor Code (Employer Code / EmployerCode1)'
-foreach ($f in @('Name', 'Street', 'HouseNumber', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
+foreach ($f in @('Name', 'Street', 'HouseNumber', 'Postalcode', 'City', 'Country', 'Language', 'ContactName', 'ContactEmail', 'ContactPhone')) {
     Assert-True ($save -match "$f\s*:\s*Trim\(cmpEmp$f\.Value & """"\)") "Save record trims $f (Trim(x & """"): blank input = empty text)"
-    if ($f -ne 'Country') { Assert-True ($saveN.Contains("If(Len(varEmpSaveRec.$f)>255,Collect(colEmpSaveErrors,{Field:`"$f`"")) "Length check <= 255 for $f" } else { Assert-True (!$saveN.Contains('If(Len(varEmpSaveRec.Country)>255')) 'Country: no length check (choice list check instead, like Projects)' }
+    if ($f -notin 'Country', 'Language') { Assert-True ($saveN.Contains("If(Len(varEmpSaveRec.$f)>255,Collect(colEmpSaveErrors,{Field:`"$f`"")) "Length check <= 255 for $f" } else { Assert-True (!$saveN.Contains('If(Len(varEmpSaveRec.Country)>255')) 'Country: no length check (choice list check instead, like Projects)' }
 }
 Assert-True ($saveN.Contains('If(IsBlank(varEmpSaveRec.Name),Collect(colEmpSaveErrors,{Field:"Name"')) 'Name required (after Trim)'
 Assert-True ($saveN.Contains('!IsMatch(varEmpSaveRec.ContactEmail,Match.Email)')) 'Email: empty or IsMatch(Match.Email)'
@@ -377,7 +383,7 @@ Assert-True ($saveN.Contains('CountIf(colAdminEmployers,Lower(Trim(Name))=varEmp
 Assert-True ($saveN.Contains('Set(varEmpDupName,varEmpSaveRec.Name);Set(varEmpDupKey,Lower(varEmpSaveRec.Name));')) 'Duplicate predicate variables set before the reads'
 $proj = [regex]::Match($load, 'As emp,(\{ID:emp\.ID,[^}]*\})').Groups[1].Value
 Assert-True ($proj.Length -gt 0 -and ([regex]::Matches($screenText, [regex]::Escape($proj))).Count -eq 4) 'One projection text for load, pre-read, duplicate read and verify read'
-foreach ($f in @('Name', 'Street', 'HouseNumber', 'Postalcode', 'City', 'Country', 'ContactName', 'ContactEmail', 'ContactPhone')) {
+foreach ($f in @('Name', 'Street', 'HouseNumber', 'Postalcode', 'City', 'Country', 'Language', 'ContactName', 'ContactEmail', 'ContactPhone')) {
     Assert-True ($saveN.Contains("Trim(p.$f&`"`")<>Trim(varEmpEdit.$f&`"`")")) "Conflict check compares $f (pre-read vs loaded snapshot, both Trim(x & `"`"))"
     Assert-True ($saveN.Contains("D:Trim(v.$f&`"`")<>Trim(varEmpSaveRec.$f&`"`")")) "Verify read compares $f with the written value (both Trim(x & `"`"))"
 }
@@ -395,7 +401,7 @@ $iGateRead = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),IfError(Refresh(Employ
 $iPre = $saveN.IndexOf('ClearCollect(colEmpPreRaw,Filter(Employers,ID=varEmpSaveID))')
 $iDup = $saveN.IndexOf('ClearCollect(colEmpDup,')
 $iConf = $saveN.IndexOf('Set(varEmpSaveConflict,true)')
-$iWriteGate = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),Set(varEmpPatchError,false);IfError(CountRows(ClearCollect(colEmpPatched,If(varEmpSaveWriteCountry,Patch(Employers,')
+$iWriteGate = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),Set(varEmpPatchError,false);IfError(CountRows(ClearCollect(colEmpPatched,If(varEmpSaveWriteCountry&&varEmpSaveWriteLanguage,Patch(Employers,')
 $iPatch = $saveN.IndexOf('Patch(Employers,')
 $iVerify = $saveN.IndexOf('ClearCollect(colEmpVerifyRaw,Filter(Employers,ID=varEmpPatchedID))')
 $iOk = $saveN.IndexOf('Set(varEmpSaveVerified,true)')
@@ -408,7 +414,7 @@ Assert-True (([regex]::Matches($saveN, 'Set\(varEmpSaveFailed,true\)')).Count -e
 Assert-True ($saveN.Contains('Set(varEmpSaveWarnWorkers,If(varEmpSaveMode="Edit"&&Coalesce(varEmpEdit.Active,true)&&!varEmpSaveRec.Active,CountIf(colEmpWorkers,EmployerID=varEmpSaveID')) 'Deactivation with active workers is counted (warning)'
 Assert-True ($screenText -notmatch 'Collect\(colEmpSaveErrors,\{[^}]*empWarnActiveWorkers') 'Active-worker warning never blocks the save'
 Assert-True ($load.Contains('ClearCollect(colPendingEmpWorkers,ForAll(Workers As wrk,{ID:wrk.ID,EmployerID:wrk.Employer.Id,WorkerActive:wrk.Active}))')) 'Workers read for the warning: explicit projection (lookup ID filtered locally)'
-$reset = 'Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))'
+$reset = 'Reset(cmpEmpName); Reset(cmpEmpStreet); Reset(cmpEmpHouseNumber); Reset(cmpEmpPostalcode); Reset(cmpEmpCity); Reset(cmpEmpCountry); Set(varEmpLangPrefill,""); Reset(cmpEmpLanguage); Reset(cmpEmpContactName); Reset(cmpEmpContactEmail); Reset(cmpEmpContactPhone); Set(varEmpActiveDraft,Coalesce(varEmpEdit.Active,true))'
 foreach ($k in @('btnEmpLoad.OnSelect', 'btnEmpSave.OnSelect', 'btnEmpNew.OnSelect', 'btnEmpDiscard.OnSelect', 'galEmpList.OnSelect')) { Assert-True ($all[$k].Contains($reset)) "$k resets all form inputs" }
 $disc = Get-Prop 'btnEmpDiscard' 'OnSelect'
 Assert-True ($disc -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf)\(' -and $disc.Contains('If(Coalesce(varEmpSaveFailed,false),') -and $disc.Contains('Set(varEmpForceRefresh,true); Select(btnEmpLoad)')) 'Discard is local; after a failed save it reloads through the staged loader'
@@ -485,8 +491,8 @@ Assert-Eval '"Test"="test"' $false 'Text comparison is case-sensitive (Name veri
 $badCoalesce = @([regex]::Matches($screenText, 'Coalesce\(\s*(?:emp|p|v|varEmpEdit|varEmpSaveRec|cmpEmp\w+)\.[^,()]+,\s*""\s*\)') | ForEach-Object { $_.Value })
 Assert-True ($badCoalesce.Count -eq 0) "No Coalesce(<field>,`"`") on Employers projections, inputs or compare expressions $($badCoalesce -join '; ')"
 Assert-True ($proj -notmatch 'Coalesce\([^)]*,""\)' -and $proj.Contains('Name:Trim(emp.Title & "")') -and $proj.Contains('Active:Coalesce(emp.Active,true)')) 'Projection: text = Trim(x & ""), Active = Coalesce(x,true)'
-foreach ($c in @("'Employer Code'", 'Street', "'House Number'", 'Postalcode', 'City', 'Country.Value', "'Contact Name'", "'Contact Email'", "'Contact Phone'")) { Assert-True ($proj.Contains("Trim(emp.$c & `"`")")) "Projection normalizes $c with Trim(x & `"`")" }
-Assert-True ((@([regex]::Matches($proj, '[\{,](\w+):') | ForEach-Object { $_.Groups[1].Value }) -join ',') -ceq 'ID,Name,Code,Street,HouseNumber,Postalcode,City,Country,ContactName,ContactEmail,ContactPhone,Active' -and $proj -notmatch 'Address') 'Projection fields: ID, Name, Code, Street, HouseNumber, Postalcode, City, Country (choice .Value), ContactName, ContactEmail, ContactPhone, Active (no Address)'
+foreach ($c in @("'Employer Code'", 'Street', "'House Number'", 'Postalcode', 'City', 'Country.Value', 'Language.Value', "'Contact Name'", "'Contact Email'", "'Contact Phone'")) { Assert-True ($proj.Contains("Trim(emp.$c & `"`")")) "Projection normalizes $c with Trim(x & `"`")" }
+Assert-True ((@([regex]::Matches($proj, '[\{,](\w+):') | ForEach-Object { $_.Groups[1].Value }) -join ',') -ceq 'ID,Name,Code,Street,HouseNumber,Postalcode,City,Country,Language,ContactName,ContactEmail,ContactPhone,Active' -and $proj -notmatch 'Address') 'Projection fields: ID, Name, Code, Street, HouseNumber, Postalcode, City, Country (choice .Value), ContactName, ContactEmail, ContactPhone, Active (no Address)'
 # Expressions taken from the source
 $tRec = [regex]::Match($formulas, '(?s)\bT\s*=\s*(\{.*\})\s*;\s*$').Groups[1].Value
 Assert-True ($tRec.Length -gt 0) 'Translation table T extracted from App.Formulas'
@@ -500,15 +506,15 @@ Assert-True $mCf.Success 'Conflict check located (With({p:First(colEmpPre)},If(.
 $cfCall = Get-Balanced $save ($mCf.Index + $mCf.Length - 1)
 $conflictFx = (Split-Args $cfCall.Substring(1, $cfCall.Length - 2))[0]
 $fNames = @([regex]::Matches($tableFx, '\{F:"(\w+)"') | ForEach-Object { $_.Groups[1].Value })
-Assert-True (($fNames -join ',') -ceq 'Name,Street,HouseNumber,Postalcode,City,Country,ContactName,ContactEmail,ContactPhone,Active') "Verify compares exactly the app-written fields: $($fNames -join ',')"
+Assert-True (($fNames -join ',') -ceq 'Name,Street,HouseNumber,Postalcode,City,Country,Language,ContactName,ContactEmail,ContactPhone,Active') "Verify compares exactly the app-written fields: $($fNames -join ',')"
 Assert-True ($tableFx -cnotmatch '\.Code\b|"Code"|Employer Code|EmployerCode1|Modified' -and $conflictFx -cnotmatch '\.Code\b|Employer Code|EmployerCode1|Modified') 'Verify and conflict ignore Contractor Code (EmployerCode1, flow MS-019) and Modified'
 # Fixtures: a SharePoint row as returned after the save (typed blanks for empty fields), and the form inputs
 $blankT = 'If(false,"x")'; $blankB = 'If(false,true)'
 function Raw([string]$name, [string]$city, [string]$code, [string]$active, [string]$empty) {
-    return "{ID:7,Title:$name,'Employer Code':$code,Street:$empty,'House Number':$empty,Postalcode:$empty,City:$city,Country:{Value:$empty},'Contact Name':$empty,'Contact Email':$empty,'Contact Phone':$empty,Active:$active,Modified:DateTime(2026,10,28,9,0,0)}"
+    return "{ID:7,Title:$name,'Employer Code':$code,Street:$empty,'House Number':$empty,Postalcode:$empty,City:$city,Country:{Value:$empty},Language:{Value:$empty},'Contact Name':$empty,'Contact Email':$empty,'Contact Phone':$empty,Active:$active,Modified:DateTime(2026,10,28,9,0,0)}"
 }
 function Inputs([string]$name, [string]$city, [string]$empty, [string]$active) {
-    return "cmpEmpName:{Value:$name},cmpEmpStreet:{Value:$empty},cmpEmpHouseNumber:{Value:$empty},cmpEmpPostalcode:{Value:$empty},cmpEmpCity:{Value:$city},cmpEmpCountry:{Value:$empty},cmpEmpContactName:{Value:$empty},cmpEmpContactEmail:{Value:$empty},cmpEmpContactPhone:{Value:$empty},varEmpActiveDraft:$active"
+    return "cmpEmpName:{Value:$name},cmpEmpStreet:{Value:$empty},cmpEmpHouseNumber:{Value:$empty},cmpEmpPostalcode:{Value:$empty},cmpEmpCity:{Value:$city},cmpEmpCountry:{Value:$empty},cmpEmpLanguage:{Value:$empty},cmpEmpContactName:{Value:$empty},cmpEmpContactEmail:{Value:$empty},cmpEmpContactPhone:{Value:$empty},varEmpActiveDraft:$active"
 }
 function Proj([string]$raw) { return "With({emp:$raw},$proj)" }
 function SaveRec([string]$inputs) { return "With({$inputs},$saveRecFx)" }
@@ -542,7 +548,7 @@ Assert-Eval (Dirty $rawEmpty $inBlank) $false 'Not dirty: snapshot from "" field
 Assert-Eval (Dirty $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '"  "' 'true')) $false 'Not dirty: only spaces typed in empty fields (Save would write the same)'
 Assert-Eval (Dirty $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad3"' '""' 'true')) $true 'Dirty: City changed'
 Assert-Eval (Dirty $rawBlank (Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'false')) $true 'Dirty: Active unchecked (snapshot Active blank = active)'
-$newSnap = '{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
+$newSnap = '{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",Language:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
 Assert-Eval ('With({varEmpMode:"New",varEmpEdit:' + $newSnap + ',' + (Inputs '""' '""' $blankT 'true') + '},' + $dirty + ')') $false 'Not dirty: New form untouched (inputs Blank)'
 Assert-Eval ('With({varEmpMode:"New",varEmpEdit:' + $newSnap + ',' + (Inputs '"TEST Contractor 3"' '""' $blankT 'true') + '},' + $dirty + ')') $true 'Dirty: New form with a typed name'
 # Diagnosability: verify mismatch in the notification (labels only) and in Trace (field names only); Patch reason in the notification only
@@ -578,7 +584,7 @@ Assert-True ($idx.ContainsKey('btnEmpFormReset') -and $idx['btnEmpFormReset']['C
 $fr = Get-Prop 'btnEmpFormReset' 'OnSelect'
 Assert-True ($fr.StartsWith('=If(varEmpLoadState="Loaded" && IsEmpty(colEmpLoadErrors) && !Coalesce(varEmpBusy,false) && !Coalesce(varEmpSaving,false) && !Coalesce(varEmpSaveFailed,false),')) 'Form reset only when Loaded, no load errors, not busy/saving, no failed save (kept input after a failed save stays)'
 Assert-True ($fr.Contains($reset)) 'Form reset resets all 8 inputs and refills the Active switch draft from varEmpEdit'
-Assert-True ($fr.Replace($draftSet, '') -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate)\(' -and $fr -notmatch '\.Run\(') 'Form reset is local only (no mutation, no variable change except the switch draft refill, no further Select: no cycle)'
+Assert-True ($fr.Replace($draftSet, '').Replace('Set(varEmpLangPrefill,"")', '') -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Clear|Set|UpdateContext|Select|Navigate)\(' -and $fr -notmatch '\.Run\(') 'Form reset is local only (no mutation, no variable change except the switch draft refill and clearing the Language prefill, no further Select: no cycle)'
 Assert-True (([regex]::Matches($screenText, 'Select\(btnEmpFormReset\)')).Count -eq 2) 'btnEmpFormReset selected exactly twice (end of loader, verified save)'
 $iBusyOff = $load.LastIndexOf('Set(varEmpForceRefresh,false); Set(varEmpBusy,false);')
 Assert-True ($iBusyOff -gt 0 -and $load.IndexOf('If(varEmpLoadState="Loaded",Select(btnEmpFormReset))') -gt $iBusyOff) 'Loader selects the form reset at its end, after busy is cleared, only when Loaded'
@@ -915,8 +921,8 @@ Assert-True (($dirty -notmatch 'cmpEmpCode') -and ($saveN -notmatch 'cmpEmpCode'
 # Grid carriers (pinned) and numeric mirror
 Assert-True ((Get-Prop 'lblEmpMetrics' 'X') -eq '=If(lblEmpLayout.Width-48>=572,3,If(lblEmpLayout.Width-48>=376,2,1))' -and (Get-Prop 'lblEmpGrid' 'Width') -eq '=(lblEmpLayout.Width-48-16*(lblEmpMetrics.X-1))/lblEmpMetrics.X' -and (Get-Prop 'lblEmpGrid' 'Visible') -eq '=false') 'Grid: columns = 3 (content >= 572), 2 (>= 376), else 1; column width = (content - 16*(cols-1))/cols (gap 16, min ~180 per column); lblEmpGrid is a hidden label'
 Assert-True ((Get-Prop 'lblEmpMetrics' 'Y') -eq '=lblEmpModified.Y+lblEmpModified.Height+24') 'lblEmpMetrics.Y = bottom of the last row (lblEmpModified) + 24 padding'
-Assert-True ((Get-Prop 'lblEmpSecGeneral' 'Y') -eq '=lblEmpFormDivider.Y+1+20' -and (Get-Prop 'lblEmpSecAddress' 'Y') -eq '=lblEmpSecGeneral.Y+38+RoundUp(2/lblEmpMetrics.X,0)*74' -and (Get-Prop 'lblEmpSecContact' 'Y') -eq '=lblEmpSecAddress.Y+38+RoundUp(5/lblEmpMetrics.X,0)*74' -and (Get-Prop 'btnEmpActiveSwitch' 'Y') -eq '=lblEmpSecContact.Y+38+RoundUp(3/lblEmpMetrics.X,0)*74') 'Section tops: previous top + 38 + rows*74 (label 18 + 4 + field 36 + 16 row gap; header 18 + 12; 24 between sections); bottom row below CONTACT'
-$grid = @{ GENERAL = @('Name', 'Code'); ADDRESS = @('Street', 'HouseNumber', 'Postalcode', 'City', 'Country'); CONTACT = @('ContactName', 'ContactEmail', 'ContactPhone') }
+Assert-True ((Get-Prop 'lblEmpSecGeneral' 'Y') -eq '=lblEmpFormDivider.Y+1+20' -and (Get-Prop 'lblEmpSecAddress' 'Y') -eq '=lblEmpSecGeneral.Y+38+RoundUp(2/lblEmpMetrics.X,0)*74' -and (Get-Prop 'lblEmpSecContact' 'Y') -eq '=lblEmpSecAddress.Y+38+RoundUp(6/lblEmpMetrics.X,0)*74' -and (Get-Prop 'btnEmpActiveSwitch' 'Y') -eq '=lblEmpSecContact.Y+38+RoundUp(3/lblEmpMetrics.X,0)*74') 'Section tops: previous top + 38 + rows*74 (label 18 + 4 + field 36 + 16 row gap; header 18 + 12; 24 between sections); bottom row below CONTACT'
+$grid = @{ GENERAL = @('Name', 'Code'); ADDRESS = @('Street', 'HouseNumber', 'Postalcode', 'City', 'Country', 'Language'); CONTACT = @('ContactName', 'ContactEmail', 'ContactPhone') }
 $secCtl = @{ GENERAL = 'lblEmpSecGeneral'; ADDRESS = 'lblEmpSecAddress'; CONTACT = 'lblEmpSecContact' }
 foreach ($s in $grid.Keys) {
     Assert-True ($idx[$secCtl[$s]]['Control'] -eq 'Label@2.5.1' -and (Get-Prop $secCtl[$s] 'Size') -eq '=12' -and (Get-Prop $secCtl[$s] 'FontWeight') -eq '=FontWeight.Bold' -and (Get-Prop $secCtl[$s] 'Color') -eq '=ColorValue("#0303B8")' -and (Get-Prop $secCtl[$s] 'Text') -match 'T\.emp' -and (Get-Prop $secCtl[$s] 'Height') -eq '=18') "$($secCtl[$s]): section header 12 Bold #0303B8 from T, h18"
@@ -947,7 +953,7 @@ Assert-True (((Get-Prop 'btnEmpFormChip' 'Text').Contains('T.empFieldActive')) -
 Assert-True (((Get-Prop 'lblEmpFormTitle' 'Width') -eq '=Max(0,Parent.Width-48-84)') -and ((Get-Prop 'lblEmpFormTitle' 'X') -eq '=24')) 'Header title leaves room for the chip (72 + 12) and never overlaps it'
 Assert-True (((Get-Prop 'lblEmpFormDivider' 'Fill') -eq '=ColorValue("#EDEDED")') -and ((Get-Prop 'lblEmpFormDivider' 'Height') -eq '=1') -and ((Get-Prop 'lblEmpFormDivider' 'Width') -eq '=lblEmpLayout.Width-48') -and ((Get-Prop 'lblEmpFormDivider' 'Y') -eq '=lblEmpFormTitle.Y+lblEmpFormTitle.Height+16')) 'Divider: 1 px #EDEDED under the header, full content width'
 $formKids = @($idx['conEmpFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
-$expKids = 'lblEmpFormTitle,btnEmpFormChip,lblEmpFormDivider,lblEmpSecGeneral,cmpEmpName,cmpEmpCode,lblEmpSecAddress,cmpEmpStreet,cmpEmpHouseNumber,cmpEmpPostalcode,cmpEmpCity,cmpEmpCountry,lblEmpSecContact,cmpEmpContactName,cmpEmpContactEmail,cmpEmpContactPhone,btnEmpActiveSwitch,btnEmpActiveKnob,lblEmpActiveState,lblEmpModified'
+$expKids = 'lblEmpFormTitle,btnEmpFormChip,lblEmpFormDivider,lblEmpSecGeneral,cmpEmpName,cmpEmpCode,lblEmpSecAddress,cmpEmpStreet,cmpEmpHouseNumber,cmpEmpPostalcode,cmpEmpCity,cmpEmpCountry,cmpEmpLanguage,lblEmpSecContact,cmpEmpContactName,cmpEmpContactEmail,cmpEmpContactPhone,btnEmpActiveSwitch,btnEmpActiveKnob,lblEmpActiveState,lblEmpModified'
 Assert-True (($formKids -join ',') -ceq $expKids) "conEmpFormCard children (final structure): $($formKids -join ',')"
 # numeric mirror of the grid
 foreach ($W in 320, 768, 900, 1000, 1280, 1366, 1920) {
@@ -1133,7 +1139,7 @@ $lcPredC = $lcGal.Substring('=Filter(cmpListCard.Items,'.Length, $lcGal.Length -
 $empPred = $lcPredC.Replace('txtSearch.Text', 'cmpEmpList.SearchText').Replace('cmpListCard.ShowInactive', 'Coalesce(varEmpShowInactive,false)')
 # the loader auto-select = the first row the list card shows: host Items, then the component's own predicate (Show inactive = varEmpShowInactive, search on its SearchText)
 $empItems = 'Filter(' + $empItemsAll + ',' + $empPred + ')'
-$empEmpty = '{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
+$empEmpty = '{ID:Blank(),Name:"",Code:"",Street:"",HouseNumber:"",Postalcode:"",City:"",Country:"",Language:"",ContactName:"",ContactEmail:"",ContactPhone:"",Active:true}'
 Test-AutoSelect $load $empItems $null (Get-Prop 'galEmpList' 'OnSelect') 'Emp' 'colAdminEmployers' $empEmpty $dirty 'Contractors'
 Assert-True ((Get-Prop 'cmpEmpList' 'SelectedID') -ceq '=Coalesce(varEmpSelectedID,0)') 'Contractors auto-select: the selected ID goes to cmpListCard.SelectedID (row highlight), Coalesce to 0 without selection'
 $empSelFix = 'colAdminEmployers:Table({ID:1,Name:"Zeta",Code:"EMP-001",City:"Ede",Active:true},{ID:2,Name:"alpha",Code:"EMP-002",City:"",Active:false},{ID:3,Name:"Beta",Code:"",City:"Delft",Active:If(false,true)})'
@@ -1176,7 +1182,7 @@ $cmpFieldDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $s
 $cvFx = ([string]$cmpFieldDef['Properties']['Value']).TrimStart('=')
 function CV-Rec([string]$valueFx, [string]$type) { return "{Value:With({cmpField:{InputType:`"$type`",DefaultValue:($valueFx) & `"`"},txtFieldValue:{Text:($valueFx) & `"`"},ddFieldValue:{Selected:If(IsBlank($valueFx),If(false,{Value:`"`"}),{Value:$valueFx})}},$cvFx)}" }
 function Emp-Inputs([string]$cityOverride) {
-    $parts = @(); foreach ($k in $inputMap.Keys) { $v = "varEmpEdit.$($inputMap[$k])"; if ($k -eq 'cmpEmpCity' -and $cityOverride -ne '') { $v = $cityOverride }; $ty = if ($k -eq 'cmpEmpCountry') { 'dropdown' } else { 'text' }; $parts += "${k}:$(CV-Rec $v $ty)" }
+    $parts = @(); foreach ($k in $inputMap.Keys) { $v = "varEmpEdit.$($inputMap[$k])"; if ($k -eq 'cmpEmpCity' -and $cityOverride -ne '') { $v = $cityOverride }; $ty = if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { 'dropdown' } else { 'text' }; $parts += "${k}:$(CV-Rec $v $ty)" }
     return ($parts -join ',') + ',varEmpActiveDraft:Coalesce(varEmpEdit.Active,true)'
 }
 $lblDirtyFx = ([string]$idx['lblEmpDirty']['Properties']['Text']).Trim().TrimStart('=')
@@ -1187,7 +1193,7 @@ Assert-Eval "With({$loadEnv},Text(First($empItems).ID))" '3' 'Dirty fixture: loa
 Assert-Eval "With({$loadEnv},With({varEmpMode:`"Edit`",varEmpEdit:LookUp(colAdminEmployers,ID=First($empItems).ID)},With({$(Emp-Inputs '')},$lblDirtyFx)))" 'false' 'Contractors: dirty false right after load (auto-selected row, inputs reset to the loaded values; blanks and spaces normalized by the loader)'
 foreach ($id in 1, 2, 3) { Assert-Eval "With({$loadEnv},With({varEmpMode:`"Edit`",varEmpEdit:LookUp(colAdminEmployers,ID=$id)},With({$(Emp-Inputs '')},$lblDirtyFx)))" 'false' "Contractors: dirty false after selecting row $id" }
 Assert-Eval "With({varEmpMode:`"New`",varEmpEdit:$empEmpty},With({$(Emp-Inputs '')},$lblDirtyFx))" 'false' 'Contractors: dirty false after New (empty snapshot, Active true)'
-Assert-Eval "With({varEmpMode:`"Edit`",varEmpEdit:{ID:9,Name:`"N`",Code:$blankT,Street:$blankT,HouseNumber:$blankT,Postalcode:$blankT,City:$blankT,Country:$blankT,ContactName:$blankT,ContactEmail:$blankT,ContactPhone:$blankT,Active:$blankB}},With({$(Emp-Inputs '')},$lblDirtyFx))" 'false' 'Contractors: dirty false for a snapshot with Blank fields and Blank Active (blank = "" and = active)'
+Assert-Eval "With({varEmpMode:`"Edit`",varEmpEdit:{ID:9,Name:`"N`",Code:$blankT,Street:$blankT,HouseNumber:$blankT,Postalcode:$blankT,City:$blankT,Country:$blankT,Language:$blankT,ContactName:$blankT,ContactEmail:$blankT,ContactPhone:$blankT,Active:$blankB}},With({$(Emp-Inputs '')},$lblDirtyFx))" 'false' 'Contractors: dirty false for a snapshot with Blank fields and Blank Active (blank = "" and = active)'
 Assert-Eval "With({$loadEnv},With({varEmpMode:`"Edit`",varEmpEdit:LookUp(colAdminEmployers,ID=3)},With({$(Emp-Inputs $emptyQ)},$lblDirtyFx)))" 'true' 'Contractors: dirty true when an input still shows another value than the loaded one (what the Studio test showed)'
 # Item 9 (04-11-2026, MS-024): ADDRESS = Street, House Number, Postal Code, City, Country (choice). Country choice safety like Projects N3:
 # an UNCHANGED stored Country outside Choices([@Employers].Country) is not written (Patch shape without Country); a new or changed value
@@ -1235,6 +1241,62 @@ Assert-Eval (Dirty $rawCo ((Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'tr
 Assert-Eval (Dirty $rawBlank ((Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'true').Replace('cmpEmpStreet:{Value:""}', 'cmpEmpStreet:{Value:"Main St"}'))) $true 'Dirty: Street changed'
 Assert-Eval (Dirty $rawBlank ((Inputs '"TEST Contractor 2"' '"Test Stad2"' '""' 'true').Replace('cmpEmpHouseNumber:{Value:""}', 'cmpEmpHouseNumber:{Value:"12a"}'))) $true 'Dirty: House Number changed'
 Assert-True ((Get-Prop 'cmpEmpCountry' 'DefaultValue') -ceq '=varEmpEdit.Country' -and (Get-Prop 'cmpEmpCountry' 'Invalid') -ceq '=CountIf(colEmpSaveErrors,Field="Country")>0') 'Contractors: Country dropdown DefaultValue = varEmpEdit.Country, Invalid via colEmpSaveErrors.Field'
+# 15-11-2026 (Eddy): Language (Employers.Language, choice, 8 values) right of Country; required in the app (red border + red bar,
+# Save blocked when empty); a NEW or CHANGED value outside Choices([@Employers].Language) is an error; an UNCHANGED value outside
+# the list is accepted and not written (like Workers.Language). Prefill: Country changed and Language empty -> CountryLanguageMap;
+# a filled Language is never overwritten.
+$appRaw = [IO.File]::ReadAllText((Join-Path $srcDir 'App.pa.yaml'))
+$mapM = [regex]::Match($appRaw, 'CountryLanguageMap = (Table\([^;]*\));')
+Assert-True $mapM.Success 'App.Formulas: named formula CountryLanguageMap = Table(...) (easy to extend: one row per country)'
+$mapFx = $mapM.Groups[1].Value
+Assert-Eval "Concat($mapFx,Country & `"=`" & Language,`",`")" 'Netherlands=Dutch,Poland=Polish,Czechia=Czech,Czech Republic=Czech,Germany=German,Romania=Romanian,Ukraine=Ukrainian,France=French,Belarus=Belarusian,United Kingdom=English,UK=English,Ireland=English' 'CountryLanguageMap (Eddy 19-11-2026): Poland Polish, Netherlands Dutch, Czechia/Czech Republic Czech, Germany German, Romania Romanian, Ukraine Ukrainian, France French, Belarus Belarusian, United Kingdom/UK/Ireland English'
+Assert-Eval "CountIf($mapFx,!(Language in [`"Dutch`",`"English`",`"Polish`",`"Czech`",`"Romanian`",`"Ukrainian`",`"German`",`"French`",`"Belarusian`"]))" 0 'CountryLanguageMap: every Language is one of the 9 choice spellings'
+Assert-Eval "CountRows($mapFx)-CountRows(Distinct($mapFx,Country))" 0 'CountryLanguageMap: each Country once'
+Assert-True ((Get-Prop 'cmpEmpLanguage' 'Items') -ceq '=ShowColumns(Choices([@Employers].Language),Value)' -and (Get-Prop 'cmpEmpLanguage' 'Invalid') -ceq '=CountIf(colEmpSaveErrors,Field="Language")>0' -and (Get-Prop 'cmpEmpLanguage' 'Required') -ceq '=true') 'Contractors: Language dropdown Items = Choices([@Employers].Language), Invalid via colEmpSaveErrors.Field, red star (Required)'
+Assert-True ((Get-Prop 'cmpEmpLanguage' 'X') -ceq '=24+Mod(5,lblEmpMetrics.X)*(lblEmpGrid.Width+16)' -and (Get-Prop 'cmpEmpLanguage' 'Y') -ceq '=lblEmpSecAddress.Y+30+RoundDown(5/lblEmpMetrics.X,0)*74') 'Contractors: Language = address cell 5 (3 columns: row City | Country | Language, the empty slot right of Country)'
+$dvL = (Get-Prop 'cmpEmpLanguage' 'DefaultValue').Substring(1)
+foreach ($c in @(@('"Polish"', '"German"', 'Polish', 'saved Language wins over a prefill'), @('""', '"German"', 'German', 'empty saved Language: prefill shown'), @('""', 'Blank()', '', 'empty saved Language, no prefill: empty'), @('Blank()', '"Czech"', 'Czech', 'blank saved Language: prefill shown'))) {
+    Assert-Eval "With({varEmpEdit:{Language:$($c[0])},varEmpLangPrefill:$($c[1])},$dvL & `"`")" $c[2] "Contractors Language DefaultValue: $($c[3])"
+}
+$ocL = Get-Prop 'cmpEmpCountry' 'OnChange'
+$ocB = Get-Balanced $ocL 3; $ocArgs = Split-Args $ocB.Substring(1, $ocB.Length - 2)
+Assert-True ($ocArgs.Count -eq 2 -and ('=' + $ocArgs[0]) -ceq (Get-Prop 'cmpEmpCountry' 'Enabled') -and $ocL.EndsWith('; true')) 'Contractors: Country.OnChange = If(<edit guard = Enabled>, prefill); true'
+$inner = $ocArgs[1].Trim()
+$inB = Get-Balanced $inner 2; $innerArgs = Split-Args $inB.Substring(1, $inB.Length - 2)
+$pfCond = $innerArgs[0]
+Assert-True ($innerArgs.Count -eq 2 -and $innerArgs[1].Contains('Set(varEmpLangPrefill,LookUp(CountryLanguageMap,Country=Trim(cmpEmpCountry.Value & "")).Language); Reset(cmpEmpLanguage);') -and $innerArgs[1] -notmatch '\b(Patch|Refresh|Collect|ClearCollect|Remove|RemoveIf|Navigate|Select)\(') 'Contractors: prefill only sets varEmpLangPrefill from the map and resets the Language field (local, no read/write)'
+foreach ($c in @(@('"Poland"', '""', '""', $true, 'New/Edit: Country Poland picked, Language empty -> prefill'),
+                @('"Poland"', '"Dutch"', '""', $false, 'Language already filled -> never overwritten'),
+                @('"Poland"', '"Dutch"', '""', $true, 'review N1 (v1.0.2): untouched prefill Dutch (Country Netherlands corrected to Poland) -> replaced', '"Dutch"'),
+                @('"Poland"', '"Czech"', '""', $false, 'review N1: Language changed by the user after a prefill -> never overwritten', '"Dutch"'),
+                @('"Poland"', '""', '"Poland"', $false, 'Country equals the saved value (reset/select) -> no prefill'),
+                @('"Belgium"', '""', '""', $false, 'Country not in the map -> no prefill'),
+                @('" Czechia "', '""', '""', $true, 'Country trimmed before the lookup'),
+                @('""', '""', '"Germany"', $false, 'Country cleared -> no prefill'))) {
+    $pf = if ($c.Count -gt 5) { $c[5] } else { '""' }
+    Assert-Eval "With({CountryLanguageMap:$mapFx,cmpEmpCountry:{Value:$($c[0])},cmpEmpLanguage:{Value:$($c[1])},varEmpEdit:{Country:$($c[2])},varEmpLangPrefill:$pf},$pfCond)" $c[3] "Contractors prefill: $($c[4])"
+}
+Assert-True ($save.Contains('Language:Trim(cmpEmpLanguage.Value & "")')) 'Contractors: Save record Language = Trim(cmpEmpLanguage.Value & "")'
+$eInL = 'CountIf(Choices([@Employers].Language),Value=varEmpSaveRec.Language)>0'
+Assert-True ($save.Contains("Set(varEmpSaveLanguageInList,$eInL);")) 'Contractors: Language in-list flag = CountIf(Choices([@Employers].Language),Value=<save value>)>0'
+$wlM = [regex]::Match($save, 'Set\(varEmpSaveWriteLanguage,(.*?)\);\r?\n'); $lvM = [regex]::Match($save, '(If\(IsBlank\(varEmpSaveRec\.Language\),.*?\));\r?\n')
+Assert-True ($wlM.Success -and $lvM.Success) 'Contractors: Language write flag and validation present'
+$iLv = $saveN.IndexOf('If(IsBlank(varEmpSaveRec.Language)'); $iIo = $saveN.IndexOf('If(IsEmpty(colEmpSaveErrors),IfError(Refresh(Employers),')
+Assert-True ($iLv -gt 0 -and $iIo -gt $iLv) 'Contractors: Language validated before the first read/write (zero writes on error)'
+$lvFx = [regex]::Replace($lvM.Groups[1].Value, 'Collect\(colEmpSaveErrors,\{Field:"Language",Message:If\(LangNl && !IsBlank\(T\.(\w+)\.nl\),T\.\w+\.nl,T\.\w+\.en\)\}\)', '"$1"')
+Assert-True ($lvFx.Contains('"empErrLanguageRequired"') -and $lvFx.Contains('"empErrLanguageUnknown"') -and $lvFx -notmatch 'Collect\(') 'Contractors: Language errors on field Language with T.empErrLanguageRequired / T.empErrLanguageUnknown'
+$chL = 'Table({Value:"Dutch"},{Value:"English"},{Value:"Polish"},{Value:"Czech"},{Value:"Romanian"},{Value:"Ukrainian"},{Value:"German"},{Value:"French"},{Value:"Belarusian"})'
+foreach ($c in @(@('"Edit"', '"Polish"', '""', 'true', 'empErrLanguageRequired', 'cleared -> blocked (required)'),
+                @('"Edit"', '""', '""', 'true', 'empErrLanguageRequired', 'legacy empty unchanged -> blocked (required)'),
+                @('"New"', '""', '""', 'true', 'empErrLanguageRequired', 'New without Language -> blocked'),
+                @('"New"', '""', '"Czech"', 'true', '', 'New with a list value -> written'),
+                @('"Edit"', '"Polish"', '"Dutch"', 'true', '', 'changed to a list value -> written'),
+                @('"Edit"', '"Nederlands"', '"Nederlands"', 'false', '', 'legacy value outside the list unchanged -> accepted, not written'),
+                @('"Edit"', '"Nederlands"', '"Klingon"', 'true', 'empErrLanguageUnknown', 'changed to another unknown value -> error'))) {
+    $env = "chL:$chL,varEmpSaveMode:$($c[0]),varEmpEdit:{Language:$($c[1])},varEmpSaveRec:{Language:$($c[2])}"
+    Assert-Eval "With({$env},With({varEmpSaveLanguageInList:$($eInL.Replace('Choices([@Employers].Language)', 'chL'))},Text($($wlM.Groups[1].Value)) & `"|`" & ($lvFx & `"`")))" "$($c[3])|$($c[4])" "Contractors Language: $($c[5]) -> WriteLanguage|Error = $($c[3])|$($c[4])"
+}
+Assert-Eval "With({LangNl:false,T:$tRec},T.empErrLanguageRequired.en & `"|`" & T.empErrLanguageUnknown.en & `"|`" & T.empFieldLanguage.en)" 'Fix: Language empty|Fix: Language unknown|Language' 'Contractors: T texts "Fix: Language empty", "Fix: Language unknown", label "Language"'
 $idxP = @{}; Index-Controls ($builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $srcDir 'scrProjects.pa.yaml'))))['Screens']['scrProjects']['Children'] $idxP
 foreach ($k in @('cmpEmpStreet', 'cmpEmpHouseNumber', 'cmpEmpPostalcode', 'cmpEmpCity', 'cmpEmpCountry')) {
     $pk = $k.Replace('cmpEmp', 'cmpPrj').Replace('Postalcode', 'PostalCode')
@@ -1967,7 +2029,7 @@ Assert-Eval "With({$pLoadEnv},With({varPrjMode:`"Edit`",varPrjEdit:LookUp(colAdm
 # read and every Patch; double click = second OnSave sees varXxxSaving (set as first action) or, after a successful New, Edit + clean;
 # Save after Discard needs mode New/Edit and lblXxxDirty "true" again (Discard resets the inputs and leaves New).
 function Get-RawOnSave([string]$scr) { $raw = [IO.File]::ReadAllText((Join-Path $srcDir "$scr.pa.yaml")); $a = $raw.IndexOf('OnSave: |-'); $b = $raw.IndexOf('RefreshText:', $a); return ($raw.Substring($a + 10, $b - $a - 10).Trim().TrimStart('=') -replace "`r", '') }
-foreach ($ns in @(@('Emp', (Get-RawOnSave 'scrContractors'), 'Employers', 'empErrNameRequired', 2), @('Prj', (Get-RawOnSave 'scrProjects'), 'Projects', 'prjErrNameRequired', 4))) {
+foreach ($ns in @(@('Emp', (Get-RawOnSave 'scrContractors'), 'Employers', 'empErrNameRequired', 4), @('Prj', (Get-RawOnSave 'scrProjects'), 'Projects', 'prjErrNameRequired', 4))) {
     $p = $ns[0]; $sv = [string]$ns[1]; $list = $ns[2]; $key = $ns[3]; $nPatch = $ns[4]
     $outer = Get-Balanced $sv 2; $oArgs = Split-Args $outer.Substring(1, $outer.Length - 2)
     $g = $oArgs[0].Trim(); $body = $oArgs[1]

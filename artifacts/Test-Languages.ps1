@@ -9,8 +9,9 @@ $projectRoot = Split-Path $PSScriptRoot
 $fails = 0
 function Check($cond, $label) { if ($cond) { Write-Output "PASS $label" } else { Write-Output "FAIL $label"; $script:fails++ } }
 $languages = @('Dutch', 'English', 'Polish', 'Czech', 'Romanian', 'Ukrainian', 'German', 'French')
-# Belarusian = 9th language since 17-11-2026 (V6, H37): texts in the CSVs now; the app code (language code 'be' in scrWeekReport) follows in the next build.
-$csvLanguages = @($languages) + 'Belarusian'
+# Belarusian = 9th language since 17-11-2026 (V6, H37); language code 'be' in scrWeekReport since v1.0.2 (19-11-2026).
+$languages += 'Belarusian'
+$csvLanguages = @($languages)
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Managment_VS.msapr'))
@@ -45,7 +46,7 @@ Check ((($ccLangs | Sort-Object) -join ',') -ceq (($csvLanguages | Sort-Object) 
 $wr = [IO.File]::ReadAllText((Join-Path $projectRoot 'Src\scrWeekReport.pa.yaml'))
 $sw = [regex]::Match($wr, 'Switch\(pg\.L,((?:"[A-Za-z]+","[a-z]{2}",?)+),"und"\)')
 $pairs = @{}; if ($sw.Success) { $parts = $sw.Groups[1].Value.Split(',') | ForEach-Object { $_.Trim('"') }; for ($i = 0; $i -lt $parts.Count; $i += 2) { $pairs[$parts[$i]] = $parts[$i + 1] } }
-$expCodes = @{ Dutch = 'nl'; English = 'en'; Polish = 'pl'; Czech = 'cs'; Romanian = 'ro'; Ukrainian = 'uk'; German = 'de'; French = 'fr' }
+$expCodes = @{ Dutch = 'nl'; English = 'en'; Polish = 'pl'; Czech = 'cs'; Romanian = 'ro'; Ukrainian = 'uk'; German = 'de'; French = 'fr'; Belarusian = 'be' }
 Check ($sw.Success -and $pairs.Count -eq $languages.Count -and @($languages | Where-Object { $pairs[$_] -cne $expCodes[$_] }).Count -eq 0) "Src: lang-code mapping covers exactly the $($languages.Count) languages with their ISO 639-1 code (unknown = und)"
 Check ($wr.Contains('Filter(Translations,Language.Value=lg.Value)') -and $wr -notmatch 'Filter\(Translations,Language=') 'Src: Translations read on the choice value (Language.Value = needed language, one read per language)'
 $d = $ds.DataSources | Where-Object Name -eq 'AppSettings'
