@@ -24,3 +24,4 @@ EditorState:
     - cmpField
     - cmpListCard
     - cmpTile
+    - cmpDialog

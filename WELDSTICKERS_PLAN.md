@@ -1,14 +1,17 @@
 # Plan Lasstickerregister (Weld sticker register)
 
-Status: **ontwerp, niet gebouwd** (Eddy 12-11-2026). Bouw pas na Week Report (fase C). Open vragen in par. 9 eerst beslissen.
+Status: **ontwerp, niet gebouwd** (Eddy 12-11-2026, verfijnd 20-11-2026). **Volgorde (Eddy 20-11-2026): bouw direct na de consent-build, vóór het certificatenregister** (CERTIFICATES_PLAN.md). De certificaatcontrole bij uitgifte komt later, zodra het certificatenregister bestaat (par. 10). Open vragen in par. 9 eerst beslissen.
 
 ## 1. Doel
 - Uitgifteregister, geen laslog. De app registreert niet per las welke sticker is gebruikt.
 - Vraag die het register moet beantwoorden: bij een probleem wordt een sticker aangewezen, dan volgt welke lasser, welke werkgever (contractor), welk project en in welke periode (uitgifte tot inname).
 - Vervangt de papieren lijsten.
+- **Business case (Eddy 20-11-2026):** bespaart ongeveer 40 geprinte pagina's per serie, en een sticker is jaren later nog terug te zoeken naar lasser, werkgever en periode (problemen worden vaak pas later gevonden).
 
 ## 2. Stickerformaat en reeksen
-- Sticker = `SSS-NNNN`: serie van 3 cijfers, nummer 0001 t/m 1000 (4 cijfers, voorloopnullen).
+- Sticker = `nnn-mmmm` (`SSS-NNNN`): serie van 3 cijfers, nummer van 4 cijfers 0001 t/m 1000 (voorloopnullen).
+- **Registratie (Eddy 20-11-2026):** de site manager registreert de **start** (serie + nummer) als de lasser aankomt en zijn stickers meeneemt, en het **einde** (serie + nummer) als de lasser vertrekt. Tussen start en einde is de reeks open (Status Issued).
+- **Reeks over meerdere series:** een reeks mag een serie overschrijden. De app slaat dan **één rij per serie** op, bijvoorbeeld start 123-0950 en einde 124-0120 = `123-0950..123-1000` + `124-0001..124-0120`. Alle rijen van één registratie krijgen dezelfde lasser, werkgever, project en data, plus een gemeenschappelijke sleutel (voorstel IssueKey, par. 9 V10) zodat ze samen getoond en gesloten worden.
 - Een reeks (range) = één aaneengesloten stuk van één serie, uitgegeven aan één lasser: Start No t/m End No.
 - Overdracht halverwege een serie (vakantie, andere ploeg): de lopende reeks wordt gesloten met End No = laatst gebruikte nummer. De volgende uitgifte in die serie begint bij het eerste ongebruikte nummer (End No + 1).
 - Ongebruikte nummers (End No + 1 t/m 1000) gaan terug naar de voorraad van die serie. Nummers onder de laatste End No worden nooit opnieuw uitgegeven; er ontstaan geen gaten.
@@ -40,7 +43,8 @@ Indexen (online controleren): Series, Status, WorkerKey (en RangeKey door unicit
 ## 4. App-regels (fail-closed, zelfde controle in DisplayMode en als eerste OnSelect-voorwaarde)
 1. Serie = precies 3 cijfers; Start No en End No gehele getallen 1 t/m 1000.
 2. Per serie hooguit één open reeks (Status Issued).
-3. Nieuwe uitgifte: Start No = vorige End No + 1 binnen de serie (eerste uitgifte: 1). De app vult Start No zelf in; de gebruiker typt hem niet.
+3. Nieuwe uitgifte: de site manager vult serie + startnummer in (Eddy 20-11-2026); de app stelt vorige End No + 1 van die serie voor (eerste uitgifte: 0001) en blokkeert een start die niet direct aansluit (gat of overlap) tenzij expliciet bevestigd (V6).
+3a. Einde: serie + nummer. Einde in een latere serie dan de start: de app sluit de startrij met End No 1000 en maakt per volgende serie een rij vanaf 0001; de laatste rij eindigt op het eindnummer. Elke tussenliggende serie moet vrij zijn (geen eerdere uitgifte); anders blokkeren.
 4. Geen overlap per serie: Start No > hoogste End No van alle gesloten reeksen van die serie.
 5. Sluiten: End No >= Start No - 1 en <= 1000 (End No = Start No - 1 = niets gebruikt, zie par. 9 V5). Returned date >= Issued date.
 6. Nooit verwijderen. Een gesloten reeks corrigeren mag alleen als het de laatste reeks van de serie is (net als inzetperiodes); anders blokkeren.
@@ -75,6 +79,8 @@ Indexen (online controleren): Series, Status, WorkerKey (en RangeKey door unicit
 - Lijst aan de app toevoegen (Studio-save naar Incoming\), net als MS-030.
 
 ## 9. Open vragen voor Eddy
+- **V10 (20-11-2026):** gemeenschappelijke sleutel IssueKey (= serie-start van de eerste rij) voor de rijen van één registratie over meerdere series: akkoord? En mag een einde meer dan één serie verder liggen dan de start (bijv. 123 -> 125), of maximaal één?
+- **V11:** zoeken in een open reeks: een lasser kan bij aankomst meer series meenemen dan de startserie. Zolang de reeks open is, toont de zoekfunctie voor nummers in latere series "mogelijk uitgegeven aan <lasser> (open sinds <datum>)"?
 - **V1 (Eddy):** is een serie gebonden aan één project, of verplaatsbaar? Voorstel: niet gebonden; het project staat per reeks, zodat een serie naar een volgend project mee kan. Bij binding moet de app de eerste uitgifte als koppeling bewaren en een andere projectkeuze blokkeren.
 - **V2:** extra kolommen WorkerKey/ProjectKey (delegatie) en Employer-momentopname (historie): akkoord?
 - **V3:** RangeKey uniek afgedwongen als bescherming tegen gelijktijdige dubbele uitgifte: akkoord?
@@ -84,3 +90,6 @@ Indexen (online controleren): Series, Status, WorkerKey (en RangeKey door unicit
 - **V7:** Home-categorie: Inventory, Team & hours, of een nieuwe categorie (bv. Quality)?
 - **V8:** wie mag uitgeven en innemen (alle app-gebruikers of alleen site managers)? Rechten op de lijst volgen daaruit.
 - **V9:** bewijs ook bij uitgifte (optie) standaard aan of uit?
+
+## 10. Certificaatcontrole bij uitgifte (later)
+- Komt pas als het certificatenregister bestaat (CERTIFICATES_PLAN.md, H49): uitgifte alleen aan een lasser met een geldig, door de uitgevende instantie geverifieerd lascertificaat (EN ISO 9606-1, niet verlopen, 6-maandsbevestiging geldig). Tot dan geen certificaatcontrole in het stickerregister.

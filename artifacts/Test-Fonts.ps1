@@ -45,7 +45,7 @@ foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContrac
 }
 # Canvas components (Src\Components): every control with text carries the Inter font; weights per role.
 $componentTextTypes='^(Label@|Classic/Button@|Classic/TextInput@|HtmlViewer@|ModernSpinner@)'
-$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave','btnCmpReportHome','btnCmpReportNav','btnCmpReportRefresh','btnCmpReportMail','btnCmpReportExport')
+$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave','btnCmpReportHome','btnCmpReportNav','lblDlgTitle','btnDlgOk','btnCmpReportRefresh','btnCmpReportMail','btnCmpReportExport')
 $componentTechnical=@('lblCmpFooterMetrics','lblCmpReportFooterMetrics')
 $componentFonts=0
 foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Components') -Filter *.pa.yaml){

@@ -66,6 +66,11 @@ function Collect-Checks($children, $parentName, $parentRect, $scrollParent, $ctx
         $r = $state.Rects[$name]
         # size 0 controls (message bar without message) take no space and are not checked
         if ($r.Width -le 0 -or $r.Height -le 0) { if ($ctl['Children']) { } ; continue }
+        if ($ctl['ComponentName'] -eq 'cmpDialog') {   # v1.0.2 H48: modal dialog = full-screen overlay on top of everything, checked for full cover instead of overlap
+            if ([Math]::Abs($r.X) -gt 0.01 -or [Math]::Abs($r.Y) -gt 0.01 -or [Math]::Abs($r.Width - $parentRect.Width) -gt 0.01 -or [Math]::Abs($r.Height - $parentRect.Height) -gt 0.01) { throw "FAIL $label : $name (cmpDialog) must cover its screen exactly (X 0, Y 0, Width/Height = Parent)" }
+            if (@($children | ForEach-Object { @($_.Keys)[0] })[-1] -ne $name) { throw "FAIL $label : $name (cmpDialog) must be the last child of the screen (on top)" }
+            continue
+        }
         $kids += @{ Name = $name; R = $r; Ctl = $ctl }
         if ($r.X -lt -0.01 -or $r.Y -lt -0.01) { throw "FAIL $label : $name starts outside its parent $parentName (X=$($r.X), Y=$($r.Y))" }
         if ($r.X + $r.Width -gt $parentRect.Width + 0.01) { throw "FAIL $label : $name exceeds the width of $parentName (X+W=$($r.X + $r.Width) > $($parentRect.Width))" }

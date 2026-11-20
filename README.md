@@ -17,7 +17,8 @@ Power Apps canvas app on SharePoint Lists for GEA site management: project/team 
 | Plan, phases, open decisions | **ROADMAP.md** | Only when the task says so |
 | Build plan admin screens (Contractors, Projects, Workers) | **ADMIN_PLAN.md** | Only when the task says so |
 | Plan Week Report + PDF/CSV export (decisions taken, phase A built) | **WEEKREPORT_PLAN.md** | Only when the task says so |
-| Design weld sticker register (not built, open questions) | **WELDSTICKERS_PLAN.md** | Only when the task says so |
+| Design weld sticker register (not built, open questions; build directly after consent) | **WELDSTICKERS_PLAN.md** | Only when the task says so |
+| Design certificates register (not built; H49: no copies or scans) | **CERTIFICATES_PLAN.md** | Only when the task says so |
 | Manual SharePoint / Power Automate steps (MS-xxx) | **MANUAL_STEPS.md** | Only when the task says so |
 | Decision log: what was decided and why | **DECISIONS.md** | Only when the task says so |
 | Manual Studio/browser test cases (TP-xxx) | **TESTPLAN.md** | Only when the task says so |
@@ -52,7 +53,7 @@ Sitemanagment/
 │  └─ <build-name>/          Packed test builds (*.msapp) — git-ignored
 ├─ templates/                PDF templates (header.html, weekreport.html, sample-body.html; DECISIONS.md H25, copy in SP library Templates)
 ├─ .claude/agents/          Subagents: powerfx-logic, powerfx-ui, verifier, reviewer, docs-keeper
-├─ README.md  AGENTS.md  PROJECT_STATUS.md  RELEASE_NOTES.md  EXCEL_MIGRATION.md  CONSENT_PLAN.md  TEAM_MOVE_PLAN.md  DESIGN_CUSTOMERS_SAFETY.md  ROADMAP.md  ADMIN_PLAN.md  WEEKREPORT_PLAN.md  WELDSTICKERS_PLAN.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md  SECURITY.md  RISK_ANALYSIS.md  *_ARCHIVE.md
+├─ README.md  AGENTS.md  PROJECT_STATUS.md  RELEASE_NOTES.md  EXCEL_MIGRATION.md  CONSENT_PLAN.md  TEAM_MOVE_PLAN.md  DESIGN_CUSTOMERS_SAFETY.md  ROADMAP.md  ADMIN_PLAN.md  WEEKREPORT_PLAN.md  WELDSTICKERS_PLAN.md  CERTIFICATES_PLAN.md  MANUAL_STEPS.md  DECISIONS.md  NEXT_COMMANDS.md  TESTPLAN.md  SECURITY.md  RISK_ANALYSIS.md  *_ARCHIVE.md
 └─ Assets/ (GEA logo, only GEA_logo_white.svg tracked)  .gitignore
 ```
 

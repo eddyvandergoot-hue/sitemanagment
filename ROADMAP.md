@@ -15,6 +15,14 @@ The full phased plan is still to be added (NEXT_COMMANDS.md, "Roadmap into repo"
 | GEA Sans allowed in generated PDFs | Workpackage documents (phase 3) |
 | Employer Code = own column EmployerCode1 (unique, not required, filled by MS-019); confirm it is the CSV EmployerCode source once MS-019 is confirmed | Export CSV (EmployerCode) |
 
+## Order after v1.0.2 (Eddy 20-11-2026)
+
+1. Consent build (CONSENT_PLAN.md, after MS-047).
+2. **Weld sticker register** directly after consent (WELDSTICKERS_PLAN.md): start/end registration by the site manager, one row per series, search sticker -> welder/employer/period. Business case: about 40 printed pages saved per series; stickers traceable for years.
+3. **Certificates register** (CERTIFICATES_PLAN.md, H49): no copies or scans, only registration + authenticity check; welding certificate verified with the issuing body before it is valid.
+4. Then: certificate check at weld sticker issue (WELDSTICKERS_PLAN.md par. 10).
+- v1.1 Temporary assignment / Move team (TEAM_MOVE_PLAN.md, approved) and the configurable app are planned around these; exact order with Eddy.
+
 ## Configurable app (backlog, Eddy 19-11-2026; after the consent build)
 
 Goal: one app that other GEA branches can use without code changes (good design, no behaviour change for the current site). Status: idea only; **design first, Eddy approves before any build**.

@@ -73,17 +73,18 @@ $all = [ordered]@{}
 foreach ($n in $idx.Keys) { foreach ($p in $idx[$n]['Properties'].Keys) { $all["$n.$p"] = ([string]$idx[$n]['Properties'][$p]).Trim() } }
 foreach ($p in $doc['Screens'][$scr]['Properties'].Keys) { $all["$scr.$p"] = ([string]$doc['Screens'][$scr]['Properties'][$p]).Trim() }
 function P([string]$key) { if (!$all.Contains($key)) { throw "FAIL missing $key" }; return [string]$all[$key] }
-$onExp = P 'cmpWrFooter.OnExport'
+# v1.0.2 H48: the export body lives in the hidden btnWrExportRun (queued by OnExport, or by Mail = export + draft).
+$onExp = P 'btnWrExportRun.OnSelect'
 $onExpN = Get-Norm $onExp
 $onExpBare = Get-Norm (Remove-FxStrings $onExp)
-$guard = (P 'cmpWrFooter.ExportEnabled').Substring(1)
+$guard = (P 'cmpWrFooter.ExportEnabled').Substring(1).Replace(' && !Coalesce(varWrPending,false)', '')
 $screenText = ($all.Values) -join "`n"
 $loader = P 'btnWrLoad.OnSelect'
 $loaderN = Get-Norm $loader
 
 # (1) Admission (6.6): visible, same guard in ExportEnabled and as first OnExport condition, fail-closed contents -----------
 Assert-True ($idx['cmpWrFooter']['ComponentName'] -eq 'cmpReportFooter' -and (P 'cmpWrFooter.ExportVisible') -eq '=true') 'Export button visible (cmpReportFooter.ExportVisible = true; component unchanged)'
-Assert-True ($onExp.StartsWith("=If($guard,")) 'guard parity: OnExport starts with If(<ExportEnabled>, (same text)'
+Assert-True ($onExp.StartsWith("=If($guard,") -and (P 'cmpWrFooter.ExportEnabled') -ceq "=$guard && !Coalesce(varWrPending,false)" -and (P 'cmpWrFooter.OnExport').StartsWith("=If($guard && !Coalesce(varWrPending,false),")) 'guard parity: OnExport starts with If(<ExportEnabled>, (same text, incl. not pending); btnWrExportRun starts with the same guard without the pending flag'
 $gN = Get-Norm $guard
 foreach ($part in '!Coalesce(varWrBusy,false)', '!Coalesce(varWrExporting,false)', '!Coalesce(varWrMailing,false)', 'varWrLoadState="Loaded"', 'IsEmpty(colWrLoadErrors)', '!IsBlank(varWrLoadedProject.ID)', '!IsBlank(varWrLoadedMonday)', 'varWrLoadedProjectID=varWrProjectID', 'varWrLoadedMonday=varWrMonday', 'If(Coalesce(varWrContractorID,0)=0,IsBlank(varWrContractorDisplay),CountIf(colWrGroups,ContractorID=varWrContractorID&&Display=varWrContractorDisplay)=1)', 'CountIf(colWrRows,Coalesce(varWrContractorID,0)=0||ContractorID=varWrContractorID)>0') {
     Assert-True ($gN.Contains($part)) "export guard contains: $part"
@@ -115,16 +116,16 @@ Assert-True ($guard -notmatch 'cmpWr\w+\.Value') 'guard reads no component outpu
 Test-Guard 'colWrRows:Filter(Table({ContractorID:10,WorkerID:1}),false)' $false 'no report rows'
 Test-Guard 'varWrContractorID:20|||varWrContractorDisplay:"Beta (B-1)"|||colWrRows:Table({ContractorID:10,WorkerID:1})' $false 'chosen contractor has no rows'
 Test-Guard 'varWrContractorID:0|||varWrContractorDisplay:"Beta (B-1)"' $false 'L6: contractor ID 0 but a remembered contractor display (not "All") blocks'
-$blocked = $onExp.Substring($onExp.LastIndexOf('Skipped:CountIf(colWrExpResults,Status="NoHours")}),'))
+$blocked = $onExp.Substring($onExp.LastIndexOf('T.wrErrMailExportFailed.en) & " " & IfError(Coalesce(First(colWrExportErrors).Message,varWrExpNotes,""),"")))),'))
 Assert-True ($blocked.Contains('Set(varAdmMsgKind,"Error")') -and $blocked.Contains('T.admHeadBlocked.en') -and $blocked.Contains('T.wrMsgExportBlocked.en') -and $blocked -notmatch '\.Run\(') 'guard false: red "Blocked." message, no flow call'
 
 # (2) Busy flag, no mutations, texts ------------------------------------------------------------------------------------------
-Assert-True ($onExpN.StartsWith("=If($gN,Set(varWrExporting,true);Set(varWrBusy,true);")) 'export sets varWrExporting and varWrBusy first (spinner in cmpTitleBar; navigation, Refresh and week change blocked)'
+Assert-True ($onExpN.StartsWith("=If($gN,Set(varWrPending,false);Set(varWrExporting,true);Set(varWrBusy,true);")) 'export clears the queued flag (varWrPending, H48), then sets varWrExporting and varWrBusy first (spinner in cmpTitleBar; navigation, Refresh and week change blocked)'
 Assert-True ($onExpN.Contains(');Set(varWrBusy,false);Set(varWrExporting,false);Trace("DIAG|Export|End",') -and ([regex]::Matches($onExpN, 'Set\(varWrExporting,false\)')).Count -eq 1 -and $onExpN.IndexOf('Set(varWrBusy,false);Set(varWrExporting,false);') -gt $onExpN.LastIndexOf("'SiteManagment-Exportfile'.Run(")) 'busy flags reset once, unconditionally after the message step (not inside any If), before the end trace'
 Assert-True ((P 'cmpWrTitle.Busy') -eq '=Coalesce(varWrBusy,false) || varWrLoadState="Loading"') 'title spinner follows varWrBusy (also during export)'
 foreach ($k in 'cmpWrFooter.HomeEnabled', 'cmpWrFooter.RefreshEnabled', 'dpWrWeek.DisplayMode', 'btnWrPrev.DisplayMode', 'btnWrNext.DisplayMode', 'cmpWrProject.Enabled', 'cmpWrContractor.Enabled') { Assert-True ((P $k).Contains('!Coalesce(varWrBusy,false)')) "$k blocked while busy (export sets varWrBusy)" }
 Assert-True ((P 'btnWrLoad.OnSelect').StartsWith('=If(Coalesce(varWrBusy,false),')) 'loader refuses while busy (no reload during export)'
-$bare = Remove-FxStrings ($screenText.Replace('=If(!IsBlank(varWrMailLink) && varAdmMsgKind in ["Success","Warning"] && varAdmMsgBody=varWrMailMsgBody,Launch(varWrMailLink))', '').Replace('If(varWrMailN>0 && !IsBlank(varWrMailLink),Launch(varWrMailLink));', ''))
+$bare = Remove-FxStrings ($screenText.Replace('=If(!IsBlank(varWrMailLink) && varAdmMsgKind in ["Success","Warning"] && varAdmMsgBody=varWrMailMsgBody,Launch(varWrMailLink))', '').Replace('=If(!IsBlank(varWrMailLink),Launch(varWrMailLink)); true', ''))
 Assert-True ($bare -notmatch '\b(Patch|Remove|RemoveIf|Update|UpdateIf|SubmitForm|Defaults|Launch|Download|Notify|Choices)\(') 'no Patch/Remove/Update/SubmitForm/Launch/Download/Notify/Choices on scrWeekReport (the app does not open the file, H26)'
 $colTargets = @([regex]::Matches((Remove-FxStrings $onExp), '\b(Collect|ClearCollect|Clear)\(\s*([^,\)]+)') | ForEach-Object { $_.Groups[2].Value.Trim() } | Sort-Object -Unique)
 Assert-True (@($colTargets | Where-Object { $_ -notmatch '^col[A-Z]\w*$' }).Count -eq 0 -and $colTargets -notcontains 'Translations') "OnExport collection functions only target local collections ($($colTargets -join ', '))"

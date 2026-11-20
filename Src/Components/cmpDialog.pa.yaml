@@ -1,0 +1,213 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+#
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+#
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpDialog:
+    DefinitionType: CanvasComponent
+    Description: 'Modal information dialog (v1.0.2, Eddy 20-11-2026, H48). The host places one instance as the LAST child of the screen (on top), full screen (X 0, Y 0, Width/Height = Parent), and shows it with Visible. A Night Blue overlay (#000F41, 50 %) covers the screen and catches every click, so the screen behind cannot be used while the dialog is open. Centered white card with a Vibrant Blue (#0303B8) accent bar, title and text Night Blue, optional list (max 6 items of up to 2 lines, then +n more), optional link (Vibrant Blue, underlined) and OK (primary green #1AFF80 with Night Blue text). Presentation only - the host sets the texts and handles OnOk (close) and OnLink (e.g. Launch). Microsoft Learn (accessible-apps-limitations): overlay dialogs have no focus trap or screen-reader isolation in canvas apps; use only for short information, never for input.'
+    CustomProperties:
+      Title:
+        PropertyKind: Input
+        DisplayName: Title
+        Description: Dialog title (plain text).
+        DataType: Text
+        Default: =""
+      Body:
+        PropertyKind: Input
+        DisplayName: Body
+        Description: Dialog text (plain text, wraps, up to 3 lines).
+        DataType: Text
+        Default: =""
+      Items:
+        PropertyKind: Input
+        DisplayName: Items
+        Description: Optional list, one item per line (Char(10) separated); empty = no list. At most 6 items are shown (each may wrap to 2 lines), then one line MoreFormat.
+        DataType: Text
+        Default: =""
+      MoreFormat:
+        PropertyKind: Input
+        DisplayName: MoreFormat
+        Description: Line shown when Items has more than 6 items; {0} = number of items not shown.
+        DataType: Text
+        Default: ="+{0} more"
+      LinkText:
+        PropertyKind: Input
+        DisplayName: LinkText
+        Description: Optional link text; empty = no link.
+        DataType: Text
+        Default: =""
+      OkText:
+        PropertyKind: Input
+        DisplayName: OkText
+        Description: Text of the OK button.
+        DataType: Text
+        Default: ="OK"
+      OnOk:
+        PropertyKind: Event
+        DisplayName: OnOk
+        Description: OK pressed. The host closes the dialog (Set its Visible variable to false) and ends with ; true.
+        ReturnType: Boolean
+        Default: =true
+      OnLink:
+        PropertyKind: Event
+        DisplayName: OnLink
+        Description: Link pressed (only while LinkText is not empty). The host ends with ; true.
+        ReturnType: Boolean
+        Default: =true
+    Properties:
+      Fill: =Color.Transparent
+      Height: =768
+      Width: =1366
+    Children:
+      - recDlgOverlay:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =Color.Transparent
+            Fill: =ColorValue("#000F4180")
+            Height: =Parent.Height
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+      - recDlgCard:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =Color.Transparent
+            Fill: =Color.White
+            Height: =6+20+32+8+72+8+If(IsBlank(Trim(cmpDialog.Items)),0,If(IsBlank(Trim(cmpDialog.Items)),0,Min(6,CountRows(Split(Trim(cmpDialog.Items),Char(10))))*36+If(CountRows(Split(Trim(cmpDialog.Items),Char(10)))>6,20,0))+8)+If(IsBlank(Trim(cmpDialog.LinkText)),0,40)+16+40+24
+            Width: =Min(520,Parent.Width-32)
+            X: =(Parent.Width-Self.Width)/2
+            Y: =Max(16,(Parent.Height-Self.Height)/2)
+      - recDlgAccent:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =Color.Transparent
+            Fill: =ColorValue("#0303B8")
+            Height: =6
+            Width: =recDlgCard.Width
+            X: =recDlgCard.X
+            Y: =recDlgCard.Y
+      - lblDlgTitle:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000F41")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            Size: =18
+            Text: =cmpDialog.Title
+            VerticalAlign: =VerticalAlign.Middle
+            Width: =recDlgCard.Width-48
+            X: =recDlgCard.X+24
+            Y: =recDlgCard.Y+6+20
+      - lblDlgBody:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000F41")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =72
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12
+            Text: =cmpDialog.Body
+            VerticalAlign: =VerticalAlign.Top
+            Width: =recDlgCard.Width-48
+            X: =recDlgCard.X+24
+            Y: =lblDlgTitle.Y+lblDlgTitle.Height+8
+      - lblDlgItems:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ColorValue("#000F41")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =If(IsBlank(Trim(cmpDialog.Items)),0,Min(6,CountRows(Split(Trim(cmpDialog.Items),Char(10))))*36+If(CountRows(Split(Trim(cmpDialog.Items),Char(10)))>6,20,0))
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: =Concat(FirstN(Split(Trim(cmpDialog.Items),Char(10)),6),"• " & Value,Char(10)) & If(CountRows(Split(Trim(cmpDialog.Items),Char(10)))>6,Char(10) & Substitute(cmpDialog.MoreFormat,"{0}",Text(CountRows(Split(Trim(cmpDialog.Items),Char(10)))-6)),"")
+            VerticalAlign: =VerticalAlign.Top
+            Visible: =!IsBlank(Trim(cmpDialog.Items))
+            Width: =recDlgCard.Width-48
+            X: =recDlgCard.X+24
+            Y: =lblDlgBody.Y+lblDlgBody.Height+8
+      - btnDlgLink:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderColor: =Color.Transparent
+            BorderThickness: =0
+            Color: =ColorValue("#0303B8")
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ColorValue("#0303B8")
+            DisabledFill: =Color.Transparent
+            Fill: =Color.Transparent
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Normal
+            Height: =32
+            HoverBorderColor: =Color.Transparent
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =Color.Transparent
+            OnSelect: =If(!IsBlank(Trim(cmpDialog.LinkText)),cmpDialog.OnLink())
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Color.Transparent
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =Color.Transparent
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =14
+            Text: =cmpDialog.LinkText
+            Underline: =true
+            VerticalAlign: =VerticalAlign.Middle
+            Visible: =!IsBlank(Trim(cmpDialog.LinkText))
+            Width: =recDlgCard.Width-48
+            X: =recDlgCard.X+24
+            Y: =lblDlgItems.Y+lblDlgItems.Height+If(IsBlank(Trim(cmpDialog.Items)),0,8)
+      - btnDlgOk:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Center
+            BorderColor: =ColorValue("#1AFF80")
+            BorderThickness: =0
+            Color: =ColorValue("#000F41")
+            DisabledBorderColor: =ColorValue("#E6E6E6")
+            DisabledColor: =ColorValue("#787878")
+            DisabledFill: =ColorValue("#E6E6E6")
+            Fill: =ColorValue("#1AFF80")
+            Font: ="Inter, Arial, sans-serif"
+            FontWeight: =FontWeight.Semibold
+            Height: =40
+            HoverBorderColor: =ColorValue("#18DD6E")
+            HoverColor: =ColorValue("#000F41")
+            HoverFill: =ColorValue("#18DD6E")
+            OnSelect: =cmpDialog.OnOk()
+            PaddingBottom: =0
+            PaddingLeft: =16
+            PaddingRight: =16
+            PaddingTop: =0
+            PressedBorderColor: =ColorValue("#18DD6E")
+            PressedColor: =ColorValue("#000F41")
+            PressedFill: =ColorValue("#18DD6E")
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =14
+            Text: =cmpDialog.OkText
+            VerticalAlign: =VerticalAlign.Middle
+            Width: =110
+            X: =recDlgCard.X+recDlgCard.Width-24-Self.Width
+            Y: =recDlgCard.Y+recDlgCard.Height-24-Self.Height

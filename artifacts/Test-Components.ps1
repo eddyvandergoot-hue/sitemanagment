@@ -7,7 +7,7 @@ function Index-CmpControls($entries, $index) { foreach ($entry in $entries) { $n
 $dir = Join-Path $projectRoot 'Src\Components'
 $files = @{}
 foreach ($f in Get-ChildItem $dir -Filter *.pa.yaml) { $files[$f.Name -replace '\.pa\.yaml$', ''] = [IO.File]::ReadAllText($f.FullName) }
-Assert-True (($files.Keys | Sort-Object) -join ',' -eq 'cmpField,cmpFooter,cmpListCard,cmpMessageBar,cmpReportFooter,cmpTile,cmpTitleBar') 'exactly seven component files, one component per file (cmpTitleBar, cmpMessageBar, cmpFooter, cmpReportFooter, cmpField, cmpListCard, cmpTile)'
+Assert-True (($files.Keys | Sort-Object) -join ',' -eq 'cmpDialog,cmpField,cmpFooter,cmpListCard,cmpMessageBar,cmpReportFooter,cmpTile,cmpTitleBar') 'exactly eight component files, one component per file (cmpTitleBar, cmpMessageBar, cmpFooter, cmpReportFooter, cmpField, cmpListCard, cmpTile, cmpDialog (v1.0.2 H48))'
 foreach ($n in $files.Keys) { Assert-True (!$files[$n].Contains("`r")) "$n.pa.yaml uses LF line endings" }
 $defs = $script:componentDefs
 $idx = @{}
@@ -23,6 +23,7 @@ $contract = @{
     cmpReportFooter = @{ HomeText = 'Input:Text'; RefreshText = 'Input:Text'; ExportText = 'Input:Text'; MailText = 'Input:Text'; NavText = 'Input:Text'; NavEnabled = 'Input:Boolean'; NavVisible = 'Input:Boolean'
                        HomeEnabled = 'Input:Boolean'; RefreshEnabled = 'Input:Boolean'; ExportEnabled = 'Input:Boolean'; ExportVisible = 'Input:Boolean'; MailEnabled = 'Input:Boolean'; MailVisible = 'Input:Boolean'
                        OnHome = 'Event:None'; OnRefresh = 'Event:None'; OnExport = 'Event:None'; OnMail = 'Event:None'; OnNav = 'Event:None' }
+    cmpDialog     = @{ Title = 'Input:Text'; Body = 'Input:Text'; Items = 'Input:Text'; MoreFormat = 'Input:Text'; LinkText = 'Input:Text'; OkText = 'Input:Text'; OnOk = 'Event:Boolean'; OnLink = 'Event:Boolean' }
     cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; DefaultValue = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
                        Value = 'Output:Text'; OnChange = 'Event:Boolean' }
     cmpTile       = @{ Label = 'Input:Text'; Icon = 'Input:Image'; IconSvg = 'Input:Text'; ArrowSvg = 'Input:Text'; Active = 'Input:Boolean'; IconSize = 'Input:Number'; LabelSize = 'Input:Number'; Padding = 'Input:Number'; SoonText = 'Input:Text'; OnSelect = 'Event:Boolean' }
@@ -216,6 +217,28 @@ foreach ($c in $ctrlList) {
 }
 Assert-True ($missing.Count -eq 0) "every template property with a sample default (and Items) is set on each control: modernCombobox ItemDisplayText/Items, dropdown/gallery Items, image Image ($($ctrlList.Count) controls checked)$(if ($missing) { ' - missing: ' + ($missing -join ', ') })"
 
+# (6c) cmpDialog (v1.0.2, Eddy 20-11-2026, H48): modal information dialog in the GEA colours -----------------------------------
+$dg = $idx['cmpDialog']
+Assert-True ((@($defs['cmpDialog']['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'recDlgOverlay,recDlgCard,recDlgAccent,lblDlgTitle,lblDlgBody,lblDlgItems,btnDlgLink,btnDlgOk') 'cmpDialog children in z-order: overlay, card, accent bar, title, text, list, link, OK'
+$ov = $dg['recDlgOverlay']['Properties']
+Assert-True ($ov['Fill'] -eq '=ColorValue("#000F4180")' -and $ov['X'] -eq '=0' -and $ov['Y'] -eq '=0' -and $ov['Width'] -eq '=Parent.Width' -and $ov['Height'] -eq '=Parent.Height') 'cmpDialog overlay: Night Blue #000F41 at 50 % (alpha 80), covers the whole component (catches clicks behind the dialog)'
+Assert-True ($dg['recDlgCard']['Properties']['Fill'] -eq '=Color.White' -and $dg['recDlgAccent']['Properties']['Fill'] -eq '=ColorValue("#0303B8")' -and $dg['recDlgAccent']['Properties']['Height'] -eq '=6' -and $dg['recDlgAccent']['Properties']['Y'] -eq '=recDlgCard.Y' -and $dg['recDlgCard']['Properties']['X'] -eq '=(Parent.Width-Self.Width)/2' -and $dg['recDlgCard']['Properties']['Width'] -eq '=Min(520,Parent.Width-32)') 'cmpDialog card: white, centred, max 520 (16 px margin on narrow screens), Vibrant Blue accent bar 6 px on top'
+foreach ($n in 'lblDlgBody', 'lblDlgItems') { $pp = $dg[$n]['Properties']; Assert-True ($pp['PaddingTop'] -eq '=0' -and $pp['PaddingBottom'] -eq '=0') "cmpDialog $n : padding 0 (Label default 5 would clip, review N1/N2)" }
+Assert-True ($dg['lblDlgBody']['Properties']['Height'] -eq '=72' -and ([string]$dg['lblDlgItems']['Properties']['Text']).Contains('FirstN(Split(Trim(cmpDialog.Items),Char(10)),6)') -and ([string]$dg['lblDlgItems']['Properties']['Text']).Contains('cmpDialog.MoreFormat') -and ([string]$dg['lblDlgItems']['Properties']['Height']).Contains('*36+If(')) 'cmpDialog: text 3 lines (72), list max 6 items of 2 lines (36 each) plus a +n more line'
+foreach ($n in 'lblDlgTitle', 'lblDlgBody', 'lblDlgItems') { Assert-True ($dg[$n]['Properties']['Color'] -eq '=ColorValue("#000F41")' -and $dg[$n]['Properties']['Font'] -eq '="Inter, Arial, sans-serif"') "cmpDialog $n : Night Blue #000F41, app font" }
+$lk = $dg['btnDlgLink']['Properties']; $okb = $dg['btnDlgOk']['Properties']
+Assert-True ($lk['Color'] -eq '=ColorValue("#0303B8")' -and $lk['Underline'] -eq '=true' -and $lk['Fill'] -eq '=Color.Transparent' -and $lk['OnSelect'] -eq '=If(!IsBlank(Trim(cmpDialog.LinkText)),cmpDialog.OnLink())' -and $lk['Visible'] -eq '=!IsBlank(Trim(cmpDialog.LinkText))') 'cmpDialog link: Vibrant Blue underlined, only shown (and raised) with a LinkText'
+Assert-True ($okb['Fill'] -eq '=ColorValue("#1AFF80")' -and $okb['Color'] -eq '=ColorValue("#000F41")' -and $okb['HoverFill'] -eq '=ColorValue("#18DD6E")' -and $okb['PressedFill'] -eq '=ColorValue("#18DD6E")' -and $okb['FontWeight'] -eq '=FontWeight.Semibold' -and $okb['Height'] -eq '=40' -and $okb['OnSelect'] -eq '=cmpDialog.OnOk()' -and $okb['X'] -eq '=recDlgCard.X+recDlgCard.Width-24-Self.Width' -and $okb['Y'] -eq '=recDlgCard.Y+recDlgCard.Height-24-Self.Height') 'cmpDialog OK: primary green #1AFF80 with Night Blue text (Save style), 40 high, bottom right inside the card'
+foreach ($ev in 'OnOk', 'OnLink') { Assert-True ($defs['cmpDialog']['CustomProperties'][$ev]['ReturnType'] -eq 'Boolean' -and $defs['cmpDialog']['CustomProperties'][$ev]['Default'] -eq '=true') "cmpDialog.$ev is a Boolean event with Default =true (component shape)" }
+# geometry (no list/link, list of 8 with link): everything inside the card, no overlap, at 1366 and 360 px
+foreach ($case in @(@(1366, 768, 0, $false), @(1366, 768, 9, $true), @(360, 640, 3, $true))) {
+    $w = $case[0]; $h = $case[1]; $n = $case[2]; $link = $case[3]
+    $listH = if ($n -gt 0) { [Math]::Min(6, $n) * 36 + $(if ($n -gt 6) { 20 } else { 0 }) } else { 0 }
+    $cardW = [Math]::Min(520, $w - 32); $cardH = 6 + 20 + 32 + 8 + 72 + 8 + $(if ($n -gt 0) { $listH + 8 } else { 0 }) + $(if ($link) { 40 } else { 0 }) + 16 + 40 + 24
+    $cx = ($w - $cardW) / 2; $cy = [Math]::Max(16, ($h - $cardH) / 2)
+    $t = @{ y = $cy + 26; h = 32 }; $b = @{ y = $t.y + 40; h = 72 }; $l = @{ y = $b.y + 80; h = $listH }; $k = @{ y = $l.y + $listH + $(if ($n -gt 0) { 8 } else { 0 }); h = $(if ($link) { 32 } else { 0 }) }; $o = @{ y = $cy + $cardH - 64; h = 40 }
+    Assert-True ($o.y -ge ($k.y + $k.h + 8) -and $o.y + 40 + 24 -eq $cy + $cardH -and $cx -ge 16 -and $cy + $cardH -le $h) "cmpDialog geometry ${w}x${h} (list $n, link $link): title, text, list, link and OK stacked without overlap inside the card, OK 24 px from the bottom"
+}
 # (7) cmpField ---------------------------------------------------------------------------------------------
 $fd = $defs['cmpField']; $fi = $idx['cmpField']; $fdp = $fd['Properties']
 Assert-True ($fdp['Height'] -eq '=58' -and $fdp['Fill'] -eq '=Color.Transparent') 'cmpField: component height 58, transparent'
@@ -522,8 +545,9 @@ foreach ($c in $idx.Keys) {
     # TP-STEP3-02 (Eddy 01-11-2026): semi-transparent colours only on top-layer click targets: the cmpListCard row hover (#F0F0F099)
     # and the cmpTile imgCmpTile PressedFill ColorFade(#000F41,-0.4) (TP-HOME-03 item 5; the Navy overlay #000F4159 is gone).
     $src = $files[$c]; if ($c -eq 'cmpListCard') { $src = $src.Replace('HoverFill: =If(cmpListCard.Enabled && ThisItem.ID<>cmpListCard.SelectedID,ColorValue("#F0F0F099"),Color.Transparent)', '') }
+    if ($c -eq 'cmpDialog') { $src = $src.Replace('Fill: =ColorValue("#000F4180")', '') }   # v1.0.2 H48 (Eddy 20-11-2026): modal overlay Night Blue 50 %, the only semi-transparent fill of cmpDialog
     if ($c -eq 'cmpTile') { $src = $src.Replace('HoverFill: =ColorValue("#000F4159")', '').Replace('PressedFill: =ColorFade(ColorValue("#000F41"),-0.4)', '') }
-    Assert-True ($src -notmatch 'RGBA\(' -and $src -notmatch '#[0-9A-Fa-f]{8}\b' -and $src -notmatch 'ColorFade\(') "$c : no semi-transparent colour (RGBA, #RRGGBBAA, ColorFade) except the cmpListCard row hover and the imgCmpTile PressedFill (ColorFade of Navy, darker than hover)"
+    Assert-True ($src -notmatch 'RGBA\(' -and $src -notmatch '#[0-9A-Fa-f]{8}\b' -and $src -notmatch 'ColorFade\(') "$c : no semi-transparent colour (RGBA, #RRGGBBAA, ColorFade) except the cmpListCard row hover, the imgCmpTile PressedFill (ColorFade of Navy, darker than hover) and the cmpDialog overlay (#000F41 50 %, H48)"
 }
 Assert-True ($rowN[0] -eq 'recCmpRowFill' -and $rowN[-1] -eq 'btnCmpRowHit') 'cmpListCard row: background first (behind the text), click target last (top layer)'
 $hit = $row['btnCmpRowHit']['Properties']
