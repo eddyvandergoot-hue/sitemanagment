@@ -39,7 +39,7 @@ $assign=@(
  @('scrWeekReport','btnWrPrev','weekArrow'),@('scrWeekReport','btnWrNext','weekArrow'),
  @('Screen1','btnTeamPrevWeek','weekArrow'),@('Screen1','btnTeamNextWeek','weekArrow'),  # v1.0.1: Project / team week arrows, Week Report arrow style
  @('Screen1','btnHomeScreen1','nav'),@('scrHours','btnHomeHours','nav'),@('scrWeeklyHours','btnHomeSummary','nav'),
- @('Screen1','btnGotoHours','nav'),@('Screen1','btnGotoHoursSummary','nav'),@('scrHours','btnWeeklyProjectTeam','nav'),@('scrWeeklyHours','btnSummaryProjectTeam','nav'),
+ @('Screen1','btnGotoHours','nav'),@('Screen1','btnGotoHoursSummary','nav'),@('scrHours','btnWeeklyProjectTeam','nav'),@('scrHours','btnHoursWeekReport','nav'),@('scrWeeklyHours','btnSummaryProjectTeam','nav'),
  @('scrHours','btnSaveWeek','primary'),@('Screen1','btnAddtoTeam','primary'),
  
  @('Screen1','btnRefreshTeam','secondary'),@('Screen1','btnMigratePreview','secondary'),@('Screen1','btnMigrateConfirm','secondary'),@('scrHours','btnFillWeek','secondary'),@('scrHours','btnRefreshWeek','secondary'),@('scrHours','btnDiscardWeek','secondary'),@('scrWeeklyHours','btnRefreshReport','secondary'),@('scrWeeklyHours','btnReportPreviousWeeks','secondary'),@('scrWeeklyHours','btnReportNextWeeks','secondary'))

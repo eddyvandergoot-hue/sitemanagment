@@ -20,9 +20,9 @@ $contract = @{
     cmpFooter     = @{ HomeText = 'Input:Text'; NewText = 'Input:Text'; RefreshText = 'Input:Text'; DiscardText = 'Input:Text'; SaveText = 'Input:Text'
                        HomeEnabled = 'Input:Boolean'; NewEnabled = 'Input:Boolean'; RefreshEnabled = 'Input:Boolean'; DiscardEnabled = 'Input:Boolean'; SaveEnabled = 'Input:Boolean'
                        OnHome = 'Event:None'; OnNew = 'Event:None'; OnRefresh = 'Event:None'; OnDiscard = 'Event:None'; OnSave = 'Event:None' }
-    cmpReportFooter = @{ HomeText = 'Input:Text'; RefreshText = 'Input:Text'; ExportText = 'Input:Text'; MailText = 'Input:Text'
+    cmpReportFooter = @{ HomeText = 'Input:Text'; RefreshText = 'Input:Text'; ExportText = 'Input:Text'; MailText = 'Input:Text'; NavText = 'Input:Text'; NavEnabled = 'Input:Boolean'; NavVisible = 'Input:Boolean'
                        HomeEnabled = 'Input:Boolean'; RefreshEnabled = 'Input:Boolean'; ExportEnabled = 'Input:Boolean'; ExportVisible = 'Input:Boolean'; MailEnabled = 'Input:Boolean'; MailVisible = 'Input:Boolean'
-                       OnHome = 'Event:None'; OnRefresh = 'Event:None'; OnExport = 'Event:None'; OnMail = 'Event:None' }
+                       OnHome = 'Event:None'; OnRefresh = 'Event:None'; OnExport = 'Event:None'; OnMail = 'Event:None'; OnNav = 'Event:None' }
     cmpField      = @{ Label = 'Input:Text'; Required = 'Input:Boolean'; InputType = 'Input:Text'; DefaultValue = 'Input:Text'; Items = 'Input:Table'; Invalid = 'Input:Boolean'; Enabled = 'Input:Boolean'; HintText = 'Input:Text'; MaxLength = 'Input:Number'
                        Value = 'Output:Text'; OnChange = 'Event:Boolean' }
     cmpTile       = @{ Label = 'Input:Text'; Icon = 'Input:Image'; IconSvg = 'Input:Text'; ArrowSvg = 'Input:Text'; Active = 'Input:Boolean'; IconSize = 'Input:Number'; LabelSize = 'Input:Number'; Padding = 'Input:Number'; SoonText = 'Input:Text'; OnSelect = 'Event:Boolean' }
@@ -44,7 +44,7 @@ foreach ($c in $contract.Keys) {
     foreach ($bad in 'X', 'Y', 'Visible') { Assert-True (!$defs[$c]['Properties'].ContainsKey($bad)) "$c Properties has no reserved $bad" }
 }
 foreach ($p in 'HomeEnabled', 'NewEnabled', 'RefreshEnabled', 'DiscardEnabled', 'SaveEnabled') { Assert-True ($defs['cmpFooter']['CustomProperties'][$p]['Default'] -eq '=false') "cmpFooter.$p default is fail-closed (=false)" }
-foreach ($p in 'HomeEnabled', 'RefreshEnabled', 'ExportEnabled', 'ExportVisible') { Assert-True ($defs['cmpReportFooter']['CustomProperties'][$p]['Default'] -eq '=false') "cmpReportFooter.$p default is fail-closed (=false)" }
+foreach ($p in 'HomeEnabled', 'RefreshEnabled', 'ExportEnabled', 'ExportVisible', 'NavEnabled', 'NavVisible') { Assert-True ($defs['cmpReportFooter']['CustomProperties'][$p]['Default'] -eq '=false') "cmpReportFooter.$p default is fail-closed (=false)" }
 foreach ($p in $defs['cmpReportFooter']['CustomProperties'].Keys) { $cp = $defs['cmpReportFooter']['CustomProperties'][$p]; Assert-True ($cp['DisplayName'] -eq $null -or $cp['DisplayName'] -ceq $p) "cmpReportFooter.$p DisplayName absent or = property name (cmpFooter shape)"; if ($cp['PropertyKind'] -eq 'Event') { Assert-True ($cp['ReturnType'] -eq 'None' -and $cp['Default'] -eq '=false' -and !$cp.ContainsKey('Parameters')) "cmpReportFooter.$p event ReturnType None like cmpFooter, no Parameters" } }
 Assert-True ($defs['cmpTitleBar']['CustomProperties']['Busy']['Default'] -eq '=false') 'cmpTitleBar.Busy default =false'
 # 02-11-2026: cmpField and cmpListCard follow the shape Eddy built and tested in Studio (Incoming 20261102Components): DisplayName = property name, events ReturnType Boolean with Default =true.
@@ -137,9 +137,9 @@ Assert-True ($rline['Fill'] -eq '=ColorValue("#DCDCDC")' -and $rline['Height'] -
 $rmet = $rf['lblCmpReportFooterMetrics']['Properties']
 Assert-True ($rmet['X'] -eq '=40' -and $rmet['Width'] -eq '=12' -and $rmet['Height'] -eq '=40' -and $rmet['Visible'] -eq '=false') 'cmpReportFooter metrics: margin 40, gap 12, button height 40 (hidden technical label)'
 $rrow = $rf['conCmpReportFooterRow']
-Assert-True ((@($rrow['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'btnCmpReportHome,icoCmpReportHome,btnCmpReportRefresh,btnCmpReportMail,btnCmpReportExport') 'cmpReportFooter: Home (with icon) left; Refresh, Mail (v1.0.2), Export right (Export right-most), all direct children of one row; week arrows moved to the host screen (Eddy 11-11-2026)'
+Assert-True ((@($rrow['Children'] | ForEach-Object { @($_.Keys)[0] }) -join ',') -eq 'btnCmpReportHome,icoCmpReportHome,btnCmpReportNav,btnCmpReportRefresh,btnCmpReportMail,btnCmpReportExport') 'cmpReportFooter: Home (with icon) left, then the navigation button (Weekly Hours, v1.0.2 H47); Refresh, Mail (v1.0.2), Export right (Export right-most), all direct children of one row; week arrows moved to the host screen (Eddy 11-11-2026)'
 Assert-True ($rf['conCmpReportFooter']['Properties']['LayoutWrap'] -eq '=false' -and $rf['conCmpReportFooter']['Properties']['LayoutOverflowX'] -eq '=LayoutOverflow.Scroll' -and $rf['conCmpReportFooter']['Properties']['LayoutOverflowY'] -eq '=LayoutOverflow.Hide') 'cmpReportFooter: LayoutWrap false, horizontal overflow Scroll, vertical Hide'
-$rev = [ordered]@{ btnCmpReportHome = @('HomeText', 'HomeEnabled', 'OnHome', 110); btnCmpReportRefresh = @('RefreshText', 'RefreshEnabled', 'OnRefresh', 110); btnCmpReportExport = @('ExportText', 'ExportEnabled', 'OnExport', 110) }
+$rev = [ordered]@{ btnCmpReportHome = @('HomeText', 'HomeEnabled', 'OnHome', 110); btnCmpReportNav = @('NavText', 'NavEnabled', 'OnNav', 180); btnCmpReportRefresh = @('RefreshText', 'RefreshEnabled', 'OnRefresh', 110); btnCmpReportExport = @('ExportText', 'ExportEnabled', 'OnExport', 110) }
 foreach ($b in $rev.Keys) {
     $p = $rf[$b]['Properties']; $txt, $en, $ev, $w = $rev[$b]
     Assert-True ($rf[$b]['Control'] -eq 'Classic/Button@2.2.0' -and !$p.ContainsKey('AccessibleLabel')) "$b is Classic/Button@2.2.0 without AccessibleLabel"
@@ -158,6 +158,8 @@ Assert-True ($null -eq $rf['btnCmpReportPrev'] -and $null -eq $rf['btnCmpReportN
 $rpri = $rf['btnCmpReportExport']['Properties']
 Assert-True ($rpri['Fill'] -eq '=ColorValue("#1AFF80")' -and $rpri['Color'] -eq '=ColorValue("#000F41")' -and $rpri['HoverFill'] -eq '=ColorValue("#18DD6E")' -and $rpri['PressedFill'] -eq '=ColorValue("#18DD6E")' -and $rpri['Visible'] -eq '=cmpReportFooter.ExportVisible') 'cmpReportFooter Export: primary green #1AFF80 / #18DD6E, text #000F41, Visible = ExportVisible'
 Assert-True ($rf['icoCmpReportHome']['Properties']['Icon'] -eq '=Icon.Home' -and $rf['icoCmpReportHome']['Properties']['OnSelect'] -eq '=Select(btnCmpReportHome)' -and $rf['icoCmpReportHome']['Properties']['TabIndex'] -eq '=-1' -and $rf['icoCmpReportHome']['Properties']['AccessibleLabel'] -eq '=""') 'cmpReportFooter: Home icon decorative, selects the Home button (guard stays in the gated OnSelect)'
+$rnv = $rf['btnCmpReportNav']['Properties']
+Assert-True ($rnv['Fill'] -eq '=ColorValue("#0303B8")' -and $rnv['Color'] -eq '=Color.White' -and $rnv['HoverFill'] -eq '=ColorValue("#000F41")' -and $rnv['PressedFill'] -eq '=ColorValue("#000F41")' -and $rnv['Visible'] -eq '=cmpReportFooter.NavVisible' -and $rnv['PaddingLeft'] -eq '=16' -and $rnv['X'] -eq '=btnCmpReportHome.X+btnCmpReportHome.Width+lblCmpReportFooterMetrics.Width') 'cmpReportFooter navigation button: navigation role like Home (#0303B8 white, hover/pressed #000F41), 12 px right of Home, only when NavVisible, padding 16 (no icon)'
 Assert-True ($rf['btnCmpReportHome']['Properties']['X'] -eq '=lblCmpReportFooterMetrics.X' -and $rf['btnCmpReportExport']['Properties']['X'] -eq '=Parent.Width-lblCmpReportFooterMetrics.X-Self.Width' -and $rf['btnCmpReportMail']['Properties']['X'] -eq '=If(cmpReportFooter.ExportVisible,btnCmpReportExport.X-lblCmpReportFooterMetrics.Width,Parent.Width-lblCmpReportFooterMetrics.X)-Self.Width' -and $rf['btnCmpReportRefresh']['Properties']['X'] -eq '=If(cmpReportFooter.MailVisible,btnCmpReportMail.X-lblCmpReportFooterMetrics.Width,If(cmpReportFooter.ExportVisible,btnCmpReportExport.X-lblCmpReportFooterMetrics.Width,Parent.Width-lblCmpReportFooterMetrics.X))-Self.Width' -and $null -eq $rf['btnCmpReportPrev']) 'cmpReportFooter: right buttons chained with 12 px gaps, margin 40 (Refresh, Mail, Export); a hidden button leaves no gap'
 
 # Geometry helper: evaluates the simple X/Y/Width/Height formulas of one component for a given Parent size (no measured text).
@@ -171,6 +173,7 @@ function Get-Geo($ctrls, $name, $prop, $env) {
     $s = [regex]::Replace($s, '\b([A-Za-z]\w*)\.(X|Y|Width|Height)\b', [Text.RegularExpressions.MatchEvaluator] { param($m) if ($ctrls.ContainsKey($m.Groups[1].Value)) { '(' + (Get-Geo $ctrls $m.Groups[1].Value $m.Groups[2].Value $env) + ')' } else { $m.Value } })
     $s = $s -replace 'cmpReportFooter\.ExportVisible', $(if ($env.exp) { '$true' } else { '$false' })
     $s = $s -replace 'cmpReportFooter\.MailVisible', $(if ($env.mail) { '$true' } else { '$false' })
+    $s = $s -replace 'cmpReportFooter\.NavVisible', $(if ($env.nav) { '$true' } else { '$false' })
     $s = $s -replace 'IsBlank\(ThisItem\.ChipText\)', $(if ($env.chip) { '$false' } else { '$true' }) -replace 'cmpListCard\.ShowInactive', $(if ($env.show) { '$true' } else { '$false' })
     $s = $s -creplace '\bMax\(', '[Math]::Max('
     while ($s -cmatch '\bIf\(') {
@@ -345,21 +348,23 @@ foreach ($w in 200, 280, 360, 512) {
     }
 }
 
-# (9b) cmpReportFooter geometry: minimal row width 556 = 2x40 margin + 4x110 (Home, Refresh, Mail, Export) + 3x12 gaps (v1.0.2 Mail; week arrows on the screen since 11-11-2026); with and without Mail/Export
-$rfMin = 2 * 40 + 4 * 110 + 3 * 12
-Assert-True ($rfMin -eq 556 -and (Get-Geo $rf 'conCmpReportFooterRow' 'Width' @{ pw = 100; ph = 68; tw = 0; th = 0; exp = $true; mail = $true }) -eq 556) 'cmpReportFooter: minimal row width 556 (the row never gets narrower, the footer scrolls horizontally)'
-foreach ($w in 556, 700, 1000, 1366) {
-    foreach ($combo in @(@($true, $true), @($true, $false), @($false, $false))) {
-        $exp = $combo[0]; $mail = $combo[1]
-        $env = @{ pw = $w; ph = 68; tw = 0; th = 0; exp = $exp; mail = $mail }
-        $rnames = @('btnCmpReportHome', 'btnCmpReportRefresh'); if ($mail) { $rnames += 'btnCmpReportMail' }; if ($exp) { $rnames += 'btnCmpReportExport' }
+# (9b) cmpReportFooter geometry: minimal row width 748 = 2x40 margin + Home 110 + Weekly Hours 180 + 3x110 (Refresh, Mail, Export) + 4x12 gaps (v1.0.2 Mail and Weekly Hours, H47); without the navigation button 556
+$rfMin = 2 * 40 + 110 + 180 + 3 * 110 + 4 * 12
+Assert-True ($rfMin -eq 748 -and (Get-Geo $rf 'conCmpReportFooterRow' 'Width' @{ pw = 100; ph = 68; tw = 0; th = 0; exp = $true; mail = $true; nav = $true }) -eq 748 -and (Get-Geo $rf 'conCmpReportFooterRow' 'Width' @{ pw = 100; ph = 68; tw = 0; th = 0; exp = $true; mail = $true; nav = $false }) -eq 556) 'cmpReportFooter: minimal row width 748 with Weekly Hours, 556 without (the row never gets narrower, the footer scrolls horizontally)'
+foreach ($w in 748, 1000, 1366) {
+    foreach ($combo in @(@($true, $true, $true), @($true, $false, $true), @($false, $false, $true), @($true, $true, $false))) {
+        $exp = $combo[0]; $mail = $combo[1]; $nav = $combo[2]
+        $env = @{ pw = $w; ph = 68; tw = 0; th = 0; exp = $exp; mail = $mail; nav = $nav }
+        $rnames = @('btnCmpReportHome'); if ($nav) { $rnames += 'btnCmpReportNav' }; $rnames += 'btnCmpReportRefresh'; if ($mail) { $rnames += 'btnCmpReportMail' }; if ($exp) { $rnames += 'btnCmpReportExport' }
         $rects = @($rnames | ForEach-Object { Rect $rf $_ $env })
         $ok = $true
         for ($i = 0; $i -lt $rects.Count; $i++) { if ($rects[$i].y -ne 14 -or $rects[$i].h -ne 40) { $ok = $false }; for ($j = $i + 1; $j -lt $rects.Count; $j++) { if (Overlap $rects[$i] $rects[$j]) { $ok = $false } } }
         $last = $rects[$rects.Count - 1]
         $ok = $ok -and ($last.x + $last.w) -eq ($w - 40) -and $rects[0].x -eq 40 -and $rects[1].x -ge ($rects[0].x + $rects[0].w + 12)
-        for ($i = 1; $i -lt ($rects.Count - 1); $i++) { if (($rects[$i].x + $rects[$i].w + 12) -ne $rects[$i + 1].x) { $ok = $false } }
-        Assert-True $ok "cmpReportFooter width $w (Export visible=$exp, Mail visible=$mail): one row at Y14 height 40, no overlap, left margin 40, right-most button ends at width-40, 12 px gaps between right buttons, no gap for a hidden button"
+        $firstRight = if ($nav) { 2 } else { 1 }
+        if ($nav) { $ok = $ok -and $rects[1].x -eq ($rects[0].x + $rects[0].w + 12) -and $rects[2].x -ge ($rects[1].x + $rects[1].w + 12) }
+        for ($i = $firstRight; $i -lt ($rects.Count - 1); $i++) { if (($rects[$i].x + $rects[$i].w + 12) -ne $rects[$i + 1].x) { $ok = $false } }
+        Assert-True $ok "cmpReportFooter width $w (Export visible=$exp, Mail visible=$mail, Weekly Hours visible=$nav): Weekly Hours 12 px right of Home, one row at Y14 height 40, no overlap, left margin 40, right-most button ends at width-40, 12 px gaps between right buttons, no gap for a hidden button"
     }
 }
 
@@ -486,7 +491,7 @@ Assert-True ($instTotal -gt 0) "instance wiring checked on $instTotal component 
 foreach ($b in @(@('btnCmpHome', 'Home'), @('btnCmpNew', 'New'), @('btnCmpRefresh', 'Refresh'), @('btnCmpDiscard', 'Discard'), @('btnCmpSave', 'Save'))) {
     Assert-True ($idx['cmpFooter'][$b[0]]['Properties']['OnSelect'] -ceq "=If(cmpFooter.$($b[1])Enabled,cmpFooter.On$($b[1])())" -and $defs['cmpFooter']['CustomProperties']["On$($b[1])"]['PropertyKind'] -eq 'Event') "cmpFooter.$($b[0]).OnSelect = If(cmpFooter.$($b[1])Enabled,cmpFooter.On$($b[1])()) and On$($b[1]) is an Event of the definition"
 }
-foreach ($b in @(@('btnCmpReportHome', 'Home'), @('btnCmpReportRefresh', 'Refresh'), @('btnCmpReportExport', 'Export'))) {
+foreach ($b in @(@('btnCmpReportHome', 'Home'), @('btnCmpReportNav', 'Nav'), @('btnCmpReportRefresh', 'Refresh'), @('btnCmpReportExport', 'Export'))) {
     Assert-True ($idx['cmpReportFooter'][$b[0]]['Properties']['OnSelect'] -ceq "=If(cmpReportFooter.$($b[1])Enabled,cmpReportFooter.On$($b[1])())" -and $defs['cmpReportFooter']['CustomProperties']["On$($b[1])"]['PropertyKind'] -eq 'Event') "cmpReportFooter.$($b[0]).OnSelect = If(cmpReportFooter.$($b[1])Enabled,cmpReportFooter.On$($b[1])()) and On$($b[1]) is an Event of the definition"
 }
 # cmpListCard filter and count (interpreter): the component filters the host rows on Show inactive and on its own search text (in Title or Subtitle)

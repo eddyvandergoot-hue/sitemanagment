@@ -16,6 +16,7 @@ Screens:
         If(IsBlank(varWrLoadState),Set(varWrLoadState,"NotLoaded"); Set(varWrContractorDisplay,""); Set(varWrContractorID,0));
         If(IsBlank(varWrMonday),Set(varWrPickedDay,Today()); Set(varWrMonday,DateAdd(Today(),1-Weekday(Today(),StartOfWeek.Monday),TimeUnit.Days)));
         If(IsBlank(varWrProjectID) && !IsBlank(varProject.Id),Set(varWrProjectID,varProject.Id));
+        If(Coalesce(varWrNavIn,false),Set(varWrNavIn,false); If(!Coalesce(varWrBusy,false),Reset(dpWrWeek)));
         Trace("DIAG|WeekReport|OnVisible",TraceSeverity.Information,{Screen:"WeekReport",LoadState:Coalesce(varWrLoadState,"")});
         If(!Coalesce(varWrBusy,false),Set(varWrMastersReady,false); Set(varWrForceRefresh,false); Select(btnWrLoad))
     Children:
@@ -1131,6 +1132,22 @@ Screens:
                Set(varWrBusy,false); Set(varWrExporting,false);
                Trace("DIAG|Export|End",TraceSeverity.Information,{Screen:"WeekReport",Files:varWrExpFiles,ElapsedMs:DateDiff(varWrExpT0,Now(),TimeUnit.Milliseconds),Errors:CountRows(colWrExportErrors)+varWrExpFailN,Contractors:CountRows(colWrExpJobs2),Exported:varWrExpOkN,Skipped:CountIf(colWrExpResults,Status="NoHours")}),
                Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgExportBlocked.nl),T.wrMsgExportBlocked.nl,T.wrMsgExportBlocked.en))
+              )
+            NavEnabled: =!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading"
+            NavText: =If(LangNl && !IsBlank(T.wrNavHours.nl),T.wrNavHours.nl,T.wrNavHours.en)
+            NavVisible: =true
+            OnNav: |-
+              =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",
+               If(Coalesce(varWeekLoading,false) || Coalesce(varWeekSaving,false) || JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),
+                Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgNavHoursBlocked.nl),T.wrMsgNavHoursBlocked.nl,T.wrMsgNavHoursBlocked.en)),
+                varTeamLoadState="Loaded" && !Coalesce(varTeamDirty,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varSaving,false) && varTeamLoadedProjectID=ddProject.Selected.Id && varTeamLoadedTeam=ddTeam.Selected.Value && Coalesce(varMastersReady,false) && Coalesce(varWorkersCacheReady,false) && !IsBlank(ddProject.Selected.Id) && !IsBlank(ddTeam.Selected.Value) && !IsBlank(varWrProjectID) && ddProject.Selected.Id=varWrProjectID,
+                If(!IsBlank(varWrMonday),Set(varHoursPickedDay,Coalesce(varWrPickedDay,varWrMonday)); Set(varHoursWeekMonday,varWrMonday));
+                Set(varTeam,If(varProject.Id=ddProject.Selected.Id && !IsBlank(varTeam.Value) && CountIf(colTeamChoices,Value=varTeam.Value)>0,varTeam,ddTeam.Selected)); Set(varProject,ddProject.Selected);
+                Trace("DIAG|Nav|WeekReportToWeeklyHours",TraceSeverity.Information,{Scenario:"Nav",Step:"WeekReportToWeeklyHours",ProjectID:varProject.Id,Team:Coalesce(varTeam.Value,"")});
+                Navigate(scrHours),
+                Set(varAdmMsgKind,"Warning"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadAttention.nl),T.admHeadAttention.nl,T.admHeadAttention.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgNavHoursNoTeam.nl),T.wrMsgNavHoursNoTeam.nl,T.wrMsgNavHoursNoTeam.en))
+               ),
+               Set(varAdmMsgKind,"Error"); Set(varAdmMsgHead,If(LangNl && !IsBlank(T.admHeadBlocked.nl),T.admHeadBlocked.nl,T.admHeadBlocked.en)); Set(varAdmMsgBody,If(LangNl && !IsBlank(T.wrMsgActionBlocked.nl),T.wrMsgActionBlocked.nl,T.wrMsgActionBlocked.en))
               )
             OnHome: |-
               =If(!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading",Navigate(scrHome),

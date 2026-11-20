@@ -6,6 +6,8 @@ $regressionOptions=New-Object Microsoft.PowerFx.ParserOptions
 $regressionOptions.Culture=[Globalization.CultureInfo]::GetCultureInfo('en-US')
 function Index-RegressionControls($entries,$index){foreach($entry in $entries){$name=@($entry.Keys)[0];$index[$name]=$entry[$name];Index-RegressionControls $entry[$name]['Children'] $index}}
 $indexes=@{};$count=0
+# v1.0.2 (H47): scrWeekReport indexed only for the Weekly Hours route check (no Check-Node/Check-Control rules applied here).
+$wrDoc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot 'Src/scrWeekReport.pa.yaml')));$wrIndex=@{};Index-RegressionControls $wrDoc['Screens']['scrWeekReport']['Children'] $wrIndex
 foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContractors','scrProjects','scrWorkers')){
  $doc=$builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $projectRoot ('Src/'+$screen+'.pa.yaml'))))
  if($screen -ne 'scrWeeklyHours'){Check-Node $doc $screen}
@@ -494,8 +496,19 @@ foreach($flag in @('varMastersReady','varWorkersCacheReady')){ foreach($v in @('
 }}
 Assert-Regression ($navFx.Replace('varMastersReady:true','varMastersReady:false')+$tileLoaded+')') $false 'Tile 5.6: Hours Summary refilled only colWorkersCache (varWorkersCacheReady true, varMastersReady false) -> Screen1'
 Assert-Regression ($navFx+$gotoPred+')') $true 'Screen1 Weekly Hours button 5.6: loaded team and valid caches -> allowed'
-$scrHoursNav=@(foreach($scr in $indexes.Keys){ foreach($n in $indexes[$scr].Keys){ foreach($pp in @($indexes[$scr][$n]['Properties'].Keys)){ if(([string]$indexes[$scr][$n]['Properties'][$pp]) -match '\bNavigate\(\s*scrHours\b'){ "$scr.$n.$pp" } } } }) | Sort-Object
-Assert-True (($scrHoursNav -join ',') -ceq 'Screen1.btnGotoHours.OnSelect,scrHome.cmpTileWeeklyHours.OnSelect') "Only two routes open Weekly Hours, both behind the 5.6 cache condition ($($scrHoursNav -join ', '))"
+$scrHoursNav=@(foreach($scr in @($indexes.Keys)+'scrWeekReport'){ $ix=if($scr -eq 'scrWeekReport'){$wrIndex}else{$indexes[$scr]}; foreach($n in $ix.Keys){ foreach($pp in @($ix[$n]['Properties'].Keys)){ if(([string]$ix[$n]['Properties'][$pp]) -match '\bNavigate\(\s*scrHours\b'){ "$scr.$n.$pp" } } } }) | Sort-Object
+Assert-True (($scrHoursNav -join ',') -ceq 'Screen1.btnGotoHours.OnSelect,scrHome.cmpTileWeeklyHours.OnSelect,scrWeekReport.cmpWrFooter.OnNav') "Only three routes open Weekly Hours, all behind the 5.6 cache condition ($($scrHoursNav -join ', '))"
+# v1.0.2 (Eddy 20-11-2026, H47): Week report -> Weekly Hours. Same loaded-team condition as the Home tile plus the same project; unsaved hours -> amber, no navigation.
+$wrNav=([string]$wrIndex['cmpWrFooter']['Properties']['OnNav']).Trim()
+$wrGuard='!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading"'
+Assert-True ($wrNav.StartsWith('=If('+$wrGuard+','+"`n"+' If(Coalesce(varWeekLoading,false) || Coalesce(varWeekSaving,false) || '+$weekDirty+',') -and ([string]$wrIndex['cmpWrFooter']['Properties']['NavEnabled']).Trim() -ceq ('='+$wrGuard)) 'Week report -> Weekly Hours: NavEnabled = the Week report guard = first OnNav condition; then unsaved hours / week load or save block first'
+$wrNavArgs=Split-TopArgs (Get-ParenAt ($wrNav.Substring(1)) (('If('+$wrGuard+',').Length+4))
+Assert-True ($wrNavArgs.Count -eq 5 -and $wrNavArgs[0].Trim().StartsWith('Coalesce(varWeekLoading') -and $wrNavArgs[1] -notmatch 'Navigate\(' -and $wrNavArgs[1].Contains('"Warning"') -and $wrNavArgs[2].Trim() -ceq ($tileLoaded+' && !IsBlank(varWrProjectID) && ddProject.Selected.Id=varWrProjectID') -and (Count-Of $wrNavArgs[3] 'Navigate(') -eq 1 -and $wrNavArgs[3].Trim().EndsWith('Navigate(scrHours)') -and $wrNavArgs[4] -notmatch 'Navigate\(' -and $wrNavArgs[4].Contains('"Warning"')) "Week report -> Weekly Hours: unsaved -> amber, no navigation; loaded team (Home tile condition) + same project -> scrHours; otherwise amber, no navigation ($($wrNavArgs.Count) branches)"
+Assert-True ($wrNavArgs[3].Contains('Set(varHoursPickedDay,') -and $wrNavArgs[3].IndexOf('Set(varTeam,') -lt $wrNavArgs[3].IndexOf('Set(varProject,') -and $wrNavArgs[1] -notmatch 'Set\(varHours' -and $wrNavArgs[4] -notmatch 'Set\(var(Hours|Team|Project)') 'Week report -> Weekly Hours: week, team (last used if it belongs to the loaded project, else Project / team) and project are set only in the navigating branch'
+foreach($case in @(@('',$true,'loaded matching selection'),@('varTeamDirty:false|varTeamDirty:true',$false,'unsaved team selection'),@('varMastersReady:true|varMastersReady:false',$false,'stale caches'),@('ddProject:{Selected:{Id:7}}|ddProject:{Selected:{Id:8}}',$false,'other project in Project / team'),@('varWrProjectID:7|varWrProjectID:Blank()',$false,'no project chosen in Week report'))){
+ $fx=$navFx.Replace('ddTeam:{Selected:{Value:"2"}}','ddTeam:{Selected:{Value:"2"}},varWrProjectID:7'); if($case[0]){ $pr=$case[0] -split '\|'; $fx=$fx.Replace($pr[0],$pr[1]) }
+ Assert-Regression ($fx+$wrNavArgs[2]+')') $case[1] "Week report -> Weekly Hours: $($case[2]) -> navigate=$($case[1])"
+}
 foreach($state in @('"NotLoaded"','"Loading"','"Failed"','Blank()')){ Assert-Regression ($navFx.Replace('varTeamLoadState:"Loaded"','varTeamLoadState:'+$state)+$tileLoaded+')') $false "Tile: team state $state -> Screen1 + Notify" }
 foreach($flag in @('varTeamDirty','varSelectionBusy','varSaving')){ Assert-Regression ($navFx.Replace($flag+':false',$flag+':true')+$tileLoaded+')') $false "Tile: $flag -> Screen1 + Notify" }
 Assert-Regression ($navFx.Replace('ddProject:{Selected:{Id:7}}','ddProject:{Selected:{Id:8}}')+$tileLoaded+')') $false 'Tile: dropdown project differs from loaded -> Screen1'
@@ -506,7 +519,6 @@ Assert-Regression ($navFx.Replace('varTeamLoadedTeam:"2"','varTeamLoadedTeam:Bla
 $weekClean=$weekDirty.Replace(')<>JSON(',')=JSON(')
 $homeButtons=@(
  @('Screen1','btnHomeScreen1','!Coalesce(varSaving,false) && !Coalesce(varSelectionBusy,false) && !Coalesce(varTeamDirty,false)'),
- @('scrHours','btnHomeHours',('!Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false) && '+$weekClean)),
  @('scrWeeklyHours','btnHomeSummary','!Coalesce(varReportBusy,false)'))
 foreach($hb in $homeButtons){
  $hp=$indexes[$hb[0]][$hb[1]]['Properties']
@@ -520,16 +532,25 @@ foreach($case in @(@('false','false','false',$true,'idle'),@('Blank()','Blank()'
 }
 Assert-True (([string]$indexes.Screen1['btnGotoHoursSummary']['Properties']['DisplayMode']).Trim() -ceq ('=If('+$gotoPredOld+$navSuffix)) 'Screen1 btnGotoHoursSummary DisplayMode unchanged (requires Loaded; Hours Summary loads its own masters)'
 Assert-True ($gotoDm -ceq ('=If('+$gotoPredOld+$cacheCond+$navSuffix)) 'Screen1 btnGotoHours DisplayMode = sibling guard + cache condition (5.6)'
-$h2=$homeButtons[1][2].Replace($weekClean,'!isDirty')
-$sibWeek=([string]$indexes.scrHours['btnWeeklyProjectTeam']['Properties']['DisplayMode']).Trim().Substring(1).Replace($weekDirty,'isDirty').Replace('DisplayMode.Edit','true').Replace('DisplayMode.Disabled','false')
-foreach($l in @('false','true')){foreach($s in @('false','true')){foreach($d in @('false','true')){
- $fxw='With({varWeekLoading:'+$l+',varWeekSaving:'+$s+',isDirty:'+$d+'},'
- $exp=($l -eq 'false' -and $s -eq 'false' -and $d -eq 'false')
- Assert-Regression ($fxw+$h2+')') $exp "scrHours Home: loading=$l saving=$s unsaved=$d -> allowed=$exp"
- Assert-Regression ($fxw+$sibWeek+')') $exp "scrHours Project / team (sibling) same outcome: loading=$l saving=$s unsaved=$d"
-}}}
-Assert-Regression ('With({varWeekLoading:Blank(),varWeekSaving:Blank(),isDirty:false},'+$h2+')') $true 'scrHours Home: cold flags without input allowed'
-$h3=$homeButtons[2][2]
+# v1.0.2 (Eddy 20-11-2026, H47): Weekly Hours navigation buttons (Home, Project / team, Week report) are clickable unless loading/saving;
+# with unsaved hours OnSelect gives an amber warning and does not navigate (team-switch pattern). DisplayMode guard = first OnSelect condition.
+$wBusy='!Coalesce(varWeekLoading,false) && !Coalesce(varWeekSaving,false)'
+foreach($nb in @(@('btnHomeHours','Navigate(scrHome)'),@('btnWeeklyProjectTeam','Navigate(Screen1,ScreenTransition.Fade)'),@('btnHoursWeekReport','Navigate(scrWeekReport)'))){
+ $np=$indexes.scrHours[$nb[0]]['Properties']; $os=([string]$np['OnSelect']).Trim()
+ Assert-True (([string]$np['DisplayMode']).Trim() -ceq ('=If('+$wBusy+$navSuffix)) "$($nb[0]) DisplayMode = If(<not loading/saving>,Edit,Disabled)"
+ $oa=Split-TopArgs (Get-ParenAt $os 3)
+ $inner=Split-TopArgs (Get-ParenAt $oa[1].Trim() 2)
+ Assert-True ($oa.Count -eq 2 -and $oa[0].Trim() -ceq $wBusy -and $oa[1].Trim().StartsWith('If(') -and $inner[0].Trim() -ceq $weekDirty -and $inner[1] -notmatch 'Navigate\(' -and $inner[1].Contains('NotificationType.Warning') -and (Count-Of $os 'Navigate(') -eq 1 -and $inner[$inner.Count-1].Trim().EndsWith($nb[1])) "$($nb[0]) OnSelect = If(<same guard>,If(<unsaved hours>,amber Notify (no navigation),...,$($nb[1])))"
+ foreach($l in @('false','true')){foreach($sv in @('false','true')){foreach($d in @('false','true')){
+  $exp=($l -eq 'false' -and $sv -eq 'false' -and $d -eq 'false')
+  $navOnly=$os.Substring(1).Replace($weekDirty,'isDirty').Replace($nb[1],'true')
+  $navOnly=[regex]::Replace($navOnly,'Notify\("[^"]*",NotificationType\.Warning,\d+\)','false')
+  if($nb[0] -eq 'btnHoursWeekReport'){ $navOnly=$navOnly.Replace('IsBlank(varProject.Id) || IsBlank(varHoursWeekMonday)','false'); $navOnly=[regex]::Replace($navOnly,'Set\([^;]*\);\s*','').Replace([regex]::Match($navOnly,'Trace\([^\n]*\);').Value,'') }
+  Assert-Regression ('With({varWeekLoading:'+$l+',varWeekSaving:'+$sv+',isDirty:'+$d+'},Coalesce('+$navOnly+',false))') $exp "scrHours $($nb[0]) real OnSelect: loading=$l saving=$sv unsaved=$d -> navigates=$exp"
+ }}}
+}
+Assert-Regression ('With({varWeekLoading:Blank(),varWeekSaving:Blank(),isDirty:false},'+$wBusy+' && !isDirty)') $true 'scrHours Home: cold flags without input allowed'
+$h3=$homeButtons[1][2]
 $sibSum=([string]$indexes.scrWeeklyHours['btnSummaryProjectTeam']['Properties']['DisplayMode']).Trim().Substring(1).Replace('DisplayMode.Edit','true').Replace('DisplayMode.Disabled','false')
 foreach($b in @('false','true')){
  Assert-Regression ('With({varReportBusy:'+$b+'},'+$h3+')') ($b -eq 'false') "Hours Summary Home: busy=$b"

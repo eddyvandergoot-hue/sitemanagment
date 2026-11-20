@@ -119,23 +119,6 @@ Screens:
                         Width: =lblHomeMetrics.Width
                         X: =Mod(1,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
                         Y: =46+RoundDown(1/lblHomeMetrics.Height,0)*(lblHomeMetrics.Width+10)
-                  - cmpTileHoursSummary:
-                      Control: CanvasComponent
-                      ComponentName: cmpTile
-                      Properties:
-                        Active: =true
-                        ArrowSvg: =IconArrowWhite
-                        Height: =lblHomeMetrics.Width
-                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
-                        IconSvg: =IconHoursSummaryWhite
-                        Label: =If(LangNl && !IsBlank(T.homeTileHoursSummary.nl),T.homeTileHoursSummary.nl,T.homeTileHoursSummary.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
-                        OnSelect: =Navigate(scrWeeklyHours); true
-                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
-                        SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
-                        Width: =lblHomeMetrics.Width
-                        X: =Mod(2,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
-                        Y: =46+RoundDown(2/lblHomeMetrics.Height,0)*(lblHomeMetrics.Width+10)
                   - cmpTileWeekReport:
                       Control: CanvasComponent
                       ComponentName: cmpTile
@@ -148,6 +131,23 @@ Screens:
                         Label: =If(LangNl && !IsBlank(T.homeTileWeekReport.nl),T.homeTileWeekReport.nl,T.homeTileWeekReport.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrWeekReport); true
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
+                        SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
+                        Width: =lblHomeMetrics.Width
+                        X: =Mod(2,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
+                        Y: =46+RoundDown(2/lblHomeMetrics.Height,0)*(lblHomeMetrics.Width+10)
+                  - cmpTileHoursSummary:
+                      Control: CanvasComponent
+                      ComponentName: cmpTile
+                      Properties:
+                        Active: =true
+                        ArrowSvg: =IconArrowWhite
+                        Height: =lblHomeMetrics.Width
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconHoursSummaryWhite
+                        Label: =If(LangNl && !IsBlank(T.homeTileHoursSummary.nl),T.homeTileHoursSummary.nl,T.homeTileHoursSummary.en)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        OnSelect: =Navigate(scrWeeklyHours); true
                         Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
@@ -186,6 +186,23 @@ Screens:
                         Width: =lblHomeMetrics.Y
                         X: =0
                         Y: =lblHomeHeaderMasterData.Y+lblHomeHeaderMasterData.Height+8
+                  - cmpTileWorkers:
+                      Control: CanvasComponent
+                      ComponentName: cmpTile
+                      Properties:
+                        Active: =true
+                        ArrowSvg: =IconArrowWhite
+                        Height: =lblHomeMetrics.Width
+                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
+                        IconSvg: =IconWorkersWhite
+                        Label: =If(LangNl && !IsBlank(T.homeTileWorkers.nl),T.homeTileWorkers.nl,T.homeTileWorkers.en)
+                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
+                        OnSelect: =Navigate(scrWorkers); true
+                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
+                        SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
+                        Width: =lblHomeMetrics.Width
+                        X: =Mod(0,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
+                        Y: =46+RoundDown(0/lblHomeMetrics.Height,0)*(lblHomeMetrics.Width+10)
                   - cmpTileContractors:
                       Control: CanvasComponent
                       ComponentName: cmpTile
@@ -201,8 +218,8 @@ Screens:
                         Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width
-                        X: =Mod(0,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
-                        Y: =46+RoundDown(0/lblHomeMetrics.Height,0)*(lblHomeMetrics.Width+10)
+                        X: =Mod(1,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
+                        Y: =46+RoundDown(1/lblHomeMetrics.Height,0)*(lblHomeMetrics.Width+10)
                   - cmpTileProjects:
                       Control: CanvasComponent
                       ComponentName: cmpTile
@@ -215,23 +232,6 @@ Screens:
                         Label: =If(LangNl && !IsBlank(T.homeTileProjects.nl),T.homeTileProjects.nl,T.homeTileProjects.en)
                         LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
                         OnSelect: =Navigate(scrProjects); true
-                        Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
-                        SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
-                        Width: =lblHomeMetrics.Width
-                        X: =Mod(1,lblHomeMetrics.Height)*(lblHomeMetrics.Width+10)
-                        Y: =46+RoundDown(1/lblHomeMetrics.Height,0)*(lblHomeMetrics.Width+10)
-                  - cmpTileWorkers:
-                      Control: CanvasComponent
-                      ComponentName: cmpTile
-                      Properties:
-                        Active: =true
-                        ArrowSvg: =IconArrowWhite
-                        Height: =lblHomeMetrics.Width
-                        IconSize: =If(lblHomeMetrics.Width>=150,44,If(lblHomeMetrics.Width>=130,38,32))
-                        IconSvg: =IconWorkersWhite
-                        Label: =If(LangNl && !IsBlank(T.homeTileWorkers.nl),T.homeTileWorkers.nl,T.homeTileWorkers.en)
-                        LabelSize: =If(lblHomeMetrics.Width>=150,11,If(lblHomeMetrics.Width>=130,10,8))
-                        OnSelect: =Navigate(scrWorkers); true
                         Padding: =If(lblHomeMetrics.Width>=150,14,If(lblHomeMetrics.Width>=130,12,If(lblHomeMetrics.Width>=107,8,6)))
                         SoonText: =If(LangNl && !IsBlank(T.homeSoon.nl),T.homeSoon.nl,T.homeSoon.en)
                         Width: =lblHomeMetrics.Width

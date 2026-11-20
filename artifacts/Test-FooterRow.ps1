@@ -35,9 +35,10 @@ $metric=Measure-Rect 'lblFooterButtonMetrics' $indexes.Screen1['lblFooterButtonM
 if($metric.Y -ne 16 -or $metric.Height -ne 40 -or $metric.Width -ne 12){throw 'Shared metrics invalid'}
 $configs=@(
  @{Screen='Screen1';Bar='navProjectTeam';Row='conProjectButtonRow';Nav=@('btnHomeScreen1','btnGotoHours','btnGotoHoursSummary');Actions=@('btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam')},
- @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam');Actions=@('btnFillWeek','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
+ @{Screen='scrHours';Bar='navWeeklyHours';Row='conWeekButtonRow';Nav=@('btnHomeHours','btnWeeklyProjectTeam','btnHoursWeekReport');Actions=@('btnFillWeek','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')},
  @{Screen='scrWeeklyHours';Bar='navHoursSummary';Row='conSummaryButtonRow';Nav=@('btnHomeSummary','btnSummaryProjectTeam');Actions=@('btnReportPreviousWeeks','btnReportNextWeeks','btnRefreshReport')}
 )
+# v1.0.2 (H47): Weekly Hours Home = same busy guard in DisplayMode and OnSelect; unsaved hours -> amber Notify, no navigation.
 # 30-10-2026 (Projects build): admin-pattern screens share the white 68 px footer, Home icon and message-bar checks.
 $adminFooter=@('scrContractors','scrProjects')
 foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(1366,768),@(1920,1080))){
@@ -61,7 +62,7 @@ foreach($case in @(@(320,600),@(480,600),@(600,600),@(768,600),@(1024,768),@(136
   $children=@($index[$cfg.Row]['Children']|ForEach-Object {@($_.Keys)[0]});foreach($name in $buttons){if($name -notin $children){throw 'Button in separate parent'}}
   # 26-10-2026 (powerfx-logic): Home has its own guard, identical in DisplayMode and OnSelect (If(<guard>,Navigate(scrHome))); the guard values are checked in Test-SaveRegression.ps1.
   $homeBtn=$cfg.Nav[0];$homeDm=[string]$index[$homeBtn]['Properties']['DisplayMode'];$homeOs=[string]$index[$homeBtn]['Properties']['OnSelect']
-  $homeGuardOk=$homeDm.StartsWith('=If(') -and $homeDm.EndsWith(',DisplayMode.Edit,DisplayMode.Disabled)') -and $homeOs -ceq ('=If('+$homeDm.Substring(4,$homeDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)+',Navigate(scrHome))')
+  $homeGuardOk=$homeDm.StartsWith('=If(') -and $homeDm.EndsWith(',DisplayMode.Edit,DisplayMode.Disabled)') -and ($homeOs -ceq ('=If('+$homeDm.Substring(4,$homeDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)+',Navigate(scrHome))') -or ($cfg.Screen -eq 'scrHours' -and $homeOs -ceq ('=If('+$homeDm.Substring(4,$homeDm.Length-4-',DisplayMode.Edit,DisplayMode.Disabled)'.Length)+',If(JSON(ShowColumns(colWeekRows,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours))<>JSON(ShowColumns(colWeekOriginal,ID,MonHours,TueHours,WedHours,ThuHours,FriHours,SatHours,SunHours)),Notify("Home not opened: unsaved hours. Save or discard first.",NotificationType.Warning,15000),Navigate(scrHome)))')))
   $homeText=if($cfg.Screen -eq 'scrContractors'){'=If(LangNl && !IsBlank(T.empHome.nl),T.empHome.nl,T.empHome.en)'}elseif($cfg.Screen -eq 'scrProjects'){'=If(LangNl && !IsBlank(T.prjHome.nl),T.prjHome.nl,T.prjHome.en)'}else{'="Home"'}; $homeGap=if($cfg.Nav.Count -gt 1){$rects[$cfg.Nav[1]].X-($rects[$homeBtn].X+$rects[$homeBtn].Width) -ne 12}else{$false}; if($children[0] -ne $homeBtn -or !$homeGuardOk -or $index[$homeBtn]['Properties']['Text'] -ne $homeText -or $rects[$homeBtn].X -ne 40 -or $homeGap){throw "Home button must be first (X=40, 12 px before next nav button) and navigate to scrHome behind the same guard in DisplayMode and OnSelect: $($cfg.Screen)"}
   if($cfg.Screen -eq 'Screen1'){
    foreach($name in @('ddTeam','ddProject','lblTeamWeek','dpTeamWeek','lblProject','lblTeam','lblWorkerEmployerFilter','ddWorkerEmployer','lblWorkerSearch','txtWorkerSearch')){Publish-Rect $name @{X=0;Y=0;Width=0;Height=0}}

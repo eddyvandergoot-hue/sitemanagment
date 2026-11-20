@@ -93,7 +93,11 @@ $G = '!Coalesce(varWrBusy,false) && varWrLoadState<>"Loading"'
 $pickOc = P 'dpWrWeek.OnChange'
 Assert-True ((P 'dpWrWeek.DisplayMode') -ceq "=If($G,DisplayMode.Edit,DisplayMode.Disabled)" -and $pickOc.StartsWith("=If($G,")) 'picker guard parity: DisplayMode condition = first OnChange condition (disabled while loading)'
 Assert-True ((Norm $pickOc).Contains('If(monday=varWrMonday,Set(varWrPickedDay,selectedDay),Set(varWrPickedDay,selectedDay);Set(varWrMonday,monday);Select(btnWrLoad))') -and ([regex]::Matches($pickOc, 'Reset\(dpWrWeek\)')).Count -eq 1 -and (Norm $pickOc).Contains('If(IsBlank(Self.SelectedDate),Reset(dpWrWeek),')) 'picker OnChange: other week -> keep day + Monday + load; same week -> keep day only; Reset only for an empty date (never after a normal pick)'
-Assert-True ($screenText -notmatch '\bvar(Hours|Week|Team)\w*' -and $screenText -notmatch '\bdpHoursWeek\b|\bdpTeamWeek\b') 'week state is own (varWr*), independent of Screen1 / Weekly Hours'
+# v1.0.2 (Eddy 20-11-2026, H47): only the Weekly Hours button (cmpWrFooter.OnNav) reads the Weekly Hours state and hands over the week; the report itself keeps its own week.
+$ownText = (@($all.Keys | Where-Object { $_ -ne 'cmpWrFooter.OnNav' } | ForEach-Object { [string]$all[$_] })) -join "`n"
+Assert-True ($ownText -notmatch '\bvar(Hours|Week|Team)\w*' -and $screenText -notmatch '\bdpHoursWeek\b|\bdpTeamWeek\b') 'week state is own (varWr*), independent of Screen1 / Weekly Hours (only the Weekly Hours button hands the week over)'
+$onNav = P 'cmpWrFooter.OnNav'
+Assert-True ([regex]::Matches($onNav, '\bSet\(var(Hours|Week|Team)\w*').Count -eq 3 -and $onNav.Contains('Set(varHoursPickedDay,Coalesce(varWrPickedDay,varWrMonday)); Set(varHoursWeekMonday,varWrMonday)') -and $onNav -notmatch 'Patch\(|Select\(|Notify\(') 'Weekly Hours button: sets only the shared week and varTeam (plus varProject), no Patch, no load trigger, no Notify (scrHours.OnVisible loads)'
 Assert-True ((P 'lblWrWeekKW.X') -eq '=btnWrNext.X+btnWrNext.Width+12' -and (P 'lblWrWeekKW.Y') -eq '=dpWrWeek.Y' -and (P 'lblWrWeekLabel.Text').Contains('T.wrFieldWeek.en')) 'label "Week" above the picker and "YYYY KWxx" beside the next-week arrow'
 
 # (3) No mutations --------------------------------------------------------------------------------------------------------

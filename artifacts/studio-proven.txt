@@ -6,6 +6,7 @@
 # Add a ref only after Eddy confirmed the import of that build (no PA2108 / formula errors). Lines starting with # are comments.
 approved-20261118-v1.0.1    v1.0.1 released (Studio test PASS 18-11-2026)
 a2432b6                     v1.0.2-20261119_204929, TP-V102-01 PASS (Eddy 19-11-2026)
+4c99604                     v1.0.2-20261120_183654 rebuild 4, retest PASS incl. ModernCombobox in cmpField (Eddy 20-11-2026)
 incoming:20261119-SiteManagement-mail.msapp       Studio save by Eddy for MS-050 (19-11-2026)
 incoming:20261119-SiteManagement-combobox.msapp   Studio save by Eddy for MS-053 (19-11-2026)
 incoming:20261120-SiteManagement-moderncombobox.msapp   Studio save by Eddy, cmbTest ModernCombobox@1.1.2 filters in Play (20-11-2026)

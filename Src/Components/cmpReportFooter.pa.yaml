@@ -9,7 +9,7 @@
 ComponentDefinitions:
   cmpReportFooter:
     DefinitionType: CanvasComponent
-    Description: Week Report footer. Presentation only. Contract - the host passes the complete guard of each button in <Button>Enabled (a Boolean) and puts the SAME guard as the first condition inside its event handler (OnHome, OnRefresh, OnMail, OnExport); week arrows live on the host screen next to the week picker (Eddy 11-11-2026). The component only calls the event when its Enabled input is true; it never decides, mutates or navigates. Export is the right-most button and only shown when ExportVisible is true; the other right-hand buttons then stay right-aligned without a gap.
+    Description: Week Report footer. Presentation only. Contract - the host passes the complete guard of each button in <Button>Enabled (a Boolean) and puts the SAME guard as the first condition inside its event handler (OnHome, OnNav, OnRefresh, OnMail, OnExport); the navigation button (NavText, v1.0.2) sits right of Home; week arrows live on the host screen next to the week picker (Eddy 11-11-2026). The component only calls the event when its Enabled input is true; it never decides, mutates or navigates. Export is the right-most button and only shown when ExportVisible is true; the other right-hand buttons then stay right-aligned without a gap.
     CustomProperties:
       HomeText:
         PropertyKind: Input
@@ -26,6 +26,21 @@ ComponentDefinitions:
         DataType: Text
         Description: Export button text.
         Default: ="Export"
+      NavText:
+        PropertyKind: Input
+        DataType: Text
+        Description: Navigation button text (right of Home), e.g. Weekly Hours.
+        Default: ="Weekly Hours"
+      NavEnabled:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Navigation button guard (true = Edit, false = Disabled). Fail-closed default.
+        Default: =false
+      NavVisible:
+        PropertyKind: Input
+        DataType: Boolean
+        Description: Navigation button visible (right of Home). Fail-closed default.
+        Default: =false
       MailText:
         PropertyKind: Input
         DataType: Text
@@ -65,6 +80,11 @@ ComponentDefinitions:
         PropertyKind: Event
         ReturnType: None
         Description: Home pressed. The host handler starts with its guard.
+        Default: =false
+      OnNav:
+        PropertyKind: Event
+        ReturnType: None
+        Description: Navigation button pressed. The host handler starts with its guard.
         Default: =false
       OnRefresh:
         PropertyKind: Event
@@ -125,7 +145,7 @@ ComponentDefinitions:
                   Fill: =Color.Transparent
                   FillPortions: =0
                   Height: =68
-                  Width: =Max(Parent.Width,2*lblCmpReportFooterMetrics.X+btnCmpReportHome.Width+btnCmpReportRefresh.Width+btnCmpReportMail.Width+btnCmpReportExport.Width+3*lblCmpReportFooterMetrics.Width)
+                  Width: =Max(Parent.Width,2*lblCmpReportFooterMetrics.X+btnCmpReportHome.Width+If(cmpReportFooter.NavVisible,btnCmpReportNav.Width+lblCmpReportFooterMetrics.Width,0)+btnCmpReportRefresh.Width+btnCmpReportMail.Width+btnCmpReportExport.Width+3*lblCmpReportFooterMetrics.Width)
                 Children:
                   - btnCmpReportHome:
                       Control: Classic/Button@2.2.0
@@ -174,6 +194,42 @@ ComponentDefinitions:
                         Width: =20
                         X: =btnCmpReportHome.X+14
                         Y: =btnCmpReportHome.Y+(btnCmpReportHome.Height-Self.Height)/2
+                  - btnCmpReportNav:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorValue("#0303B8")
+                        Color: =Color.White
+                        DisabledBorderColor: =ColorValue("#E6E6E6")
+                        DisabledColor: =ColorValue("#787878")
+                        DisabledFill: =ColorValue("#E6E6E6")
+                        Fill: =ColorValue("#0303B8")
+                        HoverBorderColor: =ColorValue("#000F41")
+                        HoverColor: =Color.White
+                        HoverFill: =ColorValue("#000F41")
+                        PressedBorderColor: =ColorValue("#000F41")
+                        PressedColor: =Color.White
+                        PressedFill: =ColorValue("#000F41")
+                        Text: =cmpReportFooter.NavText
+                        DisplayMode: =If(cmpReportFooter.NavEnabled,DisplayMode.Edit,DisplayMode.Disabled)
+                        OnSelect: =If(cmpReportFooter.NavEnabled,cmpReportFooter.OnNav())
+                        Visible: =cmpReportFooter.NavVisible
+                        X: =btnCmpReportHome.X+btnCmpReportHome.Width+lblCmpReportFooterMetrics.Width
+                        Width: =180
+                        Y: =(Parent.Height-Self.Height)/2
+                        Height: =lblCmpReportFooterMetrics.Height
+                        Font: ="Inter, Arial, sans-serif"
+                        Size: =14
+                        FontWeight: =FontWeight.Semibold
+                        Align: =Align.Center
+                        VerticalAlign: =VerticalAlign.Middle
+                        PaddingTop: =0
+                        PaddingBottom: =0
+                        PaddingLeft: =16
+                        PaddingRight: =16
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
                   - btnCmpReportRefresh:
                       Control: Classic/Button@2.2.0
                       Properties:

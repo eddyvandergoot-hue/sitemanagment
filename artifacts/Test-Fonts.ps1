@@ -10,7 +10,7 @@ $homeTiles=@()
 $semibold=@{
  'scrHome'=@('lblHomeHeaderTeamHours','lblHomeHeaderMasterData','lblHomeHeaderInventory','lblHomeHeaderCadTools','lblHomeHeaderKnowledge')  # 3-11-2026: title in cmpTitleBar, tile labels/SOON in cmpTile (component section below)
  'Screen1'=@('lblProjectTeamTitle','btnHomeScreen1','btnGotoHours','btnGotoHoursSummary','btnMigratePreview','btnMigrateConfirm','btnRefreshTeam','btnAddtoTeam','btnTeamPrevWeek','btnTeamNextWeek')
- 'scrHours'=@('lblWeeklyHoursEntryTitle','lblHeaderWorker','lblHeaderMon','lblHeaderTue','lblHeaderWed','lblHeaderThu','lblHeaderFri','lblHeaderSat','lblHeaderSun','lblHeaderTotal','btnHomeHours','btnWeeklyProjectTeam','btnFillWeek','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')
+ 'scrHours'=@('lblWeeklyHoursEntryTitle','lblHeaderWorker','lblHeaderMon','lblHeaderTue','lblHeaderWed','lblHeaderThu','lblHeaderFri','lblHeaderSat','lblHeaderSun','lblHeaderTotal','btnHomeHours','btnWeeklyProjectTeam','btnHoursWeekReport','btnFillWeek','btnRefreshWeek','btnDiscardWeek','btnSaveWeek')
  'scrContractors'=@('lblEmpFormTitle')  # 30-10-2026 step 3a: title, labels, list rows and footer buttons live in the components (checked in the component section below)
  'scrProjects'=@('lblPrjFormTitle')  # step 3b: title, labels, list rows and footer buttons live in the components
  'scrWorkers'=@('lblWrkFormTitle')  # Workers build 08-11-2026: same admin pattern (components)
@@ -45,7 +45,7 @@ foreach($screen in @('scrHome','Screen1','scrHours','scrWeeklyHours','scrContrac
 }
 # Canvas components (Src\Components): every control with text carries the Inter font; weights per role.
 $componentTextTypes='^(Label@|Classic/Button@|Classic/TextInput@|HtmlViewer@|ModernSpinner@)'
-$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave','btnCmpReportHome','btnCmpReportRefresh','btnCmpReportMail','btnCmpReportExport')
+$componentSemibold=@('lblCmpTitleText','btnCmpTile','lblCmpTileLabel','lblCmpTileSoon','btnCmpHome','btnCmpNew','btnCmpRefresh','btnCmpDiscard','btnCmpSave','btnCmpReportHome','btnCmpReportNav','btnCmpReportRefresh','btnCmpReportMail','btnCmpReportExport')
 $componentTechnical=@('lblCmpFooterMetrics','lblCmpReportFooterMetrics')
 $componentFonts=0
 foreach($componentFile in Get-ChildItem (Join-Path $projectRoot 'Src\Components') -Filter *.pa.yaml){

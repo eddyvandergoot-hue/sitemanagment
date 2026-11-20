@@ -674,6 +674,12 @@ Voorbereiding
 
 Meld per stap PASS/FAIL; bij een importfout de exacte tekst. Ruim na de test niets op: de testmedewerkers en uren blijven op TEST-000.
 
+## TP-V102-02 v1.0.2 rebuild 4: ModernCombobox, Mail (PASS 20-11-2026, Eddy; build v1.0.2-20261120_183654, SHA-256 C4C2ADFC28DEE65B7EF2003A0A520FDD2F2C98CF6C4F4D61B8E99BB85ACF1372)
+
+- R1-R6 PASS: Country/Language/Trade zoekbaar (ModernCombobox), voorinvulling Language uit Country zonder overschrijven, lege Language geblokkeerd, wisselen en Discard correct, Projects 49 landen, Mail maakt concepten (ook met gesloten desktop-Outlook).
+- Hover-/focuskleuren (Microsoft-standaard van de combobox) geaccepteerd door Eddy.
+- Feedback: Outlook komt niet naar voren / start niet (concepten worden wel gemaakt); Mail mag niet zonder export werken. Opgelost in rebuild 5 (Mail = export + concept, dialoog cmpDialog, H48).
+
 ## TP-V102-01 v1.0.2 Contractors Language, Mail, Fill week (PASS 19-11-2026, Eddy; build v1.0.2-20261119_204929, SHA-256 22A92BBA20F693D5AC07CF4E50C28044B76E2EE818AA721D9AF7C6C71020DE65)
 
 | # | Stap | Resultaat |
