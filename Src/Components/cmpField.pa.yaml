@@ -9,7 +9,7 @@
 ComponentDefinitions:
   cmpField:
     DefinitionType: CanvasComponent
-    Description: 'Admin screen form field (Admin screen pattern), built on the shape Eddy made and tested in Studio (Incoming 20261102Components, scrTest): input DefaultValue -> txtFieldValue.Default, output Value = txtFieldValue.Text (dropdown: ddFieldValue.Selected.Value, readonly: DefaultValue). Label with optional red star above one input (text, dropdown or readonly), total height 58 (label 20 + 1 + input 36 + 1; the input lies 1 px inside the component so the 2 px focus/invalid border is never clipped). Presentation only. Contract - the host passes the complete edit guard in Enabled and puts the SAME guard as the first condition in its OnChange handler. Reset contract - a changed DefaultValue updates the inner input (classic Default behaviour); after Discard the host calls Reset(<instance>), which runs OnReset and resets the inner input to DefaultValue. Dirty check and Save read the output Value, never the inner controls.'
+    Description: 'Admin screen form field (Admin screen pattern), built on the shape Eddy made and tested in Studio (Incoming 20261102Components, scrTest): input DefaultValue -> txtFieldValue.Default, output Value = txtFieldValue.Text (dropdown: ddFieldValue.Selected.Value, readonly: DefaultValue). Label with optional red star above one input (text, dropdown, combobox = ModernCombobox@1.1.2 or readonly), total height 58 (label 20 + 1 + input 36 + 1; the input lies 1 px inside the component so the 2 px focus/invalid border is never clipped). Presentation only. Contract - the host passes the complete edit guard in Enabled and puts the SAME guard as the first condition in its OnChange handler. Reset contract - a changed DefaultValue updates the inner input (classic Default; combobox DefaultSelectedItems); after Discard the host calls Reset(<instance>), which runs OnReset and resets the inner input to DefaultValue (combobox: selection and search text back to DefaultSelectedItems). Dirty check and Save read the output Value, never the inner controls.'
     CustomProperties:
       DefaultValue:
         PropertyKind: Input
@@ -26,13 +26,13 @@ ComponentDefinitions:
       HintText:
         PropertyKind: Input
         DisplayName: HintText
-        Description: Placeholder of the text field and of the search box (InputType search).
+        Description: Placeholder of the text field and of the combobox search input (InputType combobox).
         DataType: Text
         Default: =""
       InputType:
         PropertyKind: Input
         DisplayName: InputType
-        Description: 'text, dropdown, search (search box + filtered dropdown, v1.0.2) or readonly. Any other value renders a disabled white text field (fail-closed).'
+        Description: 'text, dropdown, combobox (searchable choice, ModernCombobox@1.1.2, v1.0.2) or readonly. Any other value renders a disabled white text field (fail-closed).'
         DataType: Text
         Default: ="text"
       Invalid:
@@ -79,8 +79,8 @@ ComponentDefinitions:
     Properties:
       Fill: =Color.Transparent
       Height: =58
-      OnReset: =Reset(txtFieldValue); Reset(ddFieldValue); Reset(txtFieldSearch)
-      Value: =Switch(cmpField.InputType,"dropdown",Coalesce(ddFieldValue.Selected.Value,""),"search",Coalesce(ddFieldValue.Selected.Value,""),"readonly",cmpField.DefaultValue,txtFieldValue.Text)
+      OnReset: =Reset(txtFieldValue); Reset(ddFieldValue); Reset(cbFieldValue)
+      Value: =Switch(cmpField.InputType,"dropdown",Coalesce(ddFieldValue.Selected.Value,""),"combobox",Coalesce(First(cbFieldValue.SelectedItems).Value,""),"readonly",cmpField.DefaultValue,txtFieldValue.Text)
       Width: =360
     Children:
       - htmlFieldLabel:
@@ -135,7 +135,7 @@ ComponentDefinitions:
             RadiusTopLeft: =4
             RadiusTopRight: =4
             Size: =14
-            Visible: =!(cmpField.InputType in ["dropdown","search"])
+            Visible: =!(cmpField.InputType in ["dropdown","combobox"])
             Width: =Parent.Width-2
             X: =1
             Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1
@@ -155,7 +155,7 @@ ComponentDefinitions:
             DisabledBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
             DisabledColor: =ColorValue("#000000")
             DisabledFill: =Color.White
-            DisplayMode: =If(cmpField.Enabled && cmpField.InputType in ["dropdown","search"],DisplayMode.Edit,DisplayMode.Disabled)
+            DisplayMode: =If(cmpField.Enabled && cmpField.InputType="dropdown",DisplayMode.Edit,DisplayMode.Disabled)
             Fill: =Color.White
             FocusedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
             FocusedBorderThickness: =2
@@ -165,54 +165,47 @@ ComponentDefinitions:
             HoverBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#5A5A5A"))
             HoverColor: =ColorValue("#000F41")
             HoverFill: =ColorValue("#D5EDFF")
-            Items: '=If(cmpField.InputType="search" && !IsBlank(Trim(txtFieldSearch.Text)),Filter(If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t)),Trim(txtFieldSearch.Text) in Value || Value=cmpField.DefaultValue),If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t)))'
+            Items: '=If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t))'
             Items.Value: =Value
-            OnChange: =If(cmpField.Enabled,If(cmpField.InputType="search",Reset(txtFieldSearch)); cmpField.OnChange())
+            OnChange: =If(cmpField.Enabled,cmpField.OnChange())
             PressedBorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#0303B8"))
             PressedColor: =ColorValue("#000F41")
             PressedFill: =ColorValue("#D5EDFF")
             SelectionColor: =Color.White
             SelectionFill: =ColorValue("#0303B8")
             Size: =14
-            Visible: =cmpField.InputType in ["dropdown","search"]
-            Width: =If(cmpField.InputType="search",Parent.Width-2-txtFieldSearch.Width-8,Parent.Width-2)
-            X: =If(cmpField.InputType="search",txtFieldSearch.X+txtFieldSearch.Width+8,1)
+            Visible: =cmpField.InputType="dropdown"
+            Width: =Parent.Width-2
+            X: =1
             Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1
-      - txtFieldSearch:
-          Control: Classic/TextInput@2.3.2
+      - cbFieldValue:
+          Control: ModernCombobox@1.1.2
           Properties:
-            AccessibleLabel: '=cmpField.Label & ": " & cmpField.HintText'
-            Align: =Align.Left
-            BorderColor: =ColorValue("#9B9B9B")
-            BorderThickness: =1
+            AccessibleLabel: =cmpField.Label
+            AllowExternalSelectedItems: =false
+            Appearance: =Appearance.Outline
+            BorderColor: =If(cmpField.Invalid,ColorValue("#DB1E28"),ColorValue("#9B9B9B"))
+            BorderThickness: =If(cmpField.Invalid,2,1)
             Color: =ColorValue("#000000")
-            Default: =""
-            DisabledBorderColor: =ColorValue("#9B9B9B")
-            DisabledColor: =ColorValue("#000000")
-            DisabledFill: =Color.White
-            DisplayMode: =If(cmpField.Enabled && cmpField.InputType="search",DisplayMode.Edit,DisplayMode.Disabled)
+            DefaultSelectedItems: '=Filter(If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t)),Value=cmpField.DefaultValue)'
+            DisplayMode: =If(cmpField.Enabled && cmpField.InputType="combobox",DisplayMode.Edit,DisplayMode.Disabled)
             Fill: =Color.White
-            FocusedBorderColor: =ColorValue("#0303B8")
-            FocusedBorderThickness: =2
             Font: ="Inter, Arial, sans-serif"
             FontWeight: =FontWeight.Normal
             Height: =36
-            HintText: =cmpField.HintText
-            HoverBorderColor: =ColorValue("#5A5A5A")
-            HoverColor: =ColorValue("#000000")
-            HoverFill: =Color.White
-            MaxLength: =50
-            PaddingLeft: =12
-            PaddingRight: =12
-            PressedBorderColor: =ColorValue("#0303B8")
-            PressedColor: =ColorValue("#000000")
-            PressedFill: =Color.White
+            InputTextPlaceholder: =cmpField.HintText
+            IsSearchable: =true
+            ItemDisplayText: =ThisItem.Value
+            Items: '=If(IsBlank(cmpField.DefaultValue) || !IsBlank(LookUp(cmpField.Items,Value=cmpField.DefaultValue)),cmpField.Items,Ungroup(Table({t: ShowColumns(cmpField.Items,Value)},{t: Table({Value: cmpField.DefaultValue})}),t))'
+            OnChange: =If(cmpField.Enabled,cmpField.OnChange())
             RadiusBottomLeft: =4
             RadiusBottomRight: =4
             RadiusTopLeft: =4
             RadiusTopRight: =4
+            SelectMultiple: =false
             Size: =14
-            Visible: =cmpField.InputType="search"
-            Width: =RoundDown((Parent.Width-2-8)*0.4,0)
+            ValidationState: =If(cmpField.Invalid,ValidationState.Error,ValidationState.None)
+            Visible: =cmpField.InputType="combobox"
+            Width: =Parent.Width-2
             X: =1
             Y: =htmlFieldLabel.Y+htmlFieldLabel.Height+1

@@ -1,8 +1,12 @@
 # Proof for Test-ControlProperties (PA2108 class). Lines: <git ref> = a build Studio imported WITHOUT errors (Studio > Open > Browse files);
 # incoming:<file name> = an .msapp in Incoming\ that Studio itself saved (Save as > This computer), not a packed build.
 # Every property set on a control type in these sources counts as proven.
+# documented:<Control@version> <Microsoft Learn URL> <Prop,Prop,...> = properties documented on that Learn page AND declared settable in the
+#   .msapr template of that exact version (property/includeProperty, not hidden="true", not direction="out"); the test checks the template.
 # Add a ref only after Eddy confirmed the import of that build (no PA2108 / formula errors). Lines starting with # are comments.
 approved-20261118-v1.0.1    v1.0.1 released (Studio test PASS 18-11-2026)
 a2432b6                     v1.0.2-20261119_204929, TP-V102-01 PASS (Eddy 19-11-2026)
 incoming:20261119-SiteManagement-mail.msapp       Studio save by Eddy for MS-050 (19-11-2026)
 incoming:20261119-SiteManagement-combobox.msapp   Studio save by Eddy for MS-053 (19-11-2026)
+incoming:20261120-SiteManagement-moderncombobox.msapp   Studio save by Eddy, cmbTest ModernCombobox@1.1.2 filters in Play (20-11-2026)
+documented:ModernCombobox@1.1.2 https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/controls/modern-controls/modern-control-combobox AccessibleLabel,AllowExternalSelectedItems,Appearance,BorderColor,BorderThickness,Color,DefaultSelectedItems,DisplayMode,Fill,Font,FontWeight,Height,InputTextPlaceholder,IsSearchable,OnChange,RadiusBottomLeft,RadiusBottomRight,RadiusTopLeft,RadiusTopRight,Size,ValidationState,Visible,Width

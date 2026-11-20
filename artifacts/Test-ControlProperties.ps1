@@ -3,6 +3,8 @@
 # settable in SourceCode YAML. A template property list therefore proves nothing; this check uses PROOF instead:
 #   a property is allowed on a control type (incl. version) only when it was set on that type in a build Studio imported without errors
 #   (git refs in artifacts/studio-proven.txt) or in Src written by Studio itself (only the Incoming\*.msapp files listed as incoming:<name>).
+# documented:<Control@version> <Learn URL> <props> lines (Eddy 20-11-2026: check Microsoft Learn first) add properties that are on the Learn page
+#   AND declared settable in the .msapr Templates.json of that exact version (not hidden="true" - Classic ComboBox SearchItems is hidden -, not direction="out").
 # LIMIT: checks property NAMES per control type/version only; not formula references to hidden properties, not binding or PA2231.
 # Canvas component instances are checked by Check-WeeklySource (custom properties). FAIL = unproven property or unproven control type;
 # fix: use a proven property, or let Eddy import a small test build and add its ref to studio-proven.txt. ASCII only, PowerShell 5.1.
@@ -34,7 +36,7 @@ function Add-Controls($node, $map, [string]$src) {
 # 1) proven property sets
 $proven = @{}
 $lines = @(Get-Content (Join-Path $PSScriptRoot 'studio-proven.txt') | Where-Object { $_ -and -not $_.StartsWith('#') } | ForEach-Object { ($_ -split '\s+')[0] })
-$refs = @($lines | Where-Object { -not $_.StartsWith('incoming:') }); $trusted = @($lines | Where-Object { $_.StartsWith('incoming:') } | ForEach-Object { $_.Substring(9) })
+$refs = @($lines | Where-Object { -not $_.StartsWith('incoming:') -and -not $_.StartsWith('documented:') }); $trusted = @($lines | Where-Object { $_.StartsWith('incoming:') } | ForEach-Object { $_.Substring(9) })
 Check ($refs.Count -gt 0) "studio-proven.txt lists $($refs.Count) Studio-imported build(s)"
 Push-Location $projectRoot
 try {
@@ -45,6 +47,7 @@ try {
     }
 } finally { Pop-Location }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+Add-Type -AssemblyName System.Web.Extensions
 $inc = Join-Path $projectRoot 'Incoming'
 $studioFiles = 0
 if (Test-Path $inc) {
@@ -58,8 +61,34 @@ if (Test-Path $inc) {
         } finally { $z.Dispose() }
     }
 }
+# documented properties: each must be settable in the .msapr template of that exact control version
+$docLines = @(Get-Content (Join-Path $PSScriptRoot 'studio-proven.txt') | Where-Object { $_.StartsWith('documented:') })
+$aprZ = [IO.Compression.ZipFile]::OpenRead((Join-Path $projectRoot 'Site Managment_VS.msapr'))
+try { $te = @($aprZ.Entries | Where-Object { $_.FullName.Replace('\', '/') -eq 'msapp/References/Templates.json' })[0]; $sr = New-Object IO.StreamReader($te.Open()); $tplJson = $sr.ReadToEnd(); $sr.Close() } finally { $aprZ.Dispose() }
+$tpls = (New-Object System.Web.Script.Serialization.JavaScriptSerializer -Property @{ MaxJsonLength = 2147483647 }).DeserializeObject($tplJson)['UsedTemplates']
+$docCount = 0
+foreach ($dl in $docLines) {
+    $parts = $dl -split '\s+'
+    $ctl = $parts[0].Substring(11); $url = $parts[1]; $props = @($parts[2] -split ',')
+    Check ($url -like 'https://learn.microsoft.com/*') "documented $ctl cites a Microsoft Learn page ($url)"
+    $tn = ($ctl -split '@')[0]; $tn = ($tn -split '/')[-1]; $tv = ($ctl -split '@')[1]
+    $tp = @($tpls | Where-Object { $_['Name'] -ieq $tn -and $_['Version'] -eq $tv })
+    Check ($proven.ContainsKey($ctl)) "documented $ctl control type itself was saved or imported by Studio (listed source)"
+    Check ($tp.Count -eq 1) "documented $ctl has its template in the .msapr Templates.json"
+    if ($tp.Count -ne 1) { continue }
+    $x = [string]$tp[0]['Template']
+    $hiddenStart = $x.IndexOf('<!--Hidden properties')
+    $bad = New-Object System.Collections.ArrayList
+    foreach ($p in $props) {
+        $m = [regex]::Match($x, '<property name="' + [regex]::Escape($p) + '"[^>]*>')
+        $mi = [regex]::Match($x, '<appMagic:includeProperty name="' + [regex]::Escape($p) + '"[^>]*/>')
+        $ok = ($m.Success -and $m.Value -notmatch 'hidden="true"' -and $m.Value -notmatch 'direction="out"') -or ($mi.Success -and $mi.Value -notmatch 'hidden="true"' -and ($hiddenStart -lt 0 -or $mi.Index -lt $hiddenStart))
+        if ($ok) { if (-not $proven.ContainsKey($ctl)) { $proven[$ctl] = @{} }; if (-not $proven[$ctl].ContainsKey($p)) { $proven[$ctl][$p] = "documented $url" }; $docCount++ } else { [void]$bad.Add($p) }
+    }
+    Check ($bad.Count -eq 0) "documented $ctl properties are settable in the template (not hidden, not output)$(if ($bad.Count) { ' - not settable: ' + ($bad -join ', ') })"
+}
 Check (@($trusted | Where-Object { -not (Test-Path (Join-Path $inc $_)) }).Count -eq 0) "every listed Studio-saved Incoming file exists ($($trusted -join '; '))"
-Write-Output "INFO proven sources: $($refs.Count) git ref(s) + $studioFiles Studio-written Src file(s) from $($trusted.Count) listed Incoming file(s); $($proven.Count) control types"
+Write-Output "INFO proven sources: $($refs.Count) git ref(s) + $studioFiles Studio-written Src file(s) from $($trusted.Count) listed Incoming file(s) + $docCount documented template propert(ies); $($proven.Count) control types"
 
 # 2) current Src
 $script:unprovenTypes = New-Object System.Collections.ArrayList
