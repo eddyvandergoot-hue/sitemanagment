@@ -104,6 +104,7 @@ Doel = documentgeneratie. Volgorde: (1) GEDAAN: contractoraddr goedgekeurd 7-11-
 
 ## Backlog functies
 - **v1.1 Temporary assignment / Move team (Eddy 19-11-2026):** huidig gedrag + ontwerp in TEAM_MOVE_PLAN.md (periodes per dag via Move / assign, Fill week slaat dagen met uren elders over, amber zelfde dag op 2 projecten, rood > 24 per dag; beslispunten B1-B5). Wacht op akkoord van Eddy; niets gebouwd.
+- Roadmap na consent + lasstickers (Eddy 20-11-2026, alleen ontwerp, ROADMAP.md / PROJECT_OVERVIEW.md): archief optie A (H50), configurable app scope bevestigd (H51), meerdere BU's als eigen installaties (H52), installatiepakket + INSTALL.md (H53), schaal ~6 supervisors / max ~20 per week, SharePoint volstaat (H54).
 - Configurable app (Eddy 19-11-2026, na de consent-build): bedrijfsspecifieke waarden naar AppSettings/Translations/Templates, fail-closed, zonder gedragswijziging; eerst ontwerp (ROADMAP.md), akkoord Eddy, dan pas bouwen. Backupnotitie: GitHub-repo + lokale clone + tags/releases; optioneel later een tweede remote bij GEA.
 - Hertest v1.0.1 (zodra het geval zich voordoet): Workers deactiveren van een medewerker met actieve koppeling; melding moet project, team en "open since YYYY KWxx" tonen (niet getest 18-11-2026, geen actieve gekoppelde testmedewerker).
 - HSE-feedback op de consent-app-versie (H36, Eddy 17-11-2026): GEA HSE geeft feedback als Eddy de app presenteert; wijzigingen in de tekst via Translations, zonder build. Geen HSE-goedkeuring vooraf.
