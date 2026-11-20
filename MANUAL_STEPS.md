@@ -571,7 +571,7 @@ Later te controleren (IT): is PnP PowerShell bij GEA toegestaan (app-registratie
 
 ## MS-053 — ComboBox-template via Studio (zoekbare keuzelijsten, v1.0.2)
 
-- **Added:** 19-11-2026. **Status:** Done 19-11-2026 (Eddy; template merged door Claude, alleen Templates.json).
+- **Added:** 19-11-2026. **Status:** Done 19-11-2026 (Eddy; template merged door Claude, alleen Templates.json). **Gevolg (20-11-2026, H45):** de ComboBox bleek niet bruikbaar vanuit SourceCode (SearchItems niet instelbaar, PA2108); vervangen door zoekveld + gefilterde dropdown. De template blijft ongebruikt in de .msapr.
 - **Waarom handmatig:** de app bevat nog geen ComboBox-template (alleen Dropdown). Een nieuw controltype mag pas als Studio de template in de app zet (AGENTS, technische randvoorwaarden).
 - **Stappen:**
   1. Open in Studio de testbuild v1.0.2 (zoals bij de vorige test).

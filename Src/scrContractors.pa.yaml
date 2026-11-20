@@ -444,7 +444,7 @@ Screens:
                               Height: =58
                               HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colEmpSaveErrors,Field="Country")>0
-                              InputType: ="combobox"
+                              InputType: ="search"
                               Items: |-
                                 =ShowColumns(Choices([@Employers].Country),Value)
                               Label: =If(LangNl && !IsBlank(T.empFieldCountry.nl),T.empFieldCountry.nl,T.empFieldCountry.en)
@@ -467,7 +467,7 @@ Screens:
                               Height: =58
                               HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colEmpSaveErrors,Field="Language")>0
-                              InputType: ="combobox"
+                              InputType: ="search"
                               Items: |-
                                 =ShowColumns(Choices([@Employers].Language),Value)
                               Label: =If(LangNl && !IsBlank(T.empFieldLanguage.nl),T.empFieldLanguage.nl,T.empFieldLanguage.en)

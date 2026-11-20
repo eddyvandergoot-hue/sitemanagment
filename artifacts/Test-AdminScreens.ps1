@@ -240,8 +240,8 @@ foreach ($k in $inputMap.Keys) {
     Assert-True (([string]$ip['DefaultValue']).Trim() -ceq $dvExp) "${k}.DefaultValue = $dvExp"
     Assert-True (([string]$ip['Enabled']).Trim() -ceq $fieldEnabled) "${k}.Enabled = the edit guard (Loaded, no load error, not busy/saving/failed, Mode New or Edit), as Boolean"
     Assert-True ($ip['Invalid'] -ceq ('=CountIf(colEmpSaveErrors,Field="' + $inputMap[$k] + '")>0')) "${k}.Invalid = CountIf(colEmpSaveErrors,Field=""$($inputMap[$k])"")>0 (red border rule)"
-    $itExp = if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { '="combobox"' } else { '="text"' }
-    Assert-True ($ip['InputType'] -ceq $itExp -and $ip['MaxLength'] -ceq '=255' -and $ip['HintText'] -ceq $(if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { '=If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)' } else { '=""' }) -and ($ip.ContainsKey('OnChange') -eq ($k -eq 'cmpEmpCountry'))) "${k}: InputType $itExp, MaxLength 255, HintText (combobox: search hint from T), OnChange only on Country (Language prefill)"
+    $itExp = if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { '="search"' } else { '="text"' }
+    Assert-True ($ip['InputType'] -ceq $itExp -and $ip['MaxLength'] -ceq '=255' -and $ip['HintText'] -ceq $(if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { '=If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)' } else { '=""' }) -and ($ip.ContainsKey('OnChange') -eq ($k -eq 'cmpEmpCountry'))) "${k}: InputType $itExp, MaxLength 255, HintText (search: hint from T), OnChange only on Country (Language prefill)"
     Assert-True (($ip.ContainsKey('Items')) -eq ($k -in 'cmpEmpCountry', 'cmpEmpLanguage')) "${k}: Items only on the Country and Language dropdowns"
     Assert-True ($ip['Label'] -ceq ('=' + (TT0 $fieldLabels[$k]))) "${k}.Label from T.$($fieldLabels[$k])"
     Assert-True (($ip.ContainsKey('Required') -and $ip['Required'] -eq '=true') -eq ($k -in 'cmpEmpName', 'cmpEmpLanguage')) "${k}.Required only on Contractor Name and Language"
@@ -1182,7 +1182,7 @@ $cmpFieldDef = $builder.Build().Deserialize([IO.File]::ReadAllText((Join-Path $s
 $cvFx = ([string]$cmpFieldDef['Properties']['Value']).TrimStart('=')
 function CV-Rec([string]$valueFx, [string]$type) { return "{Value:With({cmpField:{InputType:`"$type`",DefaultValue:($valueFx) & `"`"},txtFieldValue:{Text:($valueFx) & `"`"},ddFieldValue:{Selected:If(IsBlank($valueFx),If(false,{Value:`"`"}),{Value:$valueFx})},cbFieldValue:{SelectedItems:If(IsBlank($valueFx),Filter(Table({Value:`"`"}),false),Table({Value:$valueFx}))}},$cvFx)}" }
 function Emp-Inputs([string]$cityOverride) {
-    $parts = @(); foreach ($k in $inputMap.Keys) { $v = "varEmpEdit.$($inputMap[$k])"; if ($k -eq 'cmpEmpCity' -and $cityOverride -ne '') { $v = $cityOverride }; $ty = if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { 'combobox' } else { 'text' }; $parts += "${k}:$(CV-Rec $v $ty)" }
+    $parts = @(); foreach ($k in $inputMap.Keys) { $v = "varEmpEdit.$($inputMap[$k])"; if ($k -eq 'cmpEmpCity' -and $cityOverride -ne '') { $v = $cityOverride }; $ty = if ($k -in 'cmpEmpCountry', 'cmpEmpLanguage') { 'search' } else { 'text' }; $parts += "${k}:$(CV-Rec $v $ty)" }
     return ($parts -join ',') + ',varEmpActiveDraft:Coalesce(varEmpEdit.Active,true)'
 }
 $lblDirtyFx = ([string]$idx['lblEmpDirty']['Properties']['Text']).Trim().TrimStart('=')
@@ -1431,7 +1431,7 @@ foreach ($k in @($pTextFields.Keys) + @($pDropFields.Keys)) {
     Assert-True (($pIdx[$k]['Control'] -eq 'CanvasComponent') -and ($pIdx[$k]['ComponentName'] -eq 'cmpField')) "Projects: $k is a cmpField instance"
     Assert-True ((PGet $k 'DefaultValue') -ceq "=varPrjEdit.$f") "Projects: $k.DefaultValue = varPrjEdit.$f"
     Assert-True (((PGet $k 'Enabled') -ceq $pFieldGuard) -and ((PGet $k 'Invalid') -ceq ('=CountIf(colPrjSaveErrors,Field="' + $f + '")>0')) -and ((PGet $k 'Height') -eq '=58') -and ((PGet $k 'MaxLength') -eq '=255') -and ((PGet $k 'Label') -ceq ('=' + (TT $pLabelKey[$f]))) -and (-not $fp.ContainsKey('Visible')) -and (-not $fp.ContainsKey('OnChange'))) "Projects: $k Enabled = edit guard (Boolean), Invalid = CountIf(colPrjSaveErrors,Field=""$f"")>0, label from T, h58, MaxLength 255, no Visible, no OnChange logic"
-    Assert-True ((($fp.ContainsKey('Required') -and $fp['Required'] -eq '=true') -eq ($f -in @('Name', 'Number', 'Status'))) -and ((PGet $k 'InputType') -eq $(if ($k -eq 'cmpPrjCountry') { '="combobox"' } elseif ($pDropFields.Contains($k)) { '="dropdown"' } else { '="text"' }))) "Projects: $k Required only on Project Name, Project Number and Status; InputType text / dropdown"
+    Assert-True ((($fp.ContainsKey('Required') -and $fp['Required'] -eq '=true') -eq ($f -in @('Name', 'Number', 'Status'))) -and ((PGet $k 'InputType') -eq $(if ($k -eq 'cmpPrjCountry') { '="search"' } elseif ($pDropFields.Contains($k)) { '="dropdown"' } else { '="text"' }))) "Projects: $k Required only on Project Name, Project Number and Status; InputType text / dropdown"
 }
 foreach ($k in @('cmpPrjLeader', 'cmpPrjSiteManager')) { $f = @{ cmpPrjLeader = 'Leader'; cmpPrjSiteManager = 'SiteManager' }[$k]; Assert-True (((PGet $k 'DefaultValue') -ceq "=varPrjEdit.$f") -and ((PGet $k 'InputType') -eq '="readonly"') -and ((PGet $k 'Enabled') -eq '=false') -and ($pIdx[$k]['ComponentName'] -eq 'cmpField') -and ((PGet $k 'Label') -ceq ('=' + (TT $pLabelKey[$f])))) "Projects: $k read-only cmpField, never enabled, showing varPrjEdit.$f (DisplayName)" }
 Assert-True ($srcAll -notmatch '\btxtPrj\w*\b|\bddPrj\w*\b|\bgalPrjList\b|\blblPrj\w*Label\b|\blblPrj\w*Required\b|\bconPrjMsgBar\b|\bnavPrj\b|\bconPrjListCard\b|\bimgPrjSpinner\b|\bimgLogoProjects\b|\blblPrjTitle\b|\bconPrjButtonRow\b') 'Projects: no replaced hand-built control (txtPrj*, ddPrj*, galPrjList, field labels/stars, conPrjMsgBar, navPrj, spinner, logo) is left in Src'
@@ -2011,7 +2011,7 @@ Assert-True ($prjEditSets.Count -ge 3 -and @($prjEditSets | Where-Object { $_ -n
 function Prj-Inputs([string]$statusOverride) {
     $parts = @()
     foreach ($k in $pTextFields.Keys) { $parts += "${k}:$(CV-Rec "varPrjEdit.$($pTextFields[$k])" 'text')" }
-    foreach ($k in $pDropFields.Keys) { $v = "varPrjEdit.$($pDropFields[$k])"; if ($k -eq 'cmpPrjStatus' -and $statusOverride -ne '') { $v = $statusOverride }; $parts += "${k}:$(CV-Rec $v $(if ($k -eq 'cmpPrjCountry') { 'combobox' } else { 'dropdown' }))" }
+    foreach ($k in $pDropFields.Keys) { $v = "varPrjEdit.$($pDropFields[$k])"; if ($k -eq 'cmpPrjStatus' -and $statusOverride -ne '') { $v = $statusOverride }; $parts += "${k}:$(CV-Rec $v $(if ($k -eq 'cmpPrjCountry') { 'search' } else { 'dropdown' }))" }
     return ($parts -join ',')
 }
 $pLblDirtyFx = ([string]$pIdx['lblPrjDirty']['Properties']['Text']).Trim().TrimStart('=')
@@ -2128,7 +2128,7 @@ Assert-Eval (WG 'galWrkList' $wDirtyFix) $false 'Workers: list selection blocked
 
 # (W2) Form fields: cmpField instances bound to varWrkEdit, edit guard, red border, dropdown items ------------------------
 $wFieldEnabled = '=varWrkLoadState="Loaded" && IsEmpty(colWrkLoadErrors) && !Coalesce(varWrkBusy,false) && !Coalesce(varWrkSaving,false) && !Coalesce(varWrkSaveFailed,false) && Coalesce(varWrkMode,"") in ["New","Edit"]'
-$wFields = [ordered]@{ cmpWrkFirstName = @('FirstName', 'text', 'wrkFieldFirstName'); cmpWrkSurname = @('Surname', 'text', 'wrkFieldSurname'); cmpWrkTrade = @('Trade', 'combobox', 'wrkFieldTrade'); cmpWrkContractor = @('Contractor', 'dropdown', 'wrkFieldContractor'); cmpWrkLanguage = @('Language', 'combobox', 'wrkFieldLanguage') }
+$wFields = [ordered]@{ cmpWrkFirstName = @('FirstName', 'text', 'wrkFieldFirstName'); cmpWrkSurname = @('Surname', 'text', 'wrkFieldSurname'); cmpWrkTrade = @('Trade', 'search', 'wrkFieldTrade'); cmpWrkContractor = @('Contractor', 'dropdown', 'wrkFieldContractor'); cmpWrkLanguage = @('Language', 'search', 'wrkFieldLanguage') }
 $wCardKids = @($wIdx['conWrkFormCard']['Children'] | ForEach-Object { @($_.Keys)[0] })
 foreach ($k in $wFields.Keys) {
     $ip = $wIdx[$k]['Properties']; $f = $wFields[$k]

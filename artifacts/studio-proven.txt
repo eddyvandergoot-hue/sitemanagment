@@ -1,0 +1,8 @@
+# Proof for Test-ControlProperties (PA2108 class). Lines: <git ref> = a build Studio imported WITHOUT errors (Studio > Open > Browse files);
+# incoming:<file name> = an .msapp in Incoming\ that Studio itself saved (Save as > This computer), not a packed build.
+# Every property set on a control type in these sources counts as proven.
+# Add a ref only after Eddy confirmed the import of that build (no PA2108 / formula errors). Lines starting with # are comments.
+approved-20261118-v1.0.1    v1.0.1 released (Studio test PASS 18-11-2026)
+a2432b6                     v1.0.2-20261119_204929, TP-V102-01 PASS (Eddy 19-11-2026)
+incoming:20261119-SiteManagement-mail.msapp       Studio save by Eddy for MS-050 (19-11-2026)
+incoming:20261119-SiteManagement-combobox.msapp   Studio save by Eddy for MS-053 (19-11-2026)

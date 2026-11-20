@@ -417,7 +417,7 @@ Screens:
                               Height: =58
                               HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colWrkSaveErrors,Field="Trade")>0
-                              InputType: ="combobox"
+                              InputType: ="search"
                               Items: |-
                                 =ShowColumns(Choices([@Workers].Trade),Value)
                               Label: =If(LangNl && !IsBlank(T.wrkFieldTrade.nl),T.wrkFieldTrade.nl,T.wrkFieldTrade.en)
@@ -457,7 +457,7 @@ Screens:
                               Height: =58
                               HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colWrkSaveErrors,Field="Language")>0
-                              InputType: ="combobox"
+                              InputType: ="search"
                               Items: |-
                                 =ShowColumns(Choices([@Workers].Language),Value)
                               Label: =If(LangNl && !IsBlank(T.wrkFieldLanguage.nl),T.wrkFieldLanguage.nl,T.wrkFieldLanguage.en)

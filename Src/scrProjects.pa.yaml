@@ -490,7 +490,7 @@ Screens:
                               Height: =58
                               HintText: =If(LangNl && !IsBlank(T.admFieldSearchHint.nl),T.admFieldSearchHint.nl,T.admFieldSearchHint.en)
                               Invalid: =CountIf(colPrjSaveErrors,Field="Country")>0
-                              InputType: ="combobox"
+                              InputType: ="search"
                               Items: |-
                                 =ShowColumns(Choices([@Projects].Country),Value)
                               Label: =If(LangNl && !IsBlank(T.prjFieldCountry.nl),T.prjFieldCountry.nl,T.prjFieldCountry.en)
